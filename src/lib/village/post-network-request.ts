@@ -1,0 +1,29 @@
+import type { z } from "zod";
+
+import { readResponseMessage } from "../read-response-message.ts";
+
+const FALLBACK_ERROR_MESSAGE = "Something went wrong. Try again.";
+const UNREACHABLE_ERROR_MESSAGE = "We couldn't reach the server. Check your connection and try again.";
+
+async function sendPost(path: string, body: unknown) {
+  try {
+    return await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error(UNREACHABLE_ERROR_MESSAGE);
+  }
+}
+
+export async function postNetworkRequest<Schema extends z.ZodType>(
+  path: string,
+  body: unknown,
+  schema: Schema,
+  failureMessage = FALLBACK_ERROR_MESSAGE,
+): Promise<z.infer<Schema>> {
+  const response = await sendPost(path, body);
+  if (!response.ok) throw new Error(await readResponseMessage(response, failureMessage));
+  return schema.parse(await response.json());
+}

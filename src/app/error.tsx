@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 const TROUBLESHOOTING_URL = "https://github.com/VillageHQ/community#troubleshooting";
 
-export default function ErrorBoundary({ reset }: { reset: () => void }) {
+export default function ErrorBoundary({ retry }: { retry: () => void }) {
   return (
     <PageCard
       title="Something went wrong"
@@ -18,7 +18,7 @@ export default function ErrorBoundary({ reset }: { reset: () => void }) {
         </a>
         .
       </p>
-      <Button onClick={reset}>Try again</Button>
+      <Button onClick={retry}>Try again</Button>
     </PageCard>
   );
 }

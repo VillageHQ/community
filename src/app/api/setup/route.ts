@@ -7,6 +7,7 @@ import { claimFirstAdmin } from "@/lib/first-admin";
 import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/lib/password-policy";
 import { withRouteLogging } from "@/lib/route-logging";
 import { pruneExpiredRateLimits } from "@/lib/rate-limit-pruning";
+import { readJsonBody } from "@/lib/read-json-body";
 import { secretsMatch } from "@/lib/secrets-match";
 import { recordFailedSetupAttempt } from "@/lib/setup-rate-limit";
 import { readSetupToken } from "@/lib/setup-token";
@@ -28,14 +29,6 @@ const firstAdminSchema = z.object({
     .min(MINIMUM_PASSWORD_LENGTH, `Use at least ${MINIMUM_PASSWORD_LENGTH} characters.`)
     .max(MAXIMUM_PASSWORD_LENGTH, `Use at most ${MAXIMUM_PASSWORD_LENGTH} characters.`),
 });
-
-async function readJsonBody(request: Request): Promise<unknown> {
-  try {
-    return await request.json();
-  } catch {
-    return null;
-  }
-}
 
 export const POST = withRouteLogging(
   "setup",

@@ -1,6 +1,6 @@
 # Community
 
-A self-hostable community portal for VC networks, built on Village. This repo is a bare skeleton that exists to prove the app deploys. Feed, DMs, intros and the Village integration come later.
+A self-hostable community portal for VC networks, built on Village. Members search their own Village network, including the relationships of everyone in the community. Feed, DMs, intro workflow and invites come later.
 
 ## Deploy
 
@@ -17,6 +17,18 @@ A self-hostable community portal for VC networks, built on Village. This repo is
 3. Wait for the deploy to finish.
 4. Open `/setup` on your new site. Enter the token and your name, email and password.
 5. Sign in. Setup closes for good after this.
+6. Connect Village. See [Connect Village](#connect-village).
+
+### Connect Village
+
+You need a Village platform account and an active app. Billing is credits only, and your community spends your credits.
+
+1. Open **Village settings** from the home page. It shows the exact domain to enter in Village's Platform Settings.
+2. Paste your public and secret keys there. The app checks them with Village before saving.
+3. Open **Your network**. Add your LinkedIn URL and sync your network in Village's popup.
+4. Back in **Village settings**, create the group. **Your own Village network becomes shared with every current and future member.**
+
+Members then open **Your network**, add their LinkedIn URL, agree to share, and sync. The app joins them to the group after that. Members can leave from the same page. Removing someone from this portal doesn't yet remove them from the Village group, so they should leave first. Village won't let the group's creator leave while other members remain.
 
 ### Setup token
 
@@ -43,6 +55,12 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 **Sign-up:** Sign-up is closed until an admin exists and stays closed afterward. Invites are out of scope, so `/sign-up` shows a notice and `POST /api/auth/sign-up/email` refuses every request. `/setup` is the only way to create an account in this skeleton.
 
 **Auth secret:** The app uses `BETTER_AUTH_SECRET` when set. Otherwise it generates a secret on first boot and stores it in the `instance_settings` table, so anyone with database read access can read it. Changing the secret later signs everyone out.
+
+**Village:** The server mints each member's token with `POST /v2/auth/tokens`, then calls the v2 API. The secret key and tokens never reach the browser, and the app never reads the SDK's `village.token` cookie. The browser only runs the App SDK for sync, and it's identified by an opaque UUID per member. Tokens need an email, so Village receives the member's email. Keys and the invite link live in `instance_settings` in plaintext, like the generated auth secret, so anyone with database read access can read them. Sign-out clears the SDK's `village.token` from this site only. Village's own session on its domain stays, so on a shared browser the next member's popup can reuse the first member's Village account. The email check below blocks that link until an admin approves it.
+
+**Village link check:** Village doesn't sign the member reference in its widget, so anyone can send someone else a link that ties that person's Village account to their member ID. The app compares the email on `/v2/user/me` with the member's email, case-insensitively, before every join, search and path lookup. On a mismatch it blocks them and tells the member to ask an admin. **Village settings** lists the mismatch, and an admin can approve that exact pair of emails. A later change to either email blocks again. An admin can also reset a member's link there, which gives the member a new ID and clears their consent, group status and cached paths on this site. Reset removes nothing on Village's side: the old Village account stays linked to the old ID and stays in the group until it leaves inside Village, and Village won't link that same account to this site again yet.
+
+**Credit limits:** Each member gets `DAILY_CREDIT_CALL_LIMIT` searches and uncached path lookups per UTC day, 50 by default, in `src/lib/village/daily-usage.ts`. Path results stay cached per member for 24 hours. Village error responses (400 and up) don't count, because Village doesn't debit them. Timeouts, network errors and any response that isn't a Village JSON error do count, including a proxy's HTML 502, because Village may have debited them.
 
 **Query timeouts:** Queries time out after 10 seconds on the client. Direct connections also set `statement_timeout`. The app omits it when `DATABASE_URL_UNPOOLED` is set or the hostname contains `-pooler`, because PgBouncer can reject it as a startup parameter. Any other transaction pooler that rejects it needs one of those signals.
 
@@ -71,6 +89,8 @@ With no trusted header, all clients share one bucket per path. That can't be spo
 | `SETUP_TOKEN` | For setup | Unlocks `/setup`. 32+ random characters. |
 | `APP_URL` | Self-hosting | Public origin. Takes priority over platform variables. |
 | `DATABASE_URL_UNPOOLED` | No | Direct connection, preferred for migrations. |
+| `VILLAGE_API_URL` | No | Village API origin. Defaults to production. |
+| `VILLAGE_SDK_URL` | No | Village App SDK URL. Defaults to production. |
 | `BETTER_AUTH_SECRET` | No | Overrides the generated auth secret. |
 | `CLIENT_IP_HEADER` | No | Header your proxy overwrites with the client IP. Overrides the platform default. |
 | `DATABASE_CA_CERT` | No | PEM CA used to verify database TLS. Escaped `\n` is accepted. |

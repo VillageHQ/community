@@ -9,4 +9,8 @@ export const instanceSettings = pgTable("instance_settings", {
 export const INSTANCE_SETTING_KEYS = {
   authSecret: "auth_secret",
   firstAdminUserId: "first_admin_user_id",
+  villagePublicKey: "village_public_key",
+  villageSecretKey: "village_secret_key",
+  villageGroupId: "village_group_id",
+  villageGroupInviteLink: "village_group_invite_link",
 } as const;

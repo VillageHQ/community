@@ -1,10 +1,12 @@
 import { headers } from "next/headers";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { PageCard } from "@/components/page-card";
 import { SignOutForm } from "@/components/sign-out-form";
 import { getAuth } from "@/lib/auth";
 import { ROUTES } from "@/lib/routes";
+import { isAdminMember } from "@/lib/village/member-network";
 
 export default async function HomePage() {
   const requestHeaders = await headers();
@@ -22,6 +24,16 @@ export default async function HomePage() {
         <dt className="text-muted-foreground">Role</dt>
         <dd>{role}</dd>
       </dl>
+      <nav aria-label="Community" className="grid gap-1 text-sm">
+        <Link className="underline" href={ROUTES.network}>
+          Your network
+        </Link>
+        {isAdminMember(session.user) ? (
+          <Link className="underline" href={ROUTES.villageSettings}>
+            Village settings
+          </Link>
+        ) : null}
+      </nav>
       <SignOutForm />
     </PageCard>
   );

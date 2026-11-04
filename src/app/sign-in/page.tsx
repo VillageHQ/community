@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { PageCard } from "@/components/page-card";
@@ -16,12 +15,6 @@ export default async function SignInPage() {
   return (
     <PageCard title="Sign in">
       <SignInForm />
-      <p className="text-sm text-muted-foreground">
-        Need an account?{" "}
-        <Link className="underline" href={ROUTES.signUp}>
-          Sign up
-        </Link>
-      </p>
     </PageCard>
   );
 }
