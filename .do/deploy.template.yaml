@@ -1,0 +1,29 @@
+spec:
+  name: village-community
+  databases:
+    - name: db
+      engine: PG
+      version: "17"
+      production: false
+  services:
+    - name: web
+      git:
+        repo_clone_url: https://github.com/VillageHQ/community.git
+        branch: main
+      environment_slug: node-js
+      instance_size_slug: apps-s-1vcpu-0.5gb
+      instance_count: 1
+      http_port: 8080
+      envs:
+        - key: APP_URL
+          scope: RUN_TIME
+          value: ${APP_URL}
+        - key: DATABASE_URL
+          scope: RUN_TIME
+          value: ${db.DATABASE_URL}
+        - key: DATABASE_CA_CERT
+          scope: RUN_TIME
+          value: ${db.CA_CERT}
+        - key: SETUP_TOKEN
+          scope: RUN_TIME
+          type: SECRET

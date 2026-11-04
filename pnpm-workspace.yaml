@@ -1,0 +1,28 @@
+allowBuilds:
+  esbuild: false
+  sharp: false
+# Exact versions from the 3 November 2026 Next.js and Better Auth security releases.
+# Delete this list on or after 5 November 2026, once they pass pnpm's 24-hour minimum release age.
+minimumReleaseAgeExclude:
+  - '@better-auth/core@1.7.16'
+  - '@better-auth/drizzle-adapter@1.7.16'
+  - '@better-auth/kysely-adapter@1.7.16'
+  - '@better-auth/memory-adapter@1.7.16'
+  - '@better-auth/mongo-adapter@1.7.16'
+  - '@better-auth/prisma-adapter@1.7.16'
+  - '@better-auth/telemetry@1.7.16'
+  - '@next/env@16.4.5'
+  - '@next/eslint-plugin-next@16.4.5'
+  - '@next/swc-darwin-arm64@16.4.5'
+  - '@next/swc-darwin-x64@16.4.5'
+  - '@next/swc-linux-arm64-gnu@16.4.5'
+  - '@next/swc-linux-arm64-musl@16.4.5'
+  - '@next/swc-linux-x64-gnu@16.4.5'
+  - '@next/swc-linux-x64-musl@16.4.5'
+  - '@next/swc-win32-arm64-msvc@16.4.5'
+  - '@next/swc-win32-x64-msvc@16.4.5'
+  - auth@1.7.16
+  - better-auth@1.7.16
+  - better-call@1.4.5
+  - eslint-config-next@16.4.5
+  - next@16.4.5
