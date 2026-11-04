@@ -44,6 +44,15 @@ export async function saveVillageKeys(database: Database, keys: VillageKeys) {
   });
 }
 
+export async function readConfirmedVillageDomain(database: Database) {
+  const settings = await readSettings(database, [INSTANCE_SETTING_KEYS.villageDomainConfirmed]);
+  return settings.get(INSTANCE_SETTING_KEYS.villageDomainConfirmed) ?? null;
+}
+
+export async function saveConfirmedVillageDomain(database: Database, domain: string) {
+  await saveSettings(database, { [INSTANCE_SETTING_KEYS.villageDomainConfirmed]: domain });
+}
+
 export async function readVillageGroup(database: Database): Promise<VillageGroup | null> {
   const settings = await readSettings(database, [
     INSTANCE_SETTING_KEYS.villageGroupId,

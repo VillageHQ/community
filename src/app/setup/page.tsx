@@ -1,48 +1,91 @@
+import type { Metadata } from "next";
+import { KeyRound } from "lucide-react";
 import Link from "next/link";
 
-import { PageCard } from "@/components/page-card";
+import { EmptyState } from "@/components/empty-state";
+import { SplitLayout, VillageNote } from "@/components/split-layout";
+import { Button } from "@/components/ui/button";
 import { getDatabase } from "@/database/client";
+import { readBrandingForPage } from "@/lib/branding/branding";
 import { isFirstAdminClaimed } from "@/lib/first-admin";
 import { ROUTES } from "@/lib/routes";
 import { MINIMUM_SETUP_TOKEN_LENGTH, readSetupToken } from "@/lib/setup-token";
 
 import { SetupForm } from "./setup-form";
+import { PAGE_TITLES } from "@/lib/branding/page-metadata";
 
 export const dynamic = "force-dynamic";
 
+const SETUP_TOKEN_STEPS = [
+  `Create a random value of at least ${MINIMUM_SETUP_TOKEN_LENGTH} characters. A password manager's generator works well. Don't use a word or a repeated pattern.`,
+  "Open your hosting dashboard and find this app's environment variables.",
+  "Save the value in a variable named SETUP_TOKEN.",
+  "Redeploy the app, then reload this page.",
+];
+
+function MissingTokenCopy() {
+  return (
+    <>
+      <h1 className="type-h1 lg:type-display">Add a setup token to continue</h1>
+      <p className="type-lead mt-3 text-foreground-soft">
+        A setup token is a long password that proves you own this deployment. Yours is missing or too weak, so
+        nothing can be created yet.
+      </p>
+      <ol className="mt-7 grid gap-3">
+        {SETUP_TOKEN_STEPS.map((step, position) => (
+          <li key={step} className="flex items-start gap-3.5 rounded-field bg-card p-4 shadow-panel">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-accent-foreground" aria-hidden="true">
+              {position + 1}
+            </span>
+            <span className="min-w-0 pt-1">{step}</span>
+          </li>
+        ))}
+      </ol>
+    </>
+  );
+}
+
+export const metadata: Metadata = { title: PAGE_TITLES.setup };
+
 export default async function SetupPage() {
+  const community = await readBrandingForPage();
+
   if (await isFirstAdminClaimed(getDatabase())) {
     return (
-      <PageCard title="Setup is complete" description="This community already has an admin.">
-        <Link className="text-sm underline" href={ROUTES.signIn}>
-          Sign in
-        </Link>
-      </PageCard>
+      <SplitLayout community={community} note={<VillageNote />}>
+        <div className="flex min-h-[60dvh] items-center justify-center">
+          <EmptyState
+            headingLevel="h1"
+            icon={KeyRound}
+            title="Setup is complete"
+            description="This community already has an admin."
+          >
+            <Button asChild size="lg">
+              <Link href={ROUTES.signIn}>Sign in</Link>
+            </Button>
+          </EmptyState>
+        </div>
+      </SplitLayout>
     );
   }
 
   if (!readSetupToken(process.env)) {
     return (
-      <PageCard
-        title="Add a setup token to continue"
-        description="A setup token is a long password that proves you own this deployment. Yours is missing or too weak, so nothing can be created yet."
-      >
-        <ol className="list-decimal space-y-1 pl-4 text-sm">
-          <li>
-            Create a random value of at least {MINIMUM_SETUP_TOKEN_LENGTH} characters. A password
-            manager&apos;s generator works well. Don&apos;t use a word or a repeated pattern.
-          </li>
-          <li>Open your hosting dashboard and find this app&apos;s environment variables.</li>
-          <li>Save the value in a variable named SETUP_TOKEN.</li>
-          <li>Redeploy the app, then reload this page.</li>
-        </ol>
-      </PageCard>
+      <SplitLayout community={community} note={<VillageNote />}>
+        <MissingTokenCopy />
+      </SplitLayout>
     );
   }
 
   return (
-    <PageCard title="Create the first admin" description="Setup closes permanently after this.">
-      <SetupForm />
-    </PageCard>
+    <SplitLayout community={community} note={<VillageNote />}>
+      <h1 className="type-h1 lg:type-display">Let&apos;s set up your community.</h1>
+      <p className="type-lead mt-3 text-foreground-soft">
+        First, create the admin account. Setup closes permanently after this.
+      </p>
+      <div className="mt-7 rounded-panel bg-card p-5 shadow-panel sm:p-7">
+        <SetupForm />
+      </div>
+    </SplitLayout>
   );
 }

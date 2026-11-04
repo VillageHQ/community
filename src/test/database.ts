@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 
 import { rateLimit, user } from "../database/auth-schema.ts";
+import { communityBranding } from "../database/branding-schema.ts";
 import { createDatabase, type Database } from "../database/client.ts";
 import { instanceSettings } from "../database/instance-settings.ts";
 
@@ -20,6 +21,7 @@ export async function clearDatabase(database: Database) {
   await database.delete(rateLimit);
   await database.delete(user);
   await database.delete(instanceSettings);
+  await database.delete(communityBranding);
 }
 
 export async function createDisposableDatabase() {

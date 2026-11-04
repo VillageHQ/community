@@ -12,7 +12,7 @@ export function FormField({ name, label, hint, ...inputProps }: FormFieldProps) 
       <Label htmlFor={name}>{label}</Label>
       <Input id={name} name={name} aria-describedby={hint ? hintId : undefined} {...inputProps} />
       {hint ? (
-        <p id={hintId} className="text-sm text-muted-foreground">
+        <p id={hintId} className="type-small text-muted-foreground">
           {hint}
         </p>
       ) : null}

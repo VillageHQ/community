@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VillageHQ/community: design direction</title>
+<style>
+:root{--font:"Avenir Next","Avenir","Segoe UI Variable Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--radius-small:16px;--radius-field:20px;--radius-input:24px;--radius-card:28px;--radius-panel:36px;--radius-frame:36px;--radius-full:999px;--deck:#ece8dd;--bezel:#0c2427;--canvas:#f8f6f0;--surface:#ffffff;--sunk:#f2efe7;--line:#e7e2d6;--line-strong:#878b84;--ink:#0c2427;--ink-2:#3e4f50;--ink-3:#566463;--gold-soft:#f1ecd4;--gold-text:#74492c;--sage-soft:#deeeda;--sage-text:#2c5a2e;--tint-a-bg:#d5f2f0;--tint-a-fg:#204b4f;--tint-b-bg:#f1ecd4;--tint-b-fg:#74492c;--tint-c-bg:#f9ddd3;--tint-c-fg:#7a3420;--tint-d-bg:#dce8f8;--tint-d-fg:#24466f;--tint-e-bg:#deeeda;--tint-e-fg:#2c5a2e;--tint-f-bg:#f3dde8;--tint-f-fg:#6e2c4e;--shadow-panel:0 1px 2px rgb(40 34 20/.05),0 8px 24px rgb(40 34 20/.06);--shadow-frame:0 1px 2px rgb(40 34 20/.08),0 24px 64px -24px rgb(40 34 20/.28);--cta-lift:inset 0 1px 0 rgb(255 255 255/.24),0 1px 2px rgb(30 30 20/.18);--cta-glow:60%;--accent:#0f7f86;--on-accent:#ffffff;--accent-text:#087980;--accent-soft:#daf5f6;--accent-edge:#0f7f86;--focus:#087980;}
+:root:has(#theme-dark:checked){--deck:#0c0b08;--bezel:#4a473d;--canvas:#15140f;--surface:#201e18;--sunk:#2a2820;--line:#37342b;--line-strong:#8f8c80;--ink:#f7f4ea;--ink-2:#cfcbbe;--ink-3:#aaa698;--gold-soft:#3a2c17;--gold-text:#e3d8a4;--sage-soft:#223621;--sage-text:#b4dcae;--tint-a-bg:#204b4f;--tint-a-fg:#d5f2f0;--tint-b-bg:#4a3a1d;--tint-b-fg:#f1ecd4;--tint-c-bg:#5a2d20;--tint-c-fg:#f9ddd3;--tint-d-bg:#24466f;--tint-d-fg:#dce8f8;--tint-e-bg:#2c4a2d;--tint-e-fg:#deeeda;--tint-f-bg:#5a2a43;--tint-f-fg:#f3dde8;--shadow-panel:0 0 0 1px #2d2a22,0 8px 24px rgb(0 0 0/.28);--shadow-frame:0 0 0 1px #2d2a22,0 24px 64px -24px rgb(0 0 0/.7);--cta-lift:inset 0 1px 0 rgb(255 255 255/.18),0 1px 2px rgb(0 0 0/.4);--cta-glow:0%;--accent:#0f7f86;--on-accent:#ffffff;--accent-text:#49a8af;--accent-soft:#0f383b;--accent-edge:#0f7f86;--focus:#49a8af;}
+:root:has(#accent-teal:checked){--accent:#0f7f86;--on-accent:#ffffff;--accent-text:#087980;--accent-soft:#daf5f6;--accent-edge:#0f7f86;--focus:#087980;}
+:root:has(#accent-teal:checked) .brand-swatches label[for=accent-teal]{box-shadow:inset 0 0 0 2.5px var(--ink)}
+:root:has(#accent-teal:checked):has(#theme-dark:checked){--accent:#0f7f86;--on-accent:#ffffff;--accent-text:#49a8af;--accent-soft:#0f383b;--accent-edge:#0f7f86;--focus:#49a8af;}
+:root:has(#accent-teal:checked) .readout[data-accent=teal][data-mode=light]{display:block}
+:root:has(#accent-teal:checked):has(#theme-dark:checked) .readout[data-accent=teal][data-mode=light]{display:none}
+:root:has(#accent-teal:checked):has(#theme-dark:checked) .readout[data-accent=teal][data-mode=dark]{display:block}
+:root:has(#accent-sun:checked){--accent:#ffc93c;--on-accent:#000000;--accent-text:#876705;--accent-soft:#f7eeda;--accent-edge:#876705;--focus:#876705;}
+:root:has(#accent-sun:checked) .brand-swatches label[for=accent-sun]{box-shadow:inset 0 0 0 2.5px var(--ink)}
+:root:has(#accent-sun:checked):has(#theme-dark:checked){--accent:#ffc93c;--on-accent:#000000;--accent-text:#ffc93c;--accent-soft:#3c3015;--accent-edge:#ffc93c;--focus:#ffc93c;}
+:root:has(#accent-sun:checked) .readout[data-accent=sun][data-mode=light]{display:block}
+:root:has(#accent-sun:checked):has(#theme-dark:checked) .readout[data-accent=sun][data-mode=light]{display:none}
+:root:has(#accent-sun:checked):has(#theme-dark:checked) .readout[data-accent=sun][data-mode=dark]{display:block}
+:root:has(#accent-midnight:checked){--accent:#14213d;--on-accent:#ffffff;--accent-text:#14213d;--accent-soft:#e7effe;--accent-edge:#14213d;--focus:#14213d;}
+:root:has(#accent-midnight:checked) .brand-swatches label[for=accent-midnight]{box-shadow:inset 0 0 0 2.5px var(--ink)}
+:root:has(#accent-midnight:checked):has(#theme-dark:checked){--accent:#59698b;--on-accent:#ffffff;--accent-text:#8799bd;--accent-soft:#263149;--accent-edge:#59698b;--focus:#8799bd;}
+:root:has(#accent-midnight:checked) .readout[data-accent=midnight][data-mode=light]{display:block}
+:root:has(#accent-midnight:checked):has(#theme-dark:checked) .readout[data-accent=midnight][data-mode=light]{display:none}
+:root:has(#accent-midnight:checked):has(#theme-dark:checked) .readout[data-accent=midnight][data-mode=dark]{display:block}
+:root:has(#accent-coral:checked){--accent:#e8604c;--on-accent:#000000;--accent-text:#c13c2a;--accent-soft:#fee9e5;--accent-edge:#e8604c;--focus:#c13c2a;}
+:root:has(#accent-coral:checked) .brand-swatches label[for=accent-coral]{box-shadow:inset 0 0 0 2.5px var(--ink)}
+:root:has(#accent-coral:checked):has(#theme-dark:checked){--accent:#e8604c;--on-accent:#000000;--accent-text:#f66d58;--accent-soft:#462924;--accent-edge:#e8604c;--focus:#f66d58;}
+:root:has(#accent-coral:checked) .readout[data-accent=coral][data-mode=light]{display:block}
+:root:has(#accent-coral:checked):has(#theme-dark:checked) .readout[data-accent=coral][data-mode=light]{display:none}
+:root:has(#accent-coral:checked):has(#theme-dark:checked) .readout[data-accent=coral][data-mode=dark]{display:block}
+:root:has(#accent-cobalt:checked){--accent:#2556e8;--on-accent:#ffffff;--accent-text:#2556e8;--accent-soft:#e7effe;--accent-edge:#2556e8;--focus:#2556e8;}
+:root:has(#accent-cobalt:checked) .brand-swatches label[for=accent-cobalt]{box-shadow:inset 0 0 0 2.5px var(--ink)}
+:root:has(#accent-cobalt:checked):has(#theme-dark:checked){--accent:#295bed;--on-accent:#ffffff;--accent-text:#6996ff;--accent-soft:#263149;--accent-edge:#295bed;--focus:#6996ff;}
+:root:has(#accent-cobalt:checked) .readout[data-accent=cobalt][data-mode=light]{display:block}
+:root:has(#accent-cobalt:checked):has(#theme-dark:checked) .readout[data-accent=cobalt][data-mode=light]{display:none}
+:root:has(#accent-cobalt:checked):has(#theme-dark:checked) .readout[data-accent=cobalt][data-mode=dark]{display:block}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;color-scheme:light;scroll-padding-top:88px}
+:root:has(#theme-dark:checked){color-scheme:dark}
+body{margin:0;background:var(--deck);color:var(--ink);font-family:var(--font);font-size:16px;line-height:24px;font-weight:500;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-synthesis:none;font-variant-numeric:lining-nums}
+h1,h2,h3,h4,p,ul,ol,figure{margin:0;padding:0}
+ul,ol{list-style:none}
+a{color:inherit;text-decoration:none}
+button,input,textarea{font:inherit;color:inherit}
+svg{display:block;flex:none}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+.t-display{font-size:44px;line-height:50px;font-weight:700;letter-spacing:-.022em}
+.t-h1{font-size:32px;line-height:38px;font-weight:700;letter-spacing:-.018em}
+.t-h2{font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.012em}
+.t-h3{font-size:19px;line-height:26px;font-weight:700;letter-spacing:-.006em}
+.t-lead{font-size:18px;line-height:28px;font-weight:500}
+.t-small{font-size:14px;line-height:20px;font-weight:500}
+.t-micro{font-size:13px;line-height:18px;font-weight:600}
+.muted{color:var(--ink-3)}
+.soft-ink{color:var(--ink-2)}
+.strong{font-weight:700;color:var(--ink)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:0 24px;border:0;border-radius:var(--radius-full);font-size:16px;line-height:20px;font-weight:700;letter-spacing:-.003em;white-space:nowrap;cursor:pointer;transition:transform .14s ease,box-shadow .14s ease,background-color .14s ease}
+.btn:active{transform:translateY(1px)}
+.btn-sm{min-height:44px;padding:0 18px;font-size:15px;gap:8px}
+.btn-lg{min-height:56px;padding:0 32px;font-size:17px}
+.btn-xl{min-height:64px;padding:0 40px;font-size:18px}
+.btn-block{display:flex;width:100%}
+.btn-primary,.fab,.icon-btn-primary{background:var(--accent);color:var(--on-accent);box-shadow:inset 0 0 0 1.5px var(--accent-edge),var(--cta-lift),0 6px 14px -6px color-mix(in srgb,var(--accent) var(--cta-glow),transparent)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:inset 0 0 0 1.5px var(--accent-edge),var(--cta-lift),0 12px 22px -8px color-mix(in srgb,var(--accent) var(--cta-glow),transparent)}
+.btn-soft{background:var(--accent-soft);color:var(--accent-text)}
+.btn-soft:hover{box-shadow:inset 0 0 0 1.5px var(--accent-text)}
+.btn-outline{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+.btn-outline:hover{background:var(--sunk)}
+.btn-quiet{background:transparent;color:var(--ink-2)}
+.btn-quiet:hover{background:var(--sunk);color:var(--ink)}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;border:0;border-radius:50%;background:transparent;color:var(--ink-2);cursor:pointer}
+.icon-btn:hover{background:var(--sunk);color:var(--ink)}
+.icon-btn.icon-btn-primary{width:48px;height:48px;background:var(--accent);color:var(--on-accent)}
+.icon-btn.icon-btn-primary:hover{transform:translateY(-1px)}
+.icon-btn-soft{background:var(--accent-soft);color:var(--accent-text)}
+.icon-btn-soft:hover{background:var(--accent-soft);color:var(--accent-text);box-shadow:inset 0 0 0 1.5px var(--accent-text)}
+
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border:0;border-radius:var(--radius-full);background:var(--surface);color:var(--ink-2);box-shadow:inset 0 0 0 1.5px var(--line);font-size:15px;line-height:20px;font-weight:600;white-space:nowrap;cursor:pointer}
+.chip:hover{box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink)}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--canvas);box-shadow:none}
+.chip-sunk{background:var(--sunk);box-shadow:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+
+.tag{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 12px;border-radius:var(--radius-full);background:var(--sunk);color:var(--ink-2);font-size:13px;line-height:18px;font-weight:600;white-space:nowrap}
+.tag-ask{background:var(--accent-soft);color:var(--accent-text)}
+.tag-win{background:var(--gold-soft);color:var(--gold-text)}
+.tag-offer{background:var(--sage-soft);color:var(--sage-text)}
+.badge-member{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:0 10px 0 8px;border-radius:var(--radius-full);background:var(--accent-soft);color:var(--accent-text);font-size:13px;line-height:18px;font-weight:700;white-space:nowrap}
+
+.avatar{display:inline-flex;align-items:center;justify-content:center;flex:none;width:var(--size,48px);height:var(--size,48px);border-radius:50%;overflow:hidden;background:var(--avatar-bg);color:var(--avatar-fg);font-weight:700;font-size:max(12px,calc(var(--size,48px)*.36));line-height:1;letter-spacing:.01em}
+.avatar svg{width:100%;height:100%}
+.avatar-icon svg{width:26px;height:26px}
+.avatar[data-tint=a]{--avatar-bg:var(--tint-a-bg);--avatar-fg:var(--tint-a-fg)}
+.avatar[data-tint=b]{--avatar-bg:var(--tint-b-bg);--avatar-fg:var(--tint-b-fg)}
+.avatar[data-tint=c]{--avatar-bg:var(--tint-c-bg);--avatar-fg:var(--tint-c-fg)}
+.avatar[data-tint=d]{--avatar-bg:var(--tint-d-bg);--avatar-fg:var(--tint-d-fg)}
+.avatar[data-tint=e]{--avatar-bg:var(--tint-e-bg);--avatar-fg:var(--tint-e-fg)}
+.avatar[data-tint=f]{--avatar-bg:var(--tint-f-bg);--avatar-fg:var(--tint-f-fg)}
+.avatar-stack{display:inline-flex}
+.avatar-stack .avatar{margin-left:-10px;box-shadow:0 0 0 2.5px var(--stack-ring,var(--surface))}
+.avatar-stack .avatar:first-child{margin-left:0}
+
+.logo-tile{display:inline-flex;align-items:center;justify-content:center;flex:none;width:var(--size,44px);height:var(--size,44px);border-radius:calc(var(--size,44px)*.3);background:var(--accent);color:var(--on-accent);box-shadow:inset 0 0 0 1.5px var(--accent-edge)}
+.logo-tile svg{width:66%;height:66%}
+.village-mark{display:inline-block;width:var(--size,20px);height:var(--size,20px);flex:none}
+
+.card{background:var(--surface);border-radius:var(--radius-card);box-shadow:var(--shadow-panel)}
+.card-pad{padding:24px}
+.field{display:flex;align-items:center;gap:12px;min-height:56px;width:100%;padding:0 20px;background:var(--surface);border-radius:var(--radius-input);box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink-3)}
+.field:focus-within{box-shadow:inset 0 0 0 2px var(--focus)}
+.field input,.field textarea{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font-size:16px;line-height:24px;font-weight:500;resize:none}
+.field input::placeholder,.field textarea::placeholder,.composer-input::placeholder{color:var(--ink-3);opacity:1}
+.field-sunk{background:var(--sunk)}
+
+.deck{width:100%;min-width:1320px;padding-bottom:96px}
+.toolbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:10px 40px;background:var(--deck);border-bottom:1px solid var(--line)}
+.toolbar-title{display:flex;align-items:center;gap:12px;font-size:15px;font-weight:700}
+.toolbar-tools{display:flex;align-items:center;gap:20px}
+.swatches{display:flex;align-items:center;gap:2px;border:0;margin:0;padding:0}
+.swatches legend{float:left;margin-right:10px;line-height:44px;font-size:14px;font-weight:600;color:var(--ink-2);padding:0}
+.swatch-input,.switch-input{position:absolute;opacity:0;width:1px;height:1px}
+.swatch{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;cursor:pointer}
+.swatch i{display:block;width:28px;height:28px;border-radius:50%;background:var(--swatch);box-shadow:0 0 0 1.5px var(--line-strong);transition:transform .14s ease}
+.swatch:hover i{transform:scale(1.08)}
+.swatch-input:checked+.swatch{box-shadow:inset 0 0 0 2.5px var(--ink)}
+.swatch-input:focus-visible+.swatch,.switch-input:focus-visible+.switch{outline:3px solid var(--focus);outline-offset:2px}
+.switch{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 6px 0 16px;border-radius:var(--radius-full);background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line-strong);font-size:14px;font-weight:600;color:var(--ink);cursor:pointer}
+.switch-track{position:relative;display:block;width:48px;height:32px;border-radius:var(--radius-full);background:var(--sunk);box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+.switch-track::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:var(--ink);transition:transform .16s ease}
+:root:has(#theme-dark:checked) .switch-track::after{transform:translateX(16px)}
+
+.intro{width:1280px;margin:0 auto;padding:64px 0 16px}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:14px;line-height:20px;font-weight:700;color:var(--ink-2)}
+.intro-head{max-width:880px;margin-top:20px}
+.intro-head h1{font-size:64px;line-height:68px;font-weight:700;letter-spacing:-.028em}
+.intro-head p{margin-top:20px;font-size:21px;line-height:32px;color:var(--ink-2);max-width:760px}
+.principles{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.principle{padding:28px;border-radius:var(--radius-card);background:var(--surface);box-shadow:var(--shadow-panel)}
+.principle h3{margin-bottom:8px}
+.principle p{color:var(--ink-2)}
+
+.spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}
+.spec-title{margin-bottom:20px}
+.type-row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:6px 0}
+.type-row .meta{color:var(--ink-3);font-size:13px;line-height:18px;font-weight:600;white-space:nowrap}
+.radius-row{display:flex;gap:14px;align-items:flex-end}
+.radius-demo{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;line-height:18px;font-weight:600;color:var(--ink-2)}
+.radius-demo i{display:block;width:92px;height:72px;background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent-text)}
+.button-row{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.is-focus{outline:3px solid var(--focus);outline-offset:3px}
+.matrix{margin-top:20px}
+.matrix-grid{display:grid;grid-template-columns:200px 1fr 1fr;gap:12px;align-items:stretch}
+.matrix-head{font-size:14px;line-height:20px;font-weight:700;color:var(--ink-2);padding:0 4px}
+.matrix-name{display:flex;align-items:center;gap:12px;font-size:15px;line-height:20px;font-weight:700}
+.matrix-name small{display:block;font-size:13px;line-height:18px;font-weight:600;color:var(--ink-3)}
+.matrix-name i{display:block;width:36px;height:36px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1.5px rgb(0 0 0/.14)}
+.matrix-cell{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius-field);background:var(--cell-bg);color:var(--cell-ink);box-shadow:inset 0 0 0 1px var(--line)}
+.matrix-cell .numbers{margin-left:auto;text-align:right;font-size:13px;line-height:18px;font-weight:600;color:var(--cell-ink);white-space:nowrap}
+.rule{margin-top:20px;padding:20px 24px;border-radius:var(--radius-field);background:var(--sunk);color:var(--ink-2)}
+
+.screen{width:1280px;margin:72px auto 0}
+.screen-label{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;padding:0 8px}
+.screen-label .number{font-size:14px;font-weight:700;color:var(--ink-2)}
+.screen-label h2{font-size:17px;line-height:24px;font-weight:700}
+.screen-label p{font-size:14px;line-height:20px;color:var(--ink-3);margin-left:auto}
+.frame{width:1280px;border-radius:var(--radius-frame);background:var(--canvas);color:var(--ink);box-shadow:var(--shadow-frame);overflow:hidden}
+
+.shell{display:grid;grid-template-columns:264px minmax(0,1fr);align-items:stretch}
+.sidebar{display:flex;flex-direction:column;gap:4px;padding:24px 16px 20px;border-right:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;padding:0 8px 20px}
+.brand-name{font-size:18px;line-height:22px;font-weight:700;letter-spacing:-.012em}
+.brand-sub{font-size:13px;line-height:18px;font-weight:600;color:var(--ink-3)}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav a{display:flex;align-items:center;gap:14px;min-height:50px;padding:0 16px;border-radius:var(--radius-full);font-size:16px;line-height:20px;font-weight:600;color:var(--ink-2)}
+.nav a:hover{background:var(--sunk);color:var(--ink)}
+.nav a[aria-current=page]{background:var(--accent-soft);color:var(--accent-text);font-weight:700}
+.nav-count{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;padding:0 8px;border-radius:var(--radius-full);background:var(--accent);color:var(--on-accent);box-shadow:inset 0 0 0 1px var(--accent-edge);font-size:13px;line-height:18px;font-weight:700}
+.nav-divider{height:1px;margin:12px 16px;background:var(--line)}
+.sidebar-foot{margin-top:auto;padding-top:24px;display:flex;flex-direction:column;gap:12px}
+.me{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 12px;border-radius:var(--radius-field);background:var(--surface);box-shadow:var(--shadow-panel)}
+.me-name{font-size:15px;line-height:20px;font-weight:700}
+.me-role{font-size:13px;line-height:18px;font-weight:500;color:var(--ink-3)}
+.powered{display:flex;align-items:center;gap:8px;padding:0 12px;font-size:13px;line-height:18px;font-weight:600;color:var(--ink-3)}
+
+.main{min-width:0;padding:36px 40px 48px}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
+.page-head p{margin-top:6px;color:var(--ink-2);font-size:17px;line-height:26px}
+.feed-grid{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:28px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:20px}
+.stack-sm{display:flex;flex-direction:column;gap:12px}
+
+.composer{padding:20px}
+.composer-row{display:flex;align-items:flex-start;gap:14px}
+.composer-input{display:block;flex:1;min-width:0;min-height:56px;padding:15px 20px;border:0;border-radius:var(--radius-input);background:var(--sunk);color:var(--ink);font-size:17px;line-height:26px;font-weight:500;resize:none}
+.composer-input:focus-visible{outline-offset:0}
+.composer-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding-left:62px}
+
+.pinned{position:relative;padding:24px;border-radius:var(--radius-card);background:var(--accent-soft);color:var(--ink)}
+.pinned-kicker{display:flex;align-items:center;gap:8px;color:var(--accent-text);font-size:14px;line-height:20px;font-weight:700}
+.pinned h3{margin-top:10px}
+.pinned p{margin-top:6px;color:var(--ink-2)}
+.pinned-foot{display:flex;align-items:center;gap:12px;margin-top:18px}
+.pinned-foot .going{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:14px;line-height:20px;font-weight:600;color:var(--ink-2);--stack-ring:var(--accent-soft)}
+
+.post{padding:24px}
+.post-head{display:flex;align-items:center;gap:14px}
+.post-name{font-size:16px;line-height:22px;font-weight:700}
+.post-role{font-size:14px;line-height:20px;font-weight:500;color:var(--ink-3)}
+.post-head .tag{margin-left:auto}
+.post-body{margin-top:14px;font-size:17px;line-height:27px;font-weight:500}
+.reactions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px}
+.reaction{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px 0 14px;border:0;border-radius:var(--radius-full);background:var(--sunk);color:var(--ink-2);font-size:15px;line-height:20px;font-weight:700;cursor:pointer}
+.reaction:hover{box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink)}
+.reaction[aria-pressed=true]{background:var(--accent-soft);color:var(--accent-text);box-shadow:inset 0 0 0 1.5px var(--accent-text)}
+.reactions .btn{margin-left:auto}
+.comments{display:flex;flex-direction:column;gap:12px;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.comment{display:flex;gap:12px}
+.comment-bubble{flex:1;min-width:0;padding:12px 18px;border-radius:var(--radius-input);background:var(--sunk)}
+.comment-name{font-size:14px;line-height:20px;font-weight:700}
+.comment-name span{font-weight:500;color:var(--ink-3)}
+.comment-text{font-size:15px;line-height:23px}
+.reply-row{display:flex;gap:12px;align-items:center}
+.reply-field{flex:1;min-height:48px;padding:0 20px;border:0;border-radius:var(--radius-full);background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line-strong);font-size:15px;line-height:22px;font-weight:500;color:var(--ink);min-width:0}
+.reply-field::placeholder{color:var(--ink-3);opacity:1}
+
+.rail-card{padding:20px}
+.rail-title{margin-bottom:14px}
+.rail-person{display:flex;align-items:center;gap:12px}
+.rail-person+.rail-person{margin-top:14px}
+.rail-person-name{font-size:15px;line-height:20px;font-weight:700}
+.rail-person-role{font-size:13px;line-height:18px;font-weight:500;color:var(--ink-3)}
+.rail-person .btn{margin-left:auto}
+.min-0{min-width:0}
+
+.member-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.member{display:flex;flex-direction:column;padding:24px}
+.member-head{display:flex;align-items:center;gap:16px}
+.member-name{font-size:18px;line-height:24px;font-weight:700;letter-spacing:-.006em}
+.member-role{font-size:14px;line-height:20px;font-weight:500;color:var(--ink-3)}
+.member-ask{margin-top:16px;font-size:15px;line-height:23px;color:var(--ink-2)}
+.member-ask b{display:block;font-size:13px;line-height:18px;font-weight:700;color:var(--ink-3)}
+.member-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;margin-bottom:18px}
+.member .btn{margin-top:auto}
+.directory-tools{display:flex;flex-direction:column;gap:14px;margin-bottom:24px}
+.result-count{margin-bottom:14px}
+
+.messages{display:grid;grid-template-columns:348px minmax(0,1fr);height:880px}
+.convo-pane{display:flex;flex-direction:column;border-right:1px solid var(--line);min-height:0}
+.convo-head{display:flex;align-items:center;justify-content:space-between;padding:28px 20px 16px 24px}
+.convo-search{padding:0 16px 12px}
+.convo-list{padding:0 8px;overflow:hidden}
+.convo{display:flex;align-items:center;gap:12px;min-height:80px;padding:10px 12px;border-radius:var(--radius-field)}
+.convo:hover{background:var(--sunk)}
+.convo[aria-current=true]{background:var(--accent-soft);--stack-ring:var(--accent-soft)}
+.convo-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.convo-name{font-size:15px;line-height:20px;font-weight:700;white-space:nowrap}
+.convo-time{font-size:13px;line-height:18px;font-weight:500;color:var(--ink-3);white-space:nowrap}
+.convo-preview{font-size:14px;line-height:20px;font-weight:500;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.convo[data-unread] .convo-preview{color:var(--ink);font-weight:700}
+.unread-dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-edge);flex:none}
+.thread{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--surface)}
+.thread-head{display:flex;align-items:center;gap:14px;padding:18px 28px;border-bottom:1px solid var(--line)}
+.thread-head .btn{margin-left:auto}
+.thread-body{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;padding:24px 28px;overflow:hidden}
+.intro-note{display:flex;align-items:center;gap:12px;align-self:center;margin-bottom:12px;padding:10px 18px 10px 12px;border-radius:var(--radius-full);background:var(--sunk);font-size:14px;line-height:20px;font-weight:600;color:var(--ink-2)}
+.day{align-self:center;margin:8px 0;font-size:13px;line-height:18px;font-weight:700;color:var(--ink-3)}
+.bubble-row{display:flex;align-items:flex-end;gap:10px;max-width:74%}
+.bubble-row-me{align-self:flex-end;flex-direction:row-reverse}
+.bubble{padding:12px 18px;border-radius:24px 24px 24px 8px;background:var(--sunk);font-size:16px;line-height:24px;font-weight:500}
+.bubble-row-me .bubble{border-radius:24px 24px 8px 24px;background:var(--accent);color:var(--on-accent);box-shadow:inset 0 0 0 1.5px var(--accent-edge)}
+.bubble ol{list-style:decimal;padding-left:20px;margin-top:6px}
+.read{align-self:flex-end;font-size:13px;line-height:18px;font-weight:500;color:var(--ink-3);margin-right:4px}
+.typing{display:inline-flex;align-items:center;gap:5px;height:48px;padding:0 18px;border-radius:24px 24px 24px 8px;background:var(--sunk)}
+.typing i{display:block;width:8px;height:8px;border-radius:50%;background:var(--ink-3);animation:typing 1.2s infinite ease-in-out}
+.typing i:nth-child(2){animation-delay:.15s}
+.typing i:nth-child(3){animation-delay:.3s}
+@keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+.thread-composer{display:flex;align-items:center;gap:8px;padding:16px 24px 24px}
+.thread-composer .field{min-height:60px;border-radius:30px;padding:0 8px 0 10px;background:var(--surface)}
+
+.network-hero{padding:40px 40px 32px;border-radius:var(--radius-panel);background:var(--accent-soft)}
+.network-hero h1{text-align:center}
+.network-hero .scope{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:8px;color:var(--ink-2);font-size:17px;line-height:26px;--stack-ring:var(--accent-soft)}
+.hero-search{display:flex;align-items:center;gap:14px;max-width:760px;min-height:76px;margin:24px auto 0;padding:8px 8px 8px 26px;border-radius:38px;background:var(--surface);box-shadow:0 0 0 2px var(--accent-text),var(--shadow-panel);color:var(--accent-text)}
+.hero-search:focus-within{box-shadow:0 0 0 3px var(--accent-text),0 0 0 6px var(--accent-soft),var(--shadow-panel)}
+.hero-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--ink);font-size:20px;line-height:28px;font-weight:600}
+.suggestions{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:18px}
+.suggestions .chip{background:var(--surface);box-shadow:none}
+.network-grid{display:grid;grid-template-columns:minmax(0,1fr) 436px;gap:24px;align-items:start;margin-top:24px}
+.result{display:flex;align-items:center;gap:14px;min-height:92px;padding:16px 18px;border-radius:var(--radius-card);background:var(--surface);box-shadow:var(--shadow-panel);--stack-ring:var(--surface)}
+.result[aria-current=true]{box-shadow:inset 0 0 0 2.5px var(--accent-text),var(--shadow-panel)}
+.result-name{font-size:16px;line-height:22px;font-weight:700}
+.result-role{font-size:14px;line-height:20px;font-weight:500;color:var(--ink-2)}
+.result-place{font-size:13px;line-height:18px;font-weight:500;color:var(--ink-3)}
+.result-ways{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
+.way-text{font-size:13px;line-height:18px;font-weight:700;color:var(--accent-text);white-space:nowrap}
+.way-text-none{color:var(--ink-3);font-weight:600}
+.intro-panel{padding:24px;border-radius:var(--radius-panel)}
+.path{position:relative;display:flex;align-items:flex-start;justify-content:space-between;margin:18px 0 20px;padding:16px 28px 12px;border-radius:var(--radius-field);background:var(--sunk)}
+.path::before{content:"";position:absolute;left:68px;right:68px;top:39px;height:3px;border-radius:var(--radius-full);background:var(--accent-text)}
+.path-node{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;width:80px;font-size:14px;line-height:18px;font-weight:700;text-align:center}
+.path-node .avatar{box-shadow:0 0 0 4px var(--sunk)}
+.connector{padding:18px;border-radius:var(--radius-field);box-shadow:inset 0 0 0 1.5px var(--line)}
+.connector+.connector{margin-top:12px}
+.connector-top{padding:20px;box-shadow:inset 0 0 0 2.5px var(--accent-text)}
+.connector-head{display:flex;align-items:center;gap:12px}
+.connector-name{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:16px;line-height:22px;font-weight:700}
+.connector-role{font-size:14px;line-height:20px;font-weight:500;color:var(--ink-3)}
+.reason{display:flex;gap:10px;margin:14px 0;font-size:15px;line-height:23px;color:var(--ink-2)}
+.reason svg{margin-top:3px;color:var(--accent-text)}
+.privacy-note{display:flex;gap:10px;margin-top:16px;color:var(--ink-2);font-size:14px;line-height:20px}
+.privacy-note svg{margin-top:1px}
+
+.welcome{display:grid;grid-template-columns:500px minmax(0,1fr)}
+.welcome-brand{position:relative;display:flex;flex-direction:column;padding:40px;background:var(--accent);color:var(--on-accent);overflow:hidden}
+.welcome-logo{display:flex;align-items:center;gap:14px;font-size:22px;line-height:28px;font-weight:700;letter-spacing:-.014em}
+.welcome-logo .logo-tile{background:var(--on-accent);color:var(--accent);box-shadow:none}
+.constellation{position:relative;flex:1;min-height:420px;margin:20px -8px}
+.constellation svg.threads{position:absolute;inset:0;width:100%;height:100%;color:var(--on-accent);opacity:.5}
+.star{position:absolute;display:flex;flex-direction:column;align-items:center;gap:6px;transform:translate(-50%,-50%)}
+.star .avatar{box-shadow:0 0 0 4px var(--accent),0 0 0 6px color-mix(in srgb,var(--on-accent) 40%,transparent)}
+.star-label{padding:2px 10px;border-radius:var(--radius-full);background:var(--surface);color:var(--ink);font-size:13px;line-height:18px;font-weight:700;white-space:nowrap}
+.seat-note{position:relative;padding:22px 24px;border-radius:var(--radius-card);background:var(--surface);color:var(--ink);box-shadow:0 12px 32px -14px rgb(0 0 0/.35)}
+.seat-note p{font-size:17px;line-height:27px}
+.seat-sign{display:flex;align-items:center;gap:12px;margin-top:14px}
+.welcome-copy{padding:44px 64px 48px}
+.steps{display:flex;align-items:center;gap:8px;margin-bottom:28px}
+.step-pill{display:inline-flex;align-items:center;gap:8px;min-height:32px;padding:0 14px 0 6px;border-radius:var(--radius-full);background:var(--sunk);color:var(--ink-2);font-size:14px;line-height:20px;font-weight:600}
+.step-pill i{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--surface);font-style:normal;font-size:13px;font-weight:700}
+.step-pill[aria-current=step]{background:var(--accent-soft);color:var(--accent-text);font-weight:700}
+.step-pill[aria-current=step] i{background:var(--accent);color:var(--on-accent);box-shadow:inset 0 0 0 1px var(--accent-edge)}
+.welcome-copy>p{margin-top:12px;color:var(--ink-2)}
+.deal{margin-top:28px;padding:28px;border-radius:var(--radius-panel)}
+.deal-swap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.deal-side{padding:18px 20px;border-radius:var(--radius-field);background:var(--sunk)}
+.deal-side-get{background:var(--accent-soft)}
+.deal-side h4{display:flex;align-items:center;gap:8px;font-size:15px;line-height:20px;font-weight:700;margin-bottom:6px}
+.deal-side p{font-size:15px;line-height:23px;color:var(--ink-2)}
+.deal-list{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.deal-list li{display:flex;gap:12px;font-size:15px;line-height:23px;color:var(--ink-2)}
+.deal-list svg{margin-top:3px;color:var(--accent-text)}
+.consent{display:flex;align-items:center;gap:14px;min-height:64px;margin-top:20px;padding:10px 18px;border-radius:var(--radius-field);box-shadow:inset 0 0 0 1.5px var(--line-strong);font-size:16px;line-height:22px;font-weight:700;cursor:pointer}
+.consent input{appearance:none;display:grid;place-items:center;width:30px;height:30px;flex:none;margin:0;border-radius:10px;background:var(--surface);box-shadow:inset 0 0 0 2px var(--line-strong);cursor:pointer}
+.consent input::after{content:"";width:9px;height:15px;margin-top:-3px;border:solid var(--on-accent);border-width:0 3px 3px 0;transform:rotate(42deg);opacity:0}
+.consent input:checked{background:var(--accent);box-shadow:inset 0 0 0 2px var(--accent-edge)}
+.consent input:checked::after{opacity:1}
+.consent:has(input:checked){box-shadow:inset 0 0 0 2.5px var(--accent-text)}
+.welcome-actions{display:flex;align-items:center;gap:8px;margin-top:20px}
+.skip-note{margin-top:10px;color:var(--ink-3);font-size:14px;line-height:20px}
+
+.admin-tabs{display:flex;gap:8px;margin-bottom:24px}
+.progress-panel{padding:24px 28px;border-radius:var(--radius-panel);background:var(--surface);box-shadow:var(--shadow-panel);margin-bottom:20px}
+.progress-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}
+.progress-track{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.progress-track i{display:block;height:14px;border-radius:var(--radius-full);background:var(--sunk)}
+.progress-track i[data-done]{background:var(--accent);box-shadow:inset 0 0 0 1px var(--accent-edge)}
+.progress-track i[data-active]{background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent-text)}
+.admin-grid{display:grid;grid-template-columns:minmax(0,1fr) 312px;gap:20px;align-items:start}
+.checklist{display:flex;flex-direction:column;gap:10px}
+.check-row{display:flex;align-items:center;gap:16px;min-height:80px;padding:14px 20px;border-radius:var(--radius-card);background:var(--surface);box-shadow:var(--shadow-panel)}
+.check-row[data-state=done]{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line)}
+.check-mark{display:flex;align-items:center;justify-content:center;width:40px;height:40px;flex:none;border-radius:50%;background:var(--sunk);color:var(--ink-2);font-size:16px;line-height:20px;font-weight:700}
+.check-row[data-state=done] .check-mark{background:var(--accent);color:var(--on-accent);box-shadow:inset 0 0 0 1.5px var(--accent-edge)}
+.check-title{font-size:17px;line-height:24px;font-weight:700;letter-spacing:-.004em}
+.check-sub{font-size:14px;line-height:20px;font-weight:500;color:var(--ink-3)}
+.check-row .btn{margin-left:auto;flex:none}
+.check-current{padding:24px;border-radius:var(--radius-card);background:var(--surface);box-shadow:inset 0 0 0 2.5px var(--accent-text),var(--shadow-panel)}
+.check-current-head{display:flex;align-items:flex-start;gap:16px}
+.check-current .check-mark{background:var(--accent-soft);color:var(--accent-text)}
+.check-current-body{margin-top:18px;padding-left:56px}
+.invite-box{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-height:104px;align-content:flex-start;padding:14px;border-radius:var(--radius-input);background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line-strong)}
+.email-chip{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 14px 0 4px;border-radius:var(--radius-full);background:var(--sunk);font-size:14px;line-height:20px;font-weight:600}
+.invite-box input{flex:1;min-width:160px;min-height:36px;border:0;outline:0;background:transparent;font-size:15px;font-weight:500}
+.invite-box input::placeholder{color:var(--ink-3);opacity:1}
+.invite-actions{display:flex;align-items:center;gap:10px;margin-top:14px}
+.link-row{display:flex;align-items:center;gap:12px;margin-top:16px;padding:6px 6px 6px 18px;border-radius:var(--radius-full);background:var(--sunk);font-size:14px;line-height:20px;color:var(--ink-2)}
+.link-row code{flex:1;min-width:0;font:inherit;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-card{padding:22px;border-radius:var(--radius-panel)}
+.brand-preview{margin-top:16px;padding:18px;border-radius:var(--radius-field);background:var(--canvas)}
+.brand-preview-head{display:flex;align-items:center;gap:10px;font-size:15px;line-height:20px;font-weight:700;margin-bottom:14px}
+.brand-swatches{display:flex;gap:4px;margin:14px -4px 0}
+.brand-swatches .swatch{width:48px;height:48px}
+.brand-swatches .swatch i{width:34px;height:34px}
+.logo-row{display:flex;align-items:center;gap:12px;margin-top:14px;padding:10px 10px 10px 12px;border-radius:var(--radius-field);background:var(--sunk)}
+.logo-row .btn{margin-left:auto}
+.hex-field{min-height:48px;margin-top:10px;padding:0 16px;border-radius:24px}
+.hex-field i{display:block;width:22px;height:22px;flex:none;border-radius:50%;background:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent-edge)}
+.readout{display:none;margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--sunk);font-size:14px;line-height:20px;color:var(--ink-2)}
+.readout b{color:var(--ink)}
+
+.state-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.state-frame{width:auto}
+.state-body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:600px;padding:40px 52px 48px;text-align:center}
+.empty-art{width:300px;height:160px;margin-bottom:28px}
+.state-body>p{max-width:420px;margin-top:10px;color:var(--ink-2);font-size:17px;line-height:26px}
+.state-actions{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:24px}
+.empty-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:24px 28px 0}
+.empty-head .chips{flex-wrap:nowrap}
+.loading-thread{position:relative;display:flex;align-items:center;justify-content:space-between;width:340px;height:72px;margin-bottom:24px;color:var(--accent-text)}
+.loading-thread svg.line{position:absolute;inset:0;width:100%;height:100%}
+.loading-thread .avatar{position:relative;box-shadow:0 0 0 4px var(--canvas)}
+.avatar-icon svg{width:26px;height:26px}
+.loading-pulse{position:absolute;top:50%;left:48px;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--canvas),0 0 0 3.5px var(--accent-edge);animation:walk 2.4s ease-in-out infinite}
+@keyframes walk{0%{left:48px}50%{left:278px}100%{left:48px}}
+.loading-steps{display:flex;flex-direction:column;gap:6px;align-self:stretch;max-width:420px;margin:20px auto 0;text-align:left}
+.loading-step{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 16px;border-radius:var(--radius-full);font-size:15px;line-height:20px;font-weight:600;color:var(--ink-3)}
+.loading-step i{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex:none;border-radius:50%;background:var(--sunk);color:var(--ink-3)}
+.loading-step[data-state=done]{color:var(--ink-2)}
+.loading-step[data-state=done] i{background:var(--accent);color:var(--on-accent);box-shadow:inset 0 0 0 1px var(--accent-edge)}
+.loading-step[data-state=active]{background:var(--accent-soft);color:var(--ink);font-weight:700}
+.loading-step[data-state=active] i{background:var(--surface);color:var(--accent-text)}
+.spinner{animation:spin 1.1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.phones{display:flex;justify-content:center;gap:56px;padding:40px 0;border-radius:var(--radius-frame)}
+.phone-wrap{display:flex;flex-direction:column;gap:14px;align-items:center}
+.phone-caption{max-width:390px;text-align:center;color:var(--ink-2);font-size:14px;line-height:20px}
+.phone{position:relative;display:flex;flex-direction:column;width:390px;height:844px;border-radius:48px;background:var(--canvas);color:var(--ink);box-shadow:0 0 0 8px var(--bezel),var(--shadow-frame);overflow:hidden}
+.phone-top{display:flex;align-items:center;gap:10px;min-height:68px;padding:18px 14px 6px 16px;background:var(--canvas)}
+.phone-top .brand-name{font-size:17px}
+.phone-top .spacer{flex:1}
+.phone-scroll{flex:1;min-height:0;overflow-y:auto;padding:8px 14px 112px;display:flex;flex-direction:column;gap:12px;scrollbar-width:none}
+.phone-scroll::-webkit-scrollbar{display:none}
+.phone-scroll>*{flex:none}
+.phone .composer{padding:12px;display:flex;align-items:center;gap:10px}
+.phone .composer button.fake-input{flex:1;min-height:48px;padding:0 16px;border:0;border-radius:var(--radius-full);background:var(--sunk);color:var(--ink-3);text-align:left;font-size:15px;font-weight:500;cursor:text}
+.phone .pinned{padding:18px;border-radius:24px}
+.phone .pinned h3{font-size:18px;line-height:24px}
+.phone .pinned p{font-size:15px;line-height:22px}
+.phone .post{padding:18px}
+.phone .post-body{font-size:16px;line-height:25px}
+.phone .card{border-radius:24px}
+.tabbar{position:absolute;left:0;right:0;bottom:0;z-index:5;display:grid;grid-template-columns:repeat(5,1fr);padding:8px 8px 22px;background:var(--surface);box-shadow:0 -1px 0 var(--line),0 -10px 28px -16px rgb(20 20 16/.25);border-radius:28px 28px 0 0}
+.tab{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;border-radius:20px;color:var(--ink-3);font-size:12px;line-height:16px;font-weight:600}
+.tab[aria-current=page]{color:var(--accent-text);font-weight:700}
+.tab[aria-current=page] .tab-icon{background:var(--accent-soft)}
+.tab-icon{display:flex;align-items:center;justify-content:center;width:52px;height:30px;border-radius:var(--radius-full)}
+.tab-count{position:absolute;top:0;left:50%;margin-left:6px;display:flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 5px;border-radius:var(--radius-full);background:var(--accent);color:var(--on-accent);box-shadow:0 0 0 2px var(--surface);font-size:12px;line-height:16px;font-weight:700}
+.fab{position:absolute;right:16px;bottom:104px;z-index:6;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 24px 0 18px;border:0;border-radius:var(--radius-full);font-size:16px;line-height:20px;font-weight:700;cursor:pointer}
+.scrim{position:absolute;inset:0;z-index:7;background:rgb(10 12 10/.48)}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:8;padding:10px 16px 30px;background:var(--surface);border-radius:32px 32px 0 0}
+.sheet-grab{width:44px;height:5px;margin:0 auto 16px;border-radius:var(--radius-full);background:var(--line-strong)}
+.sheet-me{display:flex;align-items:center;gap:14px;padding:4px 8px 16px}
+.sheet-list{display:flex;flex-direction:column;gap:4px}
+.sheet-row{display:flex;align-items:center;gap:14px;min-height:56px;padding:0 16px;border-radius:var(--radius-input);font-size:16px;line-height:20px;font-weight:600}
+.sheet-row:hover{background:var(--sunk)}
+.sheet-row-admin{background:var(--accent-soft);color:var(--accent-text);font-weight:700}
+.sheet-row-admin:hover{background:var(--accent-soft)}
+.sheet-row .chevron{margin-left:auto}
+
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-message-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></symbol><symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol><symbol id="i-waypoints" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.586 5.414-5.172 5.172"/><path d="m18.586 13.414-5.172 5.172"/><path d="M6 12h12"/><circle cx="12" cy="20" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="4" cy="12" r="2"/></symbol><symbol id="i-handshake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></symbol><symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol><symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></symbol><symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></symbol><symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol><symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></symbol><symbol id="i-thumbs-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/><path d="M7 10v12"/></symbol><symbol id="i-lightbulb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol><symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></symbol><symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></symbol><symbol id="i-paperclip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></symbol><symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol><symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol><symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol><symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol><symbol id="i-chevrons-up-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></symbol><symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol><symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol><symbol id="i-log-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol><symbol id="i-user-round" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol><symbol id="i-loader-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></symbol><symbol id="i-hand-helping" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 12h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 14"/><path d="m7 18 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 13 6 6"/></symbol><symbol id="i-message-square-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/><path d="M12 8v6"/><path d="M9 11h6"/></symbol><symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"/><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"/><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"/></symbol><symbol id="i-circle-question-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol><symbol id="i-circle-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></symbol><symbol id="i-face-slightly-smiling-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.267 2.08a10 10 0 108.653 8.653"/><path d="M15 10V9"/><path d="M16 5h6"/><path d="M16.472 15a6 6 0 01-8.943 0"/><path d="M19 2v6"/><path d="M9 10V9"/></symbol><symbol id="i-sliders-horizontal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/></symbol><symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol><symbol id="i-calendar-days" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M8 13h.01"/><path d="M12 13h.01"/><path d="M16 13h.01"/><path d="M8 17h.01"/><path d="M12 17h.01"/><path d="M16 17h.01"/></symbol><symbol id="i-bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"/></symbol><symbol id="i-users-round" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></symbol><symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-door-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 21H2"/><path d="M10 3H7a2 2 0 00-2 2v16"/><path d="M14 12h.01"/><path d="M19 21V5a2 2 0 00-1.675-1.974l-6.163-1.013A1 1 0 0010 3v18a1 1 0 001.124.992z"/><path d="M22 21h-3"/></symbol><symbol id="i-mail-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z"/><path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10"/></symbol><symbol id="portrait-amara" viewBox="0 0 64 64"><rect width="64" height="64" fill="#f4d9b8"/><path d="M8 64c1-14 11-21 24-21s23 7 24 21z" fill="#0f6b70"/><path d="M26 36h12v8c0 3-3 5-6 5s-6-2-6-5z" fill="#74492f"/><ellipse cx="32" cy="27" rx="11.5" ry="13.5" fill="#8a5a3c"/><g fill="#22160f"><circle cx="22" cy="19" r="6.5"/><circle cx="28" cy="13.5" r="7"/><circle cx="36" cy="13" r="7"/><circle cx="42" cy="18.5" r="6.5"/><circle cx="20" cy="25" r="4"/><circle cx="44" cy="25" r="4"/></g></symbol><symbol id="portrait-jonas" viewBox="0 0 64 64"><rect width="64" height="64" fill="#c9e4e6"/><path d="M8 64c1-14 11-21 24-21s23 7 24 21z" fill="#23405f"/><path d="M26 36h12v8c0 3-3 5-6 5s-6-2-6-5z" fill="#dcae8c"/><ellipse cx="32" cy="27" rx="11.5" ry="13.5" fill="#f0c8a8"/><path d="M20 25c-1-10 5-15 12-15s13 5 12 15c-2-4-4-6-6-7-5 2-11 2-14 1-2 1-3 3-4 6z" fill="#a8743f"/><path d="M21 30c1 8 5 12.500 11 12.500S42 38 43 30c-2 2-3 3-5 3-2-.8-4-.8-6-.8s-4 0-6 .8c-2 0-3-1-5-3z" fill="#a8743f"/></symbol><symbol id="portrait-noor" viewBox="0 0 64 64"><rect width="64" height="64" fill="#f3d6d2"/><path d="M17 28c0-12 6-19 15-19s15 7 15 19v17c0 3-3 5-7 5H24c-4 0-7-2-7-5z" fill="#20171a"/><path d="M8 64c1-14 11-21 24-21s23 7 24 21z" fill="#f4efe3"/><path d="M26 36h12v8c0 3-3 5-6 5s-6-2-6-5z" fill="#c48f69"/><ellipse cx="32" cy="27" rx="11.5" ry="13.5" fill="#d9a57e"/><path d="M20.500 27c-.5-9 4-15 11.500-15s12 6 11.500 15c-3-2-7-6-9-10-3 5-9 8-14 10z" fill="#20171a"/></symbol><symbol id="portrait-lena" viewBox="0 0 64 64"><rect width="64" height="64" fill="#dfe7c9"/><path d="M8 64c1-14 11-21 24-21s23 7 24 21z" fill="#3c5a3e"/><path d="M26 36h12v8c0 3-3 5-6 5s-6-2-6-5z" fill="#e3b89c"/><ellipse cx="32" cy="27" rx="11.5" ry="13.5" fill="#f5d3bb"/><circle cx="32" cy="9.500" r="6.500" fill="#b5532e"/><path d="M20 27c-1-10 5-15.500 12-15.500S45 17 44 27c-1.500-4-4-7-7-8.500-5 1-12 2-14 1.500-1.500 1.500-2.500 4-3 7z" fill="#b5532e"/></symbol><symbol id="portrait-mateo" viewBox="0 0 64 64"><rect width="64" height="64" fill="#f5e2a8"/><path d="M8 64c1-14 11-21 24-21s23 7 24 21z" fill="#b8452f"/><path d="M26 36h12v8c0 3-3 5-6 5s-6-2-6-5z" fill="#b27b52"/><ellipse cx="32" cy="27" rx="11.5" ry="13.5" fill="#c98f63"/><path d="M20 26c-2-10 4-16.500 13-16.500 7 0 12 5 11 15.500-1-3-2.500-5-4-6-3 1.500-7-1-9.500-1-3 0-6 1.500-7.500 3-1.500 1.500-2.500 3-3 5z" fill="#1c1a18"/></symbol><symbol id="village-mark" viewBox="0 0 64 64"><defs><linearGradient id="village-gradient" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2dbfd4"/><stop offset=".5" stop-color="#1da8bc"/><stop offset="1" stop-color="#17a97c"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#village-gradient)"/><path d="M20 19.500h7.600l4.600 16.700 4.700-16.700h7.100L36 44.500h-7.900z" fill="#fff"/></symbol></defs></svg>
+<div class="deck">
+  <div class="toolbar" role="region" aria-label="Preview controls">
+    <div class="toolbar-title"><span class="logo-tile" style="--size:36px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span>Northwind Ventures, fictional fund</div>
+    <div class="toolbar-tools">
+      <fieldset class="swatches"><legend>Fund color</legend><input class="swatch-input" type="radio" name="accent" id="accent-teal" checked><label class="swatch" for="accent-teal" style="--swatch:#0f7f86" title="Village teal"><i></i><span class="sr-only">Village teal, Default</span></label><input class="swatch-input" type="radio" name="accent" id="accent-sun"><label class="swatch" for="accent-sun" style="--swatch:#ffc93c" title="Sunbeam"><i></i><span class="sr-only">Sunbeam, Light</span></label><input class="swatch-input" type="radio" name="accent" id="accent-midnight"><label class="swatch" for="accent-midnight" style="--swatch:#14213d" title="Midnight"><i></i><span class="sr-only">Midnight, Dark</span></label><input class="swatch-input" type="radio" name="accent" id="accent-coral"><label class="swatch" for="accent-coral" style="--swatch:#e8604c" title="Coral"><i></i><span class="sr-only">Coral, Mid-tone</span></label><input class="swatch-input" type="radio" name="accent" id="accent-cobalt"><label class="swatch" for="accent-cobalt" style="--swatch:#2556e8" title="Cobalt"><i></i><span class="sr-only">Cobalt, Mid-dark</span></label></fieldset>
+      <input class="switch-input" type="checkbox" id="theme-dark"><label class="switch" for="theme-dark">Dark mode<span class="switch-track"></span></label>
+    </div>
+  </div>
+  <section class="intro" aria-labelledby="direction-title">
+  <div class="eyebrow"><svg class="village-mark" style="--size:22px" viewBox="0 0 64 64" aria-hidden="true"><use href="#village-mark"/></svg>VillageHQ/community · Design direction</div>
+  <div class="intro-head">
+    <h1 id="direction-title">The front room</h1>
+    <p>A community portal should feel like walking into a room where people know your name. Warm, tactile and full of faces. Built on Village's bones, wearing the fund's colors.</p>
+  </div>
+  <div class="principles">
+    <article class="principle"><h3 class="t-h3">People, not panels</h3><p>Faces and sentences fill the screen. "Jonas needs a hand" beats any metric. There are no stat tiles.</p></article>
+    <article class="principle"><h3 class="t-h3">Soft to touch</h3><p>Pill buttons from 44 to 64px. Cards at 28px radius. Warm neutrals from Village's gold, ink from its deepest teal.</p></article>
+    <article class="principle"><h3 class="t-h3">Their brand, one token</h3><p>A fund sets one color. Every text color, tint and focus ring derives from it, and AA holds by calculation.</p></article>
+  </div>
+  <div class="spec-grid">
+    <article class="card card-pad">
+      <h2 class="t-h3 spec-title">Type scale</h2>
+      <div class="type-row"><span class="t-display" style="margin:0">Welcome in</span><span class="meta">Display 44/50, 700</span></div><div class="type-row"><span class="t-h1" style="margin:0">Who do you want to meet?</span><span class="meta">H1 32/38, 700</span></div><div class="type-row"><span class="t-h2" style="margin:0">Waiting on you</span><span class="meta">H2 24/30, 700</span></div><div class="type-row"><span class="t-h3" style="margin:0">Mateo needs an intro</span><span class="meta">H3 19/26, 700</span></div><div class="type-row"><span class="post-body" style="margin:0">Body large, for what people wrote</span><span class="meta">Body L 17/27, 500</span></div><div class="type-row"><span class="" style="margin:0">Body, for everything else</span><span class="meta">Body 16/24, 500</span></div><div class="type-row"><span class="t-small" style="margin:0">Secondary lines and roles</span><span class="meta">Small 14/20, 500</span></div><div class="type-row"><span class="t-micro" style="margin:0">Tags, counts and badges</span><span class="meta">Micro 13/18, 600</span></div>
+    </article>
+    <div class="stack">
+      <article class="card card-pad">
+        <h2 class="t-h3 spec-title">Buttons</h2>
+        <div class="button-row"><button type="button" class="btn btn-sm btn-primary">Small 44</button><button type="button" class="btn btn-primary">Default 48</button><button type="button" class="btn btn-lg btn-primary">Large 56</button><button type="button" class="btn btn-xl btn-primary">Hero 64</button></div>
+        <div class="button-row" style="margin-top:14px"><button type="button" class="btn btn-soft">Soft</button><button type="button" class="btn btn-outline">Outline</button><button type="button" class="btn btn-quiet">Quiet</button><button type="button" class="btn btn-primary is-focus">Keyboard focus</button></div>
+      </article>
+      <article class="card card-pad">
+        <h2 class="t-h3 spec-title">Radii</h2>
+        <div class="radius-row">
+          <div class="radius-demo"><i style="border-radius:16px"></i>16 small</div>
+          <div class="radius-demo"><i style="border-radius:20px"></i>20 field</div>
+          <div class="radius-demo"><i style="border-radius:24px"></i>24 input</div>
+          <div class="radius-demo"><i style="border-radius:28px"></i>28 card</div>
+          <div class="radius-demo"><i style="border-radius:36px"></i>36 panel</div>
+          <div class="radius-demo"><i style="border-radius:999px"></i>Full button</div>
+        </div>
+      </article>
+    </div>
+  </div>
+  <article class="card card-pad matrix">
+    <h2 class="t-h3 spec-title">One accent token, any color. Measured ratios.</h2>
+    <div class="matrix-grid"><div class="matrix-head">Fund color</div><div class="matrix-head">Light mode</div><div class="matrix-head">Dark mode</div><div class="matrix-name"><i style="background:#0f7f86"></i><span>Village teal<small>#0F7F86 · Default</small></span></div><div class="matrix-cell" style="--cell-bg:#ffffff;--cell-ink:#0c2427;--accent:#0f7f86;--on-accent:#ffffff;--accent-text:#087980;--accent-soft:#daf5f6;--accent-edge:#0f7f86;--focus:#087980"><button type="button" class="btn btn-sm btn-primary">Message</button><span class="tag tag-ask">Ask</span><span class="numbers">Button 4.77:1<br>Tag 4.53:1</span></div><div class="matrix-cell" style="--cell-bg:#201e18;--cell-ink:#f7f4ea;--accent:#0f7f86;--on-accent:#ffffff;--accent-text:#49a8af;--accent-soft:#0f383b;--accent-edge:#0f7f86;--focus:#49a8af"><button type="button" class="btn btn-sm btn-primary">Message</button><span class="tag tag-ask">Ask</span><span class="numbers">Button 4.77:1<br>Tag 4.55:1</span></div><div class="matrix-name"><i style="background:#ffc93c"></i><span>Sunbeam<small>#FFC93C · Light</small></span></div><div class="matrix-cell" style="--cell-bg:#ffffff;--cell-ink:#0c2427;--accent:#ffc93c;--on-accent:#000000;--accent-text:#876705;--accent-soft:#f7eeda;--accent-edge:#876705;--focus:#876705"><button type="button" class="btn btn-sm btn-primary">Message</button><span class="tag tag-ask">Ask</span><span class="numbers">Button 13.67:1<br>Tag 4.58:1</span></div><div class="matrix-cell" style="--cell-bg:#201e18;--cell-ink:#f7f4ea;--accent:#ffc93c;--on-accent:#000000;--accent-text:#ffc93c;--accent-soft:#3c3015;--accent-edge:#ffc93c;--focus:#ffc93c"><button type="button" class="btn btn-sm btn-primary">Message</button><span class="tag tag-ask">Ask</span><span class="numbers">Button 13.67:1<br>Tag 8.41:1</span></div><div class="matrix-name"><i style="background:#14213d"></i><span>Midnight<small>#14213D · Dark</small></span></div><div class="matrix-cell" style="--cell-bg:#ffffff;--cell-ink:#0c2427;--accent:#14213d;--on-accent:#ffffff;--accent-text:#14213d;--accent-soft:#e7effe;--accent-edge:#14213d;--focus:#14213d"><button type="button" class="btn btn-sm btn-primary">Message</button><span class="tag tag-ask">Ask</span><span class="numbers">Button 15.97:1<br>Tag 13.83:1</span></div><div class="matrix-cell" style="--cell-bg:#201e18;--cell-ink:#f7f4ea;--accent:#59698b;--on-accent:#ffffff;--accent-text:#8799bd;--accent-soft:#263149;--accent-edge:#59698b;--focus:#8799bd"><button type="button" class="btn btn-sm btn-primary">Message</button><span class="tag tag-ask">Ask</span><span class="numbers">Button 5.50:1<br>Tag 4.53:1</span></div><div class="matrix-name"><i style="background:#e8604c"></i><span>Coral<small>#E8604C · Mid-tone</small></span></div><div class="matrix-cell" style="--cell-bg:#ffffff;--cell-ink:#0c2427;--accent:#e8604c;--on-accent:#000000;--accent-text:#c13c2a;--accent-soft:#fee9e5;--accent-edge:#e8604c;--focus:#c13c2a"><button type="button" class="btn btn-sm btn-primary">Message</button><span class="tag tag-ask">Ask</span><span class="numbers">Button 6.21:1<br>Tag 4.56:1</span></div><div class="matrix-cell" style="--cell-bg:#201e18;--cell-ink:#f7f4ea;--accent:#e8604c;--on-accent:#000000;--accent-text:#f66d58;--accent-soft:#462924;--accent-edge:#e8604c;--focus:#f66d58"><button type="button" class="btn btn-sm btn-primary">Message</button><span class="tag tag-ask">Ask</span><span class="numbers">Button 6.21:1<br>Tag 4.52:1</span></div><div class="matrix-name"><i style="background:#2556e8"></i><span>Cobalt<small>#2556E8 · Mid-dark</small></span></div><div class="matrix-cell" style="--cell-bg:#ffffff;--cell-ink:#0c2427;--accent:#2556e8;--on-accent:#ffffff;--accent-text:#2556e8;--accent-soft:#e7effe;--accent-edge:#2556e8;--focus:#2556e8"><button type="button" class="btn btn-sm btn-primary">Message</button><span class="tag tag-ask">Ask</span><span class="numbers">Button 5.87:1<br>Tag 5.08:1</span></div><div class="matrix-cell" style="--cell-bg:#201e18;--cell-ink:#f7f4ea;--accent:#295bed;--on-accent:#ffffff;--accent-text:#6996ff;--accent-soft:#263149;--accent-edge:#295bed;--focus:#6996ff"><button type="button" class="btn btn-sm btn-primary">Message</button><span class="tag tag-ask">Ask</span><span class="numbers">Button 5.51:1<br>Tag 4.58:1</span></div></div>
+    <p class="rule"><b class="strong">The rule:</b> text on the accent is whichever of white or black has more contrast, which never falls below 4.58:1. Tinted black like #111 can't promise that, so use pure black. Fund colors stay exact in light mode. In dark mode, a color that vanishes against the surface lightens until it reaches 3:1.</p>
+  </article>
+</section>
+  <section class="screen" id="screen-feed" aria-labelledby="label-feed">
+  <header class="screen-label"><span class="number">01</span><h2 id="label-feed">App shell + feed</h2><p>Admin view. Members see the same page, no Admin link.</p></header>
+  <div class="frame shell">
+    <aside class="sidebar">
+    <div class="brand"><span class="logo-tile" style="--size:46px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span><div class="min-0"><div class="brand-name">Northwind</div><div class="brand-sub">Founder community</div></div></div>
+    <nav class="nav" aria-label="Main"><a href="#screen-feed" aria-current="page"><svg width="22" height="22" aria-hidden="true"><use href="#i-house"/></svg>Feed</a><a href="#screen-messages"><svg width="22" height="22" aria-hidden="true"><use href="#i-message-circle"/></svg>Messages<span class="nav-count" aria-label="3 new">3</span></a><a href="#screen-members"><svg width="22" height="22" aria-hidden="true"><use href="#i-users"/></svg>Members</a><a href="#screen-network"><svg width="22" height="22" aria-hidden="true"><use href="#i-waypoints"/></svg>Network</a><a href="#screen-feed"><svg width="22" height="22" aria-hidden="true"><use href="#i-handshake"/></svg>Intros<span class="nav-count" aria-label="1 new">1</span></a></nav>
+    <div class="nav-divider"></div><div class="nav"><a href="#screen-feed"><svg width="22" height="22" aria-hidden="true"><use href="#i-shield-check"/></svg>Admin</a></div>
+    <div class="sidebar-foot">
+      <a class="me" href="#screen-mobile"><span class="avatar" data-tint="b" style="--size:44px" aria-hidden="true">PR</span><div class="min-0"><div class="me-name">Priya Raman</div><div class="me-role">Head of Platform</div></div><span class="muted" style="margin-left:auto"><svg width="18" height="18" aria-hidden="true"><use href="#i-chevrons-up-down"/></svg></span></a>
+      <div class="powered"><svg class="village-mark" style="--size:18px" viewBox="0 0 64 64" aria-hidden="true"><use href="#village-mark"/></svg>Network by Village</div>
+    </div>
+  </aside>
+    <main class="main">
+      <header class="page-head"><div><h1 class="t-h1">Morning, Priya.</h1><p>Three founders joined this week. Jonas needs a hand with a sales hire.</p></div></header>
+      <div class="feed-grid">
+        <div class="stack">
+          <form class="card composer" aria-label="New post">
+            <div class="composer-row"><span class="avatar" data-tint="b" style="--size:48px" aria-hidden="true">PR</span><textarea class="composer-input" rows="1" aria-label="Write a post" placeholder="Ask the room, share a win, offer a hand"></textarea></div>
+            <div class="composer-foot">
+              <div class="chips">
+                <button type="button" class="chip chip-sunk"><svg width="18" height="18" aria-hidden="true"><use href="#i-circle-question-mark"/></svg>Ask</button>
+                <button type="button" class="chip chip-sunk"><svg width="18" height="18" aria-hidden="true"><use href="#i-trophy"/></svg>Win</button>
+                <button type="button" class="chip chip-sunk"><svg width="18" height="18" aria-hidden="true"><use href="#i-hand-helping"/></svg>Offer</button>
+              </div>
+              <button type="button" class="btn btn-primary">Post</button>
+            </div>
+          </form>
+          <article class="pinned">
+            <div class="pinned-kicker"><svg width="17" height="17" aria-hidden="true"><use href="#i-pin"/></svg>Pinned by Priya Raman</div>
+            <h3 class="t-h2">Demo Day dinner moves to Thursday, Nov 19</h3>
+            <p>Same place, The Long Table on Fenwick Street, 7pm. Partners are coming, and so are a few LPs who want to meet you properly.</p>
+            <div class="pinned-foot">
+              <button type="button" class="btn btn-primary">Count me in</button>
+              <button type="button" class="btn btn-quiet">Details</button>
+              <div class="going"><span class="avatar-stack"><span class="avatar" data-tint="f" style="--size:32px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><span class="avatar" data-tint="b" style="--size:32px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span><span class="avatar" data-tint="e" style="--size:32px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span></span> 28 going</div>
+            </div>
+          </article>
+          <article class="card post">
+            <div class="post-head"><span class="avatar" data-tint="d" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><div class="min-0"><div class="post-name">Jonas Lindqvist</div><div class="post-role">Co-founder & CTO, Ledgerline · 2h</div></div><span class="tag tag-ask"><svg width="15" height="15" aria-hidden="true"><use href="#i-circle-question-mark"/></svg>Ask</span></div>
+            <p class="post-body">Has anyone hired a first head of sales for a usage-priced product? We're at $1.2M ARR, and everyone I meet only knows seat-based quotas. I'd love 20 minutes with someone who got this right. Or very wrong.</p>
+            <div class="reactions">
+              <button type="button" class="reaction" aria-pressed="true" aria-label="Heart, 6"><svg width="19" height="19" aria-hidden="true"><use href="#i-heart"/></svg>6</button><button type="button" class="reaction" aria-pressed="false" aria-label="Thumbs up, 4"><svg width="19" height="19" aria-hidden="true"><use href="#i-thumbs-up"/></svg>4</button><button type="button" class="reaction" aria-pressed="false" aria-label="Idea, 2"><svg width="19" height="19" aria-hidden="true"><use href="#i-lightbulb"/></svg>2</button>
+              <button type="button" class="icon-btn" aria-label="Add reaction"><svg width="22" height="22" aria-hidden="true"><use href="#i-face-slightly-smiling-plus"/></svg></button>
+              <button type="button" class="btn btn-sm btn-soft"><svg width="18" height="18" aria-hidden="true"><use href="#i-message-circle"/></svg>Reply</button>
+            </div>
+            <div class="comments">
+              <div class="comment"><span class="avatar" data-tint="f" style="--size:40px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><div class="comment-bubble"><div class="comment-name">Noor Haddad <span>· 45m</span></div><div class="comment-text">We hired too early and too senior. Happy to tell you the whole painful story. Free Thursday?</div></div></div>
+              <div class="comment"><span class="avatar" data-tint="b" style="--size:40px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span><div class="comment-bubble"><div class="comment-name">Mateo Ferreira <span>· 20m</span></div><div class="comment-text">Talk to Sana at Fernwork. She built exactly this comp plan last year.</div></div></div>
+              <div class="reply-row"><span class="avatar" data-tint="b" style="--size:40px" aria-hidden="true">PR</span><input class="reply-field" aria-label="Reply to Jonas" placeholder="Write a reply"></div>
+            </div>
+          </article>
+          <article class="card post">
+            <div class="post-head"><span class="avatar" data-tint="e" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><div class="min-0"><div class="post-name">Lena Novak</div><div class="post-role">Founder, Fernwork · Yesterday</div></div><span class="tag tag-win"><svg width="15" height="15" aria-hidden="true"><use href="#i-trophy"/></svg>Win</span></div>
+            <p class="post-body">We closed our Series A. Thank you, Mateo, for the intro to our lead, and Noor, for reading the fifth draft of the deck at midnight.</p>
+            <div class="reactions">
+              <button type="button" class="reaction" aria-pressed="false" aria-label="Heart, 31"><svg width="19" height="19" aria-hidden="true"><use href="#i-heart"/></svg>31</button><button type="button" class="reaction" aria-pressed="true" aria-label="Rocket, 18"><svg width="19" height="19" aria-hidden="true"><use href="#i-rocket"/></svg>18</button><button type="button" class="reaction" aria-pressed="false" aria-label="Thumbs up, 9"><svg width="19" height="19" aria-hidden="true"><use href="#i-thumbs-up"/></svg>9</button>
+              <button type="button" class="btn btn-sm btn-quiet"><svg width="18" height="18" aria-hidden="true"><use href="#i-message-circle"/></svg>12 replies</button>
+            </div>
+          </article>
+        </div>
+        <aside class="stack" aria-label="For you">
+          <section class="card rail-card">
+            <h2 class="t-h3 rail-title">Waiting on you</h2>
+            <div class="rail-person"><span class="avatar" data-tint="b" style="--size:44px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span><div class="min-0"><div class="rail-person-name">Mateo needs an intro</div><div class="rail-person-role">to Hana at Brightmoor</div></div></div>
+            <button type="button" class="btn btn-primary btn-block" style="margin-top:14px">Review his ask</button>
+          </section>
+          <section class="card rail-card">
+            <h2 class="t-h3 rail-title">New this week</h2>
+            <div class="rail-person"><span class="avatar" data-tint="a" style="--size:44px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span><div class="min-0"><div class="rail-person-name">Amara Osei</div><div class="rail-person-role">Tidewell</div></div><button type="button" class="btn btn-sm btn-soft">Say hi</button></div>
+            <div class="rail-person"><span class="avatar" data-tint="e" style="--size:44px" aria-hidden="true">DA</span><div class="min-0"><div class="rail-person-name">Dele Adeyemi</div><div class="rail-person-role">Hollowbrook</div></div><button type="button" class="btn btn-sm btn-soft">Say hi</button></div>
+            <div class="rail-person"><span class="avatar" data-tint="a" style="--size:44px" aria-hidden="true">RM</span><div class="min-0"><div class="rail-person-name">Ravi Menon</div><div class="rail-person-role">Oakline Robotics</div></div><button type="button" class="btn btn-sm btn-soft">Say hi</button></div>
+          </section>
+          <section class="card rail-card">
+            <h2 class="t-h3 rail-title">Coming up</h2>
+            <div class="rail-person"><span class="check-mark" style="background:var(--gold-soft);color:var(--gold-text)"><svg width="20" height="20" aria-hidden="true"><use href="#i-calendar-days"/></svg></span><div class="min-0"><div class="rail-person-name">Pricing teardown</div><div class="rail-person-role">Tue, Nov 10 · with Theo</div></div></div>
+            <button type="button" class="btn btn-sm btn-outline btn-block" style="margin-top:14px">Save my seat</button>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+</section>
+  <section class="screen" id="screen-members" aria-labelledby="label-members">
+  <header class="screen-label"><span class="number">02</span><h2 id="label-members">Member directory</h2><p>Portraits when uploaded. Warm initials when not.</p></header>
+  <div class="frame shell">
+    <aside class="sidebar">
+    <div class="brand"><span class="logo-tile" style="--size:46px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span><div class="min-0"><div class="brand-name">Northwind</div><div class="brand-sub">Founder community</div></div></div>
+    <nav class="nav" aria-label="Main"><a href="#screen-feed"><svg width="22" height="22" aria-hidden="true"><use href="#i-house"/></svg>Feed</a><a href="#screen-messages"><svg width="22" height="22" aria-hidden="true"><use href="#i-message-circle"/></svg>Messages<span class="nav-count" aria-label="3 new">3</span></a><a href="#screen-members" aria-current="page"><svg width="22" height="22" aria-hidden="true"><use href="#i-users"/></svg>Members</a><a href="#screen-network"><svg width="22" height="22" aria-hidden="true"><use href="#i-waypoints"/></svg>Network</a><a href="#screen-feed"><svg width="22" height="22" aria-hidden="true"><use href="#i-handshake"/></svg>Intros<span class="nav-count" aria-label="1 new">1</span></a></nav>
+    
+    <div class="sidebar-foot">
+      <a class="me" href="#screen-mobile"><span class="avatar" data-tint="a" style="--size:44px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span><div class="min-0"><div class="me-name">Amara Osei</div><div class="me-role">Founder & CEO</div></div><span class="muted" style="margin-left:auto"><svg width="18" height="18" aria-hidden="true"><use href="#i-chevrons-up-down"/></svg></span></a>
+      <div class="powered"><svg class="village-mark" style="--size:18px" viewBox="0 0 64 64" aria-hidden="true"><use href="#village-mark"/></svg>Network by Village</div>
+    </div>
+  </aside>
+    <main class="main">
+      <header class="page-head"><div><h1 class="t-h1">Members</h1><p>142 founders, operators and friends of Northwind.</p></div><button type="button" class="btn btn-outline"><svg width="20" height="20" aria-hidden="true"><use href="#i-user-round"/></svg>Edit my card</button></header>
+      <div class="directory-tools">
+        <label class="field"><svg width="22" height="22" aria-hidden="true"><use href="#i-search"/></svg><span class="sr-only">Search members</span><input type="search" placeholder="Search by name, company or what they know"></label>
+        <div class="chips" role="group" aria-label="Filter members">
+          <button type="button" class="chip" aria-pressed="true">Everyone</button>
+          <button type="button" class="chip" aria-pressed="false">Founders</button>
+          <button type="button" class="chip" aria-pressed="false">Operators</button>
+          <button type="button" class="chip" aria-pressed="false">Northwind team</button>
+          <button type="button" class="chip" aria-pressed="false">Hiring</button>
+          <button type="button" class="chip" aria-pressed="false">Climate</button>
+          <button type="button" class="chip" aria-pressed="false">Fintech</button>
+        </div>
+      </div>
+      <div class="member-grid">
+        <article class="card member">
+    <div class="member-head"><span class="avatar" data-tint="f" style="--size:72px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><div class="min-0"><h2 class="member-name">Noor Haddad</h2><div class="member-role">Founder & CEO<br>Kindling Health</div></div></div>
+    <p class="member-ask"><b>Ask me about</b>Payer contracts and first sales hires</p>
+    <div class="member-tags"><span class="tag">Healthtech</span><span class="tag">Series A</span></div>
+    <button type="button" class="btn btn-block btn-primary" aria-label="Message Noor Haddad"><svg width="20" height="20" aria-hidden="true"><use href="#i-message-circle"/></svg>Message</button>
+  </article>
+        <article class="card member">
+    <div class="member-head"><span class="avatar" data-tint="d" style="--size:72px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><div class="min-0"><h2 class="member-name">Jonas Lindqvist</h2><div class="member-role">Co-founder & CTO<br>Ledgerline</div></div></div>
+    <p class="member-ask"><b>Ask me about</b>Usage pricing and SOC 2 on a small team</p>
+    <div class="member-tags"><span class="tag">Fintech</span><span class="tag">Hiring</span></div>
+    <button type="button" class="btn btn-block btn-primary" aria-label="Message Jonas Lindqvist"><svg width="20" height="20" aria-hidden="true"><use href="#i-message-circle"/></svg>Message</button>
+  </article>
+        <article class="card member">
+    <div class="member-head"><span class="avatar" data-tint="b" style="--size:72px" aria-hidden="true">PR</span><div class="min-0"><h2 class="member-name">Priya Raman</h2><div class="member-role">Head of Platform<br>Northwind</div></div></div>
+    <p class="member-ask"><b>Ask me about</b>Meeting anyone here. Just ask.</p>
+    <div class="member-tags"><span class="tag">Northwind team</span></div>
+    <button type="button" class="btn btn-block btn-primary" aria-label="Message Priya Raman"><svg width="20" height="20" aria-hidden="true"><use href="#i-message-circle"/></svg>Message</button>
+  </article>
+        <article class="card member">
+    <div class="member-head"><span class="avatar" data-tint="e" style="--size:72px" aria-hidden="true">DA</span><div class="min-0"><h2 class="member-name">Dele Adeyemi</h2><div class="member-role">Founder<br>Hollowbrook</div></div></div>
+    <p class="member-ask"><b>Ask me about</b>Climate grants and hardware supply chains</p>
+    <div class="member-tags"><span class="tag">Climate</span><span class="tag">Seed</span></div>
+    <button type="button" class="btn btn-block btn-primary" aria-label="Message Dele Adeyemi"><svg width="20" height="20" aria-hidden="true"><use href="#i-message-circle"/></svg>Message</button>
+  </article>
+        <article class="card member">
+    <div class="member-head"><span class="avatar" data-tint="e" style="--size:72px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><div class="min-0"><h2 class="member-name">Lena Novak</h2><div class="member-role">Founder<br>Fernwork</div></div></div>
+    <p class="member-ask"><b>Ask me about</b>Closing a Series A and remote culture</p>
+    <div class="member-tags"><span class="tag">SaaS</span><span class="tag">Series A</span></div>
+    <button type="button" class="btn btn-block btn-primary" aria-label="Message Lena Novak"><svg width="20" height="20" aria-hidden="true"><use href="#i-message-circle"/></svg>Message</button>
+  </article>
+        <article class="card member">
+    <div class="member-head"><span class="avatar" data-tint="f" style="--size:72px" aria-hidden="true">HK</span><div class="min-0"><h2 class="member-name">Hana Kobayashi</h2><div class="member-role">Head of Growth<br>Brightmoor</div></div></div>
+    <p class="member-ask"><b>Ask me about</b>Moving from self-serve to sales-led</p>
+    <div class="member-tags"><span class="tag">Growth</span><span class="tag">Operator</span></div>
+    <button type="button" class="btn btn-block btn-primary" aria-label="Message Hana Kobayashi"><svg width="20" height="20" aria-hidden="true"><use href="#i-message-circle"/></svg>Message</button>
+  </article>
+        <article class="card member">
+    <div class="member-head"><span class="avatar" data-tint="b" style="--size:72px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span><div class="min-0"><h2 class="member-name">Mateo Ferreira</h2><div class="member-role">Co-founder<br>Parcelhaus</div></div></div>
+    <p class="member-ask"><b>Ask me about</b>Warehouse automation and hiring in Lisbon</p>
+    <div class="member-tags"><span class="tag">Logistics</span><span class="tag">Seed</span></div>
+    <button type="button" class="btn btn-block btn-primary" aria-label="Message Mateo Ferreira"><svg width="20" height="20" aria-hidden="true"><use href="#i-message-circle"/></svg>Message</button>
+  </article>
+        <article class="card member">
+    <div class="member-head"><span class="avatar" data-tint="c" style="--size:72px" aria-hidden="true">SW</span><div class="min-0"><h2 class="member-name">Sana Whitfield</h2><div class="member-role">VP Sales<br>Fernwork</div></div></div>
+    <p class="member-ask"><b>Ask me about</b>Comp plans and your first ten reps</p>
+    <div class="member-tags"><span class="tag">Sales</span><span class="tag">Operator</span></div>
+    <button type="button" class="btn btn-block btn-primary" aria-label="Message Sana Whitfield"><svg width="20" height="20" aria-hidden="true"><use href="#i-message-circle"/></svg>Message</button>
+  </article>
+        <article class="card member">
+    <div class="member-head"><span class="avatar" data-tint="d" style="--size:72px" aria-hidden="true">TM</span><div class="min-0"><h2 class="member-name">Theo Marchetti</h2><div class="member-role">Venture Partner<br>Northwind</div></div></div>
+    <p class="member-ask"><b>Ask me about</b>Board dynamics and bridge rounds</p>
+    <div class="member-tags"><span class="tag">Northwind team</span></div>
+    <button type="button" class="btn btn-block btn-primary" aria-label="Message Theo Marchetti"><svg width="20" height="20" aria-hidden="true"><use href="#i-message-circle"/></svg>Message</button>
+  </article>
+      </div>
+    </main>
+  </div>
+</section>
+  <section class="screen" id="screen-messages" aria-labelledby="label-messages">
+  <header class="screen-label"><span class="number">03</span><h2 id="label-messages">Messages</h2><p>Conversation list and open thread.</p></header>
+  <div class="frame shell">
+    <aside class="sidebar">
+    <div class="brand"><span class="logo-tile" style="--size:46px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span><div class="min-0"><div class="brand-name">Northwind</div><div class="brand-sub">Founder community</div></div></div>
+    <nav class="nav" aria-label="Main"><a href="#screen-feed"><svg width="22" height="22" aria-hidden="true"><use href="#i-house"/></svg>Feed</a><a href="#screen-messages" aria-current="page"><svg width="22" height="22" aria-hidden="true"><use href="#i-message-circle"/></svg>Messages<span class="nav-count" aria-label="3 new">3</span></a><a href="#screen-members"><svg width="22" height="22" aria-hidden="true"><use href="#i-users"/></svg>Members</a><a href="#screen-network"><svg width="22" height="22" aria-hidden="true"><use href="#i-waypoints"/></svg>Network</a><a href="#screen-feed"><svg width="22" height="22" aria-hidden="true"><use href="#i-handshake"/></svg>Intros<span class="nav-count" aria-label="1 new">1</span></a></nav>
+    
+    <div class="sidebar-foot">
+      <a class="me" href="#screen-mobile"><span class="avatar" data-tint="a" style="--size:44px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span><div class="min-0"><div class="me-name">Amara Osei</div><div class="me-role">Founder & CEO</div></div><span class="muted" style="margin-left:auto"><svg width="18" height="18" aria-hidden="true"><use href="#i-chevrons-up-down"/></svg></span></a>
+      <div class="powered"><svg class="village-mark" style="--size:18px" viewBox="0 0 64 64" aria-hidden="true"><use href="#village-mark"/></svg>Network by Village</div>
+    </div>
+  </aside>
+    <main class="messages">
+      <section class="convo-pane" aria-label="Conversations">
+        <div class="convo-head"><h1 class="t-h1">Messages</h1><button type="button" class="icon-btn icon-btn-primary" aria-label="New message"><svg width="22" height="22" aria-hidden="true"><use href="#i-message-square-plus"/></svg></button></div>
+        <div class="convo-search"><label class="field" style="min-height:48px;border-radius:24px;padding:0 16px"><svg width="20" height="20" aria-hidden="true"><use href="#i-search"/></svg><span class="sr-only">Search messages</span><input type="search" placeholder="Search people and messages"></label></div>
+        <div class="convo-list">
+          <a class="convo" href="#screen-messages" aria-current="true"><span class="avatar" data-tint="f" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><div class="min-0" style="flex:1"><div class="convo-top"><span class="convo-name">Noor Haddad</span><span class="convo-time">9:42</span></div><div class="convo-preview">Dinner works. I'll find you.</div></div></a>
+          <a class="convo" href="#screen-messages" data-unread><span class="avatar" data-tint="d" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><div class="min-0" style="flex:1"><div class="convo-top"><span class="convo-name">Jonas Lindqvist</span><span class="convo-time">8:15</span></div><div class="convo-preview">Sending you the comp plan now</div></div><span class="unread-dot" role="img" aria-label="Unread"></span></a>
+          <a class="convo" href="#screen-messages" data-unread><span class="avatar" data-tint="b" style="--size:52px" aria-hidden="true">PR</span><div class="min-0" style="flex:1"><div class="convo-top"><span class="convo-name">Priya Raman</span><span class="convo-time">Mon</span></div><div class="convo-preview">You're on the list for the pricing session</div></div><span class="unread-dot" role="img" aria-label="Unread"></span></a>
+          <a class="convo" href="#screen-messages"><span class="avatar" data-tint="b" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span><div class="min-0" style="flex:1"><div class="convo-top"><span class="convo-name">Mateo Ferreira</span><span class="convo-time">Mon</span></div><div class="convo-preview">Happy to look at your warehouse numbers</div></div></a>
+          <a class="convo" href="#screen-messages"><span class="avatar" data-tint="e" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><div class="min-0" style="flex:1"><div class="convo-top"><span class="convo-name">Lena Novak</span><span class="convo-time">Oct 29</span></div><div class="convo-preview">Thank you! The deck notes helped.</div></div></a>
+          <a class="convo" href="#screen-messages" data-unread><span class="avatar" data-tint="e" style="--size:52px" aria-hidden="true">DA</span><div class="min-0" style="flex:1"><div class="convo-top"><span class="convo-name">Dele Adeyemi</span><span class="convo-time">Oct 27</span></div><div class="convo-preview">Grant deadline is the 14th, FYI</div></div><span class="unread-dot" role="img" aria-label="Unread"></span></a>
+          <a class="convo" href="#screen-messages"><span class="avatar" data-tint="f" style="--size:52px" aria-hidden="true">HK</span><div class="min-0" style="flex:1"><div class="convo-top"><span class="convo-name">Hana Kobayashi</span><span class="convo-time">Oct 22</span></div><div class="convo-preview">You: Let's do a call after the launch</div></div></a>
+        </div>
+      </section>
+      <section class="thread" aria-label="Conversation with Noor Haddad">
+        <header class="thread-head"><span class="avatar" data-tint="f" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><div class="min-0"><h2 class="t-h3">Noor Haddad</h2><div class="post-role">Founder & CEO, Kindling Health</div></div><button type="button" class="btn btn-sm btn-outline">View profile</button></header>
+        <div class="thread-body" role="log" aria-label="Messages">
+          <div class="intro-note"><span class="avatar-stack"><span class="avatar" data-tint="b" style="--size:28px" aria-hidden="true">PR</span></span>Priya introduced you on Oct 28</div>
+          <div class="day">Today</div>
+          <div class="bubble-row"><span class="avatar" data-tint="f" style="--size:36px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><div class="bubble">Saw your comment under Jonas's post. Want the whole story on our first sales hire? Short version: too senior, too soon.</div></div>
+          <div class="bubble-row bubble-row-me"><div class="bubble">Yes please. I think we're about to make the same mistake.</div></div>
+          <div class="bubble-row"><span class="avatar" data-tint="f" style="--size:36px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><div class="bubble">Two things I wish I'd known:<ol><li>Hire someone who closed deals at your price point this year.</li><li>Keep selling yourself until you can write the playbook down.</li></ol></div></div>
+          <div class="bubble-row bubble-row-me"><div class="bubble">That second one stings. Want to talk Thursday, at the Northwind dinner?</div></div>
+          <div class="read">Read 9:41</div>
+          <div class="bubble-row"><span class="avatar" data-tint="f" style="--size:36px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><div class="bubble">Dinner works. I'll find you.</div></div>
+        </div>
+        <form class="thread-composer" aria-label="Reply">
+          <div class="field"><button type="button" class="icon-btn" aria-label="Attach a file"><svg width="22" height="22" aria-hidden="true"><use href="#i-paperclip"/></svg></button><input aria-label="Message Noor" placeholder="Message Noor"><button type="button" class="icon-btn icon-btn-primary" aria-label="Send"><svg width="20" height="20" aria-hidden="true"><use href="#i-send"/></svg></button></div>
+        </form>
+      </section>
+    </main>
+  </div>
+</section>
+  <section class="screen" id="screen-network" aria-labelledby="label-network">
+  <header class="screen-label"><span class="number">04</span><h2 id="label-network">Network search</h2><p>Connector and reason come first. No scores.</p></header>
+  <div class="frame shell">
+    <aside class="sidebar">
+    <div class="brand"><span class="logo-tile" style="--size:46px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span><div class="min-0"><div class="brand-name">Northwind</div><div class="brand-sub">Founder community</div></div></div>
+    <nav class="nav" aria-label="Main"><a href="#screen-feed"><svg width="22" height="22" aria-hidden="true"><use href="#i-house"/></svg>Feed</a><a href="#screen-messages"><svg width="22" height="22" aria-hidden="true"><use href="#i-message-circle"/></svg>Messages<span class="nav-count" aria-label="3 new">3</span></a><a href="#screen-members"><svg width="22" height="22" aria-hidden="true"><use href="#i-users"/></svg>Members</a><a href="#screen-network" aria-current="page"><svg width="22" height="22" aria-hidden="true"><use href="#i-waypoints"/></svg>Network</a><a href="#screen-feed"><svg width="22" height="22" aria-hidden="true"><use href="#i-handshake"/></svg>Intros<span class="nav-count" aria-label="1 new">1</span></a></nav>
+    
+    <div class="sidebar-foot">
+      <a class="me" href="#screen-mobile"><span class="avatar" data-tint="a" style="--size:44px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span><div class="min-0"><div class="me-name">Amara Osei</div><div class="me-role">Founder & CEO</div></div><span class="muted" style="margin-left:auto"><svg width="18" height="18" aria-hidden="true"><use href="#i-chevrons-up-down"/></svg></span></a>
+      <div class="powered"><svg class="village-mark" style="--size:18px" viewBox="0 0 64 64" aria-hidden="true"><use href="#village-mark"/></svg>Network by Village</div>
+    </div>
+  </aside>
+    <main class="main" style="padding-top:28px">
+      <div class="network-hero">
+        <h1 class="t-h1">Who do you want to meet?</h1>
+        <div class="scope"><span class="avatar-stack"><span class="avatar" data-tint="d" style="--size:30px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><span class="avatar" data-tint="f" style="--size:30px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><span class="avatar" data-tint="e" style="--size:30px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><span class="avatar" data-tint="b" style="--size:30px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span></span><span>Search through 142 members' networks, including yours.</span></div>
+        <form class="hero-search" role="search"><svg width="26" height="26" aria-hidden="true"><use href="#i-search"/></svg><label class="sr-only" for="network-query">Describe who you want to meet</label><input id="network-query" value="Heads of procurement at European freight companies"><button type="button" class="btn btn-lg btn-primary">Search</button></form>
+        <div class="suggestions"><button type="button" class="chip">Angels who back climate</button><button type="button" class="chip">CFOs who've raised a Series B</button><button type="button" class="chip">People at Corvane Logistics</button></div>
+      </div>
+      <div class="network-grid">
+        <section aria-label="Results">
+          <h2 class="t-h3 result-count">24 people. 9 have a warm way in.</h2>
+          <div class="stack-sm">
+            <a class="result" href="#screen-network" aria-current="true"><span class="avatar" data-tint="c" style="--size:56px" aria-hidden="true">CB</span><div class="min-0"><div class="result-name">Clara Bergström</div><div class="result-role">VP Procurement, Corvane Logistics</div><div class="result-place">Gothenburg</div></div><div class="result-ways"><span class="avatar-stack"><span class="avatar" data-tint="d" style="--size:30px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><span class="avatar" data-tint="f" style="--size:30px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><span class="avatar" data-tint="b" style="--size:30px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span></span><span class="way-text">3 ways in</span></div></a>
+            <a class="result" href="#screen-network"><span class="avatar" data-tint="a" style="--size:56px" aria-hidden="true">TW</span><div class="min-0"><div class="result-name">Tomasz Wieczorek</div><div class="result-role">Head of Procurement, Halden Freight</div><div class="result-place">Gdańsk</div></div><div class="result-ways"><span class="avatar-stack"><span class="avatar" data-tint="e" style="--size:30px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><span class="avatar" data-tint="e" style="--size:30px" aria-hidden="true">DA</span></span><span class="way-text">2 ways in</span></div></a>
+            <a class="result" href="#screen-network"><span class="avatar" data-tint="f" style="--size:56px" aria-hidden="true">IM</span><div class="min-0"><div class="result-name">Inès Moreau</div><div class="result-role">Director of Purchasing, Tessel Cargo</div><div class="result-place">Lyon</div></div><div class="result-ways"><span class="avatar-stack"><span class="avatar" data-tint="b" style="--size:30px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span></span><span class="way-text">1 way in</span></div></a>
+            <a class="result" href="#screen-network"><span class="avatar" data-tint="e" style="--size:56px" aria-hidden="true">BV</span><div class="min-0"><div class="result-name">Bram de Vries</div><div class="result-role">Procurement Lead, Noordkade Shipping</div><div class="result-place">Rotterdam</div></div><div class="result-ways"><span class="avatar-stack"><span class="avatar" data-tint="f" style="--size:30px" aria-hidden="true">HK</span></span><span class="way-text">1 way in</span></div></a>
+            <a class="result" href="#screen-network"><span class="avatar" data-tint="d" style="--size:56px" aria-hidden="true">YK</span><div class="min-0"><div class="result-name">Yusuf Kaya</div><div class="result-role">Head of Buying, Kestrel Freight</div><div class="result-place">Izmir</div></div><div class="result-ways"><span class="avatar-stack"><span class="avatar" data-tint="c" style="--size:30px" aria-hidden="true">SW</span></span><span class="way-text">1 way in</span></div></a>
+            <a class="result" href="#screen-network"><span class="avatar" data-tint="b" style="--size:56px" aria-hidden="true">AD</span><div class="min-0"><div class="result-name">Aylin Demir</div><div class="result-role">Head of Sourcing, Marlow & Reed</div><div class="result-place">Manchester</div></div><div class="result-ways"><span class="way-text way-text-none">No warm path yet</span></div></a>
+          </div>
+          <button type="button" class="btn btn-outline btn-block" style="margin-top:14px">Show 18 more</button>
+        </section>
+        <aside class="card intro-panel" aria-label="Who can intro you to Clara">
+          <h2 class="t-h2">Who can intro you to Clara</h2>
+          <div class="path" aria-label="You, then Jonas, then Clara">
+            <div class="path-node"><span class="avatar" data-tint="a" style="--size:44px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span>You</div>
+            <div class="path-node"><span class="avatar" data-tint="d" style="--size:44px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span>Jonas</div>
+            <div class="path-node"><span class="avatar" data-tint="c" style="--size:44px" aria-hidden="true">CB</span>Clara</div>
+          </div>
+          <article class="connector connector-top">
+    <div class="connector-head"><span class="avatar" data-tint="d" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><div class="min-0"><div class="connector-name">Jonas Lindqvist</div><div class="connector-role">Co-founder & CTO, Ledgerline</div></div></div>
+    <div style="margin-top:10px"><span class="badge-member"><svg width="15" height="15" aria-hidden="true"><use href="#i-users-round"/></svg>Community member</span></div>
+    <p class="reason"><svg width="17" height="17" aria-hidden="true"><use href="#i-link"/></svg><span>Worked with Clara at Corvane Logistics for four years, 2017 to 2021.</span></p>
+    <button type="button" class="btn btn-lg btn-block btn-primary">Ask Jonas for an intro<svg width="20" height="20" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+  </article>
+          <article class="connector">
+    <div class="connector-head"><span class="avatar" data-tint="f" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><div class="min-0"><div class="connector-name">Noor Haddad</div><div class="connector-role">Founder & CEO, Kindling Health</div></div></div>
+    <div style="margin-top:10px"><span class="badge-member"><svg width="15" height="15" aria-hidden="true"><use href="#i-users-round"/></svg>Community member</span></div>
+    <p class="reason"><svg width="17" height="17" aria-hidden="true"><use href="#i-link"/></svg><span>Sits with Clara on the Oslo Supply Chain Forum board.</span></p>
+    <button type="button" class="btn btn-block btn-soft">Ask for an intro</button>
+  </article>
+          <p class="privacy-note"><svg width="17" height="17" aria-hidden="true"><use href="#i-lock"/></svg><span>Jonas reads your note first. Clara hears nothing unless he says yes.</span></p>
+        </aside>
+      </div>
+    </main>
+  </div>
+</section>
+  <section class="screen" id="screen-welcome" aria-labelledby="label-welcome">
+  <header class="screen-label"><span class="number">05</span><h2 id="label-welcome">Welcome and consent</h2><p>A person invites you. The deal is on the page, in plain words.</p></header>
+  <div class="frame welcome">
+    <aside class="welcome-brand">
+      <div class="welcome-logo"><span class="logo-tile" style="--size:52px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span>Northwind Ventures</div>
+      <div class="constellation" aria-hidden="true">
+        <svg class="threads" viewBox="0 0 100 100" fill="none" preserveAspectRatio="none"><g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" vector-effect="non-scaling-stroke"><path vector-effect="non-scaling-stroke" d="M50 50Q27.7 39.2 19 16"/><path vector-effect="non-scaling-stroke" d="M50 50Q69.475 36.05 76 13"/><path vector-effect="non-scaling-stroke" d="M50 50Q33.8 61.4 14 62"/><path vector-effect="non-scaling-stroke" d="M50 50Q69 44.3 88 50"/><path vector-effect="non-scaling-stroke" d="M50 50Q54.1 70.85 69 86"/><path vector-effect="non-scaling-stroke" d="M50 50Q45.75 71.25 32 88"/><path vector-effect="non-scaling-stroke" d="M19 16Q46.975 4.525 76 13"/><path vector-effect="non-scaling-stroke" d="M14 62Q18.45 78.15 32 88"/><path vector-effect="non-scaling-stroke" d="M76 13Q75.525 33.6 88 50"/></g></svg><div class="star" style="left:50%;top:50%"><span class="avatar" data-tint="a" style="--size:108px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span><span class="star-label">You</span></div><div class="star" style="left:19%;top:16%"><span class="avatar" data-tint="d" style="--size:64px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><span class="star-label">Jonas</span></div><div class="star" style="left:76%;top:13%"><span class="avatar" data-tint="f" style="--size:72px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><span class="star-label">Noor</span></div><div class="star" style="left:14%;top:62%"><span class="avatar" data-tint="e" style="--size:60px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><span class="star-label">Lena</span></div><div class="star" style="left:88%;top:50%"><span class="avatar" data-tint="e" style="--size:56px" aria-hidden="true">DA</span><span class="star-label">Dele</span></div><div class="star" style="left:69%;top:86%"><span class="avatar" data-tint="b" style="--size:64px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span><span class="star-label">Mateo</span></div><div class="star" style="left:32%;top:88%"><span class="avatar" data-tint="f" style="--size:52px" aria-hidden="true">HK</span><span class="star-label">Hana</span></div>
+      </div>
+      <figure class="seat-note">
+        <p>Amara, we saved you a seat. Jonas and Noor keep asking when Tidewell is joining.</p>
+        <figcaption class="seat-sign"><span class="avatar" data-tint="b" style="--size:44px" aria-hidden="true">PR</span><div><div class="me-name">Priya Raman</div><div class="me-role">Head of Platform, Northwind</div></div></figcaption>
+      </figure>
+    </aside>
+    <main class="welcome-copy">
+      <ol class="steps" aria-label="Getting started">
+        <li class="step-pill" aria-current="step"><i>1</i>Your network</li>
+        <li class="step-pill"><i>2</i>Your card</li>
+        <li class="step-pill"><i>3</i>Say hello</li>
+      </ol>
+      <h1 class="t-display">Welcome in, Amara.</h1>
+      <p class="t-lead">142 founders and operators are already here, helping each other meet the right people.</p>
+      <section class="card deal" aria-labelledby="deal-title">
+        <h2 class="t-h2" id="deal-title">One thing first: the deal</h2>
+        <div class="deal-swap">
+          <div class="deal-side"><h4><svg width="18" height="18" aria-hidden="true"><use href="#i-users-round"/></svg>You share</h4><p>Your Village network. Every current and future member can find people you know and ask you for an intro.</p></div>
+          <div class="deal-side deal-side-get"><h4><svg width="18" height="18" aria-hidden="true"><use href="#i-waypoints"/></svg>You get</h4><p>Everyone else's. Search all 142 networks and see who can introduce you, and why.</p></div>
+        </div>
+        <ul class="deal-list">
+          <li><svg width="18" height="18" aria-hidden="true"><use href="#i-check"/></svg><span>You say yes or no to every intro anyone asks you for.</span></li>
+          <li><svg width="18" height="18" aria-hidden="true"><use href="#i-mail"/></svg><span>Village, the company behind network search, gets your email address.</span></li>
+          <li><svg width="18" height="18" aria-hidden="true"><use href="#i-log-out"/></svg><span>You can leave any time. Sharing stops, but members who already saw your contacts can't unsee them.</span></li>
+          <li><svg width="18" height="18" aria-hidden="true"><use href="#i-circle-alert"/></svg><span>Leaving Northwind's community? Leave the network group first. An admin removing you doesn't yet remove you from it.</span></li>
+        </ul>
+        <label class="consent"><input type="checkbox" name="sharing-consent">I understand, and I want to share my network.</label>
+        <div class="welcome-actions">
+          <button type="button" class="btn btn-lg btn-primary">Share my network and come in<svg width="20" height="20" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+          <button type="button" class="btn btn-lg btn-quiet">Not now</button>
+        </div>
+        <p class="skip-note">You still get the feed, messages and members. Network search waits until you share.</p>
+      </section>
+    </main>
+  </div>
+</section>
+  <section class="screen" id="screen-admin" aria-labelledby="label-admin">
+  <header class="screen-label"><span class="number">06</span><h2 id="label-admin">Admin setup</h2><p>Replaces the settings page. Try the swatches: they re-skin this whole file.</p></header>
+  <div class="frame shell">
+    <aside class="sidebar">
+    <div class="brand"><span class="logo-tile" style="--size:46px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span><div class="min-0"><div class="brand-name">Northwind</div><div class="brand-sub">Founder community</div></div></div>
+    <nav class="nav" aria-label="Main"><a href="#screen-feed"><svg width="22" height="22" aria-hidden="true"><use href="#i-house"/></svg>Feed</a><a href="#screen-messages"><svg width="22" height="22" aria-hidden="true"><use href="#i-message-circle"/></svg>Messages<span class="nav-count" aria-label="3 new">3</span></a><a href="#screen-members"><svg width="22" height="22" aria-hidden="true"><use href="#i-users"/></svg>Members</a><a href="#screen-network"><svg width="22" height="22" aria-hidden="true"><use href="#i-waypoints"/></svg>Network</a><a href="#screen-feed"><svg width="22" height="22" aria-hidden="true"><use href="#i-handshake"/></svg>Intros<span class="nav-count" aria-label="1 new">1</span></a></nav>
+    <div class="nav-divider"></div><div class="nav"><a href="#screen-feed" aria-current="page"><svg width="22" height="22" aria-hidden="true"><use href="#i-shield-check"/></svg>Admin</a></div>
+    <div class="sidebar-foot">
+      <a class="me" href="#screen-mobile"><span class="avatar" data-tint="b" style="--size:44px" aria-hidden="true">PR</span><div class="min-0"><div class="me-name">Priya Raman</div><div class="me-role">Head of Platform</div></div><span class="muted" style="margin-left:auto"><svg width="18" height="18" aria-hidden="true"><use href="#i-chevrons-up-down"/></svg></span></a>
+      <div class="powered"><svg class="village-mark" style="--size:18px" viewBox="0 0 64 64" aria-hidden="true"><use href="#village-mark"/></svg>Network by Village</div>
+    </div>
+  </aside>
+    <main class="main">
+      <header class="page-head"><div><h1 class="t-h1">Let's get Northwind ready</h1><p>Three steps left, about 15 minutes. Your progress saves as you go.</p></div><button type="button" class="btn btn-outline"><svg width="20" height="20" aria-hidden="true"><use href="#i-eye"/></svg>See it as a founder</button></header>
+      <section class="progress-panel" aria-label="Setup progress">
+        <div class="progress-top"><h2 class="t-h3">3 of 6 done</h2><span class="soft-ink t-small">Next: invite your first founders</span></div>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="3" aria-label="3 of 6 setup steps done"><i data-done></i><i data-done></i><i data-done></i><i data-active></i><i></i><i></i></div>
+      </section>
+      <div class="admin-grid">
+        <ol class="checklist">
+          <li class="check-row" data-state="done"><span class="check-mark" aria-hidden="true"><svg width="22" height="22" aria-hidden="true"><use href="#i-check"/></svg></span><div class="min-0"><div class="check-title">Make it yours<span class="sr-only"> (done)</span></div><div class="check-sub">Logo and color are set.</div></div><button type="button" class="btn btn-sm btn-quiet">Edit</button></li>
+          <li class="check-row" data-state="done"><span class="check-mark" aria-hidden="true"><svg width="22" height="22" aria-hidden="true"><use href="#i-check"/></svg></span><div class="min-0"><div class="check-title">Connect Village<span class="sr-only"> (done)</span></div><div class="check-sub">Connected. Network search is on.</div></div><button type="button" class="btn btn-sm btn-quiet">Manage</button></li>
+          <li class="check-row" data-state="done"><span class="check-mark" aria-hidden="true"><svg width="22" height="22" aria-hidden="true"><use href="#i-check"/></svg></span><div class="min-0"><div class="check-title">Share Northwind's network<span class="sr-only"> (done)</span></div><div class="check-sub">Every member can now search it.</div></div><button type="button" class="btn btn-sm btn-quiet">Review</button></li>
+          <li class="check-current">
+            <div class="check-current-head"><span class="check-mark" aria-hidden="true">4</span><div class="min-0"><h2 class="check-title">Invite your first founders</h2><div class="check-sub">Start with five who will post in week one. Each gets a note from you.</div></div></div>
+            <div class="check-current-body">
+              <div class="invite-box">
+                <span class="email-chip"><span class="avatar" data-tint="a" style="--size:28px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span>amara@tidewell.example</span>
+                <span class="email-chip"><span class="avatar" data-tint="d" style="--size:28px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span>jonas@ledgerline.example</span>
+                <span class="email-chip"><span class="avatar" data-tint="f" style="--size:28px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span>noor@kindling.example</span>
+                <input aria-label="Add email addresses" placeholder="Add emails, or paste a list">
+              </div>
+              <div class="invite-actions">
+                <button type="button" class="btn btn-primary"><svg width="19" height="19" aria-hidden="true"><use href="#i-send"/></svg>Send 3 invites</button>
+                <button type="button" class="btn btn-quiet"><svg width="19" height="19" aria-hidden="true"><use href="#i-mail-open"/></svg>Preview the email</button>
+              </div>
+              <div class="link-row"><svg width="18" height="18" aria-hidden="true"><use href="#i-link"/></svg><code>community.northwind.example/join/8fk2</code><button type="button" class="btn btn-sm btn-outline"><svg width="17" height="17" aria-hidden="true"><use href="#i-copy"/></svg>Copy link</button></div>
+            </div>
+          </li>
+          <li class="check-row" data-state="todo"><span class="check-mark" aria-hidden="true">5</span><div class="min-0"><div class="check-title">Write your welcome note</div><div class="check-sub">The first thing every founder reads, in your voice.</div></div><button type="button" class="btn btn-sm btn-outline">Write it</button></li>
+          <li class="check-row" data-state="todo"><span class="check-mark" aria-hidden="true">6</span><div class="min-0"><div class="check-title">Pin your first announcement</div><div class="check-sub">Give people a reason to come back this week.</div></div><button type="button" class="btn btn-sm btn-outline">Start</button></li>
+        </ol>
+        <aside class="card brand-card" aria-label="Brand preview">
+          <h2 class="t-h3">Your brand</h2>
+          <p class="t-small soft-ink" style="margin-top:4px">Add your logo and color. We handle the contrast.</p>
+          <div class="logo-row"><span class="logo-tile" style="--size:44px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span><div class="min-0"><div class="me-name">Logo</div><div class="me-role">northwind.svg</div></div><button type="button" class="btn btn-sm btn-outline">Replace</button></div>
+          <div class="brand-swatches" role="group" aria-label="Accent color"><label class="swatch" for="accent-teal" style="--swatch:#0f7f86"><i></i><span class="sr-only">Village teal</span></label><label class="swatch" for="accent-sun" style="--swatch:#ffc93c"><i></i><span class="sr-only">Sunbeam</span></label><label class="swatch" for="accent-midnight" style="--swatch:#14213d"><i></i><span class="sr-only">Midnight</span></label><label class="swatch" for="accent-coral" style="--swatch:#e8604c"><i></i><span class="sr-only">Coral</span></label><label class="swatch" for="accent-cobalt" style="--swatch:#2556e8"><i></i><span class="sr-only">Cobalt</span></label></div>
+          <label class="field hex-field"><i></i><span class="sr-only">Your own color</span><input placeholder="Or type a hex color"></label>
+          <p class="readout" data-accent="teal" data-mode="light"><b>White button text, 4.77:1.</b> Passes AA. We picked it for you.</p><p class="readout" data-accent="sun" data-mode="light"><b>Black button text, 13.67:1.</b> Passes AA. We picked it for you.</p><p class="readout" data-accent="midnight" data-mode="light"><b>White button text, 15.97:1.</b> Passes AA. We picked it for you.</p><p class="readout" data-accent="coral" data-mode="light"><b>Black button text, 6.21:1.</b> Passes AA. We picked it for you.</p><p class="readout" data-accent="cobalt" data-mode="light"><b>White button text, 5.87:1.</b> Passes AA. We picked it for you.</p><p class="readout" data-accent="teal" data-mode="dark"><b>White button text, 4.77:1.</b> Passes AA. We picked it for you.</p><p class="readout" data-accent="sun" data-mode="dark"><b>Black button text, 13.67:1.</b> Passes AA. We picked it for you.</p><p class="readout" data-accent="midnight" data-mode="dark"><b>White button text, 5.50:1.</b> Passes AA. We picked it for you.</p><p class="readout" data-accent="coral" data-mode="dark"><b>Black button text, 6.21:1.</b> Passes AA. We picked it for you.</p><p class="readout" data-accent="cobalt" data-mode="dark"><b>White button text, 5.51:1.</b> Passes AA. We picked it for you.</p>
+          <div class="brand-preview">
+            <div class="brand-preview-head"><span class="logo-tile" style="--size:36px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span>Northwind</div>
+            <button type="button" class="btn btn-block btn-primary">Say hello</button>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px"><span class="tag tag-ask">Ask</span><span class="badge-member">Community member</span></div>
+          </div>
+                  </aside>
+      </div>
+    </main>
+  </div>
+</section>
+  <section class="screen" id="screen-states" aria-labelledby="label-states">
+  <header class="screen-label"><span class="number">07</span><h2 id="label-states">Empty and loading</h2><p>Network search can take up to a minute, so loading says what is happening.</p></header>
+  <div class="state-grid">
+    <div class="frame state-frame">
+      <div class="empty-head"><h1 class="t-h1">Intros</h1><div class="chips" role="group" aria-label="Filter intros"><button type="button" class="chip" aria-pressed="true">Asked by me</button><button type="button" class="chip" aria-pressed="false">Asked of me</button></div></div>
+      <div class="state-body" style="position:relative">
+        <div style="position:relative"><svg class="empty-art" viewBox="0 0 300 160" fill="none" aria-hidden="true"><path d="M70 80C120 30 180 130 230 80" stroke="var(--accent-text)" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 10"/><circle cx="230" cy="80" r="42" fill="var(--accent-soft)" stroke="var(--accent-text)" stroke-width="2.500" stroke-dasharray="6 8" stroke-linecap="round"/><path d="M230 66v28M216 80h28" stroke="var(--accent-text)" stroke-width="3.500" stroke-linecap="round"/></svg><span style="position:absolute;left:28px;top:38px"><span class="avatar" data-tint="a" style="--size:84px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span></span></div>
+        <h2 class="t-h2">Your first intro is one search away</h2>
+        <p>Tell us who you want to meet. We'll show you which member knows them, and why.</p>
+        <div class="state-actions">
+          <button type="button" class="btn btn-lg btn-primary"><svg width="20" height="20" aria-hidden="true"><use href="#i-search"/></svg>Find someone to meet</button>
+          <button type="button" class="btn btn-quiet">See how intros work</button>
+        </div>
+      </div>
+    </div>
+    <div class="frame state-frame">
+      <div class="state-body" role="status" aria-live="polite">
+        <div class="loading-thread" aria-hidden="true">
+          <svg class="line" viewBox="0 0 340 72" fill="none"><path d="M30 36H310" stroke="currentColor" stroke-width="2.500" stroke-linecap="round" stroke-dasharray="1 8"/></svg>
+          <span class="avatar" data-tint="a" style="--size:60px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span><span class="loading-pulse"></span><span class="avatar avatar-icon" data-tint="a" style="--size:60px"><svg width="26" height="26" aria-hidden="true"><use href="#i-search"/></svg></span>
+        </div>
+        <h2 class="t-h2">Looking through 142 networks</h2>
+        <p>Heads of procurement at European freight companies. This can take up to a minute.</p>
+        <ol class="loading-steps">
+          <li class="loading-step" data-state="done"><i><svg width="15" height="15" aria-hidden="true"><use href="#i-check"/></svg></i>Checked your own network</li>
+          <li class="loading-step" data-state="active"><i><svg class="spinner" width="16" height="16" aria-hidden="true"><use href="#i-loader-circle"/></svg></i>Asking around: Jonas, Noor and 140 others</li>
+          <li class="loading-step"><i><svg width="15" height="15" aria-hidden="true"><use href="#i-handshake"/></svg></i>Finding who knows them best</li>
+        </ol>
+        <div class="state-actions" style="margin-top:20px"><button type="button" class="btn btn-outline">Keep browsing. Tell me when it's ready.</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+  <section class="screen" id="screen-mobile" aria-labelledby="label-mobile">
+  <header class="screen-label"><span class="number">08</span><h2 id="label-mobile">Mobile feed, 390px</h2><p>Five tabs at the thumb. Admin lives behind your avatar.</p></header>
+  <div class="phones">
+    <div class="phone-wrap">
+      <div class="phone"><header class="phone-top"><span class="logo-tile" style="--size:38px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span><div class="brand-name">Northwind</div><div class="spacer"></div><button type="button" class="icon-btn" aria-label="Notifications"><svg width="22" height="22" aria-hidden="true"><use href="#i-bell"/></svg></button><button type="button" class="icon-btn" aria-label="Open account menu"><span class="avatar" data-tint="b" style="--size:40px" aria-hidden="true">PR</span></button></header><div class="phone-scroll" tabindex="0" aria-label="Feed">
+  <article class="pinned">
+    <div class="pinned-kicker"><svg width="16" height="16" aria-hidden="true"><use href="#i-pin"/></svg>Pinned by Priya</div>
+    <h3>Demo Day dinner moves to Thursday, Nov 19</h3>
+    <p>The Long Table, 7pm. Partners are coming.</p>
+    <div class="pinned-foot"><button type="button" class="btn btn-sm btn-primary">Count me in</button><div class="going"><span class="avatar-stack"><span class="avatar" data-tint="f" style="--size:28px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><span class="avatar" data-tint="b" style="--size:28px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span></span> 28</div></div>
+  </article>
+  <article class="card post">
+    <div class="post-head"><span class="avatar" data-tint="d" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><div class="min-0"><div class="post-name">Jonas Lindqvist</div><div class="post-role">Ledgerline · 2h</div></div></div>
+    <p class="post-body">Has anyone hired a first head of sales for a usage-priced product? I'd love 20 minutes with someone who got this right. Or very wrong.</p>
+    <div class="reactions"><button type="button" class="reaction" aria-pressed="true" aria-label="Heart, 6"><svg width="19" height="19" aria-hidden="true"><use href="#i-heart"/></svg>6</button><button type="button" class="reaction" aria-pressed="false" aria-label="Thumbs up, 4"><svg width="19" height="19" aria-hidden="true"><use href="#i-thumbs-up"/></svg>4</button><button type="button" class="btn btn-sm btn-soft"><svg width="18" height="18" aria-hidden="true"><use href="#i-message-circle"/></svg>Reply</button></div>
+  </article>
+  <article class="card post">
+    <div class="post-head"><span class="avatar" data-tint="e" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><div class="min-0"><div class="post-name">Lena Novak</div><div class="post-role">Fernwork · Yesterday</div></div></div>
+    <p class="post-body">We closed our Series A. Thank you, Mateo, for the intro to our lead.</p>
+    <div class="reactions"><button type="button" class="reaction" aria-pressed="false" aria-label="Heart, 31"><svg width="19" height="19" aria-hidden="true"><use href="#i-heart"/></svg>31</button><button type="button" class="reaction" aria-pressed="true" aria-label="Rocket, 18"><svg width="19" height="19" aria-hidden="true"><use href="#i-rocket"/></svg>18</button></div>
+  </article>
+</div><button type="button" class="fab"><svg width="22" height="22" aria-hidden="true"><use href="#i-plus"/></svg>Post</button><nav class="tabbar" aria-label="Main"><a class="tab" href="#screen-mobile" aria-current="page"><span class="tab-icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-house"/></svg></span>Feed</a><a class="tab" href="#screen-mobile"><span class="tab-icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-message-circle"/></svg></span>Messages<span class="tab-count" aria-label="3 new">3</span></a><a class="tab" href="#screen-mobile"><span class="tab-icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-users"/></svg></span>Members</a><a class="tab" href="#screen-mobile"><span class="tab-icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-waypoints"/></svg></span>Network</a><a class="tab" href="#screen-mobile"><span class="tab-icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-handshake"/></svg></span>Intros<span class="tab-count" aria-label="1 new">1</span></a></nav></div>
+      <p class="phone-caption">The five destinations stay one tap away. Post floats above them.</p>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone"><div inert style="display:contents"><header class="phone-top"><span class="logo-tile" style="--size:38px"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 25V8l14 15V6"/><path d="M16.500 10.500 21 6l4.500 4.500"/></svg></span><div class="brand-name">Northwind</div><div class="spacer"></div><button type="button" class="icon-btn" aria-label="Notifications"><svg width="22" height="22" aria-hidden="true"><use href="#i-bell"/></svg></button><button type="button" class="icon-btn" aria-label="Open account menu"><span class="avatar" data-tint="b" style="--size:40px" aria-hidden="true">PR</span></button></header><div class="phone-scroll" tabindex="0" aria-label="Feed">
+  <article class="pinned">
+    <div class="pinned-kicker"><svg width="16" height="16" aria-hidden="true"><use href="#i-pin"/></svg>Pinned by Priya</div>
+    <h3>Demo Day dinner moves to Thursday, Nov 19</h3>
+    <p>The Long Table, 7pm. Partners are coming.</p>
+    <div class="pinned-foot"><button type="button" class="btn btn-sm btn-primary">Count me in</button><div class="going"><span class="avatar-stack"><span class="avatar" data-tint="f" style="--size:28px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><span class="avatar" data-tint="b" style="--size:28px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span></span> 28</div></div>
+  </article>
+  <article class="card post">
+    <div class="post-head"><span class="avatar" data-tint="d" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><div class="min-0"><div class="post-name">Jonas Lindqvist</div><div class="post-role">Ledgerline · 2h</div></div></div>
+    <p class="post-body">Has anyone hired a first head of sales for a usage-priced product? I'd love 20 minutes with someone who got this right. Or very wrong.</p>
+    <div class="reactions"><button type="button" class="reaction" aria-pressed="true" aria-label="Heart, 6"><svg width="19" height="19" aria-hidden="true"><use href="#i-heart"/></svg>6</button><button type="button" class="reaction" aria-pressed="false" aria-label="Thumbs up, 4"><svg width="19" height="19" aria-hidden="true"><use href="#i-thumbs-up"/></svg>4</button><button type="button" class="btn btn-sm btn-soft"><svg width="18" height="18" aria-hidden="true"><use href="#i-message-circle"/></svg>Reply</button></div>
+  </article>
+  <article class="card post">
+    <div class="post-head"><span class="avatar" data-tint="e" style="--size:52px" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><div class="min-0"><div class="post-name">Lena Novak</div><div class="post-role">Fernwork · Yesterday</div></div></div>
+    <p class="post-body">We closed our Series A. Thank you, Mateo, for the intro to our lead.</p>
+    <div class="reactions"><button type="button" class="reaction" aria-pressed="false" aria-label="Heart, 31"><svg width="19" height="19" aria-hidden="true"><use href="#i-heart"/></svg>31</button><button type="button" class="reaction" aria-pressed="true" aria-label="Rocket, 18"><svg width="19" height="19" aria-hidden="true"><use href="#i-rocket"/></svg>18</button></div>
+  </article>
+</div><nav class="tabbar" aria-label="Main"><a class="tab" href="#screen-mobile" aria-current="page"><span class="tab-icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-house"/></svg></span>Feed</a><a class="tab" href="#screen-mobile"><span class="tab-icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-message-circle"/></svg></span>Messages<span class="tab-count" aria-label="3 new">3</span></a><a class="tab" href="#screen-mobile"><span class="tab-icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-users"/></svg></span>Members</a><a class="tab" href="#screen-mobile"><span class="tab-icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-waypoints"/></svg></span>Network</a><a class="tab" href="#screen-mobile"><span class="tab-icon"><svg width="22" height="22" aria-hidden="true"><use href="#i-handshake"/></svg></span>Intros<span class="tab-count" aria-label="1 new">1</span></a></nav></div>
+        <div class="scrim"></div>
+        <div class="sheet" role="dialog" aria-label="Account menu">
+          <div class="sheet-grab"></div>
+          <div class="sheet-me"><span class="avatar" data-tint="b" style="--size:60px" aria-hidden="true">PR</span><div><div class="t-h3">Priya Raman</div><div class="post-role">Head of Platform, Northwind</div></div></div>
+          <div class="sheet-list">
+            <a class="sheet-row sheet-row-admin" href="#screen-admin"><svg width="22" height="22" aria-hidden="true"><use href="#i-shield-check"/></svg>Admin<span class="chevron"><svg width="20" height="20" aria-hidden="true"><use href="#i-chevron-right"/></svg></span></a>
+            <a class="sheet-row" href="#screen-members"><svg width="22" height="22" aria-hidden="true"><use href="#i-user-round"/></svg>My card<span class="chevron muted"><svg width="20" height="20" aria-hidden="true"><use href="#i-chevron-right"/></svg></span></a>
+            <a class="sheet-row" href="#screen-mobile"><svg width="22" height="22" aria-hidden="true"><use href="#i-bookmark"/></svg>Saved posts<span class="chevron muted"><svg width="20" height="20" aria-hidden="true"><use href="#i-chevron-right"/></svg></span></a>
+            <label class="sheet-row" for="theme-dark" style="cursor:pointer"><svg width="22" height="22" aria-hidden="true"><use href="#i-moon"/></svg>Dark mode<span class="chevron"><span class="switch-track" style="display:block"></span></span></label>
+            <a class="sheet-row" href="#screen-mobile"><svg width="22" height="22" aria-hidden="true"><use href="#i-log-out"/></svg>Sign out</a>
+          </div>
+        </div>
+      </div>
+      <p class="phone-caption">Tap your avatar for the account sheet. Only admins see Admin.</p>
+    </div>
+  </div>
+</section>
+</div>
+</body>
+</html>

@@ -1,9 +1,13 @@
+import { UsersRound } from "lucide-react";
+
+import { Tag } from "@/components/ui/tag";
 import { COMMUNITY_MEMBER_LABEL } from "@/lib/village/member-paths";
 
 export function CommunityMemberBadge() {
   return (
-    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+    <Tag tone="accent" className="font-bold">
+      <UsersRound aria-hidden="true" />
       {COMMUNITY_MEMBER_LABEL}
-    </span>
+    </Tag>
   );
 }

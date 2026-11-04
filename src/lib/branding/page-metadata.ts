@@ -1,0 +1,23 @@
+import type { Metadata } from "next";
+
+const DEFAULT_DESCRIPTION = "A private community for your network, powered by Village.";
+
+type MetadataBranding = { name: string; descriptor: string; logo: { url: string } | null };
+
+export const PAGE_TITLES = {
+  home: "Home",
+  network: "Network",
+  admin: "Admin",
+  setup: "Set up",
+  signIn: "Sign in",
+  signUp: "Sign-up is closed",
+  notFound: "Page not found",
+};
+
+export function toRootMetadata({ name, descriptor, logo }: MetadataBranding): Metadata {
+  return {
+    title: { default: name, template: `%s · ${name}` },
+    description: descriptor || DEFAULT_DESCRIPTION,
+    icons: logo ? { icon: logo.url } : undefined,
+  };
+}

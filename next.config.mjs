@@ -12,10 +12,19 @@ const SECURITY_HEADERS = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
 ];
 
+const UPLOADED_IMAGE_CONTENT_SECURITY_POLICY = `default-src 'none'; sandbox; ${CONTENT_SECURITY_POLICY}`;
+
 export const nextConfig = {
   poweredByHeader: false,
   outputFileTracingIncludes: { "/*": ["./drizzle/**/*"] },
-  headers: async () => [{ source: "/:path*", headers: SECURITY_HEADERS }],
+  headers: async () => [
+    { source: "/:path*", headers: SECURITY_HEADERS },
+    {
+      source: "/api/branding/logo",
+      headers: [{ key: "Content-Security-Policy", value: UPLOADED_IMAGE_CONTENT_SECURITY_POLICY }],
+    },
+  ],
+  redirects: async () => [{ source: "/admin/village", destination: "/admin", permanent: false }],
 };
 
 export default nextConfig;

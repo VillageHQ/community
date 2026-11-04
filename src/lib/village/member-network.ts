@@ -467,6 +467,8 @@ export async function readVillageLinks(database: Database) {
       memberName: user.name,
       memberEmail: user.email,
       villageEmail: memberNetwork.pendingVillageEmail,
+      approvedVillageEmail: memberNetwork.approvedVillageEmail,
+      groupJoinedAt: memberNetwork.groupJoinedAt,
     })
     .from(memberNetwork)
     .innerJoin(user, eq(user.id, memberNetwork.userId))

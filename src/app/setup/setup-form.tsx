@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
+import { useFocusOnFailure } from "@/components/use-focus-on-failure";
 import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/lib/password-policy";
 import { readResponseMessage } from "@/lib/read-response-message";
 import { API_ROUTES, ROUTES } from "@/lib/routes";
@@ -34,11 +35,13 @@ async function submitSetup(_previousState: SetupState, formData: FormData): Prom
 
 export function SetupForm() {
   const [state, formAction, isPending] = useActionState(submitSetup, INITIAL_STATE);
+  const tokenRef = useFocusOnFailure(state);
 
   return (
-    <form action={formAction} className="grid gap-4">
+    <form action={formAction} className="grid gap-5">
       <FormError message={state.errorMessage} />
       <FormField
+        ref={tokenRef}
         name="token"
         label="Setup token"
         type="password"
@@ -71,7 +74,7 @@ export function SetupForm() {
         hint={`At least ${MINIMUM_PASSWORD_LENGTH} characters.`}
         required
       />
-      <Button type="submit" disabled={isPending}>
+      <Button type="submit" size="lg" disabled={isPending}>
         {isPending ? "Creating admin…" : "Create admin"}
       </Button>
     </form>

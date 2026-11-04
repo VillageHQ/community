@@ -23,3 +23,14 @@ export function withRouteLogging<Arguments extends unknown[]>(
     }
   };
 }
+
+export function withLoggedFallback<Result>(scope: string, fallback: Result, read: () => Promise<Result>) {
+  return async () => {
+    try {
+      return await read();
+    } catch (error) {
+      logError(scope, error);
+      return fallback;
+    }
+  };
+}

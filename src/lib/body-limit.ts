@@ -23,6 +23,7 @@ async function readBodyWithin(request: Request, maximumBytes: number) {
 export function withBodyLimit<Arguments extends unknown[]>(
   maximumBytes: number,
   handler: (request: Request, ...handlerArguments: Arguments) => Promise<Response>,
+  tooLargeMessage = "The request body is too large.",
 ) {
   return async (request: Request, ...handlerArguments: Arguments) => {
     if (!request.body) return handler(request, ...handlerArguments);
@@ -30,7 +31,7 @@ export function withBodyLimit<Arguments extends unknown[]>(
     const body = await readBodyWithin(request, maximumBytes);
     if (!body) {
       return Response.json(
-        { message: "The request body is too large." },
+        { message: tooLargeMessage },
         { status: PAYLOAD_TOO_LARGE_STATUS },
       );
     }

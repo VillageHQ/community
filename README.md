@@ -17,18 +17,18 @@ A self-hostable community portal for VC networks, built on Village. Members sear
 3. Wait for the deploy to finish.
 4. Open `/setup` on your new site. Enter the token and your name, email and password.
 5. Sign in. Setup closes for good after this.
-6. Connect Village. See [Connect Village](#connect-village).
+6. Follow the checklist you land on: brand your community, register the domain, add your Village keys, and create the group. See [Connect Village](#connect-village).
 
 ### Connect Village
 
 You need a Village platform account and an active app. Billing is credits only, and your community spends your credits.
 
-1. Open **Village settings** from the home page. It shows the exact domain to enter in Village's Platform Settings.
+1. Open **Admin**. You land there after setup until the checklist is done. It shows the exact domain to enter in Village's Platform Settings.
 2. Paste your public and secret keys there. The app checks them with Village before saving.
-3. Open **Your network**. Add your LinkedIn URL and sync your network in Village's popup.
-4. Back in **Village settings**, create the group. **Your own Village network becomes shared with every current and future member.**
+3. Open **Network**. Add your LinkedIn URL and sync your network in Village's popup.
+4. Back in **Admin**, create the group. **Your own Village network becomes shared with every current and future member.**
 
-Members then open **Your network**, add their LinkedIn URL, agree to share, and sync. The app joins them to the group after that. Members can leave from the same page. Removing someone from this portal doesn't yet remove them from the Village group, so they should leave first. Village won't let the group's creator leave while other members remain.
+Members then open **Network**, add their LinkedIn URL, agree to share, and sync. The app joins them to the group after that. A member can choose **Not now** and keep using the app, then opt in from **Network** later. Members can leave from the same page. Removing someone from this portal doesn't yet remove them from the Village group, so they should leave first. Village won't let the group's creator leave while other members remain.
 
 ### Setup token
 
@@ -48,6 +48,10 @@ DigitalOcean's dev database has 512 MiB and no backups. Upgrade to a managed dat
 
 Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and password, Drizzle adapter), Drizzle with `pg` over TCP, pnpm, Vitest.
 
+**Design:** [`docs/design/tokens.md`](docs/design/tokens.md) defines the tokens and [`docs/design/mockup.html`](docs/design/mockup.html) shows the target. The mockup's people and numbers are fictional. Figtree comes from the `@fontsource-variable/figtree` npm package through `next/font/local`, so builds and pages need no font network. To add a page to the sidebar and tabs, add one line to `NAVIGATION` in `src/lib/navigation.ts`.
+
+**Branding:** An admin sets the community's name, descriptor, logo and one accent color in **Admin**. The server derives every accent token per theme and writes them in the page's `<head>`, so there's no flash. Only a six-digit hex color reaches that style tag, checked on save and again on read. Logos live in Postgres so one-click deploys need no file storage. The limit is 512 KB, and only PNG, JPEG and WebP pass, verified by magic bytes. SVG is refused. A light mark on transparency gets a dark tile, chosen in the browser at upload. `GET /api/branding/logo` serves the logo publicly, because the sign-in page shows it, with the detected content type and `nosniff`.
+
 **Health:** `GET /api/health` returns `{"status":"ok"}` with 200, or `{"status":"unavailable"}` with 503 when the database is unreachable, slow, or unmigrated.
 
 **Migrations:** The app migrates itself at boot, from `src/instrumentation.ts`, on every platform. It waits for one attempt. If that fails, it logs the cause, starts anyway, and retries in the background with a capped backoff. `/api/health` returns 503 until migrations land. A cheap check skips all of this once they're applied. A Postgres advisory lock serializes concurrent instances, and it needs a session, so set `DATABASE_URL_UNPOOLED` if `DATABASE_URL` goes through a transaction pooler. Vercel previews skip migrations unless `MIGRATE_ON_PREVIEW=true`, because a preview may share the production database. `node scripts/migrate.ts` runs the same migrations by hand from the repo root and exits non-zero with the cause.
@@ -58,7 +62,7 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 
 **Village:** The server mints each member's token with `POST /v2/auth/tokens`, then calls the v2 API. The secret key and tokens never reach the browser, and the app never reads the SDK's `village.token` cookie. The browser only runs the App SDK for sync, and it's identified by an opaque UUID per member. Tokens need an email, so Village receives the member's email. Keys and the invite link live in `instance_settings` in plaintext, like the generated auth secret, so anyone with database read access can read them. Sign-out clears the SDK's `village.token` from this site only. Village's own session on its domain stays, so on a shared browser the next member's popup can reuse the first member's Village account. The email check below blocks that link until an admin approves it.
 
-**Village link check:** Village doesn't sign the member reference in its widget, so anyone can send someone else a link that ties that person's Village account to their member ID. The app compares the email on `/v2/user/me` with the member's email, case-insensitively, before every join, search and path lookup. On a mismatch it blocks them and tells the member to ask an admin. **Village settings** lists the mismatch, and an admin can approve that exact pair of emails. A later change to either email blocks again. An admin can also reset a member's link there, which gives the member a new ID and clears their consent, group status and cached paths on this site. Reset removes nothing on Village's side: the old Village account stays linked to the old ID and stays in the group until it leaves inside Village, and Village won't link that same account to this site again yet.
+**Village link check:** Village doesn't sign the member reference in its widget, so anyone can send someone else a link that ties that person's Village account to their member ID. The app compares the email on `/v2/user/me` with the member's email, case-insensitively, before every join, search and path lookup. On a mismatch it blocks them and tells the member to ask an admin. **Admin** lists the mismatch, and an admin can approve that exact pair of emails. A later change to either email blocks again. An admin can also reset a member's link there, which gives the member a new ID and clears their consent, group status and cached paths on this site. Reset removes nothing on Village's side: the old Village account stays linked to the old ID and stays in the group until it leaves inside Village, and Village won't link that same account to this site again yet.
 
 **Credit limits:** Each member gets `DAILY_CREDIT_CALL_LIMIT` searches and uncached path lookups per UTC day, 50 by default, in `src/lib/village/daily-usage.ts`. Path results stay cached per member for 24 hours. Village error responses (400 and up) don't count, because Village doesn't debit them. Timeouts, network errors and any response that isn't a Village JSON error do count, including a proxy's HTML 502, because Village may have debited them.
 

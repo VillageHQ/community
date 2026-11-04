@@ -114,6 +114,33 @@ function hasTrustedOrigin(request: Request) {
 
 type MemberRouteOptions = { adminOnly?: boolean; deadlineMs?: number };
 
+async function readAuthorizedMember(request: Request, adminOnly: boolean) {
+  if (!hasTrustedOrigin(request)) {
+    return respondWithError({
+      status: FORBIDDEN_STATUS,
+      code: NETWORK_ERROR_CODES.forbiddenOrigin,
+      message: "This request came from another site.",
+    });
+  }
+
+  const member = await readSessionMember(request);
+  if (!member) {
+    return respondWithError({
+      status: UNAUTHORIZED_STATUS,
+      code: NETWORK_ERROR_CODES.unauthenticated,
+      message: "Sign in to continue.",
+    });
+  }
+  if (adminOnly && !isAdminMember(member)) {
+    return respondWithError({
+      status: FORBIDDEN_STATUS,
+      code: NETWORK_ERROR_CODES.forbidden,
+      message: "Only an admin can do this.",
+    });
+  }
+  return member;
+}
+
 export function createMemberRoute<Schema extends z.ZodType>(
   scope: string,
   bodySchema: Schema,
@@ -123,29 +150,8 @@ export function createMemberRoute<Schema extends z.ZodType>(
   return withRouteLogging(
     scope,
     withBodyLimit(MAXIMUM_JSON_BODY_BYTES, async (request) => {
-      if (!hasTrustedOrigin(request)) {
-        return respondWithError({
-          status: FORBIDDEN_STATUS,
-          code: NETWORK_ERROR_CODES.forbiddenOrigin,
-          message: "This request came from another site.",
-        });
-      }
-
-      const member = await readSessionMember(request);
-      if (!member) {
-        return respondWithError({
-          status: UNAUTHORIZED_STATUS,
-          code: NETWORK_ERROR_CODES.unauthenticated,
-          message: "Sign in to continue.",
-        });
-      }
-      if (adminOnly && !isAdminMember(member)) {
-        return respondWithError({
-          status: FORBIDDEN_STATUS,
-          code: NETWORK_ERROR_CODES.forbidden,
-          message: "Only an admin can do this.",
-        });
-      }
+      const member = await readAuthorizedMember(request, adminOnly);
+      if (member instanceof Response) return member;
 
       const body = bodySchema.safeParse(await readJsonBody(request));
       if (!body.success) {
@@ -164,4 +170,27 @@ export function createMemberRoute<Schema extends z.ZodType>(
       }
     }),
   );
+}
+
+type BinaryRouteOptions = { maximumBytes: number; tooLargeMessage: string };
+
+export function createAdminBinaryRoute(
+  scope: string,
+  { maximumBytes, tooLargeMessage }: BinaryRouteOptions,
+  respond: (context: NetworkContext, bytes: Buffer, request: Request) => Promise<Response>,
+) {
+  return withRouteLogging(scope, async (request: Request) => {
+    const member = await readAuthorizedMember(request, true);
+    if (member instanceof Response) return member;
+
+    const readBoundedBody = withBodyLimit(
+      maximumBytes,
+      async (boundedRequest) => {
+        const bytes = Buffer.from(await boundedRequest.arrayBuffer());
+        return respond(createNetworkContext(getDatabase(), process.env, member), bytes, boundedRequest);
+      },
+      tooLargeMessage,
+    );
+    return readBoundedBody(request);
+  });
 }

@@ -36,4 +36,14 @@ describe("security headers", () => {
     expect(headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
     expect(headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
+
+  it("sandbox uploaded logos, and keep the framing rules", async () => {
+    const rules = await nextConfig.headers();
+    const logoRule = rules.find(({ source }) => source === "/api/branding/logo");
+    const policy = logoRule?.headers.find(({ key }) => key === "Content-Security-Policy")?.value;
+
+    expect(policy).toContain("default-src 'none'");
+    expect(policy).toContain("sandbox");
+    expect(policy).toContain("frame-ancestors 'none'");
+  });
 });

@@ -3,14 +3,18 @@ export const ROUTES = {
   signIn: "/sign-in",
   signUp: "/sign-up",
   setup: "/setup",
+  landing: "/start",
   network: "/network",
-  villageSettings: "/admin/village",
+  admin: "/admin",
 } as const;
 
 export const AUTH_BASE_PATH = "/api/auth";
 
 export const API_ROUTES = {
   setup: "/api/setup",
+  branding: "/api/admin/branding",
+  brandingLogo: "/api/branding/logo",
+  setupDomain: "/api/admin/setup/domain",
   networkStatus: "/api/network/status",
   networkLinkedin: "/api/network/linkedin",
   networkConsent: "/api/network/consent",
