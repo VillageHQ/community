@@ -1,0 +1,13 @@
+{
+	{$CADDY_GLOBAL_OPTIONS}
+	servers {
+		protocols h1 h2
+	}
+}
+
+{$COMMUNITY_DOMAIN} {
+	reverse_proxy app:3000 {
+		# Caddy leaves a client-sent X-Real-IP alone unless told otherwise, and rate limits trust this header.
+		header_up X-Real-IP {remote_host}
+	}
+}
