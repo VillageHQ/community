@@ -11,7 +11,7 @@ import { useFocusOnFailure } from "@/components/use-focus-on-failure";
 import { VILLAGE_PLATFORM_LINKS } from "@/platform/village/links";
 import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 type KeysState = { errorMessage: string | null };
 
@@ -19,7 +19,7 @@ const INITIAL_STATE: KeysState = { errorMessage: null };
 
 async function submitKeys(_previousState: KeysState, formData: FormData): Promise<KeysState> {
   try {
-    await postNetworkRequest(
+    await postRequest(
       API_ROUTES.villageKeys,
       Object.fromEntries(formData),
       acknowledgedResponseSchema,

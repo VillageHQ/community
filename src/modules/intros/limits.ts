@@ -3,7 +3,7 @@ import "server-only";
 import type { Database } from "../../platform/database/client.ts";
 import { recordFailedAttempt } from "../../platform/rate-limit/attempt-rate-limit.ts";
 import { pruneExpiredRateLimits } from "../../platform/rate-limit/rate-limit-pruning.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
 import { INTRO_ERROR_CODES } from "./contract.ts";
 
 const TOO_MANY_REQUESTS_STATUS = 429;
@@ -27,5 +27,5 @@ const SLOW_DOWN_MESSAGES: Record<IntroLimitKind, string> = {
 export async function enforceIntroLimit(database: Database, memberId: string, kind: IntroLimitKind) {
   await pruneExpiredRateLimits(database);
   const { isLimited } = await recordFailedAttempt(database, `intros-${kind}|${memberId}`, INTRO_MAXIMUM_PER_MINUTE[kind]);
-  if (isLimited) throw new NetworkRequestError(TOO_MANY_REQUESTS_STATUS, INTRO_ERROR_CODES.tooFast, SLOW_DOWN_MESSAGES[kind]);
+  if (isLimited) throw new RequestError(TOO_MANY_REQUESTS_STATUS, INTRO_ERROR_CODES.tooFast, SLOW_DOWN_MESSAGES[kind]);
 }

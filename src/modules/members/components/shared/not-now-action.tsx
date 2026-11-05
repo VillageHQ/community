@@ -8,14 +8,14 @@ import { Button } from "@/components/ui/button";
 import { ONBOARDING_STEPS } from "@/modules/members/contract-profile";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 import type { WelcomeContext } from "./welcome-context";
 
 const NOT_NOW_LABEL = "Not now";
 
 function finishOnboarding() {
-  return postNetworkRequest(API_ROUTES.onboarding, { step: ONBOARDING_STEPS.network }, acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.onboarding, { step: ONBOARDING_STEPS.network }, acknowledgedResponseSchema);
 }
 
 function goHome() {

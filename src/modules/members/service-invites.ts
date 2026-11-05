@@ -16,8 +16,8 @@ import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts"
 import { recordAdminAction } from "../../platform/audit/record.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { secretsMatch } from "../../platform/secrets/secrets-match.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import { type NetworkContext } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import { type RequestContext } from "../../platform/http/request-context.ts";
 import { INVITE_ERROR_CODES, INVITE_FILTERS, type InviteFilter, type InviteSummary } from "./contract-invites.ts";
 import { deliverInviteEmail } from "./email-invites.ts";
 import {
@@ -54,27 +54,27 @@ function toInviteSummary(row: InviteRow): InviteSummary {
 }
 
 export function inviteChangedError() {
-  return new NetworkRequestError(
+  return new RequestError(
     CONFLICT_STATUS,
     INVITE_ERROR_CODES.changed,
     "This invite changed. Reload the page and check it again.",
   );
 }
 
-export async function readInviter({ database, member }: NetworkContext) {
+export async function readInviter({ database, member }: RequestContext) {
   const [inviter] = await database.select({ name: user.name }).from(user).where(eq(user.id, member.id));
   return { id: member.id, name: inviter?.name ?? "" };
 }
 
-function recordInviteAction(transaction: Transaction, { member }: NetworkContext, action: AuditAction, email: string) {
+function recordInviteAction(transaction: Transaction, { member }: RequestContext, action: AuditAction, email: string) {
   return recordAdminAction(transaction, member.id, { action, targetName: email });
 }
 
-function toInviteLink(environment: NetworkContext["environment"], token: string) {
+function toInviteLink(environment: RequestContext["environment"], token: string) {
   return `${resolveAppUrl(environment)}${ROUTES.join}/${token}`;
 }
 
-export async function issueInvite(context: NetworkContext, row: InviteRow, token: string, message: string) {
+export async function issueInvite(context: RequestContext, row: InviteRow, token: string, message: string) {
   const { database, environment } = context;
   const link = toInviteLink(environment, token);
   const { name: communityName, accentColor } = await readBranding(database);
@@ -86,7 +86,7 @@ export async function issueInvite(context: NetworkContext, row: InviteRow, token
   return { invite: toInviteSummary({ ...row, emailStatus }), link, message };
 }
 
-async function rotateInvite(connection: DatabaseOrTransaction, context: NetworkContext, inviteId: string) {
+async function rotateInvite(connection: DatabaseOrTransaction, context: RequestContext, inviteId: string) {
   const inviter = await readInviter(context);
   const token = createInviteToken();
   const [rotated] = await connection
@@ -106,21 +106,21 @@ async function rotateInvite(connection: DatabaseOrTransaction, context: NetworkC
 async function requireNoMemberWithEmail(connection: DatabaseOrTransaction, email: string) {
   const [existing] = await connection.select({ id: user.id }).from(user).where(eq(user.email, email));
   if (!existing) return;
-  throw new NetworkRequestError(
+  throw new RequestError(
     CONFLICT_STATUS,
     INVITE_ERROR_CODES.alreadyMember,
     "This person already has an account. If they were removed, open them in the list above to unban them or invite them back as a new account.",
   );
 }
 
-async function renewExpiredInvite(connection: DatabaseOrTransaction, context: NetworkContext, email: string) {
+async function renewExpiredInvite(connection: DatabaseOrTransaction, context: RequestContext, email: string) {
   const [open] = await connection
     .select()
     .from(invite)
     .where(and(eq(invite.email, email), OPEN_INVITE));
   if (!open) throw inviteChangedError();
   if (readInviteState(open) !== INVITE_STATES.expired) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       INVITE_ERROR_CODES.alreadyPending,
       "This person already has a pending invite. Use Resend in the list below.",
@@ -129,7 +129,7 @@ async function renewExpiredInvite(connection: DatabaseOrTransaction, context: Ne
   return rotateInvite(connection, context, open.id);
 }
 
-export async function createInvite(context: NetworkContext, email: string) {
+export async function createInvite(context: RequestContext, email: string) {
   const { database, member } = context;
   const inviter = await readInviter(context);
   const token = createInviteToken();
@@ -157,7 +157,7 @@ export async function createInvite(context: NetworkContext, email: string) {
   return issueInvite(context, issued.row, issued.token, issued.message);
 }
 
-export async function resendInvite(context: NetworkContext, inviteId: string) {
+export async function resendInvite(context: RequestContext, inviteId: string) {
   const { rotated, token } = await withAdminTransaction(context.database, context.member.id, async (transaction) => {
     const result = await rotateInvite(transaction, context, inviteId);
     await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteResent, result.rotated.email);
@@ -166,7 +166,7 @@ export async function resendInvite(context: NetworkContext, inviteId: string) {
   return issueInvite(context, rotated, token, "New link ready. The old link no longer works.");
 }
 
-export async function revokeInvite(context: NetworkContext, inviteId: string) {
+export async function revokeInvite(context: RequestContext, inviteId: string) {
   const revoked = await withAdminTransaction(context.database, context.member.id, async (transaction) => {
     const [row] = await transaction
       .update(invite)

@@ -10,8 +10,8 @@ import { deleteMemberContent } from "../feed/service.ts";
 import { isReclaimedEmail, RECLAIMED_EMAIL_DOMAIN } from "../../platform/auth/reclaimed-email.ts";
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { DEPARTURE_SENTENCES, leaveGroupOnBehalf } from "../network/service-departure.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import type { NetworkContext } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import type { RequestContext } from "../../platform/http/request-context.ts";
 import {
   NETWORK_ERROR_CODES,
   isDepartureIncomplete,
@@ -43,15 +43,15 @@ const CONFLICT_STATUS = 409;
 const REMOVAL_BAN_REASON = "An admin removed this member.";
 
 function memberGoneError() {
-  return new NetworkRequestError(NOT_FOUND_STATUS, NETWORK_ERROR_CODES.memberNotFound, "This member isn't here anymore. Reload the page.");
+  return new RequestError(NOT_FOUND_STATUS, NETWORK_ERROR_CODES.memberNotFound, "This member isn't here anymore. Reload the page.");
 }
 
 function memberChangedError(message: string) {
-  return new NetworkRequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.memberChanged, message);
+  return new RequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.memberChanged, message);
 }
 
 function ownAccountError(message: string) {
-  return new NetworkRequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.ownAccount, message);
+  return new RequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.ownAccount, message);
 }
 
 // Every write to a role or a ban takes this lock first, so the admin count can't change between the check and the write.
@@ -69,7 +69,7 @@ async function requireAnotherAdmin(transaction: Transaction) {
     .from(user)
     .where(and(eq(user.role, MEMBER_ROLES.admin), isActiveMember()));
   if ((admins?.adminCount ?? 0) > 1) return;
-  throw new NetworkRequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.lastAdmin, "This community needs at least one admin.");
+  throw new RequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.lastAdmin, "This community needs at least one admin.");
 }
 
 async function readTarget(transaction: Transaction, memberId: string) {
@@ -95,7 +95,7 @@ type RosterTarget = Awaited<ReturnType<typeof readTarget>>;
 async function promote(transaction: Transaction, actorId: string, target: RosterTarget) {
   if (target.role === MEMBER_ROLES.admin) throw memberChangedError(`${target.name} is already an admin.`);
   if (!target.emailVerified) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       ADMIN_ERROR_CODES.emailNotConfirmed,
       `Confirm ${target.name}'s email before making them an admin.`,
@@ -114,7 +114,7 @@ async function demote(transaction: Transaction, actorId: string, target: RosterT
 
 const ROLE_CHANGES = { [MEMBER_ROLES.admin]: promote, [MEMBER_ROLES.member]: demote };
 
-export async function setMemberRole({ database, member }: NetworkContext, { memberId, role }: SetMemberRoleBody) {
+export async function setMemberRole({ database, member }: RequestContext, { memberId, role }: SetMemberRoleBody) {
   if (memberId === member.id) throw ownAccountError("You can't change your own role. Ask another admin.");
   return withAdminRosterLock(database, member.id, async (transaction) => {
     const target = await readTarget(transaction, memberId);
@@ -129,7 +129,7 @@ function readRemovedSentence(name: string, outcome: GroupDepartureOutcome | null
   return outcome ? `${removed} ${DEPARTURE_SENTENCES[outcome](name)}` : removed;
 }
 
-export async function removeMember(context: NetworkContext, { memberId, contentChoice }: RemoveMemberBody) {
+export async function removeMember(context: RequestContext, { memberId, contentChoice }: RemoveMemberBody) {
   const { database, member } = context;
   if (memberId === member.id) throw ownAccountError("You can't remove yourself. Ask another admin.");
   const keepsContent = contentChoice === CONTENT_CHOICES.keep;
@@ -162,7 +162,7 @@ export async function removeMember(context: NetworkContext, { memberId, contentC
   return { message: readRemovedSentence(removed.name, outcome), isGroupLeaveIncomplete: isDepartureIncomplete(outcome) };
 }
 
-export async function retryGroupDeparture(context: NetworkContext, memberId: string) {
+export async function retryGroupDeparture(context: RequestContext, memberId: string) {
   const { database, member } = context;
   const target = await withAdminRosterLock(database, member.id, (transaction) => readTarget(transaction, memberId));
   if (!isBanActive(target)) throw memberChangedError(`${target.name} isn't removed. They can leave from Network themselves.`);
@@ -174,12 +174,12 @@ export async function retryGroupDeparture(context: NetworkContext, memberId: str
   };
 }
 
-export async function unbanMember({ database, member }: NetworkContext, memberId: string) {
+export async function unbanMember({ database, member }: RequestContext, memberId: string) {
   return withAdminRosterLock(database, member.id, async (transaction) => {
     const target = await readTarget(transaction, memberId);
     if (!isBanActive(target)) throw memberChangedError(`${target.name} isn't removed anymore.`);
     if (isReclaimedEmail(target.email)) {
-      throw new NetworkRequestError(
+      throw new RequestError(
         CONFLICT_STATUS,
         ADMIN_ERROR_CODES.accountReclaimed,
         "This account's email is gone, so it can't come back. Invite the person again instead.",
@@ -194,7 +194,7 @@ export async function unbanMember({ database, member }: NetworkContext, memberId
 
 const RECLAIMED_BAN_REASON = "An admin reclaimed this invite for its real owner.";
 
-export async function reclaimInvite(context: NetworkContext, inviteId: string) {
+export async function reclaimInvite(context: RequestContext, inviteId: string) {
   const { database, member } = context;
   const inviter = await readInviter(context);
   const token = createInviteToken();
@@ -275,7 +275,7 @@ export async function reclaimInvite(context: NetworkContext, inviteId: string) {
   return issueInvite(context, replacement.created, token, message);
 }
 
-export async function reinviteRemovedMember(context: NetworkContext, memberId: string) {
+export async function reinviteRemovedMember(context: RequestContext, memberId: string) {
   const { database, member } = context;
   const inviter = await readInviter(context);
   const token = createInviteToken();
@@ -286,7 +286,7 @@ export async function reinviteRemovedMember(context: NetworkContext, memberId: s
       .where(eq(user.id, memberId))
       .for("update");
     if (!target || !isBanActive(target) || isReclaimedEmail(target.email)) {
-      throw new NetworkRequestError(CONFLICT_STATUS, INVITE_ERROR_CODES.changed, "This member changed. Reload the page and check again.");
+      throw new RequestError(CONFLICT_STATUS, INVITE_ERROR_CODES.changed, "This member changed. Reload the page and check again.");
     }
     await transaction
       .update(user)

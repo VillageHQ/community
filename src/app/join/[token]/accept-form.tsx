@@ -10,7 +10,7 @@ import { acceptedInviteSchema } from "@/modules/members/contract-invites";
 import { MAXIMUM_NAME_LENGTH } from "@/platform/auth/member-name";
 import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/platform/auth/password-policy";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 type AcceptState = { errorMessage: string | null; name: string };
 
@@ -20,7 +20,7 @@ const FALLBACK_ERROR_MESSAGE = "We couldn't create your account. Try again.";
 async function submitAccept(token: string, formData: FormData): Promise<AcceptState> {
   const name = String(formData.get("name"));
   try {
-    const { isSignedIn } = await postNetworkRequest(
+    const { isSignedIn } = await postRequest(
       API_ROUTES.inviteAccept,
       { token, name, password: String(formData.get("password")) },
       acceptedInviteSchema,

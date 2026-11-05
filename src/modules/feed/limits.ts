@@ -3,7 +3,7 @@ import "server-only";
 import type { Database } from "../../platform/database/client.ts";
 import { recordFailedAttempt } from "../../platform/rate-limit/attempt-rate-limit.ts";
 import { pruneExpiredRateLimits } from "../../platform/rate-limit/rate-limit-pruning.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
 import { FEED_ERROR_CODES } from "./contract.ts";
 
 const TOO_MANY_REQUESTS_STATUS = 429;
@@ -21,5 +21,5 @@ export const MAXIMUM_PER_MINUTE: Record<PostingKind, number> = {
 export async function enforcePostingLimit(database: Database, memberId: string, kind: PostingKind) {
   await pruneExpiredRateLimits(database);
   const { isLimited } = await recordFailedAttempt(database, `feed-${kind}|${memberId}`, MAXIMUM_PER_MINUTE[kind]);
-  if (isLimited) throw new NetworkRequestError(TOO_MANY_REQUESTS_STATUS, FEED_ERROR_CODES.tooFast, SLOW_DOWN_MESSAGE);
+  if (isLimited) throw new RequestError(TOO_MANY_REQUESTS_STATUS, FEED_ERROR_CODES.tooFast, SLOW_DOWN_MESSAGE);
 }

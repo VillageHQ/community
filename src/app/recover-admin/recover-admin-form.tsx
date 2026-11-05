@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/platform/auth/password-policy";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 type RecoverState = { isDone: boolean; errorMessage: string | null };
 
@@ -18,7 +18,7 @@ const INITIAL_STATE: RecoverState = { isDone: false, errorMessage: null };
 
 async function submitRecovery(_previousState: RecoverState, formData: FormData): Promise<RecoverState> {
   try {
-    await postNetworkRequest(API_ROUTES.recoverAdmin, Object.fromEntries(formData), acknowledgedResponseSchema);
+    await postRequest(API_ROUTES.recoverAdmin, Object.fromEntries(formData), acknowledgedResponseSchema);
     return { isDone: true, errorMessage: null };
   } catch (error) {
     return { isDone: false, errorMessage: error instanceof Error ? error.message : "That didn't work. Try again." };

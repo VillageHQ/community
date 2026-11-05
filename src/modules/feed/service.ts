@@ -11,8 +11,8 @@ import { recordAdminAction } from "../../platform/audit/record.ts";
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { logAdminAction } from "../../platform/observability/route-logging.ts";
 import { isAdminMember } from "../../platform/auth/roles.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import { type NetworkContext, type SessionMember } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import { type RequestContext, type SessionMember } from "../../platform/http/request-context.ts";
 import {
   FEED_ERROR_CODES,
   FEED_LIMITS,
@@ -35,19 +35,19 @@ const RECORD_BATCH_SIZE = 500;
 type ModerationRow = typeof moderationRecord.$inferInsert;
 
 function postGoneError() {
-  return new NetworkRequestError(NOT_FOUND_STATUS, FEED_ERROR_CODES.notFound, "This post is gone.");
+  return new RequestError(NOT_FOUND_STATUS, FEED_ERROR_CODES.notFound, "This post is gone.");
 }
 
 function commentGoneError() {
-  return new NetworkRequestError(NOT_FOUND_STATUS, FEED_ERROR_CODES.notFound, "This reply is gone.");
+  return new RequestError(NOT_FOUND_STATUS, FEED_ERROR_CODES.notFound, "This reply is gone.");
 }
 
 function notYoursError() {
-  return new NetworkRequestError(FORBIDDEN_STATUS, FEED_ERROR_CODES.notYours, "You can only change what you wrote.");
+  return new RequestError(FORBIDDEN_STATUS, FEED_ERROR_CODES.notYours, "You can only change what you wrote.");
 }
 
 function pinLimitError() {
-  return new NetworkRequestError(
+  return new RequestError(
     CONFLICT_STATUS,
     FEED_ERROR_CODES.pinLimit,
     `You can pin ${FEED_LIMITS.pinnedPosts} posts at a time. Unpin one first.`,
@@ -55,7 +55,7 @@ function pinLimitError() {
 }
 
 function bannedAuthorError() {
-  return new NetworkRequestError(
+  return new RequestError(
     CONFLICT_STATUS,
     FEED_ERROR_CODES.authorBanned,
     "This member is banned, so members can't see their post. You can delete it instead.",
@@ -145,7 +145,7 @@ async function readRequiredComment(database: Database, commentId: string | undef
   return hydrated;
 }
 
-export async function createPost({ database, member }: NetworkContext, { type, body }: CreatePostBody) {
+export async function createPost({ database, member }: RequestContext, { type, body }: CreatePostBody) {
   const [created] = await database.insert(post).values({ authorId: member.id, type, body }).returning({ id: post.id });
   if (!created) throw postGoneError();
   return readRequiredPost(database, member, created.id);
@@ -155,7 +155,7 @@ function readUnpinFieldsForEdit(member: SessionMember) {
   return isAdminMember(member) ? {} : { pinnedAt: null, pinnedByUserId: null };
 }
 
-export async function editPost({ database, member }: NetworkContext, { postId, type, body }: EditPostBody) {
+export async function editPost({ database, member }: RequestContext, { postId, type, body }: EditPostBody) {
   await database.transaction(async (transaction) => {
     const target = await lockPost(transaction, postId, member);
     assertAuthor(member, target.authorId);
@@ -193,7 +193,7 @@ export async function deletePostWithin(transaction: Transaction, member: Session
   );
 }
 
-export async function deletePost({ database, member }: NetworkContext, postId: string) {
+export async function deletePost({ database, member }: RequestContext, postId: string) {
   await database.transaction((transaction) => deletePostWithin(transaction, member, postId));
   if (isAdminMember(member)) logAdminAction("post_deleted", member.id, postId);
 }
@@ -240,7 +240,7 @@ async function readPinnedCount(transaction: Transaction) {
   return row?.pinnedCount ?? 0;
 }
 
-export async function setPostPinned({ database, member }: NetworkContext, { postId, isPinned }: PinPostBody) {
+export async function setPostPinned({ database, member }: RequestContext, { postId, isPinned }: PinPostBody) {
   await withAdminTransaction(database, member.id, async (transaction) => {
     await transaction.execute(sql`select pg_advisory_xact_lock(${PIN_LOCK_ID})`);
     const target = await lockPost(transaction, postId, member);
@@ -262,7 +262,7 @@ export async function setPostPinned({ database, member }: NetworkContext, { post
   logAdminAction(isPinned ? "post_pinned" : "post_unpinned", member.id, postId);
 }
 
-export async function setReaction({ database, member }: NetworkContext, body: SetReactionBody) {
+export async function setReaction({ database, member }: RequestContext, body: SetReactionBody) {
   const { postId, reaction: kind, isActive } = body;
   await database.transaction(async (transaction) => {
     await lockPostForChild(transaction, postId);
@@ -278,7 +278,7 @@ export async function setReaction({ database, member }: NetworkContext, body: Se
   return reactionsByPost.get(postId) ?? [];
 }
 
-export async function createComment({ database, member }: NetworkContext, { postId, body }: CreateCommentBody) {
+export async function createComment({ database, member }: RequestContext, { postId, body }: CreateCommentBody) {
   const commentId = await database.transaction(async (transaction) => {
     await lockPostForChild(transaction, postId);
     const [created] = await transaction
@@ -290,7 +290,7 @@ export async function createComment({ database, member }: NetworkContext, { post
   return readRequiredComment(database, commentId);
 }
 
-export async function editComment({ database, member }: NetworkContext, { commentId, body }: EditCommentBody) {
+export async function editComment({ database, member }: RequestContext, { commentId, body }: EditCommentBody) {
   await database.transaction(async (transaction) => {
     const target = await lockComment(transaction, commentId, member);
     assertAuthor(member, target.authorId);
@@ -320,7 +320,7 @@ export async function deleteCommentWithin(transaction: Transaction, member: Sess
   ]);
 }
 
-export async function deleteComment({ database, member }: NetworkContext, commentId: string) {
+export async function deleteComment({ database, member }: RequestContext, commentId: string) {
   await database.transaction((transaction) => deleteCommentWithin(transaction, member, commentId));
   if (isAdminMember(member)) logAdminAction("comment_deleted", member.id, commentId);
 }

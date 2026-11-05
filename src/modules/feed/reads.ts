@@ -10,7 +10,7 @@ import { comment, post, reaction } from "./schema.ts";
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { toAvatarUrl } from "../members/service-profile.ts";
 import { isAdminMember } from "../../platform/auth/roles.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
 import { type SessionMember } from "../../platform/http/request-context.ts";
 import {
   commentSchema,
@@ -278,7 +278,7 @@ export async function readCommentPage(
   { postId, cursor }: CommentPageRequest,
 ): Promise<CommentPage> {
   if (!(await isPostVisible(database, viewer, postId))) {
-    throw new NetworkRequestError(NOT_FOUND_STATUS, FEED_ERROR_CODES.notFound, "This post is gone.");
+    throw new RequestError(NOT_FOUND_STATUS, FEED_ERROR_CODES.notFound, "This post is gone.");
   }
   const pageSize = FEED_LIMITS.commentsPerPage;
   const rows = await selectComments(database)

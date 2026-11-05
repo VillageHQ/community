@@ -22,7 +22,7 @@ import {
 } from "@/platform/design/accent";
 import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 import { BRAND_NAME_INPUT_ID } from "./brand-fields";
 import type { CommunityLogo } from "@/platform/branding/branding";
@@ -36,7 +36,7 @@ const ACCENT_FIELD = "accentColor";
 
 async function submitBrand(_previousState: BrandState, formData: FormData): Promise<BrandState> {
   try {
-    await postNetworkRequest(API_ROUTES.branding, Object.fromEntries(formData), acknowledgedResponseSchema);
+    await postRequest(API_ROUTES.branding, Object.fromEntries(formData), acknowledgedResponseSchema);
     window.location.assign(window.location.pathname);
     return INITIAL_STATE;
   } catch (error) {

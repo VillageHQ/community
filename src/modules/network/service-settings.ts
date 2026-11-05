@@ -5,7 +5,7 @@ import { eq, or } from "drizzle-orm";
 import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../../platform/settings/schema.ts";
 import { readSettings, saveSettings } from "../../platform/settings/store.ts";
-import type { NetworkContext } from "../../platform/http/request-context.ts";
+import type { RequestContext } from "../../platform/http/request-context.ts";
 import { saveDailyLookupLimit } from "../../platform/village/settings.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
@@ -51,14 +51,14 @@ export async function deleteVillageGroup(database: Database) {
     );
 }
 
-export function setDailyLookupLimit({ database, member }: NetworkContext, limit: number) {
+export function setDailyLookupLimit({ database, member }: RequestContext, limit: number) {
   return withAdminTransaction(database, member.id, async (transaction) => {
     await saveDailyLookupLimit(transaction, limit);
     await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.dailyLimitChanged, detail: String(limit) });
   });
 }
 
-export function confirmVillageDomain({ database, member }: NetworkContext, domain: string) {
+export function confirmVillageDomain({ database, member }: RequestContext, domain: string) {
   return withAdminTransaction(database, member.id, async (transaction) => {
     await saveConfirmedVillageDomain(transaction, domain);
     await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.domainConfirmed, detail: domain });

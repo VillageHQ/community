@@ -5,18 +5,18 @@ const DEFAULT_ROUTE_DEADLINE_MS = 60_000;
 
 export type SessionMember = { id: string; email: string; role?: string | null };
 
-export type NetworkContext = {
+export type RequestContext = {
   database: Database;
   environment: Environment;
   member: SessionMember;
   deadlineAtMs: number;
 };
 
-export function createNetworkContext(
+export function createRequestContext(
   database: Database,
   environment: Environment,
   member: SessionMember,
   deadlineMs = DEFAULT_ROUTE_DEADLINE_MS,
-): NetworkContext {
+): RequestContext {
   return { database, environment, member, deadlineAtMs: Date.now() + deadlineMs };
 }

@@ -28,7 +28,7 @@ import { issuedInviteSchema } from "@/modules/members/contract-invites";
 import { createInvite, revokeInvite } from "@/modules/members/service-invites";
 import { reinviteRemovedMember } from "@/modules/admin/service-roster";
 import { confirmMemberEmail } from "@/modules/members/service-admin";
-import { createNetworkContext } from "@/platform/http/request-context";
+import { createRequestContext } from "@/platform/http/request-context";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { readDailyLookupLimit, saveVillageKeys, readVillageOutOfCreditsAt } from "@/platform/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
@@ -258,7 +258,7 @@ describe("the review fixes", () => {
     let staleAdmin: Member;
 
     function staleContext() {
-      return createNetworkContext(getDatabase(), process.env, { id: staleAdmin.userId, email: staleAdmin.email, role: MEMBER_ROLES.admin });
+      return createRequestContext(getDatabase(), process.env, { id: staleAdmin.userId, email: staleAdmin.email, role: MEMBER_ROLES.admin });
     }
 
     beforeEach(async () => {
@@ -633,7 +633,7 @@ describe("the review fixes", () => {
       expect(await database.select().from(session).where(eq(session.userId, member.userId))).toEqual([]);
       const [old] = await database.select().from(user).where(eq(user.id, member.userId));
       expect(old?.email).toContain("reclaimed");
-      expect((await reinviteRemovedMember(createNetworkContext(getDatabase(), process.env, { id: admin.userId, email: admin.email, role: MEMBER_ROLES.admin }), member.userId).catch((error: { status: number }) => error.status))).toBe(CONFLICT_STATUS);
+      expect((await reinviteRemovedMember(createRequestContext(getDatabase(), process.env, { id: admin.userId, email: admin.email, role: MEMBER_ROLES.admin }), member.userId).catch((error: { status: number }) => error.status))).toBe(CONFLICT_STATUS);
     });
   });
 });

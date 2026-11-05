@@ -9,7 +9,7 @@ import { recordAdminAction } from "../../platform/audit/record.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
 import { createVillageSession, leaveVillageGroup, readVillageUser, VILLAGE_LEAVE_OUTCOMES } from "../../platform/village/client.ts";
 import { clearMemberFromGroup } from "./service.ts";
-import { type NetworkContext } from "../../platform/http/request-context.ts";
+import { type RequestContext } from "../../platform/http/request-context.ts";
 import { readVillageGroup, type VillageGroup } from "./service-settings.ts";
 import { readVillageKeys, type VillageKeys } from "../../platform/village/settings.ts";
 import { resolveVillageApiUrl } from "../../platform/village/urls.ts";
@@ -24,7 +24,7 @@ const DEPARTURE_FROM_VILLAGE_OUTCOME = {
 
 type DepartingMember = { memberId: string; email: string };
 type DepartureAttempt = {
-  context: NetworkContext;
+  context: RequestContext;
   keys: VillageKeys;
   group: VillageGroup;
   externalId: string;
@@ -63,7 +63,7 @@ function readWorstOutcome(outcomes: GroupDepartureOutcome[]) {
   return GROUP_DEPARTURE_OUTCOMES.left;
 }
 
-async function attemptDeparture(context: NetworkContext, { memberId, email }: DepartingMember): Promise<GroupDepartureOutcome | null> {
+async function attemptDeparture(context: RequestContext, { memberId, email }: DepartingMember): Promise<GroupDepartureOutcome | null> {
   const { database } = context;
   const [network] = await database.select().from(memberNetwork).where(eq(memberNetwork.userId, memberId));
   if (!network?.groupJoinedAt && !network?.staleGroupExternalId) return null;
@@ -82,7 +82,7 @@ async function attemptDeparture(context: NetworkContext, { memberId, email }: De
   return readWorstOutcome([currentOutcome, staleOutcome]);
 }
 
-async function recordDeparture(context: NetworkContext, memberId: string, memberName: string, outcome: GroupDepartureOutcome) {
+async function recordDeparture(context: RequestContext, memberId: string, memberName: string, outcome: GroupDepartureOutcome) {
   await context.database.transaction(async (transaction) => {
     await transaction.update(memberRemoval).set({ villageLeaveOutcome: outcome }).where(eq(memberRemoval.userId, memberId));
     await recordAdminAction(transaction, context.member.id, {
@@ -95,7 +95,7 @@ async function recordDeparture(context: NetworkContext, memberId: string, member
 }
 
 // Runs after the removal commits, and never throws: Village being down must not stop someone being removed here.
-export async function leaveGroupOnBehalf(context: NetworkContext, member: DepartingMember & { memberName: string }) {
+export async function leaveGroupOnBehalf(context: RequestContext, member: DepartingMember & { memberName: string }) {
   try {
     const outcome = await attemptDeparture(context, member);
     if (outcome) await recordDeparture(context, member.memberId, member.memberName, outcome);

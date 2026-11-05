@@ -12,12 +12,12 @@ import { Button } from "@/components/ui/button";
 import { describeEmailConfirmation } from "@/modules/members/contract-email-confirmation-copy";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 import type { WelcomeContext } from "./welcome-context";
 
 function resendConfirmation() {
-  return postNetworkRequest(API_ROUTES.networkConfirmation, {}, acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.networkConfirmation, {}, acknowledgedResponseSchema);
 }
 
 function ResendConfirmation() {

@@ -12,10 +12,10 @@ import { CONFIRMATION_VIEWS, type ConfirmationView } from "@/modules/members/con
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { signOutAndGoTo } from "@/platform/auth/sign-out";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 function confirmEmail(token: string) {
-  return postNetworkRequest(API_ROUTES.networkConfirm, { token }, acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.networkConfirm, { token }, acknowledgedResponseSchema);
 }
 
 function InvalidLink() {

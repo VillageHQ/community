@@ -2,7 +2,7 @@ import { infiniteQueryOptions, queryOptions, skipToken } from "@tanstack/react-q
 
 import { API_ROUTES } from "../../platform/http/routes.ts";
 import { acknowledgedResponseSchema } from "../../platform/http/contract.ts";
-import { postNetworkRequest } from "../../platform/http/post-request.ts";
+import { postRequest } from "../../platform/http/post-request.ts";
 import {
   directMessageSchema,
   inboxSchema,
@@ -37,7 +37,7 @@ export const INBOX_QUERY_FILTER = { queryKey: [MESSAGE_QUERY_KEYS.inbox] };
 export function inboxQuery(search = WHOLE_INBOX) {
   return infiniteQueryOptions({
     queryKey: [MESSAGE_QUERY_KEYS.inbox, search],
-    queryFn: ({ pageParam }) => postNetworkRequest(API_ROUTES.messages, { search, cursor: pageParam }, inboxSchema),
+    queryFn: ({ pageParam }) => postRequest(API_ROUTES.messages, { search, cursor: pageParam }, inboxSchema),
     initialPageParam: FIRST_INBOX_PAGE,
     getNextPageParam: ({ nextCursor }) => nextCursor,
     staleTime: INBOX_POLL_MS,
@@ -50,7 +50,7 @@ export function inboxQuery(search = WHOLE_INBOX) {
 export function unreadCountQuery() {
   return queryOptions({
     queryKey: [MESSAGE_QUERY_KEYS.unreadCount],
-    queryFn: () => postNetworkRequest(API_ROUTES.messageUnreadCount, {}, unreadCountSchema),
+    queryFn: () => postRequest(API_ROUTES.messageUnreadCount, {}, unreadCountSchema),
     staleTime: INBOX_POLL_MS,
     refetchInterval: ({ state }) => readInboxPollMs(state.status === "error"),
     refetchIntervalInBackground: false,
@@ -62,7 +62,7 @@ export function threadQuery(conversationId: string) {
   return infiniteQueryOptions({
     queryKey: [MESSAGE_QUERY_KEYS.thread, conversationId],
     queryFn: ({ pageParam }) =>
-      postNetworkRequest(API_ROUTES.messageThread, { conversationId, beforeSequence: pageParam }, threadPageSchema),
+      postRequest(API_ROUTES.messageThread, { conversationId, beforeSequence: pageParam }, threadPageSchema),
     initialPageParam: NEWEST_PAGE,
     getNextPageParam: ({ olderCursor }) => olderCursor,
     staleTime: Number.POSITIVE_INFINITY,
@@ -76,7 +76,7 @@ export function threadChangesQuery(conversationId: string) {
     queryFn: async ({ client }) => {
       const threadKey = threadQuery(conversationId).queryKey;
       const afterRevision = client.getQueryData(threadKey)?.pages[0]?.revision ?? 0;
-      const changes = await postNetworkRequest(API_ROUTES.messageChanges, { conversationId, afterRevision }, threadChangesSchema);
+      const changes = await postRequest(API_ROUTES.messageChanges, { conversationId, afterRevision }, threadChangesSchema);
       client.setQueryData(threadKey, (thread) => (thread ? applyThreadChanges(thread, changes) : thread));
       if (changes.messages.length > 0) {
         await Promise.all([
@@ -105,21 +105,21 @@ export function pendingMessagesQuery(conversationId: string) {
 }
 
 export function startConversationRequest(memberId: string) {
-  return postNetworkRequest(API_ROUTES.messageStart, { memberId }, startedConversationSchema);
+  return postRequest(API_ROUTES.messageStart, { memberId }, startedConversationSchema);
 }
 
 export function sendMessageRequest(body: SendMessageBody) {
-  return postNetworkRequest(API_ROUTES.messageSend, body, directMessageSchema);
+  return postRequest(API_ROUTES.messageSend, body, directMessageSchema);
 }
 
 export function deleteMessageRequest(messageId: string) {
-  return postNetworkRequest(API_ROUTES.messageDelete, { messageId }, directMessageSchema);
+  return postRequest(API_ROUTES.messageDelete, { messageId }, directMessageSchema);
 }
 
 export function reportMessageRequest(messageId: string) {
-  return postNetworkRequest(API_ROUTES.messageReport, { messageId }, acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.messageReport, { messageId }, acknowledgedResponseSchema);
 }
 
 export function markReadRequest(body: MarkReadBody) {
-  return postNetworkRequest(API_ROUTES.messageRead, body, markedReadSchema);
+  return postRequest(API_ROUTES.messageRead, body, markedReadSchema);
 }

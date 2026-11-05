@@ -10,8 +10,8 @@ import { resolveTrustedOrigins } from "./app-url.ts";
 import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "./body-limit.ts";
 import { REQUEST_ERROR_CODES } from "./error-codes.ts";
 import { readJsonBody } from "./read-json-body.ts";
-import { createNetworkContext, type NetworkContext, type SessionMember } from "./request-context.ts";
-import { NetworkRequestError } from "./request-error.ts";
+import { createRequestContext, type RequestContext, type SessionMember } from "./request-context.ts";
+import { RequestError } from "./request-error.ts";
 
 const UNAUTHORIZED_STATUS = 401;
 const FORBIDDEN_STATUS = 403;
@@ -26,7 +26,7 @@ export function respondWithError({ status, code, message }: FriendlyError) {
 }
 
 async function respondToKnownError(database: Database, error: unknown, errorResponders: readonly ErrorResponder[]) {
-  if (error instanceof NetworkRequestError) {
+  if (error instanceof RequestError) {
     return respondWithError({ status: error.status, code: error.code, message: error.message });
   }
   for (const respond of errorResponders) {
@@ -76,7 +76,7 @@ async function readAuthorizedMember(request: Request, adminOnly: boolean) {
 }
 
 type BinaryRouteOptions = { maximumBytes: number; tooLargeMessage: string };
-type BinaryResponder = (context: NetworkContext, bytes: Buffer, request: Request) => Promise<Response>;
+type BinaryResponder = (context: RequestContext, bytes: Buffer, request: Request) => Promise<Response>;
 
 function createBinaryRoute(scope: string, adminOnly: boolean, options: BinaryRouteOptions, respond: BinaryResponder) {
   const { maximumBytes, tooLargeMessage } = options;
@@ -88,7 +88,7 @@ function createBinaryRoute(scope: string, adminOnly: boolean, options: BinaryRou
       maximumBytes,
       async (boundedRequest) => {
         const bytes = Buffer.from(await boundedRequest.arrayBuffer());
-        return respond(createNetworkContext(getDatabase(), process.env, member), bytes, boundedRequest);
+        return respond(createRequestContext(getDatabase(), process.env, member), bytes, boundedRequest);
       },
       tooLargeMessage,
     );
@@ -101,7 +101,7 @@ export function createMemberRoutes(errorResponders: readonly ErrorResponder[]) {
     createMemberRoute<Schema extends z.ZodType>(
       scope: string,
       bodySchema: Schema,
-      respond: (context: NetworkContext, body: z.infer<Schema>) => Promise<Response>,
+      respond: (context: RequestContext, body: z.infer<Schema>) => Promise<Response>,
       { adminOnly = false, deadlineMs }: MemberRouteOptions = {},
     ) {
       return withRouteLogging(
@@ -119,7 +119,7 @@ export function createMemberRoutes(errorResponders: readonly ErrorResponder[]) {
             });
           }
 
-          const context = createNetworkContext(getDatabase(), process.env, member, deadlineMs);
+          const context = createRequestContext(getDatabase(), process.env, member, deadlineMs);
           try {
             return await respond(context, body.data);
           } catch (error) {

@@ -7,7 +7,7 @@ import { CONTENT_CHOICES, type ContentChoice } from "@/modules/admin/contract";
 import { departureResponseSchema } from "@/modules/network/contract";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { API_ROUTES } from "@/platform/http/routes";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 import { ConfirmDialog } from "./confirm-dialog";
 
@@ -68,7 +68,7 @@ export function RemoveMemberDialog({ member, trigger, returnFocusRef, fallbackFo
       initialFocusRef={keepRadioRef}
       returnFocusRef={returnFocusRef}
       fallbackFocusId={fallbackFocusId}
-      action={() => postNetworkRequest(API_ROUTES.memberRemove, { memberId: id, contentChoice }, departureResponseSchema)}
+      action={() => postRequest(API_ROUTES.memberRemove, { memberId: id, contentChoice }, departureResponseSchema)}
       onDone={({ message, isGroupLeaveIncomplete }) => onDone(message, isGroupLeaveIncomplete)}
     >
       <p>

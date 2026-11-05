@@ -6,7 +6,7 @@ import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-s
 import { createSignedInMember } from "@/test/signed-in-member";
 
 import { advanceNetwork } from "./service";
-import { createNetworkContext } from "@/platform/http/request-context";
+import { createRequestContext } from "@/platform/http/request-context";
 import { NETWORK_STAGES } from "./contract";
 import {
   NETWORK_PROGRESS,
@@ -44,7 +44,7 @@ describe("network progress", () => {
     const { userId, email } = await createSignedInMember(database, role);
     const member = { id: userId, email, role };
     if (expected !== NETWORK_STAGES.notConfigured) await saveVillageKeys(database, FAKE_VILLAGE_KEYS);
-    return { member, status: () => advanceNetwork(createNetworkContext(database, process.env, member)) };
+    return { member, status: () => advanceNetwork(createRequestContext(database, process.env, member)) };
   }
 
   it.each([

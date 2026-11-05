@@ -7,8 +7,8 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberNetwork } from "./schema.ts";
 import { readLinkedinSlug, MEMBER_ERROR_CODES } from "./contract-linkedin.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import type { SessionMember, NetworkContext } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import type { SessionMember, RequestContext } from "../../platform/http/request-context.ts";
 
 const CONFLICT_STATUS = 409;
 const UNPROCESSABLE_STATUS = 422;
@@ -46,7 +46,7 @@ function isUniqueViolation(error: unknown) {
 }
 
 function linkedinTakenError() {
-  return new NetworkRequestError(
+  return new RequestError(
     CONFLICT_STATUS,
     MEMBER_ERROR_CODES.linkedinTaken,
     "Another member already uses this LinkedIn profile. Ask an admin to clear it from Admin, then Members.",
@@ -62,12 +62,12 @@ export async function readIsLinkedinConfirmed(database: Database, memberId: stri
 }
 
 export async function saveMemberLinkedinUrl(
-  { database, member }: NetworkContext,
+  { database, member }: RequestContext,
   linkedinUrl: string,
 ) {
   const linkedinSlug = readLinkedinSlug(linkedinUrl);
   if (!linkedinSlug) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       UNPROCESSABLE_STATUS,
       MEMBER_ERROR_CODES.linkedinInvalid,
       "Enter your LinkedIn profile URL, like https://www.linkedin.com/in/your-name.",

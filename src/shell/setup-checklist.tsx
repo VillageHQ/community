@@ -9,7 +9,7 @@ import { SETUP_STEP_COPY } from "@/shell/admin-setup-copy";
 import { resolveAppUrl } from "@/platform/http/app-url";
 import { readBranding, type Branding } from "@/platform/branding/branding";
 import { readResendConfig } from "@/platform/email/resend";
-import { createNetworkContext, type SessionMember } from "@/platform/http/request-context";
+import { createRequestContext, type SessionMember } from "@/platform/http/request-context";
 import { readVillageGroupReadiness } from "@/modules/network/service";
 import { readVillageGroup, type VillageGroup } from "@/modules/network/service-settings";
 import { readVillageKeys, type VillageKeys } from "@/platform/village/settings";
@@ -111,7 +111,7 @@ type SetupChecklistProps = {
 
 export async function SetupChecklist({ database, admin, progress, openStepId, basePath }: SetupChecklistProps) {
   const [branding, keys, group] = await Promise.all([readBranding(database), readVillageKeys(database), readVillageGroup(database)]);
-  const context = createNetworkContext(database, process.env, admin);
+  const context = createRequestContext(database, process.env, admin);
   const { villageUser, isVillageReachable } =
     openStepId === SETUP_STEPS.group ? await readAdminUserSafely(context) : { villageUser: null, isVillageReachable: true };
   const domain = new URL(resolveAppUrl(process.env)).hostname;

@@ -6,8 +6,8 @@ import { introRequest } from "./schema.ts";
 import { memberBlock } from "../members/schema.ts";
 import { runAfterResponse } from "../../platform/observability/after-response.ts";
 import { readAskableConnectors } from "../network/service.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import { type NetworkContext } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import { type RequestContext } from "../../platform/http/request-context.ts";
 import {
   INTRO_ACTION_RULES,
   INTRO_ACTIONS,
@@ -28,10 +28,10 @@ const CONFLICT_STATUS = 409;
 const INTRO_CHANGED_MESSAGE = "This ask just changed. Here's where it stands now.";
 
 export function introGoneError() {
-  return new NetworkRequestError(NOT_FOUND_STATUS, INTRO_ERROR_CODES.notFound, "This ask isn't available.");
+  return new RequestError(NOT_FOUND_STATUS, INTRO_ERROR_CODES.notFound, "This ask isn't available.");
 }
 
-async function isBlockedBy(context: NetworkContext, blockerId: string, blockedId: string) {
+async function isBlockedBy(context: RequestContext, blockerId: string, blockedId: string) {
   const [block] = await context.database
     .select({ blockerId: memberBlock.blockerId })
     .from(memberBlock)
@@ -39,7 +39,7 @@ async function isBlockedBy(context: NetworkContext, blockerId: string, blockedId
   return block !== undefined;
 }
 
-function sendIntroEmail(context: NetworkContext, intro: Intro, event: IntroEmailEvent) {
+function sendIntroEmail(context: RequestContext, intro: Intro, event: IntroEmailEvent) {
   runAfterResponse(() =>
     deliverIntroEmail(context.database, context.environment, {
       introId: intro.id,
@@ -53,16 +53,16 @@ function sendIntroEmail(context: NetworkContext, intro: Intro, event: IntroEmail
   );
 }
 
-async function readRequiredIntro(context: NetworkContext, introId: string) {
+async function readRequiredIntro(context: RequestContext, introId: string) {
   const intro = await readIntroForViewer(context.database, context.member.id, introId);
   if (!intro) throw introGoneError();
   return intro;
 }
 
-async function readAskedConnector(context: NetworkContext, { targetSlug, connectorSlug }: CreateIntroBody) {
+async function readAskedConnector(context: RequestContext, { targetSlug, connectorSlug }: CreateIntroBody) {
   const askable = await readAskableConnectors(context, targetSlug);
   if (!askable) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       INTRO_ERROR_CODES.pathsStale,
       "Look up who can intro you to this person first. It only takes a moment.",
@@ -70,14 +70,14 @@ async function readAskedConnector(context: NetworkContext, { targetSlug, connect
   }
   const connector = askable.connectors.find(({ linkedinSlug, member }) => linkedinSlug === connectorSlug && member !== null);
   if (!connector?.member) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       INTRO_ERROR_CODES.notConnector,
       "This person can't take this ask through the community. Look up who can intro you again.",
     );
   }
   if (!askable.targetName) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       INTRO_ERROR_CODES.targetUnknown,
       "Village didn't tell us who this person is, so we can't send this ask. Try someone else.",
@@ -94,13 +94,13 @@ async function readAskedConnector(context: NetworkContext, { targetSlug, connect
   };
 }
 
-export async function createIntroRequest(context: NetworkContext, body: CreateIntroBody) {
+export async function createIntroRequest(context: RequestContext, body: CreateIntroBody) {
   const { database, member } = context;
   const asked = await readAskedConnector(context, body);
   await enforceIntroLimit(database, member.id, INTRO_LIMIT_KINDS.ask);
 
   if (await isBlockedBy(context, member.id, asked.introducerId)) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       INTRO_ERROR_CODES.blockedByYou,
       "You blocked this member. Unblock them to ask for an intro.",
@@ -122,7 +122,7 @@ export async function createIntroRequest(context: NetworkContext, body: CreateIn
     .onConflictDoNothing()
     .returning({ id: introRequest.id });
   if (!created) {
-    throw new NetworkRequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.duplicate, "You already have an open ask with this person for this intro.");
+    throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.duplicate, "You already have an open ask with this person for this intro.");
   }
 
   const intro = await readRequiredIntro(context, created.id);
@@ -150,7 +150,7 @@ function readTransitionPatch(body: IntroTransitionBody, now: Date) {
   return { state: nextState, ...patches[body.action] };
 }
 
-export async function transitionIntro(context: NetworkContext, body: IntroTransitionBody) {
+export async function transitionIntro(context: RequestContext, body: IntroTransitionBody) {
   const { database, member } = context;
   await enforceIntroLimit(database, member.id, INTRO_LIMIT_KINDS.respond);
 
@@ -183,5 +183,5 @@ export async function transitionIntro(context: NetworkContext, body: IntroTransi
     return current;
   }
   if (current.state === nextState) return current;
-  throw new NetworkRequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.changed, INTRO_CHANGED_MESSAGE);
+  throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.changed, INTRO_CHANGED_MESSAGE);
 }

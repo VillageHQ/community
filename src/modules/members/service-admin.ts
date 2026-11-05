@@ -12,8 +12,8 @@ import { readResendConfig } from "../../platform/email/resend.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { INVITE_ERROR_CODES } from "./contract-invites.ts";
 import { readLinkedinSlug, MEMBER_ERROR_CODES } from "./contract-linkedin.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import { type NetworkContext } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import { type RequestContext } from "../../platform/http/request-context.ts";
 import { REQUEST_ERROR_CODES } from "../../platform/http/error-codes.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { toAvatarUrl } from "./service-profile.ts";
@@ -62,7 +62,7 @@ export async function readConfirmationBadgeCount(database: Database, environment
   return readResendConfig(environment) ? 0 : readWaitingMemberCount(database);
 }
 
-export async function confirmMemberEmail({ database, member }: NetworkContext, memberId: string) {
+export async function confirmMemberEmail({ database, member }: RequestContext, memberId: string) {
   await withAdminTransaction(database, member.id, async (transaction) => {
     const [confirmed] = await transaction
       .update(user)
@@ -70,7 +70,7 @@ export async function confirmMemberEmail({ database, member }: NetworkContext, m
       .where(and(eq(user.id, memberId), eq(user.emailVerified, false), isActiveMember()))
       .returning({ name: user.name });
     if (!confirmed) {
-      throw new NetworkRequestError(CONFLICT_STATUS, INVITE_ERROR_CODES.changed, "This member changed. Reload the page and check again.");
+      throw new RequestError(CONFLICT_STATUS, INVITE_ERROR_CODES.changed, "This member changed. Reload the page and check again.");
     }
     await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.emailConfirmed, targetMemberId: memberId, targetName: confirmed.name });
   });
@@ -81,7 +81,7 @@ async function readMemberName(transaction: Transaction, memberId: string) {
   return target?.name ?? null;
 }
 
-export async function confirmLinkedinClaim({ database, member }: NetworkContext, memberId: string) {
+export async function confirmLinkedinClaim({ database, member }: RequestContext, memberId: string) {
   await withAdminTransaction(database, member.id, async (transaction) => {
     const [confirmed] = await transaction
       .update(memberNetwork)
@@ -89,7 +89,7 @@ export async function confirmLinkedinClaim({ database, member }: NetworkContext,
       .where(and(eq(memberNetwork.userId, memberId), isNotNull(memberNetwork.linkedinSlug)))
       .returning({ userId: memberNetwork.userId });
     if (!confirmed) {
-      throw new NetworkRequestError(NOT_FOUND_STATUS, REQUEST_ERROR_CODES.memberNotFound, "This member has no LinkedIn profile to confirm.");
+      throw new RequestError(NOT_FOUND_STATUS, REQUEST_ERROR_CODES.memberNotFound, "This member has no LinkedIn profile to confirm.");
     }
     await recordAdminAction(transaction, member.id, {
       action: AUDIT_ACTIONS.linkedinConfirmed,
@@ -99,10 +99,10 @@ export async function confirmLinkedinClaim({ database, member }: NetworkContext,
   });
 }
 
-export async function clearLinkedinClaim({ database, member }: NetworkContext, linkedinUrl: string) {
+export async function clearLinkedinClaim({ database, member }: RequestContext, linkedinUrl: string) {
   const linkedinSlug = readLinkedinSlug(linkedinUrl);
   if (!linkedinSlug) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       UNPROCESSABLE_STATUS,
       MEMBER_ERROR_CODES.linkedinInvalid,
       "Use a LinkedIn profile URL, like https://www.linkedin.com/in/their-name.",
@@ -115,7 +115,7 @@ export async function clearLinkedinClaim({ database, member }: NetworkContext, l
     .innerJoin(user, eq(user.id, memberNetwork.userId))
     .where(eq(memberNetwork.linkedinSlug, linkedinSlug));
   if (!holder) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       NOT_FOUND_STATUS,
       REQUEST_ERROR_CODES.memberNotFound,
       "Nobody here holds that LinkedIn profile.",

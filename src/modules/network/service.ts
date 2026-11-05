@@ -57,8 +57,8 @@ import { deleteVillageGroup, readVillageGroup, saveVillageGroup } from "./servic
 import { readVillageKeys, saveVillageKeys, type VillageKeys } from "../../platform/village/settings.ts";
 import { readReachableMembers } from "./reads-reachable-members.ts";
 import { resolveVillageApiUrl, resolveVillageSdkUrl } from "../../platform/village/urls.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import type { SessionMember, NetworkContext } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import type { SessionMember, RequestContext } from "../../platform/http/request-context.ts";
 import { isAdminMember } from "../../platform/auth/roles.ts";
 import { ensureMemberNetwork, normalizeEmail, isMemberEmailTrusted } from "../members/service-linkedin.ts";
 
@@ -78,7 +78,7 @@ const SEARCH_CUT_OFF_TYPES: ReadonlySet<string> = new Set([
 type MemberNetworkRow = typeof memberNetwork.$inferSelect;
 
 function emailNotConfirmedError() {
-  return new NetworkRequestError(
+  return new RequestError(
     CONFLICT_STATUS,
     NETWORK_ERROR_CODES.emailNotConfirmed,
     "We need to confirm this email is yours before you can use network search.",
@@ -86,7 +86,7 @@ function emailNotConfirmedError() {
 }
 
 async function connectMember(
-  { database, environment, member, deadlineAtMs }: NetworkContext,
+  { database, environment, member, deadlineAtMs }: RequestContext,
   keys: VillageKeys,
 ) {
   if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
@@ -100,7 +100,7 @@ async function connectMember(
 }
 
 function linkMismatchError(member: SessionMember) {
-  return new NetworkRequestError(
+  return new RequestError(
     CONFLICT_STATUS,
     NETWORK_ERROR_CODES.linkMismatch,
     isAdminMember(member)
@@ -110,7 +110,7 @@ function linkMismatchError(member: SessionMember) {
 }
 
 function notLinkedError() {
-  return new NetworkRequestError(
+  return new RequestError(
     CONFLICT_STATUS,
     NETWORK_ERROR_CODES.notLinked,
     "Your Village account isn't linked yet. Sync your network first.",
@@ -118,7 +118,7 @@ function notLinkedError() {
 }
 
 async function confirmVillageLink(
-  { database, member }: NetworkContext,
+  { database, member }: RequestContext,
   network: MemberNetworkRow,
   villageEmail: string,
 ) {
@@ -144,7 +144,7 @@ async function confirmVillageLink(
 }
 
 async function requireTrustedVillageUser(
-  context: NetworkContext,
+  context: RequestContext,
   network: MemberNetworkRow,
   session: VillageSession,
 ) {
@@ -157,14 +157,14 @@ async function requireTrustedVillageUser(
 async function requireVillageKeys(database: Database) {
   const keys = await readVillageKeys(database);
   if (keys) return keys;
-  throw new NetworkRequestError(
+  throw new RequestError(
     SERVICE_UNAVAILABLE_STATUS,
     NETWORK_ERROR_CODES.notConfigured,
     "An admin needs to connect Village first.",
   );
 }
 
-export async function recordSharingConsent({ database, member }: NetworkContext) {
+export async function recordSharingConsent({ database, member }: RequestContext) {
   if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
 
   await ensureMemberNetwork(database, member.id);
@@ -174,7 +174,7 @@ export async function recordSharingConsent({ database, member }: NetworkContext)
     .where(eq(memberNetwork.userId, member.id));
 }
 
-function describeStage(context: NetworkContext, stage: NetworkStage): NetworkStatus {
+function describeStage(context: RequestContext, stage: NetworkStage): NetworkStatus {
   return { stage, isAdmin: isAdminMember(context.member), sync: null };
 }
 
@@ -182,7 +182,7 @@ async function markVillageLinked(database: Database, memberId: string) {
   await database.update(memberNetwork).set({ villageLinkedAt: new Date() }).where(eq(memberNetwork.userId, memberId));
 }
 
-export async function advanceNetwork(context: NetworkContext): Promise<NetworkStatus> {
+export async function advanceNetwork(context: RequestContext): Promise<NetworkStatus> {
   const { database, environment, member } = context;
 
   const keys = await readVillageKeys(database);
@@ -230,7 +230,7 @@ async function readAppPublicKeyOrExplain(session: VillageSession) {
     return await readVillageAppPublicKey(session);
   } catch (error) {
     if (!isVillageErrorStatus(error, VILLAGE_UNAUTHORIZED_STATUS)) throw error;
-    throw new NetworkRequestError(
+    throw new RequestError(
       UNPROCESSABLE_STATUS,
       NETWORK_ERROR_CODES.keysRejected,
       "Village rejected this secret key. Copy it again from API Keys in Village, and check that your Village app is active.",
@@ -238,11 +238,11 @@ async function readAppPublicKeyOrExplain(session: VillageSession) {
   }
 }
 
-export async function verifyAndSaveVillageKeys(context: NetworkContext, keys: VillageKeys) {
+export async function verifyAndSaveVillageKeys(context: RequestContext, keys: VillageKeys) {
   const { session } = await connectMember(context, keys);
 
   if ((await readAppPublicKeyOrExplain(session)) !== keys.publicKey) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       UNPROCESSABLE_STATUS,
       NETWORK_ERROR_CODES.keysMismatched,
       "This public key doesn't belong to the same Village app as the secret key.",
@@ -255,11 +255,11 @@ export async function verifyAndSaveVillageKeys(context: NetworkContext, keys: Vi
   });
 }
 
-export async function createCommunityGroup(context: NetworkContext, name: string) {
+export async function createCommunityGroup(context: RequestContext, name: string) {
   const { database, member } = context;
 
   if (await readVillageGroup(database)) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       NETWORK_ERROR_CODES.groupExists,
       "This community already has a group.",
@@ -273,7 +273,7 @@ export async function createCommunityGroup(context: NetworkContext, name: string
     throw linkMismatchError(member);
   }
   if (!villageUser?.isSyncComplete) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       NETWORK_ERROR_CODES.notReady,
       "Link and sync your Village account on the network page first.",
@@ -292,7 +292,7 @@ export async function createCommunityGroup(context: NetworkContext, name: string
   });
 }
 
-export async function readVillageGroupReadiness(context: NetworkContext) {
+export async function readVillageGroupReadiness(context: RequestContext) {
   const keys = await readVillageKeys(context.database);
   if (!keys) return null;
   const { session } = await connectMember(context, keys);
@@ -309,11 +309,11 @@ async function readMemberSlugs(database: Database, ownSlug: string | null) {
   return new Set(slugs.filter((slug) => slug !== ownSlug));
 }
 
-async function requireJoinedMember({ database, member }: NetworkContext) {
+async function requireJoinedMember({ database, member }: RequestContext) {
   const keys = await requireVillageKeys(database);
   const network = await ensureMemberNetwork(database, member.id);
   if (network.groupJoinedAt) return { keys, network };
-  throw new NetworkRequestError(
+  throw new RequestError(
     CONFLICT_STATUS,
     NETWORK_ERROR_CODES.notReady,
     "Finish joining the community on this page first.",
@@ -323,7 +323,7 @@ async function requireJoinedMember({ database, member }: NetworkContext) {
 function toSearchCutOffError(error: unknown) {
   if (!(error instanceof VillageApiError)) return error;
   if (error.status < INTERNAL_ERROR_STATUS || !SEARCH_CUT_OFF_TYPES.has(error.type)) return error;
-  return new NetworkRequestError(
+  return new RequestError(
     GATEWAY_TIMEOUT_STATUS,
     NETWORK_ERROR_CODES.searchCutOff,
     "This search took too long and was cut off. It may have used one lookup. Try fewer, more specific words.",
@@ -331,7 +331,7 @@ function toSearchCutOffError(error: unknown) {
 }
 
 export async function searchMemberNetwork(
-  context: NetworkContext,
+  context: RequestContext,
   prompt: string,
 ): Promise<NetworkSearchResult> {
   const { database, member } = context;
@@ -397,7 +397,7 @@ async function readCachedPaths(database: Database, userId: string, linkedinSlug:
 }
 
 async function fetchVillagePathsOrNull(
-  context: NetworkContext,
+  context: RequestContext,
   session: VillageSession,
   linkedinSlug: string,
 ) {
@@ -412,7 +412,7 @@ async function fetchVillagePathsOrNull(
 }
 
 async function readPathsFacts(
-  { database, member }: NetworkContext,
+  { database, member }: RequestContext,
   villagePaths: VillagePaths | null,
   network: MemberNetworkRow,
   targetSlug: string,
@@ -435,7 +435,7 @@ export type OpenAsksReader = (
 const NO_OPEN_ASKS: OpenAsksReader = async () => new Map();
 
 async function describePathsForViewer(
-  context: NetworkContext,
+  context: RequestContext,
   villagePaths: VillagePaths | null,
   network: MemberNetworkRow,
   targetSlug: string,
@@ -451,7 +451,7 @@ async function describePathsForViewer(
   return describeMemberPaths(villagePaths, facts, connectors);
 }
 
-export async function readMemberPaths(context: NetworkContext, linkedinSlug: string, readOpenAsks: OpenAsksReader = NO_OPEN_ASKS) {
+export async function readMemberPaths(context: RequestContext, linkedinSlug: string, readOpenAsks: OpenAsksReader = NO_OPEN_ASKS) {
   const { database, member } = context;
   const { keys, network } = await requireJoinedMember(context);
   const { session } = await connectMember(context, keys);
@@ -484,13 +484,13 @@ export type AskableConnectors = {
   connectors: ConnectorDraft[];
 };
 
-export async function readAskableConnectors(context: NetworkContext, targetSlug: string): Promise<AskableConnectors | null> {
+export async function readAskableConnectors(context: RequestContext, targetSlug: string): Promise<AskableConnectors | null> {
   const { database, member } = context;
   const { network } = await requireJoinedMember(context);
   if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
   if (network.pendingVillageEmail) throw linkMismatchError(member);
   if (targetSlug === network.linkedinSlug) {
-    throw new NetworkRequestError(UNPROCESSABLE_STATUS, CONNECTOR_ERROR_CODES.ownTarget, "That's you. No intro needed.");
+    throw new RequestError(UNPROCESSABLE_STATUS, CONNECTOR_ERROR_CODES.ownTarget, "That's you. No intro needed.");
   }
 
   const cachedPaths = await readCachedPaths(database, member.id, targetSlug);
@@ -527,7 +527,7 @@ export async function readVillageLinks(database: Database) {
 }
 
 export async function approveVillageLink(
-  { database, member }: NetworkContext,
+  { database, member }: RequestContext,
   memberId: string,
   villageEmail: string,
 ) {
@@ -539,7 +539,7 @@ export async function approveVillageLink(
 
   const normalizedVillageEmail = normalizeEmail(villageEmail);
   if (!pendingLink || pendingLink.pendingVillageEmail !== normalizedVillageEmail) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       NETWORK_ERROR_CODES.linkChanged,
       "This Village link changed. Reload the page and check it again.",
@@ -580,20 +580,20 @@ export async function clearMemberFromGroup(database: Database, userId: string) {
 }
 
 function leaveNotConfirmedError() {
-  return new NetworkRequestError(
+  return new RequestError(
     CONFLICT_STATUS,
     NETWORK_ERROR_CODES.leaveNotConfirmed,
     "We couldn't confirm you left, so you're still a member. Village no longer links your account to this site. Sync your network on this page again, then leave. If that doesn't work, ask an admin.",
   );
 }
 
-export async function leaveCommunityGroup(context: NetworkContext) {
+export async function leaveCommunityGroup(context: RequestContext) {
   const { database, member } = context;
   const keys = await requireVillageKeys(database);
   const group = await readVillageGroup(database);
   const memberRow = await ensureMemberNetwork(database, member.id);
   if (!group || !memberRow.groupJoinedAt) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       NETWORK_ERROR_CODES.notReady,
       "You aren't in the group.",
@@ -607,7 +607,7 @@ export async function leaveCommunityGroup(context: NetworkContext) {
 
   const outcome = await leaveVillageGroup(session, group.id);
   if (outcome === VILLAGE_LEAVE_OUTCOMES.adminBlocked) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       CONFLICT_STATUS,
       NETWORK_ERROR_CODES.groupAdminCannotLeave,
       "You created this group, so Village won't let you leave while other members are in it. Village requires every other member to leave first.",
@@ -623,7 +623,7 @@ export function staleGroupAfterLinkClears() {
   return sql`case when ${memberNetwork.groupJoinedAt} is not null then ${memberNetwork.villageExternalId} else ${memberNetwork.staleGroupExternalId} end`;
 }
 
-export async function resetVillageLink({ database, member }: NetworkContext, memberId: string) {
+export async function resetVillageLink({ database, member }: RequestContext, memberId: string) {
   await withAdminTransaction(database, member.id, async (transaction) => {
     const resetMembers = await transaction
       .update(memberNetwork)
@@ -640,7 +640,7 @@ export async function resetVillageLink({ database, member }: NetworkContext, mem
       .where(eq(memberNetwork.userId, memberId))
       .returning({ userId: memberNetwork.userId });
     if (resetMembers.length === 0) {
-      throw new NetworkRequestError(
+      throw new RequestError(
         NOT_FOUND_STATUS,
         NETWORK_ERROR_CODES.memberNotFound,
         "This member has no Village link to reset. Reload the page.",

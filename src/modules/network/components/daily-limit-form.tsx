@@ -11,12 +11,12 @@ import { Button } from "@/components/ui/button";
 import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
 import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 const LIMIT_FIELD = "dailyLookupLimit";
 
 function saveDailyLimit(limit: number) {
-  return postNetworkRequest(API_ROUTES.dailyLimit, { limit }, acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.dailyLimit, { limit }, acknowledgedResponseSchema);
 }
 
 function readSubmittedLimit(event: FormEvent<HTMLFormElement>) {

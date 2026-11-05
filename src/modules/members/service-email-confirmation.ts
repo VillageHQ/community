@@ -13,8 +13,8 @@ import type { Environment } from "../../platform/environment.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
 import { ROUTES } from "../../platform/http/routes.ts";
 import { secretsMatch } from "../../platform/secrets/secrets-match.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import { type NetworkContext } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import { type RequestContext } from "../../platform/http/request-context.ts";
 import { INVITE_ERROR_CODES } from "./contract-invites.ts";
 import { CONFIRMATION_VIEWS, type ConfirmationView } from "./contract-email-confirmation.ts";
 import { renderConfirmationEmail } from "./email-invites.ts";
@@ -88,10 +88,10 @@ export async function readConfirmationView(
     : CONFIRMATION_VIEWS.wrongAccount;
 }
 
-export async function confirmEmailWithToken({ database, member }: NetworkContext, token: string) {
+export async function confirmEmailWithToken({ database, member }: RequestContext, token: string) {
   const confirmation = await readLiveConfirmation(database, token);
   if (!confirmation) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       GONE_STATUS,
       INVITE_ERROR_CODES.unusable,
       "This link didn't work. It may have expired or been used already.",
@@ -99,7 +99,7 @@ export async function confirmEmailWithToken({ database, member }: NetworkContext
   }
   const identifier = toConfirmationIdentifier(member.id);
   if (confirmation.identifier !== identifier) {
-    throw new NetworkRequestError(
+    throw new RequestError(
       FORBIDDEN_STATUS,
       INVITE_ERROR_CODES.changed,
       "This link belongs to another account. Sign in to that account to use it.",
@@ -112,7 +112,7 @@ export async function confirmEmailWithToken({ database, member }: NetworkContext
       .where(and(eq(verification.identifier, identifier), eq(verification.value, confirmation.value)))
       .returning({ id: verification.id });
     if (consumed.length === 0) {
-      throw new NetworkRequestError(GONE_STATUS, INVITE_ERROR_CODES.unusable, "This link has been used already.");
+      throw new RequestError(GONE_STATUS, INVITE_ERROR_CODES.unusable, "This link has been used already.");
     }
     await transaction.update(user).set({ emailVerified: true }).where(eq(user.id, member.id));
     await transaction.delete(verification).where(eq(verification.identifier, identifier));

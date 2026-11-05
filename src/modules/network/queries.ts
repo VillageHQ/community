@@ -9,7 +9,7 @@ import {
   type NetworkStage,
   type NetworkStatus,
 } from "@/modules/network/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 const STATUS_POLL_INTERVAL_MS = 5_000;
 const POLLED_STAGES: ReadonlySet<NetworkStage> = new Set([
@@ -51,7 +51,7 @@ export function readStatusPollInterval(status: NetworkStatus | undefined) {
 
 export const networkStatusQuery = queryOptions({
   queryKey: [NETWORK_QUERY_KEYS.status],
-  queryFn: () => postNetworkRequest(API_ROUTES.networkStatus, {}, networkStatusSchema),
+  queryFn: () => postRequest(API_ROUTES.networkStatus, {}, networkStatusSchema),
   refetchIntervalInBackground: false,
   refetchInterval: ({ state }) => readStatusPollInterval(state.data),
   refetchOnWindowFocus: ({ state }) => isPolled(state.data),
@@ -61,7 +61,7 @@ export function networkSearchQuery(prompt: string) {
   return queryOptions({
     queryKey: [NETWORK_QUERY_KEYS.search, prompt],
     queryFn: () =>
-      postNetworkRequest(
+      postRequest(
         API_ROUTES.networkSearch,
         { prompt },
         networkSearchResultSchema,
@@ -74,7 +74,7 @@ export function networkSearchQuery(prompt: string) {
 export function networkPathsQuery(linkedinSlug: string) {
   return queryOptions({
     queryKey: [NETWORK_QUERY_KEYS.paths, linkedinSlug],
-    queryFn: () => postNetworkRequest(API_ROUTES.networkPaths, { linkedinSlug }, networkPathsSchema),
+    queryFn: () => postRequest(API_ROUTES.networkPaths, { linkedinSlug }, networkPathsSchema),
     ...SPENDS_CREDITS_ONLY_ON_REQUEST,
   });
 }

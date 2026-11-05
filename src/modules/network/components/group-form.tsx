@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { CheckboxCard } from "@/components/ui/checkbox-card";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 type GroupState = { errorMessage: string | null };
 
@@ -20,7 +20,7 @@ const ACKNOWLEDGE_FIELD = "acknowledged";
 
 async function submitGroup(_previousState: GroupState, formData: FormData): Promise<GroupState> {
   try {
-    await postNetworkRequest(
+    await postRequest(
       API_ROUTES.villageGroup,
       { name: formData.get("name"), acknowledged: formData.get(ACKNOWLEDGE_FIELD) === "on" },
       acknowledgedResponseSchema,

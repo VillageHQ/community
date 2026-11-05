@@ -7,10 +7,10 @@ import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 function leaveGroup() {
-  return postNetworkRequest(
+  return postRequest(
     API_ROUTES.networkLeave,
     { confirmed: true },
     acknowledgedResponseSchema,

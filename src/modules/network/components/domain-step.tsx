@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { VILLAGE_PLATFORM_LINKS } from "@/platform/village/links";
 import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 type DomainState = { errorMessage: string | null };
 
@@ -18,7 +18,7 @@ const INITIAL_STATE: DomainState = { errorMessage: null };
 
 async function confirmDomain(): Promise<DomainState> {
   try {
-    await postNetworkRequest(API_ROUTES.setupDomain, { confirmed: true }, acknowledgedResponseSchema);
+    await postRequest(API_ROUTES.setupDomain, { confirmed: true }, acknowledgedResponseSchema);
     window.location.assign(window.location.pathname);
     return INITIAL_STATE;
   } catch (error) {

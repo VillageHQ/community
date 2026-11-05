@@ -9,7 +9,7 @@ import { CheckboxCard } from "@/components/ui/checkbox-card";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 import { JOIN_STEPS, JoinSteps } from "./join-steps";
 import { JoinLayout } from "@/modules/members/components/shared/join-layout";
@@ -43,7 +43,7 @@ const DEAL_NOTES = [
 ];
 
 function recordConsent(formData: FormData) {
-  return postNetworkRequest(
+  return postRequest(
     API_ROUTES.networkConsent,
     { acknowledged: formData.get(CONSENT_FIELD_ID) === "on" },
     acknowledgedResponseSchema,

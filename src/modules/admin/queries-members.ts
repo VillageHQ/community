@@ -5,7 +5,7 @@ import { memberPageSchema, type MemberFilter, type SetMemberRoleBody } from "@/m
 import { issuedInviteSchema } from "@/modules/members/contract-invites";
 import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 export const ADMIN_MEMBER_QUERY_KEYS = { list: "admin-member-list" } as const;
 
@@ -16,31 +16,31 @@ type MemberPageRequest = { search: string; filter: MemberFilter; page: number };
 export function memberPageQuery({ search, filter, page }: MemberPageRequest) {
   return queryOptions({
     queryKey: [ADMIN_MEMBER_QUERY_KEYS.list, search, filter, page],
-    queryFn: () => postNetworkRequest(API_ROUTES.memberList, { search, filter, page }, memberPageSchema),
+    queryFn: () => postRequest(API_ROUTES.memberList, { search, filter, page }, memberPageSchema),
     staleTime: MEMBER_LIST_STALE_MS,
   });
 }
 
 export function setMemberRoleRequest(body: SetMemberRoleBody) {
-  return postNetworkRequest(API_ROUTES.memberRole, body, acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.memberRole, body, acknowledgedResponseSchema);
 }
 
 export function unbanMemberRequest(memberId: string) {
-  return postNetworkRequest(API_ROUTES.memberUnban, { memberId }, acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.memberUnban, { memberId }, acknowledgedResponseSchema);
 }
 
 export function approveVillageLinkRequest(memberId: string, villageEmail: string) {
-  return postNetworkRequest(API_ROUTES.villageLinks, { memberId, villageEmail }, acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.villageLinks, { memberId, villageEmail }, acknowledgedResponseSchema);
 }
 
 export function resetVillageLinkRequest(memberId: string) {
-  return postNetworkRequest(API_ROUTES.villageLinkReset, { memberId, confirmed: true }, acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.villageLinkReset, { memberId, confirmed: true }, acknowledgedResponseSchema);
 }
 
 export function leaveGroupRequest(memberId: string) {
-  return postNetworkRequest(API_ROUTES.memberLeaveGroup, { memberId }, departureResponseSchema);
+  return postRequest(API_ROUTES.memberLeaveGroup, { memberId }, departureResponseSchema);
 }
 
 export function reinviteMemberRequest(memberId: string) {
-  return postNetworkRequest(API_ROUTES.memberReinvite, { memberId }, issuedInviteSchema);
+  return postRequest(API_ROUTES.memberReinvite, { memberId }, issuedInviteSchema);
 }

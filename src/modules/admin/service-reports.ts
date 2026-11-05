@@ -17,8 +17,8 @@ import { INTRO_ROLES } from "../intros/contract.ts";
 import { readIntroForViewer } from "../intros/reads.ts";
 import { isBanActive } from "../../platform/auth/member-status.ts";
 import { enforceMessagingLimit, MESSAGING_KINDS } from "../messages/limits.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import { type NetworkContext } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import { type RequestContext } from "../../platform/http/request-context.ts";
 import {
   ADMIN_ERROR_CODES,
   ADMIN_PAGE_SIZES,
@@ -52,16 +52,16 @@ const reporterUser = alias(user, "reporter_user");
 const reportedUser = alias(user, "reported_user");
 
 function contentGoneError() {
-  return new NetworkRequestError(NOT_FOUND_STATUS, FEED_ERROR_CODES.notFound, "This isn't available anymore.");
+  return new RequestError(NOT_FOUND_STATUS, FEED_ERROR_CODES.notFound, "This isn't available anymore.");
 }
 
 function ownContentError() {
-  return new NetworkRequestError(UNPROCESSABLE_STATUS, FEED_ERROR_CODES.notYours, "You can only report what other members wrote.");
+  return new RequestError(UNPROCESSABLE_STATUS, FEED_ERROR_CODES.notYours, "You can only report what other members wrote.");
 }
 
 type ReportDraft = { targetType: ReportTarget; targetId: string; reportedMemberId: string; body: string; contentCreatedAt: Date };
 
-async function saveReport({ database, member }: NetworkContext, draft: ReportDraft) {
+async function saveReport({ database, member }: RequestContext, draft: ReportDraft) {
   if (draft.reportedMemberId === member.id) throw ownContentError();
   await enforceMessagingLimit(database, member.id, MESSAGING_KINDS.report);
   const [created] = await database
@@ -87,7 +87,7 @@ async function saveReport({ database, member }: NetworkContext, draft: ReportDra
   return REPORT_SAVED_MESSAGES.saved;
 }
 
-async function readReportablePost({ database, member }: NetworkContext, targetId: string): Promise<ReportDraft> {
+async function readReportablePost({ database, member }: RequestContext, targetId: string): Promise<ReportDraft> {
   const [target] = await database
     .select({ authorId: post.authorId, body: post.body, createdAt: post.createdAt })
     .from(post)
@@ -97,7 +97,7 @@ async function readReportablePost({ database, member }: NetworkContext, targetId
   return { targetType: REPORT_TARGETS.post, targetId, reportedMemberId: target.authorId, body: target.body, contentCreatedAt: target.createdAt };
 }
 
-async function readReportableComment({ database, member }: NetworkContext, targetId: string): Promise<ReportDraft> {
+async function readReportableComment({ database, member }: RequestContext, targetId: string): Promise<ReportDraft> {
   const [target] = await database
     .select({ postId: comment.postId, authorId: comment.authorId, body: comment.body, createdAt: comment.createdAt })
     .from(comment)
@@ -112,11 +112,11 @@ const REPORTABLE_FEED_CONTENT = {
   [FEED_REPORT_TARGETS.comment]: readReportableComment,
 };
 
-export async function reportFeedContent(context: NetworkContext, { targetType, targetId }: FeedReportBody) {
+export async function reportFeedContent(context: RequestContext, { targetType, targetId }: FeedReportBody) {
   return saveReport(context, await REPORTABLE_FEED_CONTENT[targetType](context, targetId));
 }
 
-export async function reportIntroNote(context: NetworkContext, introId: string) {
+export async function reportIntroNote(context: RequestContext, introId: string) {
   const intro = await readIntroForViewer(context.database, context.member.id, introId);
   if (!intro) throw introGoneError();
   if (intro.viewerRole !== INTRO_ROLES.introducer) throw ownContentError();
@@ -271,7 +271,7 @@ export async function readReports(database: Database, filter: ReportFilter, requ
 }
 
 function reportHandledError() {
-  return new NetworkRequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.reportHandled, "Another admin already handled this report. Reload the page.");
+  return new RequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.reportHandled, "Another admin already handled this report. Reload the page.");
 }
 
 type LockedReport = { targetId: string | null; reportedMemberId: string | null };
@@ -335,7 +335,7 @@ async function readMemberName(transaction: Transaction, memberId: string | null)
   return target?.name ?? null;
 }
 
-export async function dismissReport({ database, member }: NetworkContext, report: ReportActionBody) {
+export async function dismissReport({ database, member }: RequestContext, report: ReportActionBody) {
   await withAdminTransaction(database, member.id, async (transaction) => {
     const locked = await lockOpenReport(transaction, report);
     await resolveSameTarget(transaction, { report, locked, actorId: member.id, resolution: REPORT_RESOLUTIONS.dismissed });
@@ -350,17 +350,17 @@ export async function dismissReport({ database, member }: NetworkContext, report
 
 const CONTENT_DELETERS = { [REPORT_TARGETS.post]: deletePostWithin, [REPORT_TARGETS.comment]: deleteCommentWithin };
 
-export async function deleteReportedContent({ database, member }: NetworkContext, report: ReportActionBody) {
+export async function deleteReportedContent({ database, member }: RequestContext, report: ReportActionBody) {
   const { targetType } = report;
   if (!isDeletableTarget(targetType)) {
-    throw new NetworkRequestError(UNPROCESSABLE_STATUS, ADMIN_ERROR_CODES.notDeletable, "Only posts and replies can be deleted from here.");
+    throw new RequestError(UNPROCESSABLE_STATUS, ADMIN_ERROR_CODES.notDeletable, "Only posts and replies can be deleted from here.");
   }
   await withAdminTransaction(database, member.id, async (transaction) => {
     const locked = await lockOpenReport(transaction, report);
     const targetId = locked.targetId ?? "";
     await CONTENT_DELETERS[targetType](transaction, member, targetId).catch((error: unknown) => {
-      if (error instanceof NetworkRequestError && error.status === NOT_FOUND_STATUS) {
-        throw new NetworkRequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.contentGone, "This was already deleted. You can dismiss the report.");
+      if (error instanceof RequestError && error.status === NOT_FOUND_STATUS) {
+        throw new RequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.contentGone, "This was already deleted. You can dismiss the report.");
       }
       throw error;
     });

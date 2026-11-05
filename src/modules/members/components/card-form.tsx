@@ -16,16 +16,16 @@ import { parseTagsText, toProfileBody } from "@/modules/members/rules-profile-fo
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { postNetworkRequest } from "@/platform/http/post-request";
+import { postRequest } from "@/platform/http/post-request";
 
 import { AvatarField } from "./avatar-field";
 
 function saveCard(formData: FormData) {
-  return postNetworkRequest(API_ROUTES.profile, toProfileBody(formData), acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.profile, toProfileBody(formData), acknowledgedResponseSchema);
 }
 
 function completeCardStep() {
-  return postNetworkRequest(API_ROUTES.onboarding, { step: ONBOARDING_STEPS.card }, acknowledgedResponseSchema);
+  return postRequest(API_ROUTES.onboarding, { step: ONBOARDING_STEPS.card }, acknowledgedResponseSchema);
 }
 
 async function saveCardAndContinue(formData: FormData) {

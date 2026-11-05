@@ -1,4 +1,4 @@
-export class NetworkRequestError extends Error {
+export class RequestError extends Error {
   readonly status: number;
   readonly code: string;
 

@@ -28,7 +28,7 @@ async function sendPost(path: string, body: unknown) {
   }
 }
 
-export async function postNetworkRequest<Schema extends z.ZodType>(
+export async function postRequest<Schema extends z.ZodType>(
   path: string,
   body: unknown,
   schema: Schema,

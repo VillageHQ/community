@@ -9,7 +9,7 @@ import { issuedInviteSchema } from "@/modules/members/contract-invites";
 import { INVITE_STATES } from "@/modules/members/contract-invite-state";
 import { readInviteByToken } from "@/modules/members/service-invites";
 import { advanceNetwork } from "@/modules/network/service";
-import { createNetworkContext } from "@/platform/http/request-context";
+import { createRequestContext } from "@/platform/http/request-context";
 import { saveVillageGroup } from "@/modules/network/service-settings";
 import { saveVillageKeys } from "@/platform/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
@@ -352,7 +352,7 @@ describe("accepting an invite", () => {
       await database.update(user).set({ emailVerified: true }).where(eq(user.email, INVITEE));
 
       const member = { id: invitee?.id ?? "", email: invitee?.email ?? "", role: invitee?.role };
-      await advanceNetwork(createNetworkContext(database, process.env, member));
+      await advanceNetwork(createRequestContext(database, process.env, member));
 
       expect(village.state.mintedEmails.get(network?.villageExternalId ?? "")).toBe(INVITEE);
     });

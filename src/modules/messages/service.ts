@@ -7,8 +7,8 @@ import type { Database } from "../../platform/database/client.ts";
 import { conversation, conversationReadCursor, directMessage, messageReport } from "./schema.ts";
 import { memberBlock } from "../members/schema.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import { type NetworkContext } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import { type RequestContext } from "../../platform/http/request-context.ts";
 import { readPeerId, toConversationPair } from "./rules-conversation-pair.ts";
 import { MESSAGE_ERROR_CODES, type MarkReadBody, type SendMessageBody } from "./contract.ts";
 import { isConversationParticipant, isMessageVisibleTo, readMessageForViewer } from "./reads.ts";
@@ -23,19 +23,19 @@ type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type DatabaseOrTransaction = Database | Transaction;
 
 export function conversationGoneError() {
-  return new NetworkRequestError(NOT_FOUND_STATUS, MESSAGE_ERROR_CODES.notFound, "This conversation isn't available.");
+  return new RequestError(NOT_FOUND_STATUS, MESSAGE_ERROR_CODES.notFound, "This conversation isn't available.");
 }
 
 function messageGoneError() {
-  return new NetworkRequestError(NOT_FOUND_STATUS, MESSAGE_ERROR_CODES.notFound, "This message isn't available.");
+  return new RequestError(NOT_FOUND_STATUS, MESSAGE_ERROR_CODES.notFound, "This message isn't available.");
 }
 
 function memberGoneError() {
-  return new NetworkRequestError(NOT_FOUND_STATUS, MESSAGE_ERROR_CODES.notFound, "This member isn't available.");
+  return new RequestError(NOT_FOUND_STATUS, MESSAGE_ERROR_CODES.notFound, "This member isn't available.");
 }
 
 function ownConversationError() {
-  return new NetworkRequestError(UNPROCESSABLE_STATUS, MESSAGE_ERROR_CODES.ownConversation, "You can't message yourself.");
+  return new RequestError(UNPROCESSABLE_STATUS, MESSAGE_ERROR_CODES.ownConversation, "You can't message yourself.");
 }
 
 async function lockConversation(transaction: Transaction, conversationId: string, memberId: string) {
@@ -60,7 +60,7 @@ async function isMemberActive(database: DatabaseOrTransaction, memberId: string)
   return active !== undefined;
 }
 
-export async function startConversation({ database, member }: NetworkContext, memberId: string) {
+export async function startConversation({ database, member }: RequestContext, memberId: string) {
   if (memberId === member.id) throw ownConversationError();
   if (!(await isMemberActive(database, memberId))) throw memberGoneError();
 
@@ -110,11 +110,11 @@ async function readBlockDirections(transaction: Transaction, memberId: string, p
 }
 
 function peerBlockedError() {
-  return new NetworkRequestError(CONFLICT_STATUS, MESSAGE_ERROR_CODES.peerBlocked, "You blocked this member. Unblock them to send a message.");
+  return new RequestError(CONFLICT_STATUS, MESSAGE_ERROR_CODES.peerBlocked, "You blocked this member. Unblock them to send a message.");
 }
 
 function peerUnavailableError() {
-  return new NetworkRequestError(CONFLICT_STATUS, MESSAGE_ERROR_CODES.peerUnavailable, "This member isn't available right now.");
+  return new RequestError(CONFLICT_STATUS, MESSAGE_ERROR_CODES.peerUnavailable, "This member isn't available right now.");
 }
 
 async function insertMessage(transaction: Transaction, memberId: string, { conversationId, clientKey, body }: SendMessageBody) {
@@ -151,7 +151,7 @@ async function readRequiredMessage(database: Database, viewerId: string, message
   return message;
 }
 
-export async function sendMessage({ database, member }: NetworkContext, body: SendMessageBody) {
+export async function sendMessage({ database, member }: RequestContext, body: SendMessageBody) {
   const alreadySentId = await readOwnMessageIdByKey(database, body, member.id);
   if (alreadySentId) return readRequiredMessage(database, member.id, alreadySentId);
 
@@ -176,10 +176,10 @@ async function readParticipantMessage(database: DatabaseOrTransaction, memberId:
   return target;
 }
 
-export async function deleteOwnMessage({ database, member }: NetworkContext, messageId: string) {
+export async function deleteOwnMessage({ database, member }: RequestContext, messageId: string) {
   const { conversationId, senderId } = await readParticipantMessage(database, member.id, messageId);
   if (senderId !== member.id) {
-    throw new NetworkRequestError(FORBIDDEN_STATUS, MESSAGE_ERROR_CODES.notYours, "You can only delete your own messages.");
+    throw new RequestError(FORBIDDEN_STATUS, MESSAGE_ERROR_CODES.notYours, "You can only delete your own messages.");
   }
 
   await database.transaction(async (transaction) => {
@@ -196,7 +196,7 @@ export async function deleteOwnMessage({ database, member }: NetworkContext, mes
 }
 
 export async function markConversationRead(
-  { database, member }: NetworkContext,
+  { database, member }: RequestContext,
   { conversationId, sequence }: MarkReadBody,
 ) {
   const [newest] = await database
@@ -224,13 +224,13 @@ export async function markConversationRead(
   return { lastReadSequence: cursor?.lastReadSequence ?? readSequence };
 }
 
-export async function reportMessage({ database, member }: NetworkContext, messageId: string) {
+export async function reportMessage({ database, member }: RequestContext, messageId: string) {
   const target = await readParticipantMessage(database, member.id, messageId);
   if (target.senderId === member.id) {
-    throw new NetworkRequestError(UNPROCESSABLE_STATUS, MESSAGE_ERROR_CODES.notYours, "You can only report messages you received.");
+    throw new RequestError(UNPROCESSABLE_STATUS, MESSAGE_ERROR_CODES.notYours, "You can only report messages you received.");
   }
   if (target.body === null) {
-    throw new NetworkRequestError(CONFLICT_STATUS, MESSAGE_ERROR_CODES.deleted, "This message was deleted, so there's nothing to report.");
+    throw new RequestError(CONFLICT_STATUS, MESSAGE_ERROR_CODES.deleted, "This message was deleted, so there's nothing to report.");
   }
 
   await enforceMessagingLimit(database, member.id, MESSAGING_KINDS.report);

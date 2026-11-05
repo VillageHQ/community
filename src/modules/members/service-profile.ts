@@ -8,8 +8,8 @@ import { memberAvatar, memberProfile, memberTag, memberNetwork } from "./schema.
 import type { ImageContentType } from "../../platform/image-rules.ts";
 import { API_ROUTES } from "../../platform/http/routes.ts";
 import { saveMemberLinkedinUrl } from "./service-linkedin.ts";
-import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import { type NetworkContext } from "../../platform/http/request-context.ts";
+import { RequestError } from "../../platform/http/request-error.ts";
+import { type RequestContext } from "../../platform/http/request-context.ts";
 import { MEMBER_ERROR_CODES } from "./contract-linkedin.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { parseExternalUrl } from "./rules-external-url.ts";
@@ -31,21 +31,21 @@ async function readLinkedinSlugOf(database: Database, memberId: string) {
   return network?.linkedinSlug ?? null;
 }
 
-async function saveLinkedin(context: NetworkContext, linkedinUrl: string | undefined) {
+async function saveLinkedin(context: RequestContext, linkedinUrl: string | undefined) {
   if (linkedinUrl === undefined) return;
   if (linkedinUrl) {
     await saveMemberLinkedinUrl(context, linkedinUrl);
     return;
   }
   if (!(await readLinkedinSlugOf(context.database, context.member.id))) return;
-  throw new NetworkRequestError(
+  throw new RequestError(
     UNPROCESSABLE_STATUS,
     MEMBER_ERROR_CODES.linkedinInvalid,
     "Network search matches you by your LinkedIn, so it can't be removed. You can change it to another profile.",
   );
 }
 
-export async function saveProfile(context: NetworkContext, body: ProfileBody) {
+export async function saveProfile(context: RequestContext, body: ProfileBody) {
   const { database, member } = context;
   const { name, tags, linkedinUrl, ...cardFields } = body;
   await saveLinkedin(context, linkedinUrl);
