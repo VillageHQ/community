@@ -15,6 +15,7 @@ import { readModuleName } from "./layers";
 const HTTP_METHODS = new Set(["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"]);
 const ADMIN_API_PREFIX = "/api/admin/";
 const MODULE_ON_TOP = "admin";
+const ROUTES_THAT_STAY_OPEN = ["/api/network/leave"];
 const MODULES_DIRECTORY = resolve(REPOSITORY_ROOT, "src/modules");
 
 const manifests = MODULES.map(({ manifest }) => manifest);
@@ -47,6 +48,19 @@ describe("every API route", () => {
 
   it.each(readRouteFiles().filter((file) => toUrlPath(file).startsWith(ADMIN_API_PREFIX)))("%s requires an admin", async (file) => {
     for (const { handler } of await readHandlers(file)) expect(readRouteFacts(handler)?.access).toBe(ROUTE_ACCESS.admin);
+  });
+});
+
+describe("a route that stays open when its module is off", () => {
+  it("is only the one that lets a member leave Village", async () => {
+    const flagged = await Promise.all(
+      readRouteFiles().map(async (file) => {
+        const handlers = await readHandlers(file);
+        return handlers.some(({ handler }) => readRouteFacts(handler)?.staysOpenWhenOff) ? [toUrlPath(file)] : [];
+      }),
+    );
+
+    expect(flagged.flat()).toEqual(ROUTES_THAT_STAY_OPEN);
   });
 });
 

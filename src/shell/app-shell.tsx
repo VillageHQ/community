@@ -18,11 +18,10 @@ type AppShellProps = {
   navigation: readonly ShellNavigationItem[];
   badges: NavigationBadgeCounts;
   isNetworkOn: boolean;
-  runsOnVillage: boolean;
   children: ReactNode;
 };
 
-export function AppShell({ community, member, navigation, badges, isNetworkOn, runsOnVillage, children }: AppShellProps) {
+export function AppShell({ community, member, navigation, badges, isNetworkOn, children }: AppShellProps) {
   return (
     <div data-slot="app-shell" className="min-h-dvh lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
       <aside data-slot="sidebar" aria-label="Community" className="hidden border-r lg:block">
@@ -39,11 +38,9 @@ export function AppShell({ community, member, navigation, badges, isNetworkOn, r
           <SidebarNavigation items={navigation} isAdmin={member.isAdmin} badges={badges} />
           <div className="mt-auto flex flex-col gap-3 pt-6">
             <SidebarUserMenu member={member} />
-            {runsOnVillage ? (
-              <div className="px-3">
-                <NetworkByVillage />
-              </div>
-            ) : null}
+            <div className="px-3">
+              <NetworkByVillage />
+            </div>
           </div>
         </div>
       </aside>
@@ -55,7 +52,7 @@ export function AppShell({ community, member, navigation, badges, isNetworkOn, r
         <span className="min-w-0 flex-1 truncate text-[17px] leading-[22px] font-bold tracking-[-0.012em]">
           {community.name}
         </span>
-        <PhoneUserMenu member={member} adminBadgeCount={badges.admin} showsVillageMark={runsOnVillage} />
+        <PhoneUserMenu member={member} adminBadgeCount={badges.admin} />
       </header>
       <main id={MAIN_CONTENT_ID} tabIndex={-1} className="min-w-0 px-3.5 pt-2 pb-32 lg:px-10 lg:pt-9 lg:pb-12">
         <div data-slot="page-width" className="mx-auto w-full max-w-[1040px]">

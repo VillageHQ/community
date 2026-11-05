@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
+import { MAIN_CONTENT_ID } from "@/components/skip-link";
 import { Button } from "@/components/ui/button";
 
 import { setModuleStateRequest } from "../queries-modules";
@@ -21,6 +22,7 @@ export function RunWithoutVillage({ moduleId }: { moduleId: string }) {
         title="Run without Village?"
         confirmLabel="Run without Village"
         pendingLabel="Turning off…"
+        fallbackFocusId={MAIN_CONTENT_ID}
         action={() => setModuleStateRequest({ moduleId, isOn: false })}
         onDone={() => router.refresh()}
       >

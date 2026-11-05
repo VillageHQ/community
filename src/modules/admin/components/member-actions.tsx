@@ -149,7 +149,8 @@ function VillageActions({ member, manageButtonRef, fallbackFocusId, onDone }: Me
   const { id, name, email, villageStatus, pendingVillageEmail, hasVillageLink, hasStaleVillageMembership } = member;
   const firstName = readFirstName(name);
   const statusNote = member.isRemoved ? REMOVED_VILLAGE_NOTE : VILLAGE_STATUS_DETAILS[villageStatus].meaning;
-  if (!hasVillageLink) return <ActionGroup title="Village" note={statusNote} />;
+  const isNetworkOn = useIsModuleEnabled(networkManifest.id);
+  if (!hasVillageLink || !isNetworkOn) return <ActionGroup title="Village" note={hasStaleVillageMembership ? `${statusNote} ${STALE_MEMBERSHIP_NOTE}` : statusNote} />;
   return (
     <ActionGroup title="Village" note={hasStaleVillageMembership ? `${statusNote} ${STALE_MEMBERSHIP_NOTE}` : statusNote}>
       {pendingVillageEmail ? (

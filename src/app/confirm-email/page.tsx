@@ -14,6 +14,8 @@ import { ROUTES } from "@/platform/http/routes";
 
 import { ConfirmEmailPanel } from "./confirm-email-panel";
 import { membersManifest } from "@/modules/members/manifest";
+import { networkManifest } from "@/modules/network/manifest";
+import { isModuleEnabled } from "@/platform/modules/enablement";
 import { modulePage } from "@/platform/modules/module-page";
 
 export const dynamic = "force-dynamic";
@@ -29,7 +31,7 @@ export default modulePage(membersManifest, async function ConfirmEmailPage({ sea
   const path = `${ROUTES.confirmEmail}?token=${encodeURIComponent(token)}`;
   if (view === CONFIRMATION_VIEWS.signIn) redirect(toSignInPath(path));
 
-  const community = await readBrandingForPage();
+  const [community, isNetworkOn] = await Promise.all([readBrandingForPage(), isModuleEnabled(getDatabase(), networkManifest)]);
   return (
     <SplitLayout
       community={community}
@@ -42,6 +44,7 @@ export default modulePage(membersManifest, async function ConfirmEmailPage({ sea
           path={path}
           accountName={session?.user.name ?? ""}
           accountEmail={session?.user.email ?? ""}
+          isNetworkOn={isNetworkOn}
         />
       </div>
     </SplitLayout>

@@ -125,7 +125,7 @@ export async function SetupChecklist({ database, admin, progress, openStepId, ba
   ]);
   const context = createRequestContext(database, process.env, admin);
   const { villageUser, isVillageReachable } =
-    openStepId === SETUP_STEPS.group ? await readAdminUserSafely(context) : { villageUser: null, isVillageReachable: true };
+    isNetworkStepShown && openStepId === SETUP_STEPS.group ? await readAdminUserSafely(context) : { villageUser: null, isVillageReachable: true };
   const domain = new URL(resolveAppUrl(process.env)).hostname;
   const isEmailConfigured = readResendConfig(process.env) !== null;
 

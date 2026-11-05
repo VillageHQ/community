@@ -71,8 +71,8 @@ export function describeSetupProgress(facts: SetupFacts, stepIds: readonly Setup
 
 export type SetupProgress = ReturnType<typeof describeSetupProgress>;
 
-export function parseSetupStep(value: unknown): SetupStepId | null {
-  return SETUP_STEP_ORDER.find((step) => step === value) ?? null;
+export function parseSetupStep(value: unknown, stepIds: readonly SetupStepId[] = SETUP_STEP_ORDER): SetupStepId | null {
+  return stepIds.find((step) => step === value) ?? null;
 }
 
 export async function readSetupProgress(database: Database, environment: Environment) {

@@ -33,7 +33,7 @@ export default modulePage(adminManifest, async function AdminPage({ searchParams
 
   const database = getDatabase();
   const [progress, branding] = await Promise.all([readSetupProgress(database, process.env), readBranding(database)]);
-  const requestedStepId = parseSetupStep(step);
+  const requestedStepId = parseSetupStep(step, progress.steps.map(({ id }) => id));
   if (progress.isComplete) redirect(requestedStepId ? `${ROUTES.adminSettings}?step=${requestedStepId}` : ROUTES.adminMembers);
 
   const openStepId = requestedStepId ?? progress.currentStepId;

@@ -104,9 +104,9 @@ export function AdminSheetRow({ badgeCount }: { badgeCount: number | undefined }
   );
 }
 
-type PhoneUserMenuProps = { member: ShellMember; adminBadgeCount: number | undefined; showsVillageMark?: boolean };
+type PhoneUserMenuProps = { member: ShellMember; adminBadgeCount: number | undefined };
 
-export function PhoneUserMenu({ member, adminBadgeCount, showsVillageMark = true }: PhoneUserMenuProps) {
+export function PhoneUserMenu({ member, adminBadgeCount }: PhoneUserMenuProps) {
   const isDark = useIsDarkTheme();
   return (
     <Dialog.Root>
@@ -158,7 +158,7 @@ export function PhoneUserMenu({ member, adminBadgeCount, showsVillageMark = true
             </button>
           </div>
           <div className="mt-3 px-4">
-            {showsVillageMark ? <NetworkByVillage /> : null}
+            <NetworkByVillage />
           </div>
         </Dialog.Content>
       </Dialog.Portal>

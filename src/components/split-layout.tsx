@@ -3,7 +3,7 @@ import type { ElementType, ReactNode } from "react";
 import { Constellation, type ConstellationPerson } from "@/components/constellation";
 import { LogoTile } from "@/components/logo-tile";
 import { MAIN_CONTENT_ID } from "@/components/skip-link";
-import { NetworkByVillage, VillageMark } from "@/components/village-mark";
+import { NetworkByVillage, OnlyOnVillage, VillageMark } from "@/components/village-mark";
 import type { CommunityLogo } from "@/platform/branding/branding";
 
 type Community = { name: string; descriptor: string; logo: CommunityLogo | null };
@@ -78,12 +78,12 @@ export function CommunityNote({ community, children }: { community: Community; c
 
 export function VillageNote() {
   return (
-    <>
+    <OnlyOnVillage otherwise={<p className="type-lead">A private community for your members.</p>}>
       <p className="type-lead">A private community, with its members&apos; networks a search away.</p>
       <figcaption className="mt-3.5 flex items-center gap-3">
         <VillageMark sizePx={44} />
         <div className="type-label">Network by Village</div>
       </figcaption>
-    </>
+    </OnlyOnVillage>
   );
 }

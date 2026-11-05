@@ -18,13 +18,16 @@ function confirmEmail(token: string) {
   return postRequest(API_ROUTES.networkConfirm, { token }, acknowledgedResponseSchema);
 }
 
-function InvalidLink() {
+const INVALID_LINK_WITH_NETWORK = "It may have expired or been used already. If your email isn't confirmed yet, open Network to get a new link, or ask your admin to confirm you.";
+const INVALID_LINK_WITHOUT_NETWORK = "It may have expired or been used already. If your email isn't confirmed yet, ask your admin to confirm it.";
+
+function InvalidLink({ isNetworkOn }: { isNetworkOn: boolean }) {
   return (
     <EmptyState
       headingLevel="h1"
       icon={Clock}
       title="This link didn't work"
-      description="It may have expired or been used already. If your email isn't confirmed yet, open Network to get a new link, or ask your admin to confirm you."
+      description={isNetworkOn ? INVALID_LINK_WITH_NETWORK : INVALID_LINK_WITHOUT_NETWORK}
     >
       <Button asChild size="lg">
         <Link href={ROUTES.landing}>Continue</Link>
@@ -50,9 +53,9 @@ function WrongAccount({ accountName, path }: { accountName: string; path: string
   );
 }
 
-type ConfirmAccountProps = { token: string; accountName: string; accountEmail: string };
+type ConfirmAccountProps = { token: string; accountName: string; accountEmail: string; isNetworkOn: boolean };
 
-function ConfirmAccount({ token, accountName, accountEmail }: ConfirmAccountProps) {
+function ConfirmAccount({ token, accountName, accountEmail, isNetworkOn }: ConfirmAccountProps) {
   const confirmMutation = useMutation({ mutationFn: confirmEmail });
   if (confirmMutation.isSuccess) {
     return (
@@ -60,7 +63,7 @@ function ConfirmAccount({ token, accountName, accountEmail }: ConfirmAccountProp
         headingLevel="h1"
         icon={CircleCheck}
         title="Your email is confirmed"
-        description="Thanks. Network search is open to you now."
+        description={isNetworkOn ? "Thanks. Network search is open to you now." : "Thanks. You're all set."}
       >
         <Button asChild size="lg">
           <Link href={ROUTES.landing}>Continue</Link>
@@ -83,16 +86,16 @@ function ConfirmAccount({ token, accountName, accountEmail }: ConfirmAccountProp
   );
 }
 
-type ConfirmEmailPanelProps = ConfirmAccountProps & { view: ConfirmationView; path: string };
+type ConfirmEmailPanelProps = Omit<ConfirmAccountProps, "isNetworkOn"> & { view: ConfirmationView; path: string; isNetworkOn: boolean };
 
-export function ConfirmEmailPanel({ view, token, path, accountName, accountEmail }: ConfirmEmailPanelProps) {
-  if (view === CONFIRMATION_VIEWS.invalid) return <InvalidLink />;
+export function ConfirmEmailPanel({ view, token, path, accountName, accountEmail, isNetworkOn }: ConfirmEmailPanelProps) {
+  if (view === CONFIRMATION_VIEWS.invalid) return <InvalidLink isNetworkOn={isNetworkOn} />;
   return (
     <QueryProvider>
       {view === CONFIRMATION_VIEWS.wrongAccount ? (
         <WrongAccount accountName={accountName} path={path} />
       ) : (
-        <ConfirmAccount token={token} accountName={accountName} accountEmail={accountEmail} />
+        <ConfirmAccount token={token} accountName={accountName} accountEmail={accountEmail} isNetworkOn={isNetworkOn} />
       )}
     </QueryProvider>
   );

@@ -6,6 +6,10 @@ import { POST as leaveGroup } from "@/app/api/network/leave/route";
 import { REPORT_FILTERS, REPORT_TARGETS, reportPageSchema } from "@/modules/admin/contract";
 import { contentReport } from "@/modules/admin/schema";
 import { feedManifest } from "@/modules/feed/manifest";
+import { describeEmailConfirmation } from "@/modules/members/contract-email-confirmation-copy";
+import { ONBOARDING_STEPS } from "@/modules/members/contract-profile";
+import { readNetworkProgress } from "@/modules/network/reads-progress";
+import { ROUTES } from "@/platform/http/routes";
 import { networkManifest } from "@/modules/network/manifest";
 import { saveModuleState } from "@/platform/modules/enablement";
 import { NAVIGATION_SECTIONS } from "@/platform/modules/manifest";
@@ -17,11 +21,13 @@ import { FAKE_VILLAGE_KEYS } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
 import { readAdminTabFacts } from "./admin-badges";
-import { SETUP_STEPS, readSetupProgress } from "./admin-setup";
+import { parseSetupStep, readSetupProgress, SETUP_STEPS } from "./admin-setup";
 import { readEnabledIds, readRunsOnVillage } from "./enabled-modules";
 import { selectNavigationItems } from "./navigation";
 import { readNavigationBadges } from "./navigation-badges";
+import { selectNextSteps } from "./next-steps";
 import { resolveOnboardingStep } from "./onboarding";
+import { SetupChecklist } from "./setup-checklist";
 
 const APP_URL = "http://localhost:3000";
 const ENVIRONMENT = { APP_URL };
@@ -44,6 +50,7 @@ describe("the shell with modules off", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   afterAll(async () => {
@@ -59,6 +66,25 @@ describe("the shell with modules off", () => {
       const { steps } = await readSetupProgress(database, ENVIRONMENT);
 
       expect(steps.map(({ id }) => id)).toEqual([SETUP_STEPS.brand, SETUP_STEPS.invite]);
+    });
+
+    describe("a request for a Village setup step", () => {
+      it("is refused, however it's asked for", async () => {
+        const { steps } = await readSetupProgress(database, ENVIRONMENT);
+
+        expect(parseSetupStep(SETUP_STEPS.group, steps.map(({ id }) => id))).toBeNull();
+      });
+
+      it("calls Village for nothing, even with keys saved", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        const admin = await createSignedInMember(database, "admin");
+        await saveVillageKeys(database, FAKE_VILLAGE_KEYS);
+        const progress = await readSetupProgress(database, ENVIRONMENT);
+
+        await SetupChecklist({ database, admin: { id: admin.userId, email: admin.email, role: "admin" }, progress, openStepId: SETUP_STEPS.group, basePath: "/admin" });
+
+        expect(fetchSpy).not.toHaveBeenCalled();
+      });
     });
 
     it("hides the network and intros entries", async () => {
@@ -99,6 +125,31 @@ describe("the shell with modules off", () => {
       const response = await leaveGroup(postJson("/api/network/leave", member.cookie, { confirmed: true }));
 
       expect(response.status).not.toBe(404);
+    });
+  });
+
+  describe("a member who finishes onboarding while network is off", () => {
+    it("is prompted to sync when network comes back", async () => {
+      const { memberProfile } = await import("@/modules/members/schema");
+      const member = await createSignedInMember(database);
+      const session = { id: member.userId, email: member.email };
+      await database.insert(memberProfile).values({ userId: member.userId, cardStepDoneAt: new Date(), onboardingCompletedAt: new Date() });
+      await saveVillageKeys(database, FAKE_VILLAGE_KEYS);
+
+      await saveModuleState(database, networkManifest, false);
+      expect(await resolveOnboardingStep(database, session)).toBe(ONBOARDING_STEPS.done);
+
+      await saveModuleState(database, networkManifest, true);
+      const [nextStep] = selectNextSteps({
+        setupProgress: null,
+        networkProgress: await readNetworkProgress(database, session),
+        communityName: "Northwind",
+        isCardFilled: true,
+        confirmationCopy: describeEmailConfirmation("Northwind", false),
+      });
+
+      expect(nextStep?.isUrgent).toBe(true);
+      expect(nextStep?.action?.href).toBe(ROUTES.network);
     });
   });
 

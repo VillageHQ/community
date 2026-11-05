@@ -187,7 +187,9 @@ When a module is off:
 | API routes | 404 | The route kit's guard, inside route logging. It reads no body or session. |
 | Pages and layouts | Not-found UI | `modulePage` wraps each one. |
 | Navigation | Entry hidden | `buildShellNavigation(enabledIds)` in the layout. |
-| Badges | Not read, not polled | `readModuleBadges` and `useLiveBadges`. A badge also stops polling on a 404. |
+| Badges | Not read | `readModuleBadges`. |
+| Polling | Stops on a 404 | Every `refetchInterval` checks `isRouteGone`, so an open tab stops asking. |
+| The Village mark | Hidden when nothing needs Village | `readRunsOnVillageSafely` in the root layout. |
 | Setup checklist | Steps gone | `SETUP_STEP_OWNERS` in `shell/admin-setup.ts`. |
 | Next steps, onboarding | Skipped | `shell/next-steps.ts` and `shell/onboarding.ts`. |
 | Admin tabs | Hidden | Each manifest's `adminTabs`. |
@@ -201,14 +203,14 @@ Hidden pages answer status 200 with the not-found UI and a `noindex` tag, becaus
 Three things deliberately keep working:
 
 - **Reports.** A report on a feature that's off stays visible and resolvable, labelled with that feature, and still counts toward the admin badge. Moderation can't disappear because a switch was flipped.
-- **Leaving Village.** Turning network off doesn't take anyone out of the Village group. `/api/network/leave` stays open with `staysOpenWhenOff`, and a member still in the group gets a leave card on their own card page.
+- **Leaving Village.** Turning network off doesn't take anyone out of the Village group. `/api/network/leave` stays open with `staysOpenWhenOff`, the only route allowed to use it, and a member still in the group gets a leave card on their own card page.
 - **Departure on removal.** Removing a member still tries to take them out of the group, and the admin keeps the group row for any member still in it.
 
 `/` always renders. With the feed off, it shows next steps and new members, and the nav gets a "Home" entry.
 
 ## The features screen
 
-`/admin/features` lists the toggles as cards with big buttons. Core modules appear once, under "Always on". `POST /api/admin/modules` writes the state and the audit log in one transaction. It refuses core modules, and it refuses to turn on a module whose requirement is off.
+`/admin/features` lists the toggles as cards, each with a large switch. Core modules appear once, under "Always on". `POST /api/admin/modules` writes the state and the audit log in one transaction. It refuses core modules, and it refuses to turn on a module whose requirement is off.
 
 The screen handles dependencies in words:
 
@@ -297,6 +299,7 @@ There's no scheduler in this deployment. Do work at read time, with `after()` if
 - a route handler didn't come from a route kit
 - a route or page belongs to no manifest, or declares the wrong owner
 - a route under `/api/admin` doesn't require an admin
+- any route other than `/api/network/leave` uses `staysOpenWhenOff`
 - a module folder has no registry line
 - a module imports a toggleable module it doesn't list in `requires`
 

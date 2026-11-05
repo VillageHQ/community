@@ -15,7 +15,7 @@ import {
   type MarkReadBody,
   type SendMessageBody,
 } from "./contract.ts";
-import { INBOX_POLL_MS, readInboxPollMs, readBadgePollMs } from "../../platform/http/polling.ts";
+import { INBOX_POLL_MS, readInboxPollMs, isRouteGone } from "../../platform/http/polling.ts";
 import { readThreadPollMs } from "./rules-polling.ts";
 import { applyThreadChanges, type PendingMessage } from "./rules-thread-cache.ts";
 
@@ -41,7 +41,7 @@ export function inboxQuery(search = WHOLE_INBOX) {
     initialPageParam: FIRST_INBOX_PAGE,
     getNextPageParam: ({ nextCursor }) => nextCursor,
     staleTime: INBOX_POLL_MS,
-    refetchInterval: ({ state }) => readInboxPollMs(state.status === "error"),
+    refetchInterval: ({ state }) => (isRouteGone(state.error) ? false : readInboxPollMs(state.status === "error")),
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });
@@ -52,7 +52,7 @@ export function unreadCountQuery() {
     queryKey: [MESSAGE_QUERY_KEYS.unreadCount],
     queryFn: () => postRequest(API_ROUTES.messageUnreadCount, {}, unreadCountSchema),
     staleTime: INBOX_POLL_MS,
-    refetchInterval: readBadgePollMs,
+    refetchInterval: ({ state }) => (isRouteGone(state.error) ? false : readInboxPollMs(state.status === "error")),
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });
@@ -86,8 +86,7 @@ export function threadChangesQuery(conversationId: string) {
       }
       return { hasMore: changes.hasMore };
     },
-    refetchInterval: ({ state }) =>
-      readThreadPollMs({ hasFailed: state.status === "error", hasMore: state.data?.hasMore ?? false }),
+    refetchInterval: ({ state }) => (isRouteGone(state.error) ? false : readThreadPollMs({ hasFailed: state.status === "error", hasMore: state.data?.hasMore ?? false })),
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     gcTime: 0,

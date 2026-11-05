@@ -11,7 +11,7 @@ import { readBrandingForPage } from "@/platform/branding/branding";
 import { getDatabase } from "@/platform/database/client";
 import { EnabledModulesProvider } from "@/platform/modules/enabled-modules";
 import { AppShell } from "@/shell/app-shell";
-import { readEnabledIds, readModuleBadges, readRunsOnVillage } from "@/shell/enabled-modules";
+import { readEnabledIds, readModuleBadges } from "@/shell/enabled-modules";
 import { buildShellNavigation } from "@/shell/navigation";
 import { readNavigationBadges } from "@/shell/navigation-badges";
 
@@ -34,7 +34,6 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       navigation={buildShellNavigation(enabledIds)}
       badges={{ ...adminBadges, ...moduleBadges }}
       isNetworkOn={enabledIds.has(networkManifest.id)}
-      runsOnVillage={readRunsOnVillage(enabledIds)}
     >
       {children}
     </AppShell>

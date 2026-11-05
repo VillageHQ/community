@@ -11,8 +11,7 @@ export function readInboxPollMs(hasFailed: boolean) {
   return hasFailed ? INBOX_POLL_AFTER_FAILURE_MS : INBOX_POLL_MS;
 }
 
-// An admin can turn a module off while a tab is open. Its routes then answer 404, so a badge stops asking.
-export function readBadgePollMs({ state }: { state: { status: string; error: unknown } }) {
-  if (state.error instanceof RequestFailure && state.error.status === NOT_FOUND_STATUS) return false;
-  return readInboxPollMs(state.status === "error");
+// An admin can turn a module off while a tab is open. Its routes then answer 404, so every poll stops.
+export function isRouteGone(error: unknown) {
+  return error instanceof RequestFailure && error.status === NOT_FOUND_STATUS;
 }

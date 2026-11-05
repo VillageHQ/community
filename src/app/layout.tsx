@@ -5,6 +5,8 @@ import { connection } from "next/server";
 import type { ReactNode } from "react";
 
 import { SkipLink } from "@/components/skip-link";
+import { RunsOnVillageProvider } from "@/components/village-mark";
+import { readRunsOnVillageSafely } from "@/shell/enabled-modules";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { toRootMetadata } from "@/platform/branding/page-metadata";
 import { renderAccentCss } from "@/platform/design/accent";
@@ -21,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
   const theme = parseTheme(cookieStore.get(THEME_COOKIE)?.value);
-  const { accentColor } = await readBrandingForPage();
+  const [{ accentColor }, runsOnVillage] = await Promise.all([readBrandingForPage(), readRunsOnVillageSafely()]);
 
   return (
     <html
@@ -35,7 +37,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <SkipLink />
-        {children}
+        <RunsOnVillageProvider value={runsOnVillage}>{children}</RunsOnVillageProvider>
       </body>
     </html>
   );

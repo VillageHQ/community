@@ -165,7 +165,7 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
     <AdminSection title="Settings" description="Come back to any part of setup, any time.">
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_312px]">
         <div className="grid gap-5">
-          <SetupChecklist database={database} admin={admin} progress={progress} openStepId={parseSetupStep(step)} basePath={ROUTES.adminSettings} />
+          <SetupChecklist database={database} admin={admin} progress={progress} openStepId={parseSetupStep(step, progress.steps.map(({ id }) => id))} basePath={ROUTES.adminSettings} />
           <EmailCard config={readResendConfig(process.env)} enabledIds={enabledIds} />
           <VersionCard />
         </div>
