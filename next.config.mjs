@@ -19,7 +19,10 @@ const SECRET_LINK_HEADERS = [
 
 const UPLOADED_IMAGE_CONTENT_SECURITY_POLICY = `default-src 'none'; sandbox; ${CONTENT_SECURITY_POLICY}`;
 
+const BUILD_OUTPUT = process.env.COMMUNITY_STANDALONE_BUILD === "true" ? "standalone" : undefined;
+
 export const nextConfig = {
+  output: BUILD_OUTPUT,
   poweredByHeader: false,
   outputFileTracingIncludes: { "/*": ["./drizzle/**/*"] },
   headers: async () => [

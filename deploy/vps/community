@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+# Everyday commands for a Community server set up by install.sh. Run `sudo community` to see them.
+set -euo pipefail
+
+readonly COMMUNITY_HOME="${COMMUNITY_HOME:-/opt/community}"
+readonly ENV_FILE="$COMMUNITY_HOME/.env"
+readonly BACKUPS_DIRECTORY="$COMMUNITY_HOME/backups"
+readonly BACKUPS_KEPT=7
+readonly BACKUP_WARNING_AGE_SECONDS=$((2 * 24 * 60 * 60))
+readonly HEALTH_TIMEOUT_SECONDS=180
+readonly INSTALLER_URL="https://raw.githubusercontent.com/VillageHQ/community/${COMMUNITY_REF:-main}/install.sh"
+
+say() { printf '%s\n' "$*"; }
+die() {
+  printf '%s\n' "$*" >&2
+  exit 1
+}
+
+compose() {
+  docker compose --project-directory "$COMMUNITY_HOME" -f "$COMMUNITY_HOME/compose.yml" "$@"
+}
+
+read_setting() {
+  sed -n "s/^$1=//p" "$ENV_FILE" | tail -n 1
+}
+
+require_access() {
+  [ ! -r "$ENV_FILE" ] || return 0
+  if [ "$(id -u)" -eq 0 ] || [ ! -e "$COMMUNITY_HOME" ]; then
+    die "Community isn't installed in $COMMUNITY_HOME."
+  fi
+  die "This needs administrator rights. Put sudo in front: sudo community $*"
+}
+
+run_sql() {
+  compose exec -T -e PGOPTIONS=-cclient_min_messages=warning postgres psql -U community -d postgres -v ON_ERROR_STOP=1 -q -c "$1"
+}
+
+is_valid_dump() {
+  compose exec -T postgres pg_restore --list <"$1" >/dev/null 2>&1
+}
+
+create_backup() {
+  local prefix="$1" target partial
+  target="$BACKUPS_DIRECTORY/$prefix-$(date -u +%Y%m%d-%H%M%S).dump"
+  partial="$target.partial"
+  mkdir -p "$BACKUPS_DIRECTORY"
+  chmod 700 "$BACKUPS_DIRECTORY"
+  if ! (umask 077 && compose exec -T postgres pg_dump -U community -d community --format=custom >"$partial"); then
+    rm -f "$partial"
+    die "The backup failed. Is the database running? Check with: sudo community status"
+  fi
+  if ! is_valid_dump "$partial"; then
+    rm -f "$partial"
+    die "The backup failed: the file it wrote can't be read back."
+  fi
+  mv "$partial" "$target"
+  printf '%s' "$target"
+}
+
+remove_old_backups() {
+  local backups=("$BACKUPS_DIRECTORY"/community-*.dump) index
+  [ -e "${backups[0]}" ] || return 0
+  for ((index = 0; index < ${#backups[@]} - BACKUPS_KEPT; index++)); do
+    rm -f "${backups[index]}"
+  done
+}
+
+backup() {
+  local target
+  target="$(create_backup community)"
+  remove_old_backups
+  say "Backup saved: $target"
+  say "This copy sits on the same disk as your data. If the server is lost, it's lost too."
+  say "Copy backups to another place regularly. docs/self-host-vps.md shows how."
+}
+
+wait_for_healthy_app() {
+  local deadline=$((SECONDS + HEALTH_TIMEOUT_SECONDS)) container
+  while [ "$SECONDS" -lt "$deadline" ]; do
+    container="$(compose ps -q app)"
+    if [ -n "$container" ] && [ "$(docker inspect --format '{{.State.Health.Status}}' "$container")" = "healthy" ]; then
+      return 0
+    fi
+    sleep 3
+  done
+  return 1
+}
+
+confirm_restore() {
+  local answer=""
+  [ -z "${COMMUNITY_NONINTERACTIVE:-}" ] || return 0
+  { : </dev/tty; } 2>/dev/null || die "Run this in a terminal, so you can confirm it."
+  say "This replaces everything in your community with the contents of $1."
+  say "Posts, messages and members added since that backup will be gone."
+  read -r -p "Type restore to continue: " answer </dev/tty
+  [ "$answer" = "restore" ] || die "Stopped. Nothing changed."
+}
+
+restart_app() {
+  compose start app >/dev/null 2>&1 || true
+}
+
+restore() {
+  local file="${1:-}" safety_copy
+  if [ -z "$file" ]; then
+    say "Say which backup to restore: sudo community restore <file>"
+    say "Your backups:"
+    printf '  %s\n' "$BACKUPS_DIRECTORY"/*.dump
+    exit 1
+  fi
+  [ -f "$file" ] || die "There's no file at $file."
+  is_valid_dump "$file" || die "$file isn't a Community backup, or it's damaged. Nothing changed."
+  confirm_restore "$file"
+
+  safety_copy="$(create_backup before-restore)"
+  say "Saved your current data first: $safety_copy"
+
+  trap restart_app EXIT
+  say "Stopping the app while we restore."
+  compose stop app >/dev/null 2>&1
+  run_sql 'DROP DATABASE IF EXISTS community_restoring WITH (FORCE)'
+  run_sql 'CREATE DATABASE community_restoring OWNER community'
+  if ! compose exec -T postgres pg_restore -U community -d community_restoring --no-owner --exit-on-error --single-transaction <"$file"; then
+    run_sql 'DROP DATABASE IF EXISTS community_restoring WITH (FORCE)'
+    die "The restore failed. Your data is unchanged."
+  fi
+  run_sql 'DROP DATABASE IF EXISTS community_replaced WITH (FORCE)'
+  run_sql 'ALTER DATABASE community RENAME TO community_replaced'
+  run_sql 'ALTER DATABASE community_restoring RENAME TO community'
+  run_sql 'DROP DATABASE community_replaced WITH (FORCE)'
+
+  trap - EXIT
+  say "Starting the app again."
+  compose start app >/dev/null 2>&1
+  wait_for_healthy_app || die "The data is back, but the app hasn't recovered yet. Look here: sudo community logs app"
+  say "Restore finished. Your community is running on the data from $file."
+}
+
+print_backup_status() {
+  local backups=("$BACKUPS_DIRECTORY"/community-*.dump) newest age
+  if [ ! -e "${backups[0]}" ]; then
+    say "Last backup: none yet"
+    return 0
+  fi
+  newest="${backups[${#backups[@]} - 1]}"
+  age=$(($(date +%s) - $(date -r "$newest" +%s)))
+  say "Last backup: $newest"
+  if [ "$age" -gt "$BACKUP_WARNING_AGE_SECONDS" ]; then
+    say "Warning: that backup is more than 2 days old. Look here: journalctl -u community-backup"
+  fi
+}
+
+status() {
+  say "Address: $(read_setting APP_URL)"
+  compose ps --format 'table {{.Service}}\t{{.Status}}'
+  print_backup_status
+  say "Free disk space: $(df -h "$COMMUNITY_HOME" | awk 'NR == 2 { print $4 }')"
+}
+
+logs() {
+  compose logs --tail 200 --follow "$@"
+}
+
+upgrade() {
+  local installer exit_code=0
+  installer="$(mktemp)"
+  curl -fsSL "$INSTALLER_URL" -o "$installer" || die "Couldn't download the installer. Check this server's internet connection."
+  bash "$installer" || exit_code=$?
+  rm -f "$installer"
+  return "$exit_code"
+}
+
+setup_token() {
+  read_setting SETUP_TOKEN
+}
+
+usage() {
+  cat <<'USAGE'
+Everyday commands for your community. Put sudo in front of each one.
+
+  sudo community status            Show what's running and the last backup
+  sudo community logs [service]    Show recent activity. Press Ctrl+C to stop. Services: app, caddy, postgres
+  sudo community upgrade           Install the newest version. Backs up first
+  sudo community backup            Make a backup now
+  sudo community restore <file>    Replace your data with a backup
+  sudo community setup-token       Show your setup token
+USAGE
+}
+
+main() {
+  local command="${1:-}"
+  [ "$#" -eq 0 ] || shift
+  case "$command" in
+    status) require_access "$command" && status ;;
+    logs) require_access "$command" && logs "$@" ;;
+    upgrade) require_access "$command" && upgrade ;;
+    backup) require_access "$command" && backup ;;
+    restore) require_access "$command" && restore "$@" ;;
+    setup-token) require_access "$command" && setup_token ;;
+    "") usage ;;
+    *)
+      usage >&2
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

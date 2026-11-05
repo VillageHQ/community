@@ -29,6 +29,16 @@ No terminal, no code. It's MIT licensed, and you run your own copy.
 2. Choose your setup token when asked: a long password you enter once, in the next section. See [Setup token](#setup-token). On DigitalOcean, replace the `change-me` placeholder.
 3. Wait for the deploy to finish, then open your new site. Your host shows its address.
 
+### On your own server
+
+Rent a server, point a domain at it and paste one command. It leaves your community running on HTTPS, restarts it by itself and backs it up every day. We've tested it on fresh virtual machines, but not yet on a rented server with a real certificate.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh | sudo bash
+```
+
+[Read the guide](docs/self-host-vps.md) for what to rent and how to point your domain.
+
 ## Your first 10 minutes
 
 1. **Create your admin account.** Your site opens on it. Enter the setup token and your name, email and password. Setup closes for good after this.
@@ -116,6 +126,7 @@ You can see your version in **Admin**, **Settings**. Updates aren't automatic.
 - **Railway:** Railway notifies you when the template's repo changes, and you choose when to apply it.
 - **Vercel:** The button copies this repo to your account. Pull changes from this repo into your copy, and each push redeploys.
 - **DigitalOcean:** The app follows this repo's `main` but doesn't update by itself. Start a new deploy from the dashboard.
+- **Your own server:** Run `sudo community upgrade`.
 
 ## Technical details
 
@@ -196,6 +207,7 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 | Vercel | `x-vercel-forwarded-for` | Confirmed: [docs](https://vercel.com/docs/headers/request-headers) say Vercel overwrites forwarded IP headers to prevent spoofing. |
 | Railway | `x-real-ip` | Partly confirmed: [docs](https://docs.railway.com/networking/public-networking/specs-and-limits) name it as the client IP. Only a forum reply from staff says the edge overwrites client values. Other forum threads report CDN addresses in it, which would collapse clients into one bucket. |
 | DigitalOcean | None by default | Not confirmed: [docs](https://docs.digitalocean.com/support/where-can-i-find-the-client-ip-address-of-a-request-connecting-to-my-app/) say App Platform adds `do-connecting-ip` but not that it replaces a client-sent value. |
+| Your own server, with `install.sh` | `x-real-ip` | Tested: Caddy overwrites a client-sent value, and only Caddy can reach the app. |
 | Anywhere else | None by default | Set `CLIENT_IP_HEADER` only if your proxy overwrites that header and clients can't reach the app directly. |
 
 With no trusted header, all clients share one bucket per path. That can't be spoofed, but one abuser can throttle sign-in for everyone, at 3 attempts per 10 seconds. Once a live test shows DigitalOcean replaces a client-sent `do-connecting-ip`, set `CLIENT_IP_HEADER=do-connecting-ip`.
