@@ -518,11 +518,16 @@ test_helper() {
   it "tells a non-administrator to use sudo"
   point_domain_at "$SERVER_IP"
   run_installer COMMUNITY_DOMAIN="$DOMAIN"
-  chmod 755 /opt/community
   exit_code=0
   output="$(setpriv --reuid=65534 --clear-groups /usr/local/bin/community setup-token 2>&1)" || exit_code=$?
   assert_exit 1
   assert_says "sudo community setup-token"
+
+  it "says so when Community isn't installed"
+  exit_code=0
+  output="$(/source/deploy/vps/community status 2>&1)" || exit_code=$?
+  assert_exit 1
+  assert_says "isn't installed"
 
   it "prints the setup token"
   point_domain_at "$SERVER_IP"

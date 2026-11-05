@@ -25,8 +25,11 @@ read_setting() {
 }
 
 require_access() {
-  [ -f "$ENV_FILE" ] || die "Community isn't installed in $COMMUNITY_HOME."
-  [ -r "$ENV_FILE" ] || die "This needs administrator rights. Put sudo in front: sudo community $*"
+  [ ! -r "$ENV_FILE" ] || return 0
+  if [ "$(id -u)" -eq 0 ] || [ ! -e "$COMMUNITY_HOME" ]; then
+    die "Community isn't installed in $COMMUNITY_HOME."
+  fi
+  die "This needs administrator rights. Put sudo in front: sudo community $*"
 }
 
 run_sql() {
