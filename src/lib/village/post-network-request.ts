@@ -5,6 +5,15 @@ import { readResponseMessage } from "../read-response-message.ts";
 const FALLBACK_ERROR_MESSAGE = "Something went wrong. Try again.";
 const UNREACHABLE_ERROR_MESSAGE = "We couldn't reach the server. Check your connection and try again.";
 
+export class RequestFailure extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function sendPost(path: string, body: unknown) {
   try {
     return await fetch(path, {
@@ -24,6 +33,6 @@ export async function postNetworkRequest<Schema extends z.ZodType>(
   failureMessage = FALLBACK_ERROR_MESSAGE,
 ): Promise<z.infer<Schema>> {
   const response = await sendPost(path, body);
-  if (!response.ok) throw new Error(await readResponseMessage(response, failureMessage));
+  if (!response.ok) throw new RequestFailure(response.status, await readResponseMessage(response, failureMessage));
   return schema.parse(await response.json());
 }

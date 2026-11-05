@@ -1,7 +1,8 @@
-import { eq } from "drizzle-orm";
+import { hashPassword } from "better-auth/crypto";
+import { eq, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
-import { rateLimit, user } from "../database/auth-schema";
+import { account, rateLimit, session, user, verification } from "../database/auth-schema";
 import { clearDatabase, createTestDatabase } from "../test/database";
 import { createAuth } from "./create-auth";
 import { claimFirstAdmin } from "./first-admin";
@@ -139,6 +140,145 @@ describe("createAuth", () => {
         expect(sameClient.status).toBe(429);
         expect(otherClient.status).toBe(401);
       });
+    });
+  });
+
+  describe("acting as a member", () => {
+    const MEMBER_ID = "member-with-private-messages";
+    const MEMBER_EMAIL = "member@example.com";
+    const MEMBER_PASSWORD = "the-members-own-password";
+    const ADMINS_PASSWORD_FOR_MEMBER = "password-the-admin-chose";
+
+    async function seedMemberWithPassword() {
+      await database.insert(user).values({ id: MEMBER_ID, name: "Member", email: MEMBER_EMAIL, emailVerified: true, role: "user" });
+      await database.insert(account).values({
+        id: `${MEMBER_ID}-account`,
+        userId: MEMBER_ID,
+        accountId: MEMBER_ID,
+        providerId: "credential",
+        password: await hashPassword(MEMBER_PASSWORD),
+      });
+    }
+
+    async function readMemberSessions() {
+      return database.select().from(session).where(eq(session.userId, MEMBER_ID));
+    }
+
+    async function readMemberPasswordHash() {
+      const [row] = await database.select({ password: account.password }).from(account).where(eq(account.userId, MEMBER_ID));
+      return row?.password;
+    }
+
+    beforeEach(async () => {
+      await claimFirstAdmin(database, ADMIN);
+      await seedMemberWithPassword();
+    });
+
+    describe.each([
+      ["/admin/impersonate-user", () => ({ userId: MEMBER_ID })],
+      ["/admin/stop-impersonating", () => ({})],
+      ["/admin/set-user-password", () => ({ userId: MEMBER_ID, newPassword: ADMINS_PASSWORD_FOR_MEMBER })],
+      ["/admin/list-user-sessions", () => ({ userId: MEMBER_ID })],
+      ["/admin/revoke-user-session", () => ({ sessionToken: "any-token" })],
+      ["/admin/create-user", () => ({ email: "new@example.com", password: ADMINS_PASSWORD_FOR_MEMBER, name: "New" })],
+    ])("%s", (path, createBody) => {
+      it("answers an admin as if it doesn't exist", async () => {
+        const headers = await signInAsAdmin();
+
+        const response = await post(path, createBody(), headers);
+
+        expect(response.status).toBe(404);
+        expect(response.headers.get("set-cookie")).toBeNull();
+      });
+
+      it("answers a visitor the same way", async () => {
+        expect((await post(path, createBody())).status).toBe(404);
+      });
+    });
+
+    it("mints no session when an admin tries to impersonate", async () => {
+      const headers = await signInAsAdmin();
+      await post("/admin/impersonate-user", { userId: MEMBER_ID }, headers);
+
+      expect(await readMemberSessions()).toEqual([]);
+    });
+
+    it("refuses impersonation through the server API too", async () => {
+      const headers = await signInAsAdmin();
+
+      await expect(auth.api.impersonateUser({ body: { userId: MEMBER_ID }, headers: new Headers(headers) })).rejects.toThrow();
+      expect(await readMemberSessions()).toEqual([]);
+    });
+
+    it("leaves the member's password alone when an admin tries to set it", async () => {
+      const headers = await signInAsAdmin();
+      const before = await readMemberPasswordHash();
+
+      await post("/admin/set-user-password", { userId: MEMBER_ID, newPassword: ADMINS_PASSWORD_FOR_MEMBER }, headers);
+
+      expect(await readMemberPasswordHash()).toBe(before);
+      const signIn = await post("/sign-in/email", { email: MEMBER_EMAIL, password: ADMINS_PASSWORD_FOR_MEMBER });
+      expect(signIn.status).toBe(401);
+    });
+
+    it("refuses setting a password through the server API too", async () => {
+      const headers = await signInAsAdmin();
+      const before = await readMemberPasswordHash();
+
+      await expect(
+        auth.api.setUserPassword({ body: { userId: MEMBER_ID, newPassword: ADMINS_PASSWORD_FOR_MEMBER }, headers: new Headers(headers) }),
+      ).rejects.toThrow();
+      expect(await readMemberPasswordHash()).toBe(before);
+    });
+
+    it("returns no session token to an admin listing sessions", async () => {
+      const memberSignIn = await post("/sign-in/email", { email: MEMBER_EMAIL, password: MEMBER_PASSWORD });
+      expect(memberSignIn.status).toBe(200);
+      const [memberSession] = await readMemberSessions();
+      const headers = await signInAsAdmin();
+
+      const response = await post("/admin/list-user-sessions", { userId: MEMBER_ID }, headers);
+
+      expect(await response.text()).not.toContain(memberSession?.token ?? "no-token");
+    });
+
+    it.each([
+      ["email", { email: "admin-controlled@example.com" }],
+      ["emailVerified", { emailVerified: false }],
+      ["id", { id: "another-id" }],
+      ["image", { image: "https://evil.test/a.png" }],
+    ])("refuses an admin changing a member's %s", async (_field, data) => {
+      const headers = await signInAsAdmin();
+
+      const response = await post("/admin/update-user", { userId: MEMBER_ID, data }, headers);
+
+      expect(response.status).toBe(403);
+      const [row] = await database.select({ email: user.email, emailVerified: user.emailVerified }).from(user).where(eq(user.id, MEMBER_ID));
+      expect(row).toEqual({ email: MEMBER_EMAIL, emailVerified: true });
+    });
+
+    it("still lets an admin rename a member", async () => {
+      const headers = await signInAsAdmin();
+
+      const response = await post("/admin/update-user", { userId: MEMBER_ID, data: { name: "Renamed" } }, headers);
+
+      expect(response.status).toBe(200);
+    });
+
+    it("still lets an admin ban a member", async () => {
+      const headers = await signInAsAdmin();
+
+      expect((await post("/admin/ban-user", { userId: MEMBER_ID }, headers)).status).toBe(200);
+    });
+
+    it("issues no password reset token", async () => {
+      await post("/request-password-reset", { email: MEMBER_EMAIL });
+
+      expect(await database.select().from(verification).where(like(verification.identifier, "reset-password%"))).toEqual([]);
+    });
+
+    it("keeps the member's own sign-in working", async () => {
+      expect((await post("/sign-in/email", { email: MEMBER_EMAIL, password: MEMBER_PASSWORD })).status).toBe(200);
     });
   });
 

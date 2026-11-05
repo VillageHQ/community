@@ -57,6 +57,13 @@
       "when": 1793850286677,
       "tag": "0007_feed_audit_replies",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793855925625,
+      "tag": "0008_direct_messages",
+      "breakpoints": true
     }
   ]
 }

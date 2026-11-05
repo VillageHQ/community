@@ -9,6 +9,7 @@ import { nameSchema } from "./invites/invite-api.ts";
 const ADMIN_ROLE = "admin";
 const ROLE_SEPARATOR = ",";
 const UPDATE_USER_PATH = "/update-user";
+const ADMIN_UPDATE_USER_PATH = "/admin/update-user";
 
 const roleSchema = z.union([z.string(), z.array(z.string())]);
 
@@ -51,6 +52,38 @@ async function isLastActiveAdmin(database: Database, userId: string) {
 const NULL_BYTE = "\0";
 const NULL_BYTE_MESSAGE = "This name has a character we can't save.";
 const REFUSED_PATHS: ReadonlySet<string> = new Set(["/verify-email"]);
+const ADMIN_PATH_PREFIX = "/admin/";
+
+// Anything else under /admin/ can act as a member, or leak what could: impersonation, setting
+// a password, listing session tokens. Fail closed, so an upgrade can't add a route unnoticed.
+const ALLOWED_ADMIN_PATHS: ReadonlySet<string> = new Set([
+  "/admin/ban-user",
+  "/admin/get-user",
+  "/admin/has-permission",
+  "/admin/list-users",
+  "/admin/remove-user",
+  "/admin/revoke-user-sessions",
+  "/admin/set-role",
+  "/admin/unban-user",
+  "/admin/update-user",
+]);
+
+const ADMIN_UPDATABLE_FIELDS: ReadonlySet<string> = new Set(["name", "role", "banned", "banReason", "banExpires"]);
+
+const adminUpdateFieldsSchema = z.object({ data: z.record(z.string(), z.unknown()) });
+
+function isRefusedPath(path: string) {
+  if (REFUSED_PATHS.has(path)) return true;
+  return path.startsWith(ADMIN_PATH_PREFIX) && !ALLOWED_ADMIN_PATHS.has(path);
+}
+
+function rejectIdentityChange(path: string, body: unknown) {
+  if (path !== ADMIN_UPDATE_USER_PATH) return;
+  const update = adminUpdateFieldsSchema.safeParse(body);
+  if (!update.success) return;
+  if (Object.keys(update.data.data).every((field) => ADMIN_UPDATABLE_FIELDS.has(field))) return;
+  throw new APIError("FORBIDDEN", { message: "Admins can't change a member's sign-in details." });
+}
 
 const nameUpdateSchema = z.object({
   name: z
@@ -69,8 +102,9 @@ function rejectUnsafeName(path: string, body: unknown) {
 
 export function createAuthGuards(database: Database) {
   return createAuthMiddleware(async (context) => {
-    if (REFUSED_PATHS.has(context.path)) throw new APIError("NOT_FOUND");
+    if (isRefusedPath(context.path)) throw new APIError("NOT_FOUND");
     rejectUnsafeName(context.path, context.body);
+    rejectIdentityChange(context.path, context.body);
 
     const losesAdmin = ADMIN_LOSS_CHECKS[context.path];
     if (!losesAdmin) return;

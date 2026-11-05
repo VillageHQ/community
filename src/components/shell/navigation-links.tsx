@@ -1,25 +1,44 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { unreadCountQuery } from "@/lib/messages/message-queries";
 import {
   describeBadge,
+  describeNavigationBadge,
   isNavigationItemActive,
+  NAVIGATION_BADGES,
   NAVIGATION_SECTIONS,
   selectNavigationItems,
+  type NavigationBadge as NavigationBadgeKind,
   type NavigationBadgeCounts,
 } from "@/lib/navigation";
 
 type NavigationProps = { isAdmin: boolean; badges: NavigationBadgeCounts };
 
-export function NavigationBadge({ count }: { count: number | undefined }) {
+type NavigationBadgeProps = { count: number | undefined; description?: string };
+
+function useLiveBadges(badges: NavigationBadgeCounts): NavigationBadgeCounts {
+  const { data } = useQuery({
+    ...unreadCountQuery(),
+    initialData: { unreadCount: badges[NAVIGATION_BADGES.messages] ?? 0 },
+  });
+  return { ...badges, [NAVIGATION_BADGES.messages]: data.unreadCount };
+}
+
+function describeCount(badge: NavigationBadgeKind, count: number | undefined) {
+  return count ? describeNavigationBadge(badge, count) : undefined;
+}
+
+export function NavigationBadge({ count, description }: NavigationBadgeProps) {
   if (!count) return null;
   return (
     <span
       role="img"
-      aria-label={describeBadge(count)}
+      aria-label={description ?? describeBadge(count)}
       className="type-micro ml-auto inline-flex h-[26px] min-w-[26px] items-center justify-center rounded-full bg-primary px-2 font-bold text-primary-foreground shadow-[inset_0_0_0_1px_var(--brand-edge)]"
     >
       {count}
@@ -41,23 +60,28 @@ function SidebarSection({ section, isAdmin, badges }: NavigationProps & { sectio
     >
       <Icon aria-hidden="true" />
       {label}
-      <NavigationBadge count={badge ? badges[badge] : undefined} />
+      <NavigationBadge
+        count={badge ? badges[badge] : undefined}
+        description={badge ? describeCount(badge, badges[badge]) : undefined}
+      />
     </Link>
   ));
 }
 
 export function SidebarNavigation({ isAdmin, badges }: NavigationProps) {
+  const liveBadges = useLiveBadges(badges);
   return (
     <nav aria-label="Main" className="flex flex-col gap-1">
-      <SidebarSection section={NAVIGATION_SECTIONS.primary} isAdmin={isAdmin} badges={badges} />
+      <SidebarSection section={NAVIGATION_SECTIONS.primary} isAdmin={isAdmin} badges={liveBadges} />
       {isAdmin ? <div className="mx-4 my-3 h-px bg-border" /> : null}
-      <SidebarSection section={NAVIGATION_SECTIONS.admin} isAdmin={isAdmin} badges={badges} />
+      <SidebarSection section={NAVIGATION_SECTIONS.admin} isAdmin={isAdmin} badges={liveBadges} />
     </nav>
   );
 }
 
 export function TabBar({ badges }: { badges: NavigationBadgeCounts }) {
   const pathname = usePathname();
+  const liveBadges = useLiveBadges(badges);
   const items = selectNavigationItems(NAVIGATION_SECTIONS.primary, false);
   return (
     <nav
@@ -78,13 +102,13 @@ export function TabBar({ badges }: { badges: NavigationBadgeCounts }) {
               <Icon aria-hidden="true" className="size-icon" />
             </span>
             {label}
-            {badge && badges[badge] ? (
+            {badge && liveBadges[badge] ? (
               <span
                 role="img"
-                aria-label={describeBadge(badges[badge])}
+                aria-label={describeNavigationBadge(badge, liveBadges[badge])}
                 className="type-tab absolute top-0 left-1/2 ml-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-[5px] font-bold text-primary-foreground shadow-[0_0_0_2px_var(--card)]"
               >
-                {badges[badge]}
+                {liveBadges[badge]}
               </span>
             ) : null}
           </Link>

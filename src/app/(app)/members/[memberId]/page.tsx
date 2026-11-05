@@ -13,12 +13,15 @@ import { PAGE_TITLES } from "@/lib/branding/page-metadata";
 import { readFirstName } from "@/lib/design/avatar-identity";
 import { formatMonthAndYear } from "@/lib/format-date";
 import { readExternalHost } from "@/lib/members/external-url";
+import { isBlockedBy } from "@/lib/messages/message-reads";
 import { isCardFilledIn, readMemberProfile } from "@/lib/members/profile";
 import { ROUTES } from "@/lib/routes";
 import { requireMember } from "@/lib/session";
 import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
 import { isAdminMember } from "@/lib/village/member-network";
 
+import { BlockMemberButton } from "../../messages/block-member-button";
+import { StartConversationButton } from "../../messages/start-conversation-button";
 import { AdminMemberPanel } from "./admin-member-panel";
 
 export const metadata: Metadata = { title: PAGE_TITLES.profile };
@@ -51,10 +54,12 @@ function ProfileSection({ title, children }: { title: string; children: ReactNod
 export default async function MemberProfilePage({ params }: { params: Promise<{ memberId: string }> }) {
   const viewer = await requireMember();
   const { memberId } = await params;
-  const profile = await readMemberProfile(getDatabase(), memberId);
+  const database = getDatabase();
+  const profile = await readMemberProfile(database, memberId);
   if (!profile) notFound();
 
   const isOwnProfile = viewer.id === profile.id;
+  const isBlockedByViewer = !isOwnProfile && (await isBlockedBy(database, viewer.id, profile.id));
   const roleLine = [profile.title, profile.company].filter(Boolean).join(", ");
 
   return (
@@ -87,7 +92,15 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
                 Edit my card
               </Link>
             </Button>
-          ) : null}
+          ) : (
+            <StartConversationButton
+              memberId={profile.id}
+              label="Message"
+              accessibleName={`Message ${profile.name}`}
+              size="lg"
+              className="max-sm:w-full"
+            />
+          )}
         </div>
         {profile.linkedinSlug || profile.website ? (
           <div className="mt-5 flex flex-wrap gap-2">
@@ -134,6 +147,8 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
       )}
 
       <p className="type-small px-1 text-muted-foreground">Joined {formatMonthAndYear(profile.createdAt)}.</p>
+
+      {isOwnProfile ? null : <BlockMemberButton memberId={profile.id} memberName={profile.name} isBlocked={isBlockedByViewer} />}
 
       {isAdminMember(viewer) ? (
         <AdminMemberPanel

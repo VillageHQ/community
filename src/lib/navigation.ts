@@ -1,11 +1,11 @@
-import { House, ShieldCheck, Users, Waypoints, type LucideIcon } from "lucide-react";
+import { House, MessageCircle, ShieldCheck, Users, Waypoints, type LucideIcon } from "lucide-react";
 
 import { ROUTES } from "./routes.ts";
 
 export const NAVIGATION_SECTIONS = { primary: "primary", admin: "admin" } as const;
-export const NAVIGATION_BADGES = { admin: "admin" } as const;
+export const NAVIGATION_BADGES = { admin: "admin", messages: "messages" } as const;
 
-type NavigationBadge = (typeof NAVIGATION_BADGES)[keyof typeof NAVIGATION_BADGES];
+export type NavigationBadge = (typeof NAVIGATION_BADGES)[keyof typeof NAVIGATION_BADGES];
 
 export type NavigationBadgeCounts = Partial<Record<NavigationBadge, number>>;
 
@@ -19,6 +19,13 @@ type NavigationItem = {
 
 export const NAVIGATION = {
   feed: { label: "Feed", href: ROUTES.feed, icon: House, section: NAVIGATION_SECTIONS.primary },
+  messages: {
+    label: "Messages",
+    href: ROUTES.messages,
+    icon: MessageCircle,
+    section: NAVIGATION_SECTIONS.primary,
+    badge: NAVIGATION_BADGES.messages,
+  },
   members: { label: "Members", href: ROUTES.members, icon: Users, section: NAVIGATION_SECTIONS.primary },
   network: { label: "Network", href: ROUTES.network, icon: Waypoints, section: NAVIGATION_SECTIONS.primary },
   admin: {
@@ -44,4 +51,17 @@ export function isNavigationItemActive(href: string, pathname: string) {
 
 export function describeBadge(count: number) {
   return `${count} need${count === 1 ? "s" : ""} your attention`;
+}
+
+export function describeUnreadMessages(count: number) {
+  return count === 1 ? "1 unread message" : `${count} unread messages`;
+}
+
+const BADGE_DESCRIPTIONS: Record<NavigationBadge, (count: number) => string> = {
+  [NAVIGATION_BADGES.admin]: describeBadge,
+  [NAVIGATION_BADGES.messages]: describeUnreadMessages,
+};
+
+export function describeNavigationBadge(badge: NavigationBadge, count: number) {
+  return BADGE_DESCRIPTIONS[badge](count);
 }

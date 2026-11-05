@@ -8,6 +8,7 @@ export default defineConfig({
     "./src/database/feed-schema.ts",
     "./src/database/instance-settings.ts",
     "./src/database/members-schema.ts",
+    "./src/database/messages-schema.ts",
     "./src/database/village-schema.ts",
   ],
   out: "./drizzle",

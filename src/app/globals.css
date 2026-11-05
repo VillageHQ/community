@@ -321,6 +321,35 @@
   max-width: none;
 }
 
+/* Messages fill the page beside the sidebar on desktop. */
+@media (min-width: 1024px) {
+  [data-slot="app-shell"]:has([data-slot="messages"]) > main {
+    padding: 0;
+  }
+
+  [data-slot="app-shell"]:has([data-slot="messages"]) [data-slot="page-width"] {
+    max-width: none;
+  }
+}
+
+/* An open thread takes over the phone screen, so nothing can cover its composer. */
+@media (max-width: 1023.98px) {
+  [data-slot="app-shell"]:has([data-phone-takeover]) > :is([data-slot="phone-top-bar"], [data-slot="tab-bar"]) {
+    display: none;
+  }
+
+  [data-slot="app-shell"]:has([data-phone-takeover]) > main {
+    padding: 0;
+  }
+}
+
+/* Message options wait for a hover or focus where a pointer can hover. */
+@media (hover: hover) {
+  .group:not(:hover) > [data-slot="message-menu"]:not(:focus-within):not(:has([data-state="open"])) {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

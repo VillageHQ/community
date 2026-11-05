@@ -8,6 +8,7 @@ import type { readNewMembers } from "@/lib/members/directory";
 import type { NextStep } from "@/lib/next-steps";
 import { ROUTES } from "@/lib/routes";
 
+import { StartConversationButton } from "../messages/start-conversation-button";
 import { FEED_AVATAR_SIZES } from "./feed-display";
 
 type NewMember = Awaited<ReturnType<typeof readNewMembers>>["newMembers"][number];
@@ -15,17 +16,23 @@ type NewMember = Awaited<ReturnType<typeof readNewMembers>>["newMembers"][number
 function NewMemberRow({ member }: { member: NewMember }) {
   const { id, name, title, company, avatarUrl } = member;
   return (
-    <li className="flex items-center gap-3">
+    <li className="flex flex-wrap items-center gap-3">
       <Avatar stableId={id} name={name} imageUrl={avatarUrl} sizePx={FEED_AVATAR_SIZES.rail} />
       <div className="min-w-0 flex-1">
-        <div className="type-label wrap-anywhere">{name}</div>
+        <Link href={`${ROUTES.members}/${id}`} className="type-label wrap-anywhere hover:underline">
+          {name}
+        </Link>
         <div className="type-micro font-medium wrap-anywhere text-muted-foreground">{company ?? title ?? "New member"}</div>
       </div>
-      <Button asChild variant="soft" size="sm" className="px-4">
-        <Link href={`${ROUTES.members}/${id}`} aria-label={`View profile of ${name}`}>
-          View
-        </Link>
-      </Button>
+      <StartConversationButton
+        memberId={id}
+        label="Say hi"
+        accessibleName={`Say hi to ${name}`}
+        showsIcon={false}
+        variant="soft"
+        size="sm"
+        className="px-4"
+      />
     </li>
   );
 }

@@ -3,7 +3,15 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { describeBadge, isNavigationItemActive, NAVIGATION, NAVIGATION_SECTIONS, selectNavigationItems } from "./navigation";
+import {
+  describeBadge,
+  describeNavigationBadge,
+  isNavigationItemActive,
+  NAVIGATION,
+  NAVIGATION_BADGES,
+  NAVIGATION_SECTIONS,
+  selectNavigationItems,
+} from "./navigation";
 import { ROUTES } from "./routes";
 
 const APP_GROUP = resolve(import.meta.dirname, "../app/(app)");
@@ -20,10 +28,10 @@ describe("the navigation", () => {
     }
   });
 
-  it("shows members Feed, Members and Network", () => {
+  it("shows members Feed, Messages, Members and Network", () => {
     const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false).map(({ label }) => label);
 
-    expect(labels).toEqual(["Feed", "Members", "Network"]);
+    expect(labels).toEqual(["Feed", "Messages", "Members", "Network"]);
   });
 
   it("hides Admin from members", () => {
@@ -54,5 +62,10 @@ describe("the navigation", () => {
   it("describes badges for screen readers with correct grammar", () => {
     expect(describeBadge(1)).toBe("1 needs your attention");
     expect(describeBadge(3)).toBe("3 need your attention");
+  });
+
+  it("describes the messages badge as unread messages", () => {
+    expect(describeNavigationBadge(NAVIGATION_BADGES.messages, 1)).toBe("1 unread message");
+    expect(describeNavigationBadge(NAVIGATION_BADGES.messages, 4)).toBe("4 unread messages");
   });
 });

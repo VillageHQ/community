@@ -19,6 +19,7 @@ import { parseDirectoryFilters, toDirectoryQueryString } from "@/lib/members/dir
 import { PROFILE_LIMITS, type DirectoryFilters, type DirectoryMember } from "@/lib/members/profile-api";
 import { ROUTES } from "@/lib/routes";
 
+import { StartConversationButton } from "../messages/start-conversation-button";
 import { directoryQuery } from "./member-queries";
 
 const SEARCH_DEBOUNCE_MS = 250;
@@ -52,7 +53,7 @@ function goToPage(page: number, filters: DirectoryFilters) {
   document.getElementById(RESULTS_ID)?.focus();
 }
 
-function MemberCard({ member }: { member: DirectoryMember }) {
+function MemberCard({ member, viewerId }: { member: DirectoryMember; viewerId: string }) {
   const { id, name, title, company, canHelpWith, avatarUrl, tags } = member;
   return (
     <li className="flex">
@@ -78,11 +79,16 @@ function MemberCard({ member }: { member: DirectoryMember }) {
             <Tag key={tag}>{tag}</Tag>
           ))}
         </div>
-        <Button asChild className="mt-auto w-full">
-          <Link href={`${ROUTES.members}/${id}`} aria-label={`View profile of ${name}`}>
-            View profile
-          </Link>
-        </Button>
+        <div className="mt-auto grid gap-2">
+          {id === viewerId ? null : (
+            <StartConversationButton memberId={id} label="Message" accessibleName={`Message ${name}`} className="w-full" />
+          )}
+          <Button asChild variant="outline" className="w-full">
+            <Link href={`${ROUTES.members}/${id}`} aria-label={`View profile of ${name}`}>
+              View profile
+            </Link>
+          </Button>
+        </div>
       </article>
     </li>
   );
@@ -119,9 +125,9 @@ function DirectoryEmpty({ filters, onClear }: { filters: DirectoryFilters; onCle
   );
 }
 
-type DirectoryResultsProps = { filters: DirectoryFilters; onClear: () => void; isStale: boolean };
+type DirectoryResultsProps = { filters: DirectoryFilters; onClear: () => void; isStale: boolean; viewerId: string };
 
-function DirectoryResults({ filters, onClear, isStale }: DirectoryResultsProps) {
+function DirectoryResults({ filters, onClear, isStale, viewerId }: DirectoryResultsProps) {
   const { data: directory } = useSuspenseQuery(directoryQuery(filters));
   const { members, matchCount, page, pageCount, popularTags } = directory;
   const isFiltered = Boolean(filters.search || filters.tag);
@@ -155,7 +161,7 @@ function DirectoryResults({ filters, onClear, isStale }: DirectoryResultsProps) 
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
             {members.map((member) => (
-              <MemberCard key={member.id} member={member} />
+              <MemberCard key={member.id} member={member} viewerId={viewerId} />
             ))}
           </ul>
         )}
@@ -170,7 +176,7 @@ function DirectoryResults({ filters, onClear, isStale }: DirectoryResultsProps) 
   );
 }
 
-export function MemberDirectory() {
+export function MemberDirectory({ viewerId }: { viewerId: string }) {
   const searchParams = useSearchParams();
   const queryString = searchParams.toString();
   const deferredQueryString = useDeferredValue(queryString);
@@ -219,6 +225,7 @@ export function MemberDirectory() {
           filters={deferredFilters}
           onClear={() => clearFilters(setSearchDraft)}
           isStale={queryString !== deferredQueryString}
+          viewerId={viewerId}
         />
       </QueryBoundary>
     </>

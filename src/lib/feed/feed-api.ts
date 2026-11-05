@@ -31,7 +31,7 @@ function normalizeLineBreaks(text: string) {
   return text.replace(WINDOWS_LINE_BREAK, "\n").replace(REPEATED_BLANK_LINES, "\n\n");
 }
 
-function feedTextSchema(label: string, maximumLength: number) {
+export function feedTextSchema(label: string, maximumLength: number) {
   return z
     .string({ error: `Write ${label} first.` })
     .overwrite(removeNullBytes)

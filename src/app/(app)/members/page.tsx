@@ -26,7 +26,7 @@ function readMemberSentence(memberCount: number, communityName: string, isCommun
 type MembersPageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function MembersPage({ searchParams }: MembersPageProps) {
-  await requireMember();
+  const { id: viewerId } = await requireMember();
   const filters = parseDirectoryFilters(await searchParams);
   const [directory, community] = await Promise.all([readDirectory(getDatabase(), filters), readBrandingForPage()]);
 
@@ -48,7 +48,7 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
         }
       />
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <MemberDirectory />
+        <MemberDirectory viewerId={viewerId} />
       </HydrationBoundary>
     </>
   );
