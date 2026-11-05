@@ -20,6 +20,7 @@ import { SETUP_STEP_COPY } from "@/lib/admin-setup-copy";
 import { resolveAppUrl } from "@/lib/app-url";
 import { readBranding, type Branding } from "@/lib/branding/branding";
 import { readResendConfig } from "@/lib/email/resend";
+import { readIntroStateCounts } from "@/lib/intros/intro-reads";
 import { readConfirmationBadgeCount } from "@/lib/members/member-admin";
 import { ROUTES } from "@/lib/routes";
 import { requireAdmin } from "@/lib/session";
@@ -35,6 +36,7 @@ import { BrandCard } from "./brand-card";
 import { BRAND_NAME_INPUT_ID } from "./brand-fields";
 import { DomainStep } from "./domain-step";
 import { GroupForm } from "./group-form";
+import { IntroCountsCard } from "./intro-counts-card";
 import { KeysForm } from "./keys-form";
 import { InviteStep } from "./members/invite-step";
 import { VillageLinks } from "./village-links";
@@ -150,13 +152,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const { step } = await searchParams;
 
   const database = getDatabase();
-  const [progress, branding, keys, group, villageLinks, confirmationBadgeCount] = await Promise.all([
+  const [progress, branding, keys, group, villageLinks, confirmationBadgeCount, introStateCounts] = await Promise.all([
     readSetupProgress(database, process.env),
     readBranding(database),
     readVillageKeys(database),
     readVillageGroup(database),
     readVillageLinks(database),
     readConfirmationBadgeCount(database, process.env),
+    readIntroStateCounts(database),
   ]);
   const openStepId = parseSetupStep(step) ?? progress.currentStepId;
   const isGroupStepOpen = openStepId === SETUP_STEPS.group;
@@ -225,6 +228,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
             </div>
             <VillageLinks links={villageLinks} />
           </Card>
+
+          <IntroCountsCard counts={introStateCounts} />
         </div>
         {isBrandCurrent ? null : <AdminBrandCard branding={branding} isCurrentStep={false} />}
       </div>

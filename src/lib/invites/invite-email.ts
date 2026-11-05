@@ -1,27 +1,11 @@
 import { pickOnAccent } from "../design/accent.ts";
+import { escapeHtml, toSingleLine } from "../email/email-text.ts";
 import { readResendConfig, sendResendEmail } from "../email/resend.ts";
 import type { Environment } from "../environment.ts";
 import { logError } from "../route-logging.ts";
 import { INVITE_EMAIL_STATUSES, INVITE_LIFETIME_DAYS } from "./invite-state.ts";
 
 const IDEMPOTENCY_TOKEN_PREFIX_LENGTH = 16;
-const CONTROL_CHARACTERS = /[\p{Cc}\p{Cf}]+/gu;
-
-const HTML_ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
-
-function escapeHtml(text: string) {
-  return text.replace(/[&<>"']/g, (character) => HTML_ESCAPES[character] ?? character);
-}
-
-function toSingleLine(text: string) {
-  return text.replace(CONTROL_CHARACTERS, " ").trim();
-}
 
 type InviteEmailFacts = {
   to: string;

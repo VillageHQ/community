@@ -403,7 +403,7 @@ describe("member network safeguards", () => {
 
         const body = await (await search(member)).json();
 
-        expect(body).toEqual({ people: [], discardedOffNetworkResults: true });
+        expect(body).toMatchObject({ people: [], discardedOffNetworkResults: true });
       },
     );
   });

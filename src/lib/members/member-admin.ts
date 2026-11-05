@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, eq, or, isNull, ne } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
 
 import { user } from "../../database/auth-schema.ts";
 import type { Database } from "../../database/client.ts";
@@ -73,6 +73,17 @@ export async function confirmMemberEmail({ database }: NetworkContext, memberId:
   );
 }
 
+export async function confirmLinkedinClaim({ database }: NetworkContext, memberId: string) {
+  const [confirmed] = await database
+    .update(memberNetwork)
+    .set({ linkedinConfirmedSlug: sql`${memberNetwork.linkedinSlug}` })
+    .where(and(eq(memberNetwork.userId, memberId), isNotNull(memberNetwork.linkedinSlug)))
+    .returning({ userId: memberNetwork.userId });
+  if (!confirmed) {
+    throw new NetworkRequestError(NOT_FOUND_STATUS, NETWORK_ERROR_CODES.memberNotFound, "This member has no LinkedIn profile to confirm.");
+  }
+}
+
 export async function clearLinkedinClaim({ database }: NetworkContext, linkedinUrl: string) {
   const linkedinSlug = readLinkedinSlug(linkedinUrl);
   if (!linkedinSlug) {
@@ -96,6 +107,6 @@ export async function clearLinkedinClaim({ database }: NetworkContext, linkedinU
     );
   }
 
-  await database.update(memberNetwork).set({ linkedinSlug: null }).where(eq(memberNetwork.userId, holder.id));
+  await database.update(memberNetwork).set({ linkedinSlug: null, linkedinConfirmedSlug: null }).where(eq(memberNetwork.userId, holder.id));
   return holder.name;
 }

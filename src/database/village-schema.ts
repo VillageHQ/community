@@ -8,6 +8,7 @@ export const memberNetwork = pgTable("member_network", {
     .references(() => user.id, { onDelete: "cascade" }),
   villageExternalId: uuid("village_external_id").notNull().unique().defaultRandom(),
   linkedinSlug: text("linkedin_slug").unique(),
+  linkedinConfirmedSlug: text("linkedin_confirmed_slug"),
   sharingConsentedAt: timestamp("sharing_consented_at", { withTimezone: true }),
   groupJoinedAt: timestamp("group_joined_at", { withTimezone: true }),
   pendingVillageEmail: text("pending_village_email"),

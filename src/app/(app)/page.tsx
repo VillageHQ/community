@@ -10,6 +10,7 @@ import { PAGE_TITLES } from "@/lib/branding/page-metadata";
 import { readFirstName } from "@/lib/design/avatar-identity";
 import { readResendConfig } from "@/lib/email/resend";
 import { readFeedPage } from "@/lib/feed/feed-reads";
+import { readWaitingIntros } from "@/lib/intros/intro-reads";
 import { readNewMembers } from "@/lib/members/directory";
 import { describeEmailConfirmation } from "@/lib/members/email-confirmation-copy";
 import { resolveOnboardingStep } from "@/lib/members/onboarding";
@@ -23,7 +24,7 @@ import { readNetworkProgress } from "@/lib/village/network-progress";
 
 import { Feed } from "./feed/feed";
 import { feedQuery } from "./feed/feed-queries";
-import { NewThisWeekCard, NextStepCard } from "./feed/feed-rail";
+import { NewThisWeekCard, NextStepCard, WaitingOnYouCard } from "./feed/feed-rail";
 
 export const metadata: Metadata = { title: PAGE_TITLES.feed };
 
@@ -38,7 +39,7 @@ export default async function FeedPage() {
   if ((await resolveOnboardingStep(database, member)) !== ONBOARDING_STEPS.done) redirect(ROUTES.welcome);
 
   const isAdmin = isAdminMember(member);
-  const [community, networkProgress, setupProgress, { newCount, newMembers }, profile, avatarUrl, feedPage] =
+  const [community, networkProgress, setupProgress, { newCount, newMembers }, profile, avatarUrl, feedPage, waitingIntros] =
     await Promise.all([
       readBrandingForPage(),
       readNetworkProgress(database, member),
@@ -47,6 +48,7 @@ export default async function FeedPage() {
       readMemberProfile(database, member.id),
       readAvatarUrl(database, member.id),
       readFeedPage(database, member, null),
+      readWaitingIntros(database, member.id),
     ]);
 
   const nextSteps = selectNextSteps({
@@ -75,11 +77,21 @@ export default async function FeedPage() {
                 <NextStepCard nextStep={nextStep} />
               </div>
             ))}
+          {waitingIntros.length > 0 ? (
+            <div className="lg:hidden">
+              <WaitingOnYouCard intros={waitingIntros} />
+            </div>
+          ) : null}
           <HydrationBoundary state={dehydrate(queryClient)}>
             <Feed viewer={{ id: member.id, name: member.name, avatarUrl, isAdmin }} />
           </HydrationBoundary>
         </div>
         <aside aria-label="For you" className="grid gap-5 lg:sticky lg:top-9">
+          {waitingIntros.length > 0 ? (
+            <div className="max-lg:hidden">
+              <WaitingOnYouCard intros={waitingIntros} />
+            </div>
+          ) : null}
           {nextSteps.map((nextStep) => (
             <div key={nextStep.title} className={nextStep.isUrgent ? "max-lg:hidden" : undefined}>
               <NextStepCard nextStep={nextStep} />

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { INTRO_STATES } from "../intros/intro-api.ts";
+
 export const NETWORK_STAGES = {
   notConfigured: "not_configured",
   needsEmailConfirmation: "needs_email_confirmation",
@@ -73,9 +75,11 @@ export const networkSearchResultSchema = z.object({
       headline: z.string().nullable(),
       linkedinSlug: z.string().nullable(),
       isMember: z.boolean(),
+      memberId: z.string().nullable(),
     }),
   ),
   discardedOffNetworkResults: z.boolean(),
+  dailyLookupsLeft: z.number().int(),
 });
 
 export type NetworkSearchResult = z.infer<typeof networkSearchResultSchema>;
@@ -87,10 +91,28 @@ const pathPersonSchema = z.object({
   isMember: z.boolean(),
 });
 
+const connectorSchema = z.object({
+  name: z.string(),
+  headline: z.string().nullable(),
+  linkedinSlug: z.string().nullable(),
+  reason: z.string(),
+  throughName: z.string().nullable(),
+  member: z.object({ id: z.string(), avatarUrl: z.string().nullable() }).nullable(),
+  openAsk: z.object({ id: z.uuid(), state: z.enum(INTRO_STATES) }).nullable(),
+});
+
+export type Connector = z.infer<typeof connectorSchema>;
+
 export const networkPathsSchema = z.object({
   summary: z.string().nullable(),
   isTargetMember: z.boolean(),
   isCached: z.boolean(),
+  targetName: z.string().nullable(),
+  targetMemberId: z.string().nullable(),
+  isViewer: z.boolean(),
+  isDirectConnection: z.boolean(),
+  dailyLookupsLeft: z.number().int(),
+  connectors: z.array(connectorSchema),
   paths: z.array(
     z.object({
       degree: z.number(),
@@ -105,5 +127,7 @@ export const networkPathsSchema = z.object({
 
 export type NetworkPaths = z.infer<typeof networkPathsSchema>;
 export type NetworkPath = NetworkPaths["paths"][number];
+
+export const LOW_LOOKUPS_LEFT = 10;
 
 export const acknowledgedResponseSchema = z.object({ message: z.string() });

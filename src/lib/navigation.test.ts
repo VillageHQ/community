@@ -28,10 +28,10 @@ describe("the navigation", () => {
     }
   });
 
-  it("shows members Feed, Messages, Members and Network", () => {
+  it("shows members Feed, Messages, Members, Network and Intros", () => {
     const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false).map(({ label }) => label);
 
-    expect(labels).toEqual(["Feed", "Messages", "Members", "Network"]);
+    expect(labels).toEqual(["Feed", "Messages", "Members", "Network", "Intros"]);
   });
 
   it("hides Admin from members", () => {
@@ -62,6 +62,11 @@ describe("the navigation", () => {
   it("describes badges for screen readers with correct grammar", () => {
     expect(describeBadge(1)).toBe("1 needs your attention");
     expect(describeBadge(3)).toBe("3 need your attention");
+  });
+
+  it("describes the intros badge in plain words", () => {
+    expect(describeNavigationBadge(NAVIGATION_BADGES.intros, 1)).toBe("1 intro needs a look");
+    expect(describeNavigationBadge(NAVIGATION_BADGES.intros, 2)).toBe("2 intros need a look");
   });
 
   it("describes the messages badge as unread messages", () => {

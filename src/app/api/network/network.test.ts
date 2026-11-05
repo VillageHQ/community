@@ -373,13 +373,13 @@ describe("the member network API", () => {
         await createJoinedMember("another-member");
         village.state.searchPeople = [
           { full_name: "Stranger", linkedin_url: TARGET_URL },
-          { full_name: "Fellow Member", linkedin_url: "https://LinkedIn.com/in/Another-Member/" },
+          { full_name: "Test Member", linkedin_url: "https://LinkedIn.com/in/Another-Member/" },
         ];
 
         const result = await readSearch();
 
         expect(result.people.map(({ fullName, isMember }) => [fullName, isMember])).toEqual([
-          ["Fellow Member", true],
+          ["Test Member", true],
           ["Stranger", false],
         ]);
       });
@@ -411,7 +411,7 @@ describe("the member network API", () => {
 
     describe("reading paths", () => {
       const INTRODUCER = { first_name: "Intro", last_name: "Ducer", linkedin_url: "https://linkedin.com/in/introducer" };
-      const MEMBER_INTRODUCER = { first_name: "Mem", last_name: "Ber", linkedin_url: "https://www.linkedin.com/in/Fellow-Member/" };
+      const MEMBER_INTRODUCER = { first_name: "Test", last_name: "Member", linkedin_url: "https://www.linkedin.com/in/Fellow-Member/" };
 
       it("marks member introducers and ranks their paths first", async () => {
         await createJoinedMember("fellow-member");

@@ -1,0 +1,31 @@
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
+import type { Metadata } from "next";
+
+import { PageHeader } from "@/components/page-header";
+import { QueryBoundary } from "@/components/query-boundary";
+import { getDatabase } from "@/database/client";
+import { PAGE_TITLES } from "@/lib/branding/page-metadata";
+import { introBoardQuery } from "@/lib/intros/intro-queries";
+import { readIntroBoard } from "@/lib/intros/intro-reads";
+import { requireMember } from "@/lib/session";
+
+import { IntroBoardView } from "./intro-board";
+
+export const metadata: Metadata = { title: PAGE_TITLES.intros };
+
+export default async function IntrosPage() {
+  const member = await requireMember();
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(introBoardQuery().queryKey, await readIntroBoard(getDatabase(), member.id));
+
+  return (
+    <>
+      <PageHeader title="Intros" description="The warm way to meet someone: one person who knows them, saying yes first." />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <QueryBoundary loadingMessage="Finding your intros…">
+          <IntroBoardView />
+        </QueryBoundary>
+      </HydrationBoundary>
+    </>
+  );
+}

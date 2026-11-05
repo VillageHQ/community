@@ -9,6 +9,7 @@ export type WelcomeContext = {
   neighbours: ConstellationPerson[];
   sharingMemberCount: number;
   notNowHref: string;
+  needsFullName?: boolean;
   memberEmail?: string;
   isEmailConfigured?: boolean;
   isOnboarding?: boolean;

@@ -6,6 +6,7 @@ import { NetworkByVillage } from "@/components/village-mark";
 import type { NavigationBadgeCounts } from "@/lib/navigation";
 
 import { SidebarNavigation, TabBar } from "./navigation-links";
+import { SearchReadyNotice } from "./search-ready-notice";
 import { PhoneUserMenu, SidebarUserMenu, type ShellMember } from "./user-menu";
 import type { CommunityLogo } from "@/lib/branding/branding";
 
@@ -56,6 +57,7 @@ export function AppShell({ community, member, badges, children }: AppShellProps)
           {children}
         </div>
       </main>
+      <SearchReadyNotice />
       <TabBar badges={badges} />
     </div>
   );

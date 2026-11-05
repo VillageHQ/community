@@ -118,6 +118,7 @@ export async function readMemberProfile(database: Database, memberId: string) {
       needs: memberProfile.needs,
       website: memberProfile.website,
       linkedinSlug: memberNetwork.linkedinSlug,
+      linkedinConfirmedSlug: memberNetwork.linkedinConfirmedSlug,
       avatarUpdatedAt: memberAvatar.updatedAt,
     })
     .from(user)
@@ -133,9 +134,10 @@ export async function readMemberProfile(database: Database, memberId: string) {
     .where(eq(memberTag.userId, memberId))
     .orderBy(memberTag.tag);
 
-  const { avatarUpdatedAt, website, ...fields } = row;
+  const { avatarUpdatedAt, website, linkedinConfirmedSlug, ...fields } = row;
   return {
     ...fields,
+    isLinkedinConfirmed: fields.linkedinSlug !== null && linkedinConfirmedSlug === fields.linkedinSlug,
     website: website ? parseExternalUrl(website) : null,
     avatarUrl: toAvatarUrl(memberId, avatarUpdatedAt),
     tags: tags.map(({ tag }) => tag),

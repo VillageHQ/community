@@ -1,9 +1,9 @@
-import { House, MessageCircle, ShieldCheck, Users, Waypoints, type LucideIcon } from "lucide-react";
+import { Handshake, House, MessageCircle, ShieldCheck, Users, Waypoints, type LucideIcon } from "lucide-react";
 
 import { ROUTES } from "./routes.ts";
 
 export const NAVIGATION_SECTIONS = { primary: "primary", admin: "admin" } as const;
-export const NAVIGATION_BADGES = { admin: "admin", messages: "messages" } as const;
+export const NAVIGATION_BADGES = { admin: "admin", messages: "messages", intros: "intros" } as const;
 
 export type NavigationBadge = (typeof NAVIGATION_BADGES)[keyof typeof NAVIGATION_BADGES];
 
@@ -28,6 +28,13 @@ export const NAVIGATION = {
   },
   members: { label: "Members", href: ROUTES.members, icon: Users, section: NAVIGATION_SECTIONS.primary },
   network: { label: "Network", href: ROUTES.network, icon: Waypoints, section: NAVIGATION_SECTIONS.primary },
+  intros: {
+    label: "Intros",
+    href: ROUTES.intros,
+    icon: Handshake,
+    section: NAVIGATION_SECTIONS.primary,
+    badge: NAVIGATION_BADGES.intros,
+  },
   admin: {
     label: "Admin",
     href: ROUTES.admin,
@@ -57,9 +64,14 @@ export function describeUnreadMessages(count: number) {
   return count === 1 ? "1 unread message" : `${count} unread messages`;
 }
 
+export function describeIntroBadge(count: number) {
+  return count === 1 ? "1 intro needs a look" : `${count} intros need a look`;
+}
+
 const BADGE_DESCRIPTIONS: Record<NavigationBadge, (count: number) => string> = {
   [NAVIGATION_BADGES.admin]: describeBadge,
   [NAVIGATION_BADGES.messages]: describeUnreadMessages,
+  [NAVIGATION_BADGES.intros]: describeIntroBadge,
 };
 
 export function describeNavigationBadge(badge: NavigationBadge, count: number) {

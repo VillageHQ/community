@@ -5,6 +5,7 @@ import { cn } from "cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { introCountsQuery } from "@/lib/intros/intro-queries";
 import { unreadCountQuery } from "@/lib/messages/message-queries";
 import {
   describeBadge,
@@ -26,7 +27,15 @@ function useLiveBadges(badges: NavigationBadgeCounts): NavigationBadgeCounts {
     ...unreadCountQuery(),
     initialData: { unreadCount: badges[NAVIGATION_BADGES.messages] ?? 0 },
   });
-  return { ...badges, [NAVIGATION_BADGES.messages]: data.unreadCount };
+  const { data: introCounts } = useQuery({
+    ...introCountsQuery(),
+    initialData: { waitingOnYou: badges[NAVIGATION_BADGES.intros] ?? 0, updates: 0 },
+  });
+  return {
+    ...badges,
+    [NAVIGATION_BADGES.messages]: data.unreadCount,
+    [NAVIGATION_BADGES.intros]: introCounts.waitingOnYou + introCounts.updates,
+  };
 }
 
 function describeCount(badge: NavigationBadgeKind, count: number | undefined) {

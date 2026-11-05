@@ -34,6 +34,14 @@ async function releaseCreditCall(database: Database, userId: string, usageDate: 
     .where(and(eq(memberDailyUsage.userId, userId), eq(memberDailyUsage.usageDate, usageDate)));
 }
 
+export async function readDailyLookupsLeft(database: Database, userId: string) {
+  const [usage] = await database
+    .select({ callCount: memberDailyUsage.callCount })
+    .from(memberDailyUsage)
+    .where(and(eq(memberDailyUsage.userId, userId), eq(memberDailyUsage.usageDate, readUsageDate())));
+  return Math.max(DAILY_CREDIT_CALL_LIMIT - (usage?.callCount ?? 0), 0);
+}
+
 function wasNotDebited(error: unknown) {
   return error instanceof VillageApiError && error.isVillageErrorResponse;
 }

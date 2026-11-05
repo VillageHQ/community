@@ -7,6 +7,7 @@ export default defineConfig({
     "./src/database/branding-schema.ts",
     "./src/database/feed-schema.ts",
     "./src/database/instance-settings.ts",
+    "./src/database/intro-schema.ts",
     "./src/database/members-schema.ts",
     "./src/database/messages-schema.ts",
     "./src/database/village-schema.ts",

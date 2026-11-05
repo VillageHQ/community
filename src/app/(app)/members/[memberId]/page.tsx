@@ -156,6 +156,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
           email={profile.email}
           isEmailConfirmed={profile.emailVerified}
           linkedinUrl={profile.linkedinSlug ? toLinkedinUrl(profile.linkedinSlug) : null}
+          isLinkedinConfirmed={profile.isLinkedinConfirmed}
         />
       ) : null}
     </div>

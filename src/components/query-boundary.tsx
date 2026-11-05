@@ -1,7 +1,7 @@
 "use client";
 
 import { QueryErrorResetBoundary } from "@tanstack/react-query";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, type ComponentType, type ReactNode } from "react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 
 import { ErrorState, RetryButton } from "@/components/error-state";
@@ -22,13 +22,18 @@ function QueryFailure({ error, resetErrorBoundary }: FallbackProps) {
   );
 }
 
-type QueryBoundaryProps = { loadingMessage: string; fallback?: ReactNode; children: ReactNode };
+type QueryBoundaryProps = {
+  loadingMessage: string;
+  fallback?: ReactNode;
+  failure?: ComponentType<FallbackProps>;
+  children: ReactNode;
+};
 
-export function QueryBoundary({ loadingMessage, fallback, children }: QueryBoundaryProps) {
+export function QueryBoundary({ loadingMessage, fallback, failure = QueryFailure, children }: QueryBoundaryProps) {
   return (
     <QueryErrorResetBoundary>
       {({ reset }) => (
-        <ErrorBoundary FallbackComponent={QueryFailure} onReset={reset}>
+        <ErrorBoundary FallbackComponent={failure} onReset={reset}>
           <Suspense fallback={fallback ?? <LoadingState title={loadingMessage} />}>
             {children}
           </Suspense>

@@ -12,8 +12,19 @@ type RecordedRequest = {
 };
 
 type FakeFailure = { status: number; type: string };
-type FakeRelationship = { first_name: string; last_name: string; linkedin_url: string };
-type FakePath = { degree: number; description: string; introducer: FakeRelationship; starter?: FakeRelationship };
+type FakeRelationship = { first_name: string; last_name: string; linkedin_url: string; headline?: string };
+type FakeScoreMeta = { title: string; description: string };
+type FakePath = {
+  degree: number;
+  description: string;
+  introducer: FakeRelationship;
+  starter?: FakeRelationship;
+  isStarterCurrentUser?: boolean;
+  introducerMeta?: FakeScoreMeta[];
+  starterMeta?: FakeScoreMeta[];
+};
+type FakeTarget = { first_name?: string; last_name?: string; full_name?: string };
+type FakePaths = { summary: string; paths: FakePath[]; target?: FakeTarget };
 type FakePerson = { full_name: string; linkedin_url: string; headline?: string };
 
 type FakeVillageState = {
@@ -30,7 +41,7 @@ type FakeVillageState = {
   failures: Map<string, FakeFailure>;
   searchPeople: FakePerson[];
   searchSource: string | undefined;
-  pathsByUrl: Map<string, { summary: string; paths: FakePath[] }>;
+  pathsByUrl: Map<string, FakePaths>;
   joinedMembers: Set<string>;
   createdGroups: string[];
   inviteLink: string;
@@ -94,21 +105,32 @@ function readObjectField(body: unknown, field: string) {
 }
 
 function toVillageProfile(profile: FakeRelationship) {
-  return { ...profile, headline: "Headline" };
+  return { headline: "Headline", ...profile };
 }
 
-function toVillagePaths({ summary, paths }: { summary: string; paths: FakePath[] }) {
+const DEFAULT_FAKE_TARGET: FakeTarget = { first_name: "Target", last_name: "Person", full_name: "Target Person" };
+
+function toVillagePaths({ summary, paths, target = DEFAULT_FAKE_TARGET }: FakePaths) {
   return {
+    person: { linkedin_url: "", village_url: "", first_name: "", last_name: "", full_name: "", ...target },
     summary: { score: 1, score_label: "Okay", description: summary },
     count: paths.length,
-    paths: paths.map(({ degree, description, introducer, starter }) => ({
+    paths: paths.map(({ degree, description, introducer, starter, isStarterCurrentUser, introducerMeta, starterMeta }) => ({
       degree,
       summary: { score: 1, score_label: "Okay", description },
-      introducer: { profile: toVillageProfile(introducer), score: 1, score_label: "Okay", score_meta: [] },
+      introducer: { profile: toVillageProfile(introducer), score: 1, score_label: "Okay", score_meta: introducerMeta ?? [] },
       starters: starter
-        ? [{ profile: toVillageProfile(starter), score: 1, score_label: "Okay", score_meta: [], is_current_user: false }]
+        ? [
+            {
+              profile: toVillageProfile(starter),
+              score: 1,
+              score_label: "Okay",
+              score_meta: starterMeta ?? [],
+              is_current_user: isStarterCurrentUser ?? false,
+            },
+          ]
         : [],
-      score_meta: [],
+      score_meta: introducerMeta ?? [],
     })),
   };
 }

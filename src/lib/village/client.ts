@@ -98,6 +98,16 @@ const pathProfileSchema = z.object({
   first_name: z.string().nullish(),
   last_name: z.string().nullish(),
   linkedin_url: z.string().nullish(),
+  headline: z.string().nullish(),
+});
+
+const scoreMetaSchema = z.array(z.object({ title: z.string().nullish(), description: z.string().nullish() })).nullish();
+
+const pathTargetSchema = z.object({
+  first_name: z.string().nullish(),
+  last_name: z.string().nullish(),
+  full_name: z.string().nullish(),
+  headline: z.string().nullish(),
 });
 
 const pathSummarySchema = z.object({
@@ -106,15 +116,16 @@ const pathSummarySchema = z.object({
 });
 
 export const villagePathsSchema = z.object({
+  person: pathTargetSchema.nullish(),
   summary: pathSummarySchema.nullish(),
   paths: z.array(
     z.object({
       degree: z.number(),
       summary: pathSummarySchema,
       starters: z.array(
-        z.object({ profile: pathProfileSchema, is_current_user: z.boolean().nullish() }),
+        z.object({ profile: pathProfileSchema, is_current_user: z.boolean().nullish(), score_meta: scoreMetaSchema }),
       ),
-      introducer: z.object({ profile: pathProfileSchema }).nullish(),
+      introducer: z.object({ profile: pathProfileSchema, score_meta: scoreMetaSchema }).nullish(),
     }),
   ),
 });

@@ -11,6 +11,7 @@ import {
   memberBlock,
   messageReport,
 } from "../../database/messages-schema.ts";
+import { stopOpenAsksOnBlock } from "../intros/intro-blocks.ts";
 import { isActiveMember } from "../members/active-member.ts";
 import { NetworkRequestError, type NetworkContext } from "../village/member-network.ts";
 import { readPeerId, toConversationPair } from "./conversation-pair.ts";
@@ -261,6 +262,9 @@ export async function setMemberBlocked({ database, member }: NetworkContext, { m
 
   const [target] = await database.select({ id: user.id }).from(user).where(eq(user.id, memberId));
   if (!target) throw memberGoneError();
-  await database.insert(memberBlock).values({ blockerId: member.id, blockedId: memberId }).onConflictDoNothing();
+  await database.transaction(async (transaction) => {
+    await transaction.insert(memberBlock).values({ blockerId: member.id, blockedId: memberId }).onConflictDoNothing();
+    await stopOpenAsksOnBlock(transaction, member.id, memberId);
+  });
   return { isBlocked };
 }

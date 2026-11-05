@@ -64,6 +64,20 @@
       "when": 1793855925625,
       "tag": "0008_direct_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793857587162,
+      "tag": "0009_intro_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793860656961,
+      "tag": "0010_linkedin_confirmation_and_email_cooldown",
+      "breakpoints": true
     }
   ]
 }

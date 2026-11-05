@@ -8,6 +8,8 @@ export const PAGE_TITLES = {
   feed: "Feed",
   messages: "Messages",
   network: "Network",
+  intros: "Intros",
+  intro: "Intro",
   members: "Members",
   editCard: "Your card",
   profile: "Member",

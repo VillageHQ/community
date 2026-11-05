@@ -4,6 +4,7 @@ import { QueryProvider } from "@/components/query-provider";
 import { AppShell } from "@/components/shell/app-shell";
 import { getDatabase } from "@/database/client";
 import { readBrandingForPage } from "@/lib/branding/branding";
+import { readIntroBadgeCount, readIntroCounts } from "@/lib/intros/intro-reads";
 import { readAvatarUrl } from "@/lib/members/profile";
 import { readUnreadCount } from "@/lib/messages/message-reads";
 import { readNavigationBadges } from "@/lib/navigation-badges";
@@ -15,10 +16,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const { name: communityName, descriptor, logo } = await readBrandingForPage();
   const isAdmin = isAdminMember({ id, email, role });
   const database = getDatabase();
-  const [adminBadges, unreadMessages, avatarUrl] = await Promise.all([
+  const [adminBadges, unreadMessages, avatarUrl, introCounts] = await Promise.all([
     isAdmin ? readNavigationBadges(database, process.env) : {},
     readUnreadCount(database, id),
     readAvatarUrl(database, id),
+    readIntroCounts(database, id),
   ]);
 
   return (
@@ -26,7 +28,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <AppShell
         community={{ name: communityName, descriptor, logo }}
         member={{ id, name, email, image: avatarUrl, isAdmin }}
-        badges={{ ...adminBadges, messages: unreadMessages }}
+        badges={{ ...adminBadges, messages: unreadMessages, intros: readIntroBadgeCount(introCounts) }}
       >
         {children}
       </AppShell>

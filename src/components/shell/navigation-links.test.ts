@@ -14,6 +14,9 @@ function stubUnreadCount(unreadCount: number) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (path: string) => {
+      if (path === API_ROUTES.introCounts) {
+        return new Response(JSON.stringify({ waitingOnYou: 0, updates: 0 }), { headers: { "Content-Type": "application/json" } });
+      }
       if (path !== API_ROUTES.messageUnreadCount) throw new Error(`Unexpected request to ${path}`);
       return new Response(JSON.stringify({ unreadCount }), { headers: { "Content-Type": "application/json" } });
     }),

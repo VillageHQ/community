@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, skipToken } from "@tanstack/react-query";
 
 import { API_ROUTES } from "@/lib/routes";
 import {
@@ -26,7 +26,20 @@ export const NETWORK_QUERY_KEYS = {
   status: "network-status",
   search: "network-search",
   paths: "network-paths",
+  activeSearch: "network-active-search",
 } as const;
+
+export type ActiveSearch = { prompt: string; startedAtMs: number; wasSeen: boolean };
+
+
+const SPENDS_CREDITS_ONLY_ON_REQUEST = {
+  staleTime: Number.POSITIVE_INFINITY,
+  gcTime: Number.POSITIVE_INFINITY,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+  retryOnMount: false,
+};
 
 function isPolled(status: NetworkStatus | undefined) {
   return status !== undefined && POLLED_STAGES.has(status.stage);
@@ -54,7 +67,7 @@ export function networkSearchQuery(prompt: string) {
         networkSearchResultSchema,
         SEARCH_CUT_OFF_MESSAGE,
       ),
-    staleTime: Infinity,
+    ...SPENDS_CREDITS_ONLY_ON_REQUEST,
   });
 }
 
@@ -62,6 +75,14 @@ export function networkPathsQuery(linkedinSlug: string) {
   return queryOptions({
     queryKey: [NETWORK_QUERY_KEYS.paths, linkedinSlug],
     queryFn: () => postNetworkRequest(API_ROUTES.networkPaths, { linkedinSlug }, networkPathsSchema),
-    staleTime: Infinity,
+    ...SPENDS_CREDITS_ONLY_ON_REQUEST,
   });
 }
+
+export const activeSearchQuery = queryOptions<ActiveSearch | null>({
+  queryKey: [NETWORK_QUERY_KEYS.activeSearch],
+  queryFn: skipToken,
+  initialData: null,
+  staleTime: Number.POSITIVE_INFINITY,
+  gcTime: Number.POSITIVE_INFINITY,
+});

@@ -43,6 +43,10 @@ export function confirmMemberRequest(memberId: string) {
   return postNetworkRequest(API_ROUTES.memberConfirm, { memberId }, acknowledgedResponseSchema);
 }
 
+export function confirmLinkedinRequest(memberId: string) {
+  return postNetworkRequest(API_ROUTES.memberConfirmLinkedin, { memberId }, acknowledgedResponseSchema);
+}
+
 export function clearLinkedinRequest(linkedinUrl: string) {
   return postNetworkRequest(API_ROUTES.memberClearLinkedin, { linkedinUrl }, acknowledgedResponseSchema);
 }

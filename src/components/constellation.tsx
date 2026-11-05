@@ -3,7 +3,7 @@ import { UserRound } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { readFirstName } from "@/lib/design/avatar-identity";
 
-export type ConstellationPerson = { id: string; name: string };
+export type ConstellationPerson = { id: string; name: string; imageUrl?: string | null };
 
 const CENTER = { left: 50, top: 50, sizePx: 108 };
 

@@ -9,6 +9,8 @@ import { user } from "../../database/auth-schema.ts";
 import type { Database } from "../../database/client.ts";
 import { memberNetwork, memberPathResult } from "../../database/village-schema.ts";
 import type { Environment } from "../environment.ts";
+import { INTRO_ERROR_CODES, INTRO_LIMITS } from "../intros/intro-api.ts";
+import { readOpenAsks } from "../intros/open-asks.ts";
 import {
   createVillageGroup,
   createVillageSession,
@@ -25,12 +27,22 @@ import {
   VILLAGE_NOT_FOUND_STATUS,
   VILLAGE_UNAUTHORIZED_STATUS,
   VillageApiError,
+  type VillagePaths,
   type VillageSession,
   villagePathsSchema,
 } from "./client.ts";
-import { withCreditCall } from "./daily-usage.ts";
+import { cleanVillageText } from "./connector-reason.ts";
+import { readDailyLookupsLeft, withCreditCall } from "./daily-usage.ts";
 import { readLinkedinSlug, toLinkedinUrl } from "./linkedin-slug.ts";
-import { describeMemberPaths } from "./member-paths.ts";
+import {
+  describeMemberPaths,
+  readConnectors,
+  readPathSlugs,
+  readTargetName,
+  readTrustedMember,
+  type ConnectorDraft,
+  type MemberPathsFacts,
+} from "./member-paths.ts";
 import {
   NETWORK_ERROR_CODES,
   NETWORK_STAGES,
@@ -46,6 +58,7 @@ import {
   saveVillageKeys,
   type VillageKeys,
 } from "./settings.ts";
+import { readReachableMembers } from "./reachable-members.ts";
 import { resolveVillageApiUrl, resolveVillageSdkUrl } from "./urls.ts";
 
 const ADMIN_ROLE = "admin";
@@ -221,6 +234,14 @@ function linkedinTakenError() {
     NETWORK_ERROR_CODES.linkedinTaken,
     "Another member already uses this LinkedIn profile. Ask an admin to clear it from Admin, then Members.",
   );
+}
+
+export async function readIsLinkedinConfirmed(database: Database, memberId: string) {
+  const [network] = await database
+    .select({ linkedinSlug: memberNetwork.linkedinSlug, linkedinConfirmedSlug: memberNetwork.linkedinConfirmedSlug })
+    .from(memberNetwork)
+    .where(eq(memberNetwork.userId, memberId));
+  return Boolean(network?.linkedinSlug) && network?.linkedinSlug === network?.linkedinConfirmedSlug;
 }
 
 export async function saveMemberLinkedinUrl(
@@ -426,17 +447,28 @@ export async function searchMemberNetwork(
     console.log(
       JSON.stringify({ level: "info", scope: "village", event: "off_network_results_discarded" }),
     );
-    return { people: [], discardedOffNetworkResults: true };
+    return {
+      people: [],
+      discardedOffNetworkResults: true,
+      dailyLookupsLeft: await readDailyLookupsLeft(database, member.id),
+    };
   }
 
-  const memberSlugs = await readMemberSlugs(database, network.linkedinSlug);
+  const peopleSlugs = people.flatMap(({ linkedin_url }) => {
+    const slug = readLinkedinSlug(linkedin_url);
+    return slug ? [slug] : [];
+  });
+  const reachableMembers = await readReachableMembers(database, peopleSlugs, member.id);
   const describedPeople = people.map((person) => {
     const linkedinSlug = readLinkedinSlug(person.linkedin_url);
+    const fullName = person.full_name || [person.first_name, person.last_name].filter(Boolean).join(" ");
+    const member = readTrustedMember(fullName, linkedinSlug, reachableMembers);
     return {
-      fullName: person.full_name || [person.first_name, person.last_name].filter(Boolean).join(" "),
+      fullName,
       headline: person.headline ?? null,
       linkedinSlug,
-      isMember: linkedinSlug !== null && memberSlugs.has(linkedinSlug),
+      isMember: member !== null,
+      memberId: member?.id ?? null,
     };
   });
 
@@ -445,6 +477,7 @@ export async function searchMemberNetwork(
       (first, second) => Number(second.isMember) - Number(first.isMember),
     ),
     discardedOffNetworkResults: false,
+    dailyLookupsLeft: await readDailyLookupsLeft(database, member.id),
   };
 }
 
@@ -458,7 +491,8 @@ async function readCachedPaths(database: Database, userId: string, linkedinSlug:
   if (!cached) return undefined;
   if (Date.now() - cached.fetchedAt.getTime() > PATH_CACHE_TTL_MS) return undefined;
   if (cached.paths === null) return null;
-  return villagePathsSchema.parse(cached.paths);
+  const paths = villagePathsSchema.parse(cached.paths);
+  return paths.person ? paths : undefined;
 }
 
 async function fetchVillagePathsOrNull(
@@ -476,31 +510,88 @@ async function fetchVillagePathsOrNull(
   }
 }
 
+async function readPathsFacts(
+  { database, member }: NetworkContext,
+  villagePaths: VillagePaths | null,
+  network: MemberNetworkRow,
+  targetSlug: string,
+  isCached: boolean,
+): Promise<MemberPathsFacts> {
+  const [memberSlugs, reachableMembers, dailyLookupsLeft] = await Promise.all([
+    readMemberSlugs(database, network.linkedinSlug),
+    readReachableMembers(database, [targetSlug, ...readPathSlugs(villagePaths)], member.id),
+    readDailyLookupsLeft(database, member.id),
+  ]);
+  return { targetSlug, viewerSlug: network.linkedinSlug, memberSlugs, reachableMembers, isCached, dailyLookupsLeft };
+}
+
+async function describePathsForViewer(
+  context: NetworkContext,
+  villagePaths: VillagePaths | null,
+  network: MemberNetworkRow,
+  targetSlug: string,
+  isCached: boolean,
+) {
+  const facts = await readPathsFacts(context, villagePaths, network, targetSlug, isCached);
+  const openAsks = await readOpenAsks(context.database, context.member.id, targetSlug);
+  const connectors = readConnectors(villagePaths, facts).map((connector) => ({
+    ...connector,
+    openAsk: connector.member ? (openAsks.get(connector.member.id) ?? null) : null,
+  }));
+  return describeMemberPaths(villagePaths, facts, connectors);
+}
+
 export async function readMemberPaths(context: NetworkContext, linkedinSlug: string) {
   const { database, member } = context;
   const { keys, network } = await requireJoinedMember(context);
   const { session } = await connectMember(context, keys);
   await requireTrustedVillageUser(context, network, session);
-  const memberSlugs = await readMemberSlugs(database, network.linkedinSlug);
 
   const cachedPaths = await readCachedPaths(database, member.id, linkedinSlug);
   if (cachedPaths !== undefined) {
-    return describeMemberPaths(cachedPaths, linkedinSlug, memberSlugs, true);
+    return describePathsForViewer(context, cachedPaths, network, linkedinSlug, true);
   }
 
   const villagePaths = await fetchVillagePathsOrNull(context, session, linkedinSlug);
   if (villagePaths === null) await requireTrustedVillageUser(context, network, session);
 
   const fetchedAt = new Date();
+  const paths = villagePaths && { ...villagePaths, person: villagePaths.person ?? {} };
   await database
     .insert(memberPathResult)
-    .values({ userId: member.id, linkedinSlug, paths: villagePaths, fetchedAt })
+    .values({ userId: member.id, linkedinSlug, paths, fetchedAt })
     .onConflictDoUpdate({
       target: [memberPathResult.userId, memberPathResult.linkedinSlug],
-      set: { paths: villagePaths, fetchedAt },
+      set: { paths, fetchedAt },
     });
 
-  return describeMemberPaths(villagePaths, linkedinSlug, memberSlugs, false);
+  return describePathsForViewer(context, villagePaths, network, linkedinSlug, false);
+}
+
+export type AskableConnectors = {
+  targetName: string | null;
+  targetHeadline: string | null;
+  connectors: ConnectorDraft[];
+};
+
+export async function readAskableConnectors(context: NetworkContext, targetSlug: string): Promise<AskableConnectors | null> {
+  const { database, member } = context;
+  const { network } = await requireJoinedMember(context);
+  if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
+  if (network.pendingVillageEmail) throw linkMismatchError();
+  if (targetSlug === network.linkedinSlug) {
+    throw new NetworkRequestError(UNPROCESSABLE_STATUS, INTRO_ERROR_CODES.ownTarget, "That's you. No intro needed.");
+  }
+
+  const cachedPaths = await readCachedPaths(database, member.id, targetSlug);
+  if (!cachedPaths) return null;
+
+  const facts = await readPathsFacts(context, cachedPaths, network, targetSlug, true);
+  return {
+    targetName: readTargetName(cachedPaths),
+    targetHeadline: cleanVillageText(cachedPaths.person?.headline ?? "", INTRO_LIMITS.headlineLength) || null,
+    connectors: readConnectors(cachedPaths, facts),
+  };
 }
 
 export async function readVillageLinks(database: Database) {

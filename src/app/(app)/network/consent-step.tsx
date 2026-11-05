@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { ArrowRight, CircleAlert, DoorOpen, Mail, UsersRound, Waypoints } from "lucide-react";
+import { ArrowRight, Check, CircleAlert, DoorOpen, Mail, Search, UsersRound, Waypoints } from "lucide-react";
 
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,14 @@ import { readSharingSentence, type WelcomeContext } from "./welcome-context";
 const CONSENT_FIELD_ID = "sharing-consent";
 
 const DEAL_NOTES = [
+  {
+    icon: Check,
+    text: "You say yes or no to every intro anyone asks you for.",
+  },
+  {
+    icon: Search,
+    text: "That covers intros only. Without asking you each time, members can find your contacts in search and see you as someone who can introduce them.",
+  },
   {
     icon: Mail,
     text: "Your email address goes to Village, the company that runs network search for this community.",

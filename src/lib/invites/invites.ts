@@ -297,6 +297,7 @@ export async function reclaimInvite(context: NetworkContext, inviteId: string) {
       .update(memberNetwork)
       .set({
         linkedinSlug: null,
+        linkedinConfirmedSlug: null,
         villageExternalId: randomUUID(),
         sharingConsentedAt: null,
         groupJoinedAt: null,

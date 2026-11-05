@@ -65,8 +65,13 @@ describe("the consent screen", () => {
     expect(renderConsent()).toContain("you can come back here from Network any time");
   });
 
-  it("makes no promise about approving intros, which don't exist yet", () => {
-    expect(renderConsent()).not.toMatch(/yes or no to every intro/i);
+  it("promises a yes or no on every intro", () => {
+    expect(renderConsent()).toContain("You say yes or no to every intro anyone asks you for.");
+  });
+
+  it("says being findable isn't controlled per intro", () => {
+    expect(renderConsent()).toContain("That covers intros only.");
+    expect(renderConsent()).toContain("Without asking you each time, members can find your contacts in search");
   });
 
   it("states real member counts, never invented ones", () => {

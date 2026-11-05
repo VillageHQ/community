@@ -1,30 +1,31 @@
 "use client";
 
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { ChevronDown, ExternalLink, Search, Waypoints } from "lucide-react";
-import { useState } from "react";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { ChevronDown, Search, Waypoints } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useId, useRef, useState } from "react";
 
-import { CommunityMemberBadge } from "@/components/community-member-badge";
 import type { ConstellationPerson } from "@/components/constellation";
 import { EmptyState } from "@/components/empty-state";
-import { LoadingState } from "@/components/loading-state";
 import { QueryBoundary } from "@/components/query-boundary";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { readFirstName } from "@/lib/design/avatar-identity";
-import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
-import type { NetworkPerson } from "@/lib/village/network-api";
+import { ROUTES } from "@/lib/routes";
+import { LOW_LOOKUPS_LEFT, type NetworkPerson } from "@/lib/village/network-api";
 
 import { LeaveGroup } from "./leave-group";
 import { LinkedinForm } from "./linkedin-step";
-import { NETWORK_QUERY_KEYS, networkSearchQuery } from "./network-queries";
+import { NetworkFailure } from "./network-failure";
+import { activeSearchQuery, NETWORK_QUERY_KEYS, networkSearchQuery, type ActiveSearch } from "./network-queries";
 import { PersonPaths } from "./person-paths";
+import { PersonResult } from "./person-result";
+import { SearchWaiting } from "./search-waiting";
+import { useIsDesktop } from "./use-is-desktop";
 import type { WelcomeContext } from "./welcome-context";
 
 const PROMPT_FIELD = "prompt";
 const SEARCH_EXAMPLES = ["Fintech founders in London", "Angels who back climate", "Heads of sales at SaaS companies"];
-const SEARCH_DURATION_NOTE = "Searches can take a minute or more.";
 const STACKED_FACES = 4;
 
 function readSearchScope(sharingMemberCount: number) {
@@ -32,92 +33,64 @@ function readSearchScope(sharingMemberCount: number) {
   return `Search ${sharingMemberCount} members' networks, including yours.`;
 }
 
-type PathsPanelProps = { person: NetworkPerson; linkedinSlug: string; viewer: ConstellationPerson };
+function readPeopleHeading(count: number) {
+  return count === 1 ? "1 person in your network" : `${count} people in your network`;
+}
 
-function PathsPanel({ person, linkedinSlug, viewer }: PathsPanelProps) {
+type PathsPanelProps = { person: NetworkPerson; linkedinSlug: string; viewer: ConstellationPerson; panelId: string };
+
+function PathsPanel({ person, linkedinSlug, viewer, panelId }: PathsPanelProps) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => heading.current?.focus({ preventScroll: false }), [linkedinSlug]);
+
   return (
-    <section aria-label={`Intro paths to ${person.fullName}`} className="grid gap-4 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-6">
-      <h2 className="type-h2">Who can intro you to {readFirstName(person.fullName)}</h2>
-      <QueryBoundary loadingMessage="Finding intro paths…">
+    <section
+      id={panelId}
+      aria-label={`Who can intro you to ${person.fullName}`}
+      className="grid gap-4 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-6"
+    >
+      <h2 ref={heading} tabIndex={-1} className="type-h2 scroll-mt-24 outline-none">
+        Who can intro you to {readFirstName(person.fullName)}
+      </h2>
+      <QueryBoundary
+        key={linkedinSlug}
+        loadingMessage={`Finding who knows ${readFirstName(person.fullName)}…`}
+        failure={NetworkFailure}
+      >
         <PersonPaths linkedinSlug={linkedinSlug} personName={person.fullName} viewer={viewer} />
       </QueryBoundary>
     </section>
   );
 }
 
-type PersonResultProps = {
-  person: NetworkPerson;
-  isSelected: boolean;
-  viewer: ConstellationPerson;
-  onSelect: (linkedinSlug: string | null) => void;
-};
-
-function PersonResult({ person, isSelected, viewer, onSelect }: PersonResultProps) {
-  const { fullName, headline, linkedinSlug, isMember } = person;
-
+function PickSomeone() {
   return (
-    <li className="grid gap-3">
-      <div
-        data-selected={isSelected}
-        className="flex flex-wrap items-center gap-3.5 rounded-card bg-card px-card-phone py-4 shadow-panel data-[selected=true]:shadow-[inset_0_0_0_2.5px_var(--brand-emphasis),var(--elevation-panel)]"
-      >
-        <Avatar stableId={linkedinSlug ?? fullName} name={fullName} sizePx={56} />
-        <div className="min-w-0 flex-[1_1_180px]">
-          {linkedinSlug ? (
-            <a
-              className="inline-flex items-center gap-1.5 text-base leading-[22px] font-bold underline-offset-3 hover:underline"
-              href={toLinkedinUrl(linkedinSlug)}
-              rel="noreferrer"
-              target="_blank"
-            >
-              <span className="min-w-0 wrap-anywhere">{fullName}</span>
-              <ExternalLink aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
-              <span className="sr-only">on LinkedIn, opens in a new tab</span>
-            </a>
-          ) : (
-            <span className="text-base leading-[22px] font-bold wrap-anywhere">{fullName}</span>
-          )}
-          {headline ? <p className="type-small wrap-anywhere text-foreground-soft">{headline}</p> : null}
-          {isMember ? (
-            <div className="mt-1.5">
-              <CommunityMemberBadge />
-            </div>
-          ) : null}
-        </div>
-        {linkedinSlug ? (
-          <Button
-            type="button"
-            size="sm"
-            variant={isSelected ? "outline" : "soft"}
-            aria-expanded={isSelected}
-            className="ml-auto"
-            onClick={() => onSelect(isSelected ? null : linkedinSlug)}
-          >
-            {isSelected ? "Hide intro paths" : "Show intro paths"}
-          </Button>
-        ) : null}
-      </div>
-      {isSelected && linkedinSlug ? (
-        <div className="lg:hidden">
-          <PathsPanel person={person} linkedinSlug={linkedinSlug} viewer={viewer} />
-        </div>
-      ) : null}
-    </li>
+    <div className="grid justify-items-center gap-2 rounded-panel bg-muted px-8 py-10 text-center">
+      <Waypoints aria-hidden="true" className="size-8 text-brand-emphasis" />
+      <p className="type-h3">Pick someone to see the way in</p>
+      <p className="type-small text-foreground-soft">We&apos;ll show who knows them, and why.</p>
+    </div>
   );
 }
 
-function readPeopleHeading(count: number) {
-  return count === 1 ? "1 person in your network" : `${count} people in your network`;
+function useMarkSearchSeen() {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    queryClient.setQueryData(activeSearchQuery.queryKey, (active) => (active ? { ...active, wasSeen: true } : active));
+  }, [queryClient]);
 }
 
 function SearchResults({ prompt, viewer }: { prompt: string; viewer: ConstellationPerson }) {
   const { data: result } = useSuspenseQuery(networkSearchQuery(prompt));
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const isDesktop = useIsDesktop();
+  const panelId = useId();
   const selectedPerson = result.people.find(({ linkedinSlug }) => linkedinSlug === selectedSlug);
+  useMarkSearchSeen();
 
   if (result.people.length === 0) {
     return (
-      <div role="status">
+      <div role="status" className="rounded-panel bg-card shadow-panel">
         <EmptyState
           icon={Search}
           title="Nobody in your network matches"
@@ -128,62 +101,92 @@ function SearchResults({ prompt, viewer }: { prompt: string; viewer: Constellati
   }
 
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-6">
+    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_436px] lg:gap-6">
       <section aria-labelledby="results-heading">
-        <h2 id="results-heading" className="type-h3 mb-3.5">
-          {readPeopleHeading(result.people.length)}
-        </h2>
+        <div role="status">
+          <h2 id="results-heading" className="type-h3 mb-3.5">
+            {readPeopleHeading(result.people.length)}
+          </h2>
+        </div>
         <ul aria-label="Search results" className="grid gap-3">
-          {result.people.map((person, position) => (
-            <PersonResult
-              key={person.linkedinSlug ?? `${person.fullName}-${position}`}
-              person={person}
-              isSelected={selectedSlug !== null && person.linkedinSlug === selectedSlug}
-              viewer={viewer}
-              onSelect={setSelectedSlug}
-            />
-          ))}
+          {result.people.map((person, position) => {
+            const isSelected = selectedSlug !== null && person.linkedinSlug === selectedSlug;
+            return (
+              <li key={person.linkedinSlug ?? `${person.fullName}-${position}`} className="grid gap-3">
+                <PersonResult person={person} isSelected={isSelected} panelId={panelId} onSelect={setSelectedSlug} />
+                {isSelected && person.linkedinSlug && !isDesktop ? (
+                  <PathsPanel person={person} linkedinSlug={person.linkedinSlug} viewer={viewer} panelId={panelId} />
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
+        {result.dailyLookupsLeft <= LOW_LOOKUPS_LEFT ? (
+          <p className="type-small mt-3.5 text-muted-foreground">
+            {result.dailyLookupsLeft === 1 ? "1 lookup" : `${result.dailyLookupsLeft} lookups`} left today.
+          </p>
+        ) : null}
       </section>
-      <div className="hidden lg:sticky lg:top-9 lg:block">
-        {selectedPerson?.linkedinSlug ? (
-          <PathsPanel person={selectedPerson} linkedinSlug={selectedPerson.linkedinSlug} viewer={viewer} />
-        ) : (
-          <div className="grid justify-items-center gap-2 rounded-panel bg-muted px-8 py-10 text-center">
-            <Waypoints aria-hidden="true" className="size-8 text-brand-emphasis" />
-            <p className="type-h3">Pick someone to see the way in</p>
-            <p className="type-small text-foreground-soft">
-              Choose Show intro paths on a result. Each new lookup uses one of your daily lookups.
-            </p>
-          </div>
-        )}
-      </div>
+      {isDesktop ? (
+        <div>
+          {selectedPerson?.linkedinSlug ? (
+            <PathsPanel person={selectedPerson} linkedinSlug={selectedPerson.linkedinSlug} viewer={viewer} panelId={panelId} />
+          ) : (
+            <PickSomeone />
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function ChangeLinkedin() {
+function FullNameNote() {
+  return (
+    <p className="type-note flex flex-wrap items-center gap-x-3 gap-y-1 rounded-field bg-card p-4 text-foreground-soft shadow-panel">
+      <span className="min-w-0 flex-[1_1_240px]">
+        Members see you as a way in when your name here matches your LinkedIn. Add your first and last name, or ask an admin to confirm your LinkedIn.
+      </span>
+      <Button asChild variant="soft" size="sm">
+        <Link href={ROUTES.editCard}>Edit your card</Link>
+      </Button>
+    </p>
+  );
+}
+
+function NetworkSettings() {
   const queryClient = useQueryClient();
   return (
     <details className="group rounded-card-phone bg-card shadow-panel sm:rounded-card">
       <summary className="flex min-h-16 list-none items-center justify-between gap-3 rounded-card-phone px-card-phone font-bold sm:rounded-card sm:px-6 [&::-webkit-details-marker]:hidden">
-        Change your LinkedIn profile
+        Your network settings
         <ChevronDown aria-hidden="true" className="size-5 shrink-0 transition-transform group-open:rotate-180" />
       </summary>
-      <div className="px-card-phone pb-[18px] sm:px-6 sm:pb-6">
-        <LinkedinForm
-          submitLabel="Save"
-          onSaved={() => queryClient.invalidateQueries({ queryKey: [NETWORK_QUERY_KEYS.status] })}
-        />
+      <div className="grid items-start gap-6 px-card-phone pb-[18px] sm:px-6 sm:pb-6 lg:grid-cols-2">
+        <div className="grid gap-3">
+          <h2 className="type-h3">Change your LinkedIn profile</h2>
+          <LinkedinForm
+            submitLabel="Save"
+            onSaved={() => queryClient.invalidateQueries({ queryKey: [NETWORK_QUERY_KEYS.status] })}
+          />
+        </div>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <h2 className="type-h3">Leave the group</h2>
+            <p className="type-small text-foreground-soft">Stops sharing your network, and your access to others&apos;.</p>
+          </div>
+          <LeaveGroup />
+        </div>
       </div>
     </details>
   );
 }
 
-type SearchHeroProps = { welcome: WelcomeContext; onSearch: (prompt: string) => void };
+type SearchHeroProps = { welcome: WelcomeContext; initialPrompt: string; onSearch: (prompt: string) => void };
 
-function SearchHero({ welcome, onSearch }: SearchHeroProps) {
-  const [draft, setDraft] = useState("");
+function SearchHero({ welcome, initialPrompt, onSearch }: SearchHeroProps) {
+  const [draft, setDraft] = useState(initialPrompt);
+  const field = useRef<HTMLInputElement>(null);
+
   return (
     <section aria-labelledby="network-title" className="rounded-card bg-accent px-card-phone py-7 sm:rounded-panel sm:px-10 sm:pt-10 sm:pb-8">
       <h1 id="network-title" className="type-h1 text-center">
@@ -198,7 +201,7 @@ function SearchHero({ welcome, onSearch }: SearchHeroProps) {
                 stableId={id}
                 name={name}
                 sizePx={32}
-                className="-ml-2.5 shadow-[0_0_0_2.5px_var(--accent)] first:ml-0"
+                className="-ml-1.5 shadow-[0_0_0_2.5px_var(--accent)] first:ml-0"
               />
             ))}
           </span>
@@ -206,33 +209,41 @@ function SearchHero({ welcome, onSearch }: SearchHeroProps) {
         <p>{readSearchScope(welcome.sharingMemberCount)}</p>
       </div>
       <form
-        action={(formData) => onSearch(String(formData.get(PROMPT_FIELD)))}
+        role="search"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const prompt = draft.trim();
+          if (prompt) onSearch(prompt);
+        }}
         className="mx-auto mt-6 flex max-w-[760px] flex-wrap items-center gap-2 rounded-[38px] bg-card p-2 pl-5 text-brand-emphasis shadow-[0_0_0_2px_var(--brand-emphasis),var(--elevation-panel)] focus-within:shadow-[0_0_0_3px_var(--brand-emphasis),0_0_0_6px_var(--accent),var(--elevation-panel)] sm:min-h-[76px] sm:flex-nowrap sm:gap-3.5 sm:pl-[26px]"
       >
         <Search aria-hidden="true" className="size-6 shrink-0" />
         <label htmlFor={PROMPT_FIELD} className="sr-only">
-          Who are you looking for?
+          Describe who you want to meet
         </label>
         <input
+          ref={field}
           id={PROMPT_FIELD}
           name={PROMPT_FIELD}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           required
           placeholder="Fintech founders in London"
-          className="min-h-11 min-w-0 flex-1 bg-transparent text-lg leading-7 font-semibold text-foreground outline-none sm:text-xl"
+          className="min-h-11 min-w-0 flex-1 bg-transparent text-lg leading-7 font-semibold text-foreground outline-none placeholder:text-muted-foreground sm:text-xl"
         />
         <Button type="submit" size="lg" className="max-sm:w-full">
           Search
         </Button>
       </form>
-      <p className="type-small mt-3 text-center text-foreground-soft">{SEARCH_DURATION_NOTE}</p>
-      <ul aria-label="Search ideas" className="mt-3 flex flex-wrap justify-center gap-2">
+      <ul aria-label="Search ideas" className="mt-[18px] flex flex-wrap justify-center gap-2">
         {SEARCH_EXAMPLES.map((example) => (
           <li key={example}>
             <button
               type="button"
-              onClick={() => setDraft(example)}
+              onClick={() => {
+                setDraft(example);
+                field.current?.focus();
+              }}
               className="inline-flex min-h-11 items-center rounded-full bg-card px-card-phone text-[15px] leading-5 font-semibold text-foreground-soft hover:text-foreground hover:shadow-[inset_0_0_0_1.5px_var(--input)]"
             >
               {example}
@@ -244,37 +255,40 @@ function SearchHero({ welcome, onSearch }: SearchHeroProps) {
   );
 }
 
+function toActiveSearch(prompt: string): ActiveSearch {
+  return { prompt, startedAtMs: Date.now(), wasSeen: false };
+}
+
 export function NetworkSearch({ welcome }: { welcome: WelcomeContext }) {
-  const [prompt, setPrompt] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { data: active } = useQuery(activeSearchQuery);
 
   return (
     <div className="grid gap-6">
-      <SearchHero welcome={welcome} onSearch={setPrompt} />
-      {prompt ? (
+      <SearchHero
+        welcome={welcome}
+        initialPrompt={active?.prompt ?? ""}
+        onSearch={(prompt) => queryClient.setQueryData(activeSearchQuery.queryKey, toActiveSearch(prompt))}
+      />
+      {active ? (
         <QueryBoundary
-          key={prompt}
+          key={`${active.prompt}-${active.startedAtMs}`}
           loadingMessage="Searching your network…"
+          failure={NetworkFailure}
           fallback={
-            <LoadingState
+            <SearchWaiting
+              prompt={active.prompt}
+              startedAtMs={active.startedAtMs}
               person={welcome.member}
-              title="Searching your network…"
-              description={`${prompt}. ${SEARCH_DURATION_NOTE}`}
+              sharingMemberCount={welcome.sharingMemberCount}
             />
           }
         >
-          <SearchResults prompt={prompt} viewer={welcome.member} />
+          <SearchResults prompt={active.prompt} viewer={welcome.member} />
         </QueryBoundary>
       ) : null}
-      <div className="grid items-start gap-5 lg:grid-cols-2">
-        <ChangeLinkedin />
-        <Card className="grid gap-4">
-          <div className="grid gap-1.5">
-            <CardTitle>Leave the group</CardTitle>
-            <CardDescription>Stops sharing your network, and your access to others&apos;.</CardDescription>
-          </div>
-          <LeaveGroup />
-        </Card>
-      </div>
+      {welcome.needsFullName ? <FullNameNote /> : null}
+      <NetworkSettings />
     </div>
   );
 }
