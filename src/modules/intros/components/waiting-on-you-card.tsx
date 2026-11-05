@@ -11,10 +11,13 @@ const RAIL_AVATAR_SIZE_PX = 44;
 
 function describeWaitingIntro({ state, requester, target }: Intro) {
   const firstName = readFirstName(requester.name);
+  if (state === INTRO_STATES.targetAgreed) {
+    return { title: `${readFirstName(target.name)} said yes`, detail: `Now connect them with ${firstName}`, action: "Send the message" };
+  }
   if (state === INTRO_STATES.accepted) {
     return { title: `You said yes to ${firstName}`, detail: `Now connect them with ${target.name}`, action: "Finish the intro" };
   }
-  return { title: `${firstName} needs an intro`, detail: `to ${target.name}`, action: `Review ${firstName}'s ask` };
+  return { title: `${firstName} needs an intro`, detail: `to ${target.name}`, action: `Review ${firstName}'s intro request` };
 }
 
 function WaitingIntroRow({ intro }: { intro: Intro }) {

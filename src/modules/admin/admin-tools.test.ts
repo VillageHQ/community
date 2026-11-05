@@ -29,7 +29,6 @@ import { readCommunityHealth } from "@/modules/admin/reads-health";
 import { describeCreditEstimate, estimateCreditCost, readCreditUsage } from "@/modules/network/reads-credits";
 import { readOpenReportCount } from "@/modules/admin/service-reports";
 import { feedPageSchema } from "@/modules/feed/contract";
-import { INTRO_STATES } from "@/modules/intros/contract";
 import { issuedInviteSchema } from "@/modules/members/contract-invites";
 import { readMemberProfile } from "@/modules/members/service-profile";
 import { readNavigationBadges } from "@/shell/navigation-badges";
@@ -956,7 +955,7 @@ describe("the admin tools", () => {
         { days: 30, posts: 2, activeMembers: 2 },
       ]);
       expect(health.invites).toMatchObject({ accepted: 0, pending: 1, sent: 1, acceptedPercent: 0 });
-      expect(health.intros.find(({ state }) => state === INTRO_STATES.requested)?.count).toBe(0);
+      expect(health.intros).toEqual({ asked: 0, introduced: 0, declined: 0, helped: 0 });
     });
 
     it("shows no acceptance rate before any invite", async () => {

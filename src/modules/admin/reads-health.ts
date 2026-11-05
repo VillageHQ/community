@@ -9,7 +9,7 @@ import { comment, post, reaction } from "../feed/schema.ts";
 import { introRequest } from "../intros/schema.ts";
 import { directMessage } from "../messages/schema.ts";
 import { memberNetwork } from "../members/schema.ts";
-import { readIntroStateCounts } from "../intros/reads.ts";
+import { readIntroCommunityCounts } from "../intros/reads.ts";
 import { readInviteCounts } from "../members/service-invites.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { readActiveMemberCount } from "../members/reads-directory.ts";
@@ -67,7 +67,7 @@ export async function readCommunityHealth(database: Database, now = new Date()) 
     readConsentedMemberCount(database),
     readSharingMemberCount(database),
     Promise.all(HEALTH_WINDOWS_IN_DAYS.map((days) => readWindow(database, days, now))),
-    readIntroStateCounts(database),
+    readIntroCommunityCounts(database),
     readInviteCounts(database, now),
   ]);
   return { members, sharing, synced, windows, intros, invites: readInviteAcceptance(invites) };

@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
-import { INTRO_LIMITS, INTRO_STATES, OPEN_INTRO_STATES } from "./contract.ts";
+import { INTRO_DECLINE_KINDS, INTRO_LIMITS, INTRO_OUTCOMES, INTRO_STATES, OPEN_INTRO_STATES } from "./contract.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 
 const MILLISECOND_PRECISION = 3;
@@ -38,6 +38,7 @@ export const introRequest = pgTable(
     note: text("note").notNull(),
     state: text("state").notNull().default(INTRO_STATES.requested),
     declineReason: text("decline_reason"),
+    declineKind: text("decline_kind"),
     isWithheld: boolean("is_withheld").notNull().default(false),
     requesterHasUpdate: boolean("requester_has_update").notNull().default(false),
     askedEmailAt: introTimestamp("asked_email_at"),
@@ -45,6 +46,13 @@ export const introRequest = pgTable(
     acceptedAt: introTimestamp("accepted_at"),
     closedAt: introTimestamp("closed_at"),
     expiresAt: introTimestamp("expires_at").notNull(),
+    consentTokenHash: text("consent_token_hash").unique(),
+    targetEmail: text("target_email"),
+    consentEmailAt: introTimestamp("consent_email_at"),
+    askedTargetAt: introTimestamp("asked_target_at"),
+    targetAgreedAt: introTimestamp("target_agreed_at"),
+    outcome: text("outcome"),
+    outcomeAnsweredAt: introTimestamp("outcome_answered_at"),
   },
   (table) => [
     uniqueIndex("intro_request_open_unique")
@@ -60,8 +68,29 @@ export const introRequest = pgTable(
       sql`${table.declineReason} is null or (${table.state} = '${sql.raw(INTRO_STATES.declined)}' and char_length(${table.declineReason}) between 1 and ${toSqlNumber(INTRO_LIMITS.declineReasonLength)})`,
     ),
     check(
+      "intro_request_decline_kind",
+      sql`${table.declineKind} is null or (${table.state} = '${sql.raw(INTRO_STATES.declined)}' and ${table.declineKind} in (${toSqlLiterals(Object.values(INTRO_DECLINE_KINDS))}))`,
+    ),
+    check(
+      "intro_request_consent_token_while_asking",
+      sql`${table.consentTokenHash} is null or ${table.state} = '${sql.raw(INTRO_STATES.askingTarget)}'`,
+    ),
+    check(
+      "intro_request_target_email_while_open",
+      sql`${table.targetEmail} is null or ${table.state} in (${toSqlLiterals([INTRO_STATES.askingTarget, INTRO_STATES.targetAgreed])})`,
+    ),
+    check(
+      "intro_request_outcome_known",
+      sql`${table.outcome} is null or (${table.state} = '${sql.raw(INTRO_STATES.completed)}' and ${table.outcome} in (${toSqlLiterals(Object.values(INTRO_OUTCOMES))}))`,
+    ),
+    check(
       "intro_request_snapshot_lengths",
       sql`char_length(${table.targetName}) between 1 and ${toSqlNumber(INTRO_LIMITS.nameLength)} and char_length(${table.introducerName}) between 1 and ${toSqlNumber(INTRO_LIMITS.nameLength)} and char_length(${table.reason}) between 1 and ${toSqlNumber(INTRO_LIMITS.reasonLength)}`,
     ),
   ],
 );
+
+export const introOptOut = pgTable("intro_opt_out", {
+  targetSlugHash: text("target_slug_hash").primaryKey(),
+  createdAt: introTimestamp("created_at").notNull().defaultNow(),
+});

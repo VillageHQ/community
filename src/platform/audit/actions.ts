@@ -31,6 +31,7 @@ export const AUDIT_ACTIONS = {
   domainConfirmed: "domain_confirmed",
   moduleTurnedOn: "module_turned_on",
   moduleTurnedOff: "module_turned_off",
+  introAsksStopped: "intro_asks_stopped",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

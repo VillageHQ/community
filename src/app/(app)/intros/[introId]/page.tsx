@@ -44,7 +44,7 @@ export default modulePage(introsManifest, async function IntroPage({ params }: {
         </Button>
       </div>
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <QueryBoundary loadingMessage="Opening this ask…">
+        <QueryBoundary loadingMessage="Opening this intro request…">
           <IntroDetailView introId={intro.id} />
         </QueryBoundary>
       </HydrationBoundary>

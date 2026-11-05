@@ -34,12 +34,12 @@ function useLiveBadges(items: readonly ShellNavigationItem[], badges: Navigation
   const { data: introCounts } = useQuery({
     ...introCountsQuery(),
     enabled: hasBadge(items, NAVIGATION_BADGES.intros),
-    initialData: { waitingOnYou: badges[NAVIGATION_BADGES.intros] ?? 0, updates: 0 },
+    initialData: { waitingOnYou: badges[NAVIGATION_BADGES.intros] ?? 0, updates: 0, outcomesDue: 0 },
   });
   return {
     ...badges,
     [NAVIGATION_BADGES.messages]: data.unreadCount,
-    [NAVIGATION_BADGES.intros]: introCounts.waitingOnYou + introCounts.updates,
+    [NAVIGATION_BADGES.intros]: introCounts.waitingOnYou + introCounts.updates + introCounts.outcomesDue,
   };
 }
 

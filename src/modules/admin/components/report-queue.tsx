@@ -45,7 +45,7 @@ const TARGET_DISPLAY: Record<ReportTarget, { label: string; scope: string; delet
   },
   [REPORT_TARGETS.introNote]: {
     label: "Intro note",
-    scope: "You're seeing a copy of this note, and nothing else about the ask. You can't delete notes from here.",
+    scope: "You're seeing a copy of this note, and nothing else about the intro request. You can't delete notes from here.",
     deleteLabel: null,
   },
 };
