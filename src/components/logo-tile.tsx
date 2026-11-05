@@ -1,8 +1,8 @@
 import { cn } from "cn";
 import Image from "next/image";
 
-import { LOGO_BACKDROPS, type LogoBackdrop } from "@/lib/branding/logo-rules";
-import { readInitials } from "@/lib/design/avatar-identity";
+import { LOGO_BACKDROPS, type LogoBackdrop } from "@/platform/branding/logo-rules";
+import { readInitials } from "@/platform/design/avatar-identity";
 
 const DEFAULT_LOGO_SIZE_PX = 44;
 const CORNER_RATIO = 0.3;

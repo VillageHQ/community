@@ -4,10 +4,10 @@ import Link from "next/link";
 
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
 import { Button } from "@/components/ui/button";
-import { readBrandingForPage } from "@/lib/branding/branding";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { readResendConfig } from "@/lib/email/resend";
-import { ROUTES } from "@/lib/routes";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { readResendConfig } from "@/platform/email/resend";
+import { ROUTES } from "@/platform/http/routes";
 
 import { ForgotPasswordForm } from "./forgot-password-form";
 

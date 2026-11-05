@@ -1,14 +1,31 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 
 import { hashPassword } from "better-auth/crypto";
 
-import { account, user } from "../database/auth-schema.ts";
-import type { Database } from "../database/client.ts";
-import { getAuth } from "../lib/auth.ts";
+import { account, user } from "../platform/database/auth-schema.ts";
+import type { Database } from "../platform/database/client.ts";
+import { getAuth } from "../platform/auth/auth.ts";
 
 const MEMBER_PASSWORD = "a-long-test-password";
 const CREDENTIAL_PROVIDER_ID = "credential";
-const SESSION_COOKIE_PATTERN = /^[^;]+/;
+const COOKIE_SIGNATURE_ALGORITHM = "sha256";
+
+let memberPasswordHash: Promise<string> | undefined;
+
+// Scrypt dominates the cost of a member, and a hook that makes five of them times out on a busy machine. One hash per run is enough.
+function readMemberPasswordHash() {
+  memberPasswordHash ??= hashPassword(MEMBER_PASSWORD);
+  return memberPasswordHash;
+}
+
+// Signing in would verify the password with scrypt again, so this creates the session directly.
+async function createSessionCookie(userId: string) {
+  const auth = await getAuth();
+  const { internalAdapter, authCookies, secret } = await auth.$context;
+  const { token } = await internalAdapter.createSession(userId);
+  const signature = createHmac(COOKIE_SIGNATURE_ALGORITHM, secret).update(token).digest("base64");
+  return `${authCookies.sessionToken.name}=${encodeURIComponent(`${token}.${signature}`)}`;
+}
 
 export async function createSignedInMember(database: Database, role: "admin" | "user" = "user") {
   const userId = randomUUID();
@@ -19,16 +36,8 @@ export async function createSignedInMember(database: Database, role: "admin" | "
     userId,
     accountId: userId,
     providerId: CREDENTIAL_PROVIDER_ID,
-    password: await hashPassword(MEMBER_PASSWORD),
+    password: await readMemberPasswordHash(),
   });
 
-  const auth = await getAuth();
-  const { headers } = await auth.api.signInEmail({
-    body: { email, password: MEMBER_PASSWORD },
-    returnHeaders: true,
-  });
-  const cookie = headers.getSetCookie()[0]?.match(SESSION_COOKIE_PATTERN)?.[0];
-  if (!cookie) throw new Error("Sign-in set no session cookie.");
-
-  return { userId, email, cookie };
+  return { userId, email, cookie: await createSessionCookie(userId) };
 }

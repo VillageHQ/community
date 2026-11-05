@@ -1,7 +1,7 @@
-import { inviteIdBodySchema } from "@/lib/invites/invite-api";
-import { reclaimInvite } from "@/lib/invites/invites";
-import { logAdminAction } from "@/lib/route-logging";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { inviteIdBodySchema } from "@/modules/members/contract-invites";
+import { reclaimInvite } from "@/modules/admin/service-roster";
+import { logAdminAction } from "@/platform/observability/route-logging";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(
   "invite-reclaim",

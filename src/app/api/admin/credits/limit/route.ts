@@ -1,7 +1,7 @@
-import { dailyLimitBodySchema } from "@/lib/admin/admin-api";
-import { setDailyLookupLimit } from "@/lib/admin/settings-actions";
-import { logAdminAction } from "@/lib/route-logging";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { dailyLimitBodySchema } from "@/platform/village/contract";
+import { setDailyLookupLimit } from "@/modules/network/service-settings";
+import { logAdminAction } from "@/platform/observability/route-logging";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(
   "admin-daily-limit",

@@ -1,0 +1,46 @@
+import { queryOptions } from "@tanstack/react-query";
+
+import { departureResponseSchema } from "@/modules/network/contract";
+import { memberPageSchema, type MemberFilter, type SetMemberRoleBody } from "@/modules/admin/contract";
+import { issuedInviteSchema } from "@/modules/members/contract-invites";
+import { API_ROUTES } from "@/platform/http/routes";
+import { acknowledgedResponseSchema } from "@/platform/http/contract";
+import { postRequest } from "@/platform/http/post-request";
+
+export const ADMIN_MEMBER_QUERY_KEYS = { list: "admin-member-list" } as const;
+
+const MEMBER_LIST_STALE_MS = 15_000;
+
+type MemberPageRequest = { search: string; filter: MemberFilter; page: number };
+
+export function memberPageQuery({ search, filter, page }: MemberPageRequest) {
+  return queryOptions({
+    queryKey: [ADMIN_MEMBER_QUERY_KEYS.list, search, filter, page],
+    queryFn: () => postRequest(API_ROUTES.memberList, { search, filter, page }, memberPageSchema),
+    staleTime: MEMBER_LIST_STALE_MS,
+  });
+}
+
+export function setMemberRoleRequest(body: SetMemberRoleBody) {
+  return postRequest(API_ROUTES.memberRole, body, acknowledgedResponseSchema);
+}
+
+export function unbanMemberRequest(memberId: string) {
+  return postRequest(API_ROUTES.memberUnban, { memberId }, acknowledgedResponseSchema);
+}
+
+export function approveVillageLinkRequest(memberId: string, villageEmail: string) {
+  return postRequest(API_ROUTES.villageLinks, { memberId, villageEmail }, acknowledgedResponseSchema);
+}
+
+export function resetVillageLinkRequest(memberId: string) {
+  return postRequest(API_ROUTES.villageLinkReset, { memberId, confirmed: true }, acknowledgedResponseSchema);
+}
+
+export function leaveGroupRequest(memberId: string) {
+  return postRequest(API_ROUTES.memberLeaveGroup, { memberId }, departureResponseSchema);
+}
+
+export function reinviteMemberRequest(memberId: string) {
+  return postRequest(API_ROUTES.memberReinvite, { memberId }, issuedInviteSchema);
+}

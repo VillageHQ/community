@@ -30,7 +30,7 @@ Point any static host at this repo with **root directory `site`**. There's no bu
 ## How it stays out of the app
 
 - `eslint.config.mjs` ignores `site/**`.
-- `site/.ignore` stops Tailwind from scanning this folder for class names, so nothing here reaches the app's CSS. It also hides the folder from tools that honor `.ignore`, like ripgrep. Use `rg --no-ignore` to search it.
+- `@source not "../../site"` in `src/app/globals.css` stops Tailwind from scanning this folder for class names, so nothing here reaches the app's CSS.
 - `tsc` and Vitest only look at TypeScript files and `src/`. Vercel and DigitalOcean build from the repo root with `next build`, which never reads this folder.
 
 ## Third-party assets

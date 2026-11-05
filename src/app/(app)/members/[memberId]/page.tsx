@@ -8,21 +8,22 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
-import { getDatabase } from "@/database/client";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { readFirstName } from "@/lib/design/avatar-identity";
-import { formatMonthAndYear } from "@/lib/format-date";
-import { readExternalHost } from "@/lib/members/external-url";
-import { isBlockedBy } from "@/lib/messages/message-reads";
-import { isCardFilledIn, readMemberProfile } from "@/lib/members/profile";
-import { ROUTES } from "@/lib/routes";
-import { requireMember } from "@/lib/session";
-import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
-import { isAdminMember } from "@/lib/village/member-network";
+import { getDatabase } from "@/platform/database/client";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { readFirstName } from "@/platform/design/avatar-identity";
+import { formatMonthAndYear } from "@/platform/text/format-date";
+import { readExternalHost } from "@/modules/members/rules-external-url";
+import { isBlockedBy } from "@/modules/members/service-blocks";
+import { isCardFilledIn, readMemberProfile } from "@/modules/members/service-profile";
+import { ROUTES } from "@/platform/http/routes";
+import { requireMember } from "@/platform/auth/session";
+import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
+import { isAdminMember } from "@/platform/auth/roles";
 
-import { BlockMemberButton } from "../../messages/block-member-button";
-import { StartConversationButton } from "../../messages/start-conversation-button";
-import { AdminMemberPanel } from "./admin-member-panel";
+import { BlockMemberButton } from "@/modules/members/components/block-member-button";
+import { MemberConversationSlot } from "@/modules/members/slots";
+import { INBOX_QUERY_FILTER } from "@/modules/messages/queries";
+import { AdminMemberPanel } from "@/modules/members/components/admin-member-panel";
 
 export const metadata: Metadata = { title: PAGE_TITLES.profile };
 
@@ -93,7 +94,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
               </Link>
             </Button>
           ) : (
-            <StartConversationButton
+            <MemberConversationSlot
               memberId={profile.id}
               label="Message"
               accessibleName={`Message ${profile.name}`}
@@ -148,7 +149,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
 
       <p className="type-small px-1 text-muted-foreground">Joined {formatMonthAndYear(profile.createdAt)}.</p>
 
-      {isOwnProfile ? null : <BlockMemberButton memberId={profile.id} memberName={profile.name} isBlocked={isBlockedByViewer} />}
+      {isOwnProfile ? null : <BlockMemberButton memberId={profile.id} memberName={profile.name} isBlocked={isBlockedByViewer} refreshesAfterChange={INBOX_QUERY_FILTER} />}
 
       {isAdminMember(viewer) ? (
         <AdminMemberPanel email={profile.email} isEmailConfirmed={profile.emailVerified} isLinkedinConfirmed={profile.isLinkedinConfirmed} />

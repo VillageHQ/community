@@ -1,22 +1,22 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { getDatabase } from "@/database/client";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { readInviterOfMember } from "@/lib/invites/invites";
-import { readActiveMemberCount, readMemberNeighbours } from "@/lib/members/directory";
-import { resolveOnboardingStep } from "@/lib/members/onboarding";
-import { readMemberProfile } from "@/lib/members/profile";
-import { ONBOARDING_STEPS } from "@/lib/members/profile-api";
-import { ROUTES } from "@/lib/routes";
-import { requireMember } from "@/lib/session";
-import { NETWORK_PROGRESS, readNetworkProgress } from "@/lib/village/network-progress";
+import { getDatabase } from "@/platform/database/client";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { readInviterOfMember } from "@/modules/members/service-invites";
+import { readActiveMemberCount, readMemberNeighbours } from "@/modules/members/reads-directory";
+import { resolveOnboardingStep } from "@/shell/onboarding";
+import { readMemberProfile } from "@/modules/members/service-profile";
+import { ONBOARDING_STEPS } from "@/modules/members/contract-profile";
+import { ROUTES } from "@/platform/http/routes";
+import { requireMember } from "@/platform/auth/session";
+import { NETWORK_PROGRESS, readNetworkProgress } from "@/modules/network/reads-progress";
 
-import { ConsentStep } from "../network/consent-step";
-import { LinkedinWelcome } from "../network/linkedin-step";
-import { loadWelcomeContext } from "../network/load-welcome-context";
-import { CardStep } from "./card-step";
-import { ConfirmationStep } from "./confirmation-step";
+import { ConsentStep } from "@/modules/network/components/consent-step";
+import { LinkedinWelcome } from "@/modules/network/components/linkedin-step";
+import { loadWelcomeContext } from "@/shell/load-welcome-context";
+import { CardStep } from "@/modules/members/components/card-step";
+import { ConfirmationStep } from "@/modules/members/components/confirmation-step";
 
 export const metadata: Metadata = { title: PAGE_TITLES.welcome };
 

@@ -6,9 +6,9 @@ import { connection } from "next/server";
 import { CenteredPage } from "@/components/centered-page";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
-import { readBrandingForPage } from "@/lib/branding/branding";
-import { ROUTES } from "@/lib/routes";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { ROUTES } from "@/platform/http/routes";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 
 export const metadata: Metadata = { title: PAGE_TITLES.notFound };
 

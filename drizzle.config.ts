@@ -2,16 +2,6 @@ import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: [
-    "./src/database/admin-schema.ts",
-    "./src/database/auth-schema.ts",
-    "./src/database/branding-schema.ts",
-    "./src/database/feed-schema.ts",
-    "./src/database/instance-settings.ts",
-    "./src/database/intro-schema.ts",
-    "./src/database/members-schema.ts",
-    "./src/database/messages-schema.ts",
-    "./src/database/village-schema.ts",
-  ],
+  schema: ["./src/platform/database/auth-schema.ts", "./src/platform/*/schema.ts", "./src/modules/*/schema.ts"],
   out: "./drizzle",
 });

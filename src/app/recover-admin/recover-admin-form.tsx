@@ -7,10 +7,10 @@ import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/lib/password-policy";
-import { API_ROUTES, ROUTES } from "@/lib/routes";
-import { acknowledgedResponseSchema } from "@/lib/village/network-api";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/platform/auth/password-policy";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
+import { acknowledgedResponseSchema } from "@/platform/http/contract";
+import { postRequest } from "@/platform/http/post-request";
 
 type RecoverState = { isDone: boolean; errorMessage: string | null };
 
@@ -18,7 +18,7 @@ const INITIAL_STATE: RecoverState = { isDone: false, errorMessage: null };
 
 async function submitRecovery(_previousState: RecoverState, formData: FormData): Promise<RecoverState> {
   try {
-    await postNetworkRequest(API_ROUTES.recoverAdmin, Object.fromEntries(formData), acknowledgedResponseSchema);
+    await postRequest(API_ROUTES.recoverAdmin, Object.fromEntries(formData), acknowledgedResponseSchema);
     return { isDone: true, errorMessage: null };
   } catch (error) {
     return { isDone: false, errorMessage: error instanceof Error ? error.message : "That didn't work. Try again." };

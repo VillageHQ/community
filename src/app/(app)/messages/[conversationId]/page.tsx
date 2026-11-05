@@ -1,13 +1,13 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import { notFound } from "next/navigation";
 
-import { getDatabase } from "@/database/client";
-import { conversationIdSchema } from "@/lib/messages/message-api";
-import { threadQuery } from "@/lib/messages/message-queries";
-import { readThreadPage } from "@/lib/messages/message-reads";
-import { requireMember } from "@/lib/session";
+import { getDatabase } from "@/platform/database/client";
+import { conversationIdSchema } from "@/modules/messages/contract";
+import { threadQuery } from "@/modules/messages/queries";
+import { readThreadPage } from "@/modules/messages/reads";
+import { requireMember } from "@/platform/auth/session";
 
-import { Thread } from "../thread";
+import { Thread } from "@/modules/messages/components/thread";
 
 type ConversationPageProps = { params: Promise<{ conversationId: string }> };
 

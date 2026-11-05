@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { ProgressTrack } from "@/components/progress-track";
-import { getDatabase } from "@/database/client";
-import { parseSetupStep, readSetupProgress, SETUP_STEP_NAMES, SETUP_STEPS, type SetupProgress } from "@/lib/admin-setup";
-import { readBranding } from "@/lib/branding/branding";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { ROUTES } from "@/lib/routes";
-import { requireAdmin } from "@/lib/session";
+import { getDatabase } from "@/platform/database/client";
+import { parseSetupStep, readSetupProgress, SETUP_STEP_NAMES, SETUP_STEPS, type SetupProgress } from "@/shell/admin-setup";
+import { readBranding } from "@/platform/branding/branding";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { ROUTES } from "@/platform/http/routes";
+import { requireAdmin } from "@/platform/auth/session";
 
-import { AdminSection } from "./admin-section";
-import { AdminBrandCard, SetupChecklist } from "./setup-checklist";
+import { AdminSection } from "@/shell/admin-section";
+import { AdminBrandCard, SetupChecklist } from "@/shell/setup-checklist";
 
 const NEXT_STEP_AFTER_SETUP = "invite more members whenever you like";
 

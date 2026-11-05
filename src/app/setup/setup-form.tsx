@@ -6,9 +6,9 @@ import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { useFocusOnFailure } from "@/components/use-focus-on-failure";
-import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/lib/password-policy";
-import { readResponseMessage } from "@/lib/read-response-message";
-import { API_ROUTES, ROUTES } from "@/lib/routes";
+import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/platform/auth/password-policy";
+import { readResponseMessage } from "@/platform/http/read-response-message";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 
 type SetupState = { errorMessage: string | null; name: string; email: string };
 

@@ -2,9 +2,9 @@ import { randomUUID } from "node:crypto";
 
 import { eq } from "drizzle-orm";
 
-import type { Database } from "../database/client.ts";
-import { conversation, directMessage } from "../database/messages-schema.ts";
-import { toConversationPair } from "../lib/messages/conversation-pair.ts";
+import type { Database } from "../platform/database/client.ts";
+import { conversation, directMessage } from "../modules/messages/schema.ts";
+import { toConversationPair } from "../modules/messages/rules-conversation-pair.ts";
 
 export async function seedConversation(database: Database, firstMemberId: string, secondMemberId: string) {
   const [seeded] = await database

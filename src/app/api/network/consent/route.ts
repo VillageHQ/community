@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { recordSharingConsent } from "@/lib/village/member-network";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { recordSharingConsent } from "@/modules/network/service";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 const consentBodySchema = z.object({
   acknowledged: z.literal(true, "Confirm that you understand what joining shares."),

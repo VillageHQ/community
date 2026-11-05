@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { confirmVillageDomain } from "@/lib/admin/settings-actions";
-import { resolveAppUrl } from "@/lib/app-url";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { confirmVillageDomain } from "@/modules/network/service-settings";
+import { resolveAppUrl } from "@/platform/http/app-url";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 const domainBodySchema = z.object({
   confirmed: z.literal(true, "Confirm that you added the domain."),

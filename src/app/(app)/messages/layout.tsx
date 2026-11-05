@@ -2,13 +2,13 @@ import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { getDatabase } from "@/database/client";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { inboxQuery } from "@/lib/messages/message-queries";
-import { readInbox } from "@/lib/messages/message-reads";
-import { requireMember } from "@/lib/session";
+import { getDatabase } from "@/platform/database/client";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { inboxQuery } from "@/modules/messages/queries";
+import { readInbox } from "@/modules/messages/reads";
+import { requireMember } from "@/platform/auth/session";
 
-import { MessagePanes } from "./message-panes";
+import { MessagePanes } from "@/modules/messages/components/message-panes";
 
 export const metadata: Metadata = { title: PAGE_TITLES.messages };
 

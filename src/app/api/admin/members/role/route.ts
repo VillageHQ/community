@@ -1,7 +1,8 @@
-import { MEMBER_ROLES, setMemberRoleBodySchema } from "@/lib/admin/admin-api";
-import { setMemberRole } from "@/lib/admin/member-roster";
-import { logAdminAction } from "@/lib/route-logging";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { MEMBER_ROLES } from "@/platform/auth/roles";
+import { setMemberRoleBodySchema } from "@/modules/admin/contract";
+import { setMemberRole } from "@/modules/admin/service-roster";
+import { logAdminAction } from "@/platform/observability/route-logging";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 const ROLE_MESSAGES = {
   [MEMBER_ROLES.admin]: (name: string) => `${name} is now an admin.`,

@@ -7,8 +7,8 @@ import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { useFocusOnFailure } from "@/components/use-focus-on-failure";
-import { authClient } from "@/lib/auth-client";
-import { ROUTES } from "@/lib/routes";
+import { authClient } from "@/platform/auth/auth-client";
+import { ROUTES } from "@/platform/http/routes";
 
 type SignInState = { errorMessage: string | null; email: string };
 

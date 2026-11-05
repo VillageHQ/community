@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { LogoTile } from "@/components/logo-tile";
 import { MAIN_CONTENT_ID } from "@/components/skip-link";
 import { NetworkByVillage } from "@/components/village-mark";
-import type { CommunityLogo } from "@/lib/branding/branding";
+import type { CommunityLogo } from "@/platform/branding/branding";
 
 type CenteredPageProps = { name: string; logo: CommunityLogo | null; children: ReactNode };
 

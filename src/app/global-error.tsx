@@ -2,8 +2,8 @@
 
 import { ErrorState, RetryButton } from "@/components/error-state";
 import { MAIN_CONTENT_ID } from "@/components/skip-link";
-import { DEFAULT_ACCENT_COLOR, renderAccentCss } from "@/lib/design/accent";
-import { SYSTEM_THEME_SCRIPT } from "@/lib/design/theme";
+import { DEFAULT_ACCENT_COLOR, renderAccentCss } from "@/platform/design/accent";
+import { SYSTEM_THEME_SCRIPT } from "@/platform/design/theme";
 
 import { figtree, figtreeExtended } from "./fonts";
 import "./globals.css";

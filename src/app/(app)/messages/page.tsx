@@ -1,6 +1,6 @@
-import { requireMember } from "@/lib/session";
+import { requireMember } from "@/platform/auth/session";
 
-import { NoConversationSelected } from "./no-conversation-selected";
+import { NoConversationSelected } from "@/modules/messages/components/no-conversation-selected";
 
 export default async function MessagesPage() {
   await requireMember();

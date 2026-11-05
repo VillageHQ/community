@@ -17,7 +17,7 @@
     "test": "vitest run",
     "db:migrate": "node --env-file-if-exists=.env scripts/migrate.ts",
     "db:generate": "drizzle-kit generate",
-    "db:auth-schema": "auth generate --config scripts/auth-schema-config.ts --output src/database/auth-schema.ts --yes"
+    "db:auth-schema": "auth generate --config scripts/auth-schema-config.ts --output src/platform/database/auth-schema.ts --yes"
   },
   "dependencies": {
     "@better-auth/core": "1.7.16",

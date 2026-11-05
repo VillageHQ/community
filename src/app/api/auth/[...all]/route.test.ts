@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { rateLimit } from "@/database/auth-schema";
+import { rateLimit } from "@/platform/database/auth-schema";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 
 import { GET, POST } from "./route";

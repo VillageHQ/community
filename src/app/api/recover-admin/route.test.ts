@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { adminAuditEntry } from "@/database/admin-schema";
-import { session, user } from "@/database/auth-schema";
-import { AUDIT_ACTIONS } from "@/lib/admin/admin-api";
-import { getAuth } from "@/lib/auth";
+import { adminAuditEntry } from "@/platform/audit/schema";
+import { session, user } from "@/platform/database/auth-schema";
+import { AUDIT_ACTIONS } from "@/platform/audit/actions";
+import { getAuth } from "@/platform/auth/auth";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";
 

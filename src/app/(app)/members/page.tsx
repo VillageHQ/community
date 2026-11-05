@@ -5,16 +5,16 @@ import Link from "next/link";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { getDatabase } from "@/database/client";
-import { readBrandingForPage } from "@/lib/branding/branding";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { readDirectory } from "@/lib/members/directory";
-import { parseDirectoryFilters } from "@/lib/members/directory-url";
-import { ROUTES } from "@/lib/routes";
-import { requireMember } from "@/lib/session";
+import { getDatabase } from "@/platform/database/client";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { readDirectory } from "@/modules/members/reads-directory";
+import { parseDirectoryFilters } from "@/modules/members/rules-directory-url";
+import { ROUTES } from "@/platform/http/routes";
+import { requireMember } from "@/platform/auth/session";
 
-import { MemberDirectory } from "./member-directory";
-import { directoryQuery } from "./member-queries";
+import { MemberDirectory } from "@/modules/members/components/member-directory";
+import { directoryQuery } from "@/modules/members/queries-directory";
 
 export const metadata: Metadata = { title: PAGE_TITLES.members };
 

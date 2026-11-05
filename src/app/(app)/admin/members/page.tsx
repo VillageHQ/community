@@ -3,20 +3,20 @@ import { MailPlus } from "lucide-react";
 import type { Metadata } from "next";
 
 import { Button } from "@/components/ui/button";
-import { getDatabase } from "@/database/client";
-import { MAXIMUM_SEARCH_LENGTH, MEMBER_FILTERS } from "@/lib/admin/admin-api";
-import { readAdminMembers } from "@/lib/admin/member-list";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { readResendConfig } from "@/lib/email/resend";
-import { INVITE_FILTERS } from "@/lib/invites/invite-api";
-import { readInvites } from "@/lib/invites/invites";
-import { readWaitingMemberCount, readWaitingMembers } from "@/lib/members/member-admin";
-import { requireAdmin } from "@/lib/session";
+import { getDatabase } from "@/platform/database/client";
+import { MAXIMUM_SEARCH_LENGTH, MEMBER_FILTERS } from "@/modules/admin/contract";
+import { readAdminMembers } from "@/modules/admin/reads-members";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { readResendConfig } from "@/platform/email/resend";
+import { INVITE_FILTERS } from "@/modules/members/contract-invites";
+import { readInvites } from "@/modules/members/service-invites";
+import { readWaitingMemberCount, readWaitingMembers } from "@/modules/members/service-admin";
+import { requireAdmin } from "@/platform/auth/session";
 
-import { AdminSection } from "../admin-section";
-import { InviteManager, INVITE_SECTION_ID } from "./invite-manager";
-import { inviteListQuery, waitingMembersQuery } from "./invite-queries";
-import { memberPageQuery } from "./member-queries";
+import { AdminSection } from "@/shell/admin-section";
+import { InviteManager, INVITE_SECTION_ID } from "@/modules/admin/components/invite-manager";
+import { inviteListQuery, waitingMembersQuery } from "@/modules/members/queries-invites";
+import { memberPageQuery } from "@/modules/admin/queries-members";
 
 const FIRST_PAGE = 1;
 

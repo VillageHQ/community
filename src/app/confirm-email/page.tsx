@@ -3,14 +3,14 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
-import { getDatabase } from "@/database/client";
-import { readActiveSession } from "@/lib/active-session";
-import { readBrandingForPage } from "@/lib/branding/branding";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { readConfirmationView } from "@/lib/invites/email-confirmation";
-import { CONFIRMATION_VIEWS } from "@/lib/invites/email-confirmation-views";
-import { toSignInPath } from "@/lib/return-path";
-import { ROUTES } from "@/lib/routes";
+import { getDatabase } from "@/platform/database/client";
+import { readActiveSession } from "@/platform/auth/active-session";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { readConfirmationView } from "@/modules/members/service-email-confirmation";
+import { CONFIRMATION_VIEWS } from "@/modules/members/contract-email-confirmation";
+import { toSignInPath } from "@/platform/http/return-path";
+import { ROUTES } from "@/platform/http/routes";
 
 import { ConfirmEmailPanel } from "./confirm-email-panel";
 

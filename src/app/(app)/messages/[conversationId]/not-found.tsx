@@ -3,9 +3,9 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
-import { PhoneMessagesHeading } from "../phone-messages-heading";
+import { PhoneMessagesHeading } from "@/modules/messages/components/phone-messages-heading";
 
 export default function ConversationNotFound() {
   return (

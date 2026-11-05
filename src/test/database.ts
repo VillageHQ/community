@@ -2,14 +2,15 @@ import { randomUUID } from "node:crypto";
 
 import { sql } from "drizzle-orm";
 
-import { adminAuditEntry, contentReport } from "../database/admin-schema.ts";
-import { rateLimit, user } from "../database/auth-schema.ts";
-import { communityBranding } from "../database/branding-schema.ts";
-import { createDatabase, type Database } from "../database/client.ts";
-import { moderationRecord } from "../database/feed-schema.ts";
-import { instanceSettings } from "../database/instance-settings.ts";
-import { invite } from "../database/members-schema.ts";
-import { messageReport } from "../database/messages-schema.ts";
+import { adminAuditEntry } from "../platform/audit/schema.ts";
+import { contentReport } from "../modules/admin/schema.ts";
+import { rateLimit, user, verification } from "../platform/database/auth-schema.ts";
+import { communityBranding } from "../platform/branding/schema.ts";
+import { createDatabase, type Database } from "../platform/database/client.ts";
+import { moderationRecord } from "../modules/feed/schema.ts";
+import { instanceSettings } from "../platform/settings/schema.ts";
+import { invite } from "../modules/members/schema.ts";
+import { messageReport } from "../modules/messages/schema.ts";
 
 export function readTestConnectionString() {
   const connectionString = process.env.TEST_DATABASE_URL;
@@ -23,6 +24,7 @@ export function createTestDatabase() {
 
 export async function clearDatabase(database: Database) {
   await database.delete(rateLimit);
+  await database.delete(verification);
   await database.delete(moderationRecord);
   await database.delete(messageReport);
   await database.delete(contentReport);

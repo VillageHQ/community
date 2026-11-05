@@ -1,6 +1,6 @@
-import { deletePost } from "@/lib/feed/feed-actions";
-import { postIdBodySchema } from "@/lib/feed/feed-api";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { deletePost } from "@/modules/feed/service";
+import { postIdBodySchema } from "@/modules/feed/contract";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("feed-post-delete", postIdBodySchema, async (context, { postId }) => {
   await deletePost(context, postId);

@@ -1,9 +1,9 @@
-import { getDatabase } from "@/database/client";
-import { getAuth } from "@/lib/auth";
-import { isStaticAuthEndpoint } from "@/lib/auth-endpoints";
-import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/lib/body-limit";
-import { pruneExpiredRateLimits } from "@/lib/rate-limit-pruning";
-import { withRouteLogging } from "@/lib/route-logging";
+import { getDatabase } from "@/platform/database/client";
+import { getAuth } from "@/platform/auth/auth";
+import { isStaticAuthEndpoint } from "@/platform/auth/auth-endpoints";
+import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/platform/http/body-limit";
+import { pruneExpiredRateLimits } from "@/platform/rate-limit/rate-limit-pruning";
+import { withRouteLogging } from "@/platform/observability/route-logging";
 
 const NOT_FOUND_STATUS = 404;
 

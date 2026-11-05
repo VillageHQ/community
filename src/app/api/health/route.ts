@@ -1,5 +1,5 @@
-import { isAppHealthy } from "@/lib/health";
-import { withRouteLogging } from "@/lib/route-logging";
+import { isAppHealthy } from "@/platform/observability/health";
+import { withRouteLogging } from "@/platform/observability/route-logging";
 
 const HEALTHY_STATUS = 200;
 const UNAVAILABLE_STATUS = 503;

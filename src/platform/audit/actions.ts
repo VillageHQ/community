@@ -1,0 +1,34 @@
+
+
+export const AUDIT_ACTIONS = {
+  rolePromoted: "role_promoted",
+  roleDemoted: "role_demoted",
+  memberRemoved: "member_removed",
+  memberUnbanned: "member_unbanned",
+  emailConfirmed: "email_confirmed",
+  villageLinkApproved: "village_link_approved",
+  villageLinkReset: "village_link_reset",
+  linkedinConfirmed: "linkedin_confirmed",
+  linkedinCleared: "linkedin_cleared",
+  inviteCreated: "invite_created",
+  inviteResent: "invite_resent",
+  inviteRevoked: "invite_revoked",
+  inviteReclaimed: "invite_reclaimed",
+  reportDismissed: "report_dismissed",
+  reportedContentDeleted: "reported_content_deleted",
+  postPinned: "post_pinned",
+  postUnpinned: "post_unpinned",
+  dailyLimitChanged: "daily_limit_changed",
+  villageKeysSaved: "village_keys_saved",
+  villageGroupCreated: "village_group_created",
+  brandingSaved: "branding_saved",
+  logoSaved: "logo_saved",
+  logoRemoved: "logo_removed",
+  villageGroupLeft: "village_group_left",
+  memberReinvited: "member_reinvited",
+  passwordReset: "password_reset",
+  adminPasswordRecovered: "admin_password_recovered",
+  domainConfirmed: "domain_confirmed",
+} as const;
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

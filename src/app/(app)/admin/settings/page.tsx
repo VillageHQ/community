@@ -6,18 +6,18 @@ import { ExternalTextLink } from "@/components/external-text-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
-import { getDatabase } from "@/database/client";
-import { HOST_SETTINGS_GUIDE_URL, UPDATE_GUIDE_URL } from "@/lib/admin/settings-copy";
-import { parseSetupStep, readSetupProgress } from "@/lib/admin-setup";
-import { APP_VERSION } from "@/lib/app-version";
-import { readBranding } from "@/lib/branding/branding";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { readResendConfig, type ResendConfig } from "@/lib/email/resend";
-import { ROUTES } from "@/lib/routes";
-import { requireAdmin } from "@/lib/session";
+import { getDatabase } from "@/platform/database/client";
+import { HOST_SETTINGS_GUIDE_URL, UPDATE_GUIDE_URL } from "@/modules/admin/copy";
+import { parseSetupStep, readSetupProgress } from "@/shell/admin-setup";
+import { APP_VERSION } from "@/platform/app-version";
+import { readBranding } from "@/platform/branding/branding";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { readResendConfig, type ResendConfig } from "@/platform/email/resend";
+import { ROUTES } from "@/platform/http/routes";
+import { requireAdmin } from "@/platform/auth/session";
 
-import { AdminSection } from "../admin-section";
-import { AdminBrandCard, SetupChecklist } from "../setup-checklist";
+import { AdminSection } from "@/shell/admin-section";
+import { AdminBrandCard, SetupChecklist } from "@/shell/setup-checklist";
 
 const EMAIL_ON_EFFECTS = [
   "Invites go out by email, and you can still copy the link.",

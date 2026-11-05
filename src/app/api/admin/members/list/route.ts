@@ -1,6 +1,6 @@
-import { memberListBodySchema } from "@/lib/admin/admin-api";
-import { readAdminMembers } from "@/lib/admin/member-list";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { memberListBodySchema } from "@/modules/admin/contract";
+import { readAdminMembers } from "@/modules/admin/reads-members";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(
   "admin-member-list",

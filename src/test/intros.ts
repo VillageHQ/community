@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
 
-import { user } from "../database/auth-schema.ts";
-import type { Database } from "../database/client.ts";
-import { introRequest } from "../database/intro-schema.ts";
-import { memberNetwork } from "../database/village-schema.ts";
+import { user } from "../platform/database/auth-schema.ts";
+import type { Database } from "../platform/database/client.ts";
+import { introRequest } from "../modules/intros/schema.ts";
+import { memberNetwork } from "../modules/members/schema.ts";
 
 const LONG_PAST = new Date("2020-01-01T00:00:00.000Z");
 

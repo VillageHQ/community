@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { saveMemberLinkedinUrl } from "@/lib/village/member-network";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { saveMemberLinkedinUrl } from "@/modules/members/service-linkedin";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 const linkedinBodySchema = z.object({ linkedinUrl: z.string().min(1, "Enter a LinkedIn URL.") });
 

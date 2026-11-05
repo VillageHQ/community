@@ -1,7 +1,7 @@
-import { adminMemberIdBodySchema } from "@/lib/admin/admin-api";
-import { reinviteRemovedMember } from "@/lib/invites/invites";
-import { logAdminAction } from "@/lib/route-logging";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { adminMemberIdBodySchema } from "@/modules/admin/contract";
+import { reinviteRemovedMember } from "@/modules/admin/service-roster";
+import { logAdminAction } from "@/platform/observability/route-logging";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(
   "admin-member-reinvite",
