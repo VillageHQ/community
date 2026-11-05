@@ -100,6 +100,7 @@ esac'
 printf '%s\n' "curl $*" >>/tmp/stub-calls
 case "$*" in
   *--resolve*) [ -z "${STUB_HTTPS_FAILS:-}" ]; exit ;;
+  *raw.githubusercontent.com*) cp /source/install.sh "${@: -1}"; exit ;;
   *-4*ipify*) printf '%s' "${STUB_PUBLIC_IP:-203.0.113.20}"; exit ;;
   *dns.google*) [ -z "${STUB_GOOGLE_DNS_DOWN:-}" ] || exit 7 ;;
   *cloudflare-dns*) [ -z "${STUB_CLOUDFLARE_DNS_DOWN:-}" ] || exit 7 ;;
@@ -550,6 +551,15 @@ test_helper() {
   assert_true "removes the oldest" test ! -e /opt/community/backups/community-20260101-000000.dump
   assert_true "keeps the safety copy" test -e /opt/community/backups/before-restore-20260101-000000.dump
   assert_says "same disk"
+
+  it "upgrades through the installer and reports success"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN"
+  exit_code=0
+  output="$(env PATH="$STUBS:$PATH" COMMUNITY_NONINTERACTIVE=1 community upgrade 2>&1)" || exit_code=$?
+  assert_exit 0
+  assert_says "up to date at https://$DOMAIN"
+  assert_never_says "unbound variable"
 
   it "shows help with no command and rejects an unknown one"
   output="$(env PATH="$STUBS:$PATH" bash /source/deploy/vps/community)"

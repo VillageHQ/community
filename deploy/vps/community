@@ -158,11 +158,12 @@ logs() {
 }
 
 upgrade() {
-  local installer
+  local installer exit_code=0
   installer="$(mktemp)"
-  trap 'rm -f "$installer"' EXIT
   curl -fsSL "$INSTALLER_URL" -o "$installer" || die "Couldn't download the installer. Check this server's internet connection."
-  bash "$installer"
+  bash "$installer" || exit_code=$?
+  rm -f "$installer"
+  return "$exit_code"
 }
 
 setup_token() {
