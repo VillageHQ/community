@@ -3,9 +3,11 @@ import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { feedManifest } from "@/modules/feed/manifest";
 import { introsManifest } from "@/modules/intros/manifest";
 import { MemberConversationSlot } from "@/modules/members/slots";
 import { messagesManifest } from "@/modules/messages/manifest";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { saveModuleState } from "@/platform/modules/enablement";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";
@@ -52,6 +54,21 @@ describe("the slots in the app", () => {
 
   afterAll(async () => {
     await database.$client.end();
+  });
+
+  describe("the home page title", () => {
+    it("says Feed with the feed on", async () => {
+      const { generateMetadata } = await import("./page");
+
+      expect((await generateMetadata()).title).toBe(PAGE_TITLES.feed);
+    });
+
+    it("says Home with the feed off", async () => {
+      await saveModuleState(database, feedManifest, false);
+      const { generateMetadata } = await import("./page");
+
+      expect((await generateMetadata()).title).toBe(PAGE_TITLES.home);
+    });
   });
 
   it("gives every page in the app the Message button", async () => {

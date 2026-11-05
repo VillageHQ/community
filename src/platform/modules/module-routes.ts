@@ -2,6 +2,7 @@ import "server-only";
 
 import type { z } from "zod";
 
+import { REQUEST_ERROR_CODES } from "../http/error-codes.ts";
 import { createMemberRoutes, type BinaryResponder, type BinaryRouteOptions, type MemberRouteOptions } from "../http/member-route.ts";
 import type { RequestContext } from "../http/request-context.ts";
 import { withRouteLogging } from "../observability/route-logging.ts";
@@ -16,6 +17,7 @@ type ModuleRouteOptions = { staysOpenWhenOff?: boolean };
 const { createMemberRoute, createAdminBinaryRoute, createMemberBinaryRoute } = createMemberRoutes([respondToVillageError]);
 
 const NOT_FOUND_STATUS = 404;
+const MODULE_OFF_MESSAGE = "An admin turned this off, so it isn't available right now.";
 
 export function createModuleRoutes(owner: ModuleManifest) {
   function declare<Arguments extends unknown[]>(
@@ -28,7 +30,7 @@ export function createModuleRoutes(owner: ModuleManifest) {
     const route = !isGuarded
       ? handler
       : withRouteLogging(scope, async (...handlerArguments: Arguments) => {
-          if (!(await isModuleEnabled(getDatabase(), owner))) return Response.json({ message: "Not found." }, { status: NOT_FOUND_STATUS });
+          if (!(await isModuleEnabled(getDatabase(), owner))) return Response.json({ code: REQUEST_ERROR_CODES.moduleOff, message: MODULE_OFF_MESSAGE }, { status: NOT_FOUND_STATUS });
           return handler(...handlerArguments);
         });
     recordRouteFacts(route, { ownerId: owner.id, scope, access, staysOpenWhenOff });

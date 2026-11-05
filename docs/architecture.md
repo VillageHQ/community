@@ -184,7 +184,7 @@ When a module is off:
 
 | Where | What happens | How |
 |---|---|---|
-| API routes | 404 | The route kit's guard, inside route logging. It reads no body or session. |
+| API routes | 404 with code `module_off` | The route kit's guard, inside route logging. It reads no body or session. A stale tab shows `ModuleOffNotice` with a way home. |
 | Pages and layouts | Not-found UI | `modulePage` wraps each one. |
 | Navigation | Entry hidden | `buildShellNavigation(enabledIds)` in the layout. |
 | Badges | Not read | `readModuleBadges`. |
@@ -217,7 +217,7 @@ The screen handles dependencies in words:
 - Turning off a requirement says what it pauses, plus the manifest's `turnOffNote` if it has one.
 - A paused feature shows "Paused: needs Network" and a button to turn on Network.
 
-The keys step of setup also offers "Run without Village", so a new community can skip Village in one click.
+The domain and keys steps of setup also offer "Run without Village", so a new community can skip Village in one click. It confirms what happened.
 
 ## Adding a module
 

@@ -54,6 +54,23 @@ describe("the features screen", () => {
     expect(screen.getByRole("switch", { name: "Intros" }).getAttribute("aria-checked")).toBe("false");
   });
 
+  describe("after turning a feature on", () => {
+    beforeEach(async () => {
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ message: "Intros is on." }), { headers: { "Content-Type": "application/json" } })));
+      renderScreen([{ ...INTROS, isOn: false }]);
+      fireEvent.click(screen.getByRole("switch", { name: "Intros" }));
+      await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Intros is on."));
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("keeps focus on the feature's card", () => {
+      expect(document.activeElement?.id).toBe("feature-card-intros");
+    });
+  });
+
   describe("after turning a feature off", () => {
     beforeEach(async () => {
       vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ message: "Network is off." }), { headers: { "Content-Type": "application/json" } })));

@@ -6,6 +6,7 @@ import { NetworkByVillage } from "@/components/village-mark";
 import type { NavigationBadgeCounts, ShellNavigationItem } from "./navigation-rules";
 
 import { SidebarNavigation, TabBar } from "./navigation-links";
+import { ModuleOffNotice } from "./module-off-notice";
 import { SearchReadyNotice } from "./search-ready-notice";
 import { PhoneUserMenu, SidebarUserMenu, type ShellMember } from "./user-menu";
 import type { CommunityLogo } from "@/platform/branding/branding";
@@ -60,6 +61,7 @@ export function AppShell({ community, member, navigation, badges, isNetworkOn, c
         </div>
       </main>
       {isNetworkOn ? <SearchReadyNotice /> : null}
+      <ModuleOffNotice />
       <TabBar items={navigation} badges={badges} />
     </div>
   );

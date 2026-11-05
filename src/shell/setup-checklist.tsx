@@ -74,7 +74,12 @@ type StepBodyFacts = {
 };
 
 const STEP_BODIES: Partial<Record<SetupStepId, (facts: StepBodyFacts) => ReactNode>> = {
-  [SETUP_STEPS.domain]: ({ domain, isDone }) => <DomainStep domain={domain} isDone={isDone} />,
+  [SETUP_STEPS.domain]: ({ domain, isDone, keys }) => (
+    <>
+      <DomainStep domain={domain} isDone={isDone} />
+      {keys ? null : <RunWithoutVillage moduleId={networkManifest.id} />}
+    </>
+  ),
   [SETUP_STEPS.keys]: ({ keys }) => (
     <>
       <KeysForm savedPublicKey={keys?.publicKey ?? ""} hasSavedKeys={Boolean(keys)} />

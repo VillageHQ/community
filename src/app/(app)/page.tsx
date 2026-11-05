@@ -32,9 +32,13 @@ import { feedManifest } from "@/modules/feed/manifest";
 import { introsManifest } from "@/modules/intros/manifest";
 import { networkManifest } from "@/modules/network/manifest";
 import { readEnabledIds } from "@/shell/enabled-modules";
+import { isModuleEnabled } from "@/platform/modules/enablement";
 import { modulePage } from "@/platform/modules/module-page";
 
-export const metadata: Metadata = { title: PAGE_TITLES.feed };
+export async function generateMetadata(): Promise<Metadata> {
+  const isFeedOn = await isModuleEnabled(getDatabase(), feedManifest);
+  return { title: isFeedOn ? PAGE_TITLES.feed : PAGE_TITLES.home };
+}
 
 function readWeekSentence(newCount: number) {
   if (newCount === 0) return "Here's what's happening.";

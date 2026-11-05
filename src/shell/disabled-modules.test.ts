@@ -1,3 +1,6 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST as dismissReport } from "@/app/api/admin/reports/dismiss/route";
@@ -39,6 +42,8 @@ function postJson(path: string, cookie: string, body: unknown) {
     body: JSON.stringify(body),
   });
 }
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 describe("the shell with modules off", () => {
   const database = createTestDatabase();
@@ -125,6 +130,17 @@ describe("the shell with modules off", () => {
       const response = await leaveGroup(postJson("/api/network/leave", member.cookie, { confirmed: true }));
 
       expect(response.status).not.toBe(404);
+    });
+  });
+
+  describe("the first Village step of setup", () => {
+    it("offers to run without Village", async () => {
+      const admin = await createSignedInMember(database, "admin");
+      const progress = await readSetupProgress(database, ENVIRONMENT);
+
+      const checklist = await SetupChecklist({ database, admin: { id: admin.userId, email: admin.email, role: "admin" }, progress, openStepId: SETUP_STEPS.domain, basePath: "/admin" });
+
+      expect(renderToStaticMarkup(createElement(QueryClientProvider, { client: new QueryClient() }, checklist))).toContain("Run without Village");
     });
   });
 

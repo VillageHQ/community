@@ -7,6 +7,7 @@ import { POST as readIntroBoard } from "@/app/api/intros/route";
 import { feedManifest } from "@/modules/feed/manifest";
 import { networkManifest } from "@/modules/network/manifest";
 import { MODULES } from "@/modules/registry";
+import { REQUEST_ERROR_CODES } from "@/platform/http/error-codes";
 import { saveModuleState } from "@/platform/modules/enablement";
 import { MODULE_KINDS, type ToggleableManifest } from "@/platform/modules/manifest";
 import { readRouteFacts } from "@/platform/modules/route-facts";
@@ -104,6 +105,15 @@ describe("a module that's turned off", () => {
 
       expect(digests.filter(({ digest }) => digest !== NOT_FOUND_DIGEST)).toEqual([]);
     });
+  });
+
+  it("explains itself instead of answering a bare not found", async () => {
+    const { cookie } = await createSignedInMember(database);
+    await saveModuleState(database, feedManifest, false);
+
+    const response = await readFeed(jsonRequest("/api/feed", cookie));
+
+    expect(await response.json()).toMatchObject({ code: REQUEST_ERROR_CODES.moduleOff, message: expect.stringContaining("turned this off") });
   });
 
   it("pauses a module that requires it", async () => {

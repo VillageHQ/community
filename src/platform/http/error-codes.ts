@@ -4,4 +4,5 @@ export const REQUEST_ERROR_CODES = {
   forbidden: "forbidden",
   forbiddenOrigin: "forbidden_origin",
   memberNotFound: "member_not_found",
+  moduleOff: "module_off",
 } as const;
