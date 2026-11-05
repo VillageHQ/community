@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { memberNetwork } from "@/database/village-schema";
+import { memberNetwork } from "@/modules/members/schema";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";

@@ -8,14 +8,14 @@ import { MAXIMUM_SEARCH_LENGTH, MEMBER_FILTERS } from "@/lib/admin/admin-api";
 import { readAdminMembers } from "@/lib/admin/member-list";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readResendConfig } from "@/platform/email/resend";
-import { INVITE_FILTERS } from "@/lib/invites/invite-api";
-import { readInvites } from "@/lib/invites/invites";
-import { readWaitingMemberCount, readWaitingMembers } from "@/lib/members/member-admin";
+import { INVITE_FILTERS } from "@/modules/members/contract-invites";
+import { readInvites } from "@/modules/members/service-invites";
+import { readWaitingMemberCount, readWaitingMembers } from "@/modules/members/service-admin";
 import { requireAdmin } from "@/platform/auth/session";
 
 import { AdminSection } from "@/app/(app)/admin/admin-section";
 import { InviteManager, INVITE_SECTION_ID } from "./invite-manager";
-import { inviteListQuery, waitingMembersQuery } from "./invite-queries";
+import { inviteListQuery, waitingMembersQuery } from "@/modules/members/queries-invites";
 import { memberPageQuery } from "./member-queries";
 
 const FIRST_PAGE = 1;

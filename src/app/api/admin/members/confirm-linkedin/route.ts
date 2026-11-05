@@ -1,5 +1,5 @@
-import { memberIdBodySchema } from "@/lib/invites/invite-api";
-import { confirmLinkedinClaim } from "@/lib/members/member-admin";
+import { memberIdBodySchema } from "@/modules/members/contract-invites";
+import { confirmLinkedinClaim } from "@/modules/members/service-admin";
 import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

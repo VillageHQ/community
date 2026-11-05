@@ -12,17 +12,17 @@ import { getDatabase } from "@/platform/database/client";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatMonthAndYear } from "@/platform/text/format-date";
-import { readExternalHost } from "@/lib/members/external-url";
+import { readExternalHost } from "@/modules/members/rules-external-url";
 import { isBlockedBy } from "@/lib/messages/message-reads";
-import { isCardFilledIn, readMemberProfile } from "@/lib/members/profile";
+import { isCardFilledIn, readMemberProfile } from "@/modules/members/service-profile";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
-import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
+import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
 import { isAdminMember } from "@/platform/auth/roles";
 
 import { BlockMemberButton } from "@/app/(app)/messages/block-member-button";
 import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
-import { AdminMemberPanel } from "./admin-member-panel";
+import { AdminMemberPanel } from "@/modules/members/components/admin-member-panel";
 
 export const metadata: Metadata = { title: PAGE_TITLES.profile };
 

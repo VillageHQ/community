@@ -14,10 +14,10 @@ import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { postNetworkRequest } from "@/platform/http/post-request";
 
 import { JOIN_STEPS, JoinSteps } from "./join-steps";
-import { JoinLayout } from "./join-layout";
-import { NotNowAction } from "./not-now-action";
-import { OnboardingSteps, ONBOARDING_PILLS } from "./onboarding-steps";
-import { readSharingSentence, type WelcomeContext } from "./welcome-context";
+import { JoinLayout } from "@/modules/members/components/join-layout";
+import { NotNowAction } from "@/modules/members/components/not-now-action";
+import { OnboardingSteps, ONBOARDING_PILLS } from "@/modules/members/components/onboarding-steps";
+import { readSharingSentence, type WelcomeContext } from "@/modules/members/components/welcome-context";
 
 const LINKEDIN_FIELD = "linkedinUrl";
 

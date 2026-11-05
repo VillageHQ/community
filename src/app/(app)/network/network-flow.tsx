@@ -9,14 +9,14 @@ import { ROUTES } from "@/platform/http/routes";
 import { NETWORK_STAGES, type NetworkStatus } from "@/lib/village/network-api";
 
 import { ConsentStep } from "./consent-step";
-import { EmailConfirmationNotice } from "./email-confirmation-notice";
+import { EmailConfirmationNotice } from "@/modules/members/components/email-confirmation-notice";
 import { LinkedinWelcome } from "./linkedin-step";
 import { NetworkSkeleton } from "./network-skeleton";
 import { networkStatusQuery } from "./network-queries";
 import { NetworkSearch } from "./network-search";
 import { NoticeCard } from "./notice-card";
 import { SyncStep } from "./sync-step";
-import type { WelcomeContext } from "./welcome-context";
+import type { WelcomeContext } from "@/modules/members/components/welcome-context";
 
 function renderNotConfigured({ isAdmin }: NetworkStatus) {
   if (!isAdmin) {

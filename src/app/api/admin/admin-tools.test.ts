@@ -7,10 +7,9 @@ import { contentReport } from "@/database/admin-schema";
 import { session, user } from "@/platform/database/auth-schema";
 import { comment, moderationRecord, post, reaction } from "@/database/feed-schema";
 import { introRequest } from "@/database/intro-schema";
-import { invite } from "@/database/members-schema";
+import { invite, memberNetwork } from "@/modules/members/schema";
 import { directMessage, messageReport } from "@/database/messages-schema";
 import { memberDailyUsage } from "@/platform/village/schema";
-import { memberNetwork } from "@/database/village-schema";
 import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import {
   AUDIT_KINDS,
@@ -31,8 +30,8 @@ import { describeCreditEstimate, estimateCreditCost, readCreditUsage } from "@/l
 import { readOpenReportCount } from "@/lib/admin/reports";
 import { feedPageSchema } from "@/lib/feed/feed-api";
 import { INTRO_STATES } from "@/lib/intros/intro-api";
-import { issuedInviteSchema } from "@/lib/invites/invite-api";
-import { readMemberProfile } from "@/lib/members/profile";
+import { issuedInviteSchema } from "@/modules/members/contract-invites";
+import { readMemberProfile } from "@/modules/members/service-profile";
 import { readNavigationBadges } from "@/lib/navigation-badges";
 import { readVillageStatus } from "@/lib/village/member-village-status";
 import { readDailyLookupLimit, saveVillageKeys, readVillageOutOfCreditsAt } from "@/platform/village/settings";

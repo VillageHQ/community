@@ -10,15 +10,15 @@ import { getDatabase } from "@/platform/database/client";
 import { readActiveSession } from "@/platform/auth/active-session";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
-import { recordFailedInviteAttempt } from "@/lib/invites/invite-attempts";
+import { recordFailedInviteAttempt } from "@/modules/members/limits-invites";
 import {
   INVITE_INVALID_COPY,
   INVITE_RATE_LIMITED_COPY,
   INVITE_UNUSABLE_COPY,
   type InviteUnusableCopy,
-} from "@/lib/invites/invite-copy";
-import { INVITE_LIFETIME_DAYS, INVITE_STATES } from "@/lib/invites/invite-state";
-import { readInviteByToken } from "@/lib/invites/invites";
+} from "@/modules/members/copy-invites";
+import { INVITE_LIFETIME_DAYS, INVITE_STATES } from "@/modules/members/contract-invite-state";
+import { readInviteByToken } from "@/modules/members/service-invites";
 import { ROUTES } from "@/platform/http/routes";
 
 import { AcceptForm } from "./accept-form";

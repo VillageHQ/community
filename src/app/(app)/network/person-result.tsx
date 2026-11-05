@@ -5,7 +5,7 @@ import { ChevronRight, ExternalLink } from "lucide-react";
 
 import { CommunityMemberBadge } from "@/components/community-member-badge";
 import { Avatar } from "@/components/ui/avatar";
-import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
+import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
 import type { NetworkPaths, NetworkPerson } from "@/lib/village/network-api";
 
 import { networkPathsQuery } from "./network-queries";

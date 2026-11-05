@@ -1,6 +1,6 @@
 import { readFirstName } from "../../platform/design/avatar-identity.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
-import { toLinkedinUrl } from "../village/linkedin-slug.ts";
+import { toLinkedinUrl } from "../../modules/members/contract-linkedin.ts";
 import type { Intro } from "./intro-api.ts";
 
 export function readIntroPromise(introducerName: string, targetName: string) {

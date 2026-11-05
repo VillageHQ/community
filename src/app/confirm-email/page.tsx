@@ -7,8 +7,8 @@ import { getDatabase } from "@/platform/database/client";
 import { readActiveSession } from "@/platform/auth/active-session";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
-import { readConfirmationView } from "@/lib/invites/email-confirmation";
-import { CONFIRMATION_VIEWS } from "@/lib/invites/email-confirmation-views";
+import { readConfirmationView } from "@/modules/members/service-email-confirmation";
+import { CONFIRMATION_VIEWS } from "@/modules/members/contract-email-confirmation";
 import { toSignInPath } from "@/platform/http/return-path";
 import { ROUTES } from "@/platform/http/routes";
 

@@ -11,7 +11,7 @@ export default defineConfig({
     "./src/platform/settings/schema.ts",
     "./src/platform/village/schema.ts",
     "./src/database/intro-schema.ts",
-    "./src/database/members-schema.ts",
+    "./src/modules/members/schema.ts",
     "./src/database/messages-schema.ts",
     "./src/database/village-schema.ts",
   ],

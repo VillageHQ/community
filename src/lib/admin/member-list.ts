@@ -5,13 +5,12 @@ import { and, asc, count, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
 import { memberRemoval } from "../../database/admin-schema.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { invite, memberAvatar } from "../../database/members-schema.ts";
-import { memberNetwork } from "../../database/village-schema.ts";
+import { invite, memberAvatar, memberNetwork } from "../../modules/members/schema.ts";
 import { isReclaimedEmail } from "../../platform/auth/reclaimed-email.ts";
 import { isActiveMember, isBanActive, isBanInEffect } from "../../platform/auth/member-status.ts";
-import { toContainsPattern } from "../members/directory.ts";
-import { toAvatarUrl } from "../members/profile.ts";
-import { toLinkedinUrl } from "../village/linkedin-slug.ts";
+import { toContainsPattern } from "../../modules/members/reads-directory.ts";
+import { toAvatarUrl } from "../../modules/members/service-profile.ts";
+import { toLinkedinUrl } from "../../modules/members/contract-linkedin.ts";
 import { readVillageStatus } from "../village/member-village-status.ts";
 import {
   ADMIN_PAGE_SIZES,

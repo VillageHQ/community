@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { SETUP_STEPS } from "./admin-setup-steps";
 import { describeJoinSteps, NEXT_STEPS, selectNextSteps } from "./next-steps";
-import { describeEmailConfirmation } from "./members/email-confirmation-copy";
+import { describeEmailConfirmation } from "@/modules/members/contract-email-confirmation-copy";
 import { ROUTES } from "@/platform/http/routes";
 import { NETWORK_PROGRESS } from "./village/network-progress-stages";
 

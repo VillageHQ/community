@@ -4,7 +4,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { user } from "@/platform/database/auth-schema";
 import { introRequest } from "@/database/intro-schema";
 import { memberBlock } from "@/database/messages-schema";
-import { memberNetwork, memberPathResult } from "@/database/village-schema";
+import { memberNetwork } from "@/modules/members/schema";
+import { memberPathResult } from "@/database/village-schema";
 import {
   INTRO_ACTIONS,
   INTRO_ERROR_CODES,

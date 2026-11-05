@@ -6,7 +6,8 @@ import { and, eq, isNotNull, or, sql } from "drizzle-orm";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { memberNetwork, memberPathResult } from "../../database/village-schema.ts";
+import { memberNetwork } from "../../modules/members/schema.ts";
+import { memberPathResult } from "../../database/village-schema.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
@@ -35,7 +36,7 @@ import {
 } from "../../platform/village/client.ts";
 import { cleanVillageText } from "./connector-reason.ts";
 import { CREDIT_CALL_KINDS, readDailyLookupsLeft, withCreditCall } from "../../platform/village/credit-ledger.ts";
-import { readLinkedinSlug, toLinkedinUrl } from "./linkedin-slug.ts";
+import { readLinkedinSlug, toLinkedinUrl } from "../../modules/members/contract-linkedin.ts";
 import {
   describeMemberPaths,
   readConnectors,
@@ -59,7 +60,7 @@ import { resolveVillageApiUrl, resolveVillageSdkUrl } from "../../platform/villa
 import { NetworkRequestError } from "../../platform/http/request-error.ts";
 import type { SessionMember, NetworkContext } from "../../platform/http/request-context.ts";
 import { isAdminMember } from "../../platform/auth/roles.ts";
-import { ensureMemberNetwork, normalizeEmail, isMemberEmailTrusted } from "../members/linkedin-claim.ts";
+import { ensureMemberNetwork, normalizeEmail, isMemberEmailTrusted } from "../../modules/members/service-linkedin.ts";
 
 const PATH_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const NOT_FOUND_STATUS = 404;

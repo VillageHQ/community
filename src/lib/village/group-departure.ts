@@ -3,7 +3,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 
 import { memberRemoval } from "../../database/admin-schema.ts";
-import { memberNetwork } from "../../database/village-schema.ts";
+import { memberNetwork } from "../../modules/members/schema.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { GROUP_DEPARTURE_OUTCOMES, type GroupDepartureOutcome } from "../admin/admin-api.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";

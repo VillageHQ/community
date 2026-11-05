@@ -6,11 +6,10 @@ import { alias } from "drizzle-orm/pg-core";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { introRequest } from "../../database/intro-schema.ts";
-import { memberAvatar, memberProfile } from "../../database/members-schema.ts";
+import { memberAvatar, memberProfile, memberNetwork } from "../../modules/members/schema.ts";
 import { memberBlock } from "../../database/messages-schema.ts";
-import { memberNetwork } from "../../database/village-schema.ts";
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
-import { toAvatarUrl } from "../members/profile.ts";
+import { toAvatarUrl } from "../../modules/members/service-profile.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import {
   INTRO_LIFETIME_DAYS,

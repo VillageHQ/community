@@ -1,5 +1,5 @@
 import { getDatabase } from "@/platform/database/client";
-import { readAvatar } from "@/lib/members/profile";
+import { readAvatar } from "@/modules/members/service-profile";
 import { withRouteLogging } from "@/platform/observability/route-logging";
 import { readSessionMember } from "@/platform/http/member-route";
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { MEMBER_ERROR_CODES } from "../../modules/members/contract-linkedin.ts";
 import { REQUEST_ERROR_CODES } from "../../platform/http/error-codes.ts";
 import { VILLAGE_ERROR_CODES } from "../../platform/village/error-codes.ts";
 import { INTRO_STATES } from "../intros/intro-api.ts";
@@ -20,8 +21,7 @@ export const NETWORK_STAGES = {
 export const NETWORK_ERROR_CODES = {
   ...REQUEST_ERROR_CODES,
   ...VILLAGE_ERROR_CODES,
-  linkedinInvalid: "linkedin_invalid",
-  linkedinTaken: "linkedin_taken",
+  ...MEMBER_ERROR_CODES,
   emailNotConfirmed: "email_not_confirmed",
   notConfigured: "not_configured",
   notReady: "network_not_ready",

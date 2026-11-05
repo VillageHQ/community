@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { user } from "@/platform/database/auth-schema";
 import { recordFailedAttempt } from "@/platform/rate-limit/attempt-rate-limit";
-import { sendEmailConfirmation } from "@/lib/invites/email-confirmation";
+import { sendEmailConfirmation } from "@/modules/members/service-email-confirmation";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 const CONFIRMATION_KEY_PREFIX = "email-confirmation";

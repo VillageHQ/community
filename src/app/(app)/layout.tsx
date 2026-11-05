@@ -5,7 +5,7 @@ import { AppShell } from "@/components/shell/app-shell";
 import { getDatabase } from "@/platform/database/client";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { readIntroBadgeCount, readIntroCounts } from "@/lib/intros/intro-reads";
-import { readAvatarUrl } from "@/lib/members/profile";
+import { readAvatarUrl } from "@/modules/members/service-profile";
 import { readUnreadCount } from "@/lib/messages/message-reads";
 import { readNavigationBadges } from "@/lib/navigation-badges";
 import { requireMember } from "@/platform/auth/session";

@@ -4,7 +4,7 @@ import type { Database } from "../platform/database/client.ts";
 import { readOpenReportCount } from "./admin/reports.ts";
 import { readSetupProgress } from "./admin-setup.ts";
 import type { Environment } from "../platform/environment.ts";
-import { readConfirmationBadgeCount } from "./members/member-admin.ts";
+import { readConfirmationBadgeCount } from "../modules/members/service-admin.ts";
 import type { NavigationBadgeCounts } from "./navigation.ts";
 import { readPendingLinkCount } from "./village/network-progress.ts";
 import { readVillageOutOfCreditsAt } from "../platform/village/settings.ts";

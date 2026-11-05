@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FormError } from "@/components/form-error";
 import { QueryProvider } from "@/components/query-provider";
 import { Button } from "@/components/ui/button";
-import { CONFIRMATION_VIEWS, type ConfirmationView } from "@/lib/invites/email-confirmation-views";
+import { CONFIRMATION_VIEWS, type ConfirmationView } from "@/modules/members/contract-email-confirmation";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { signOutAndGoTo } from "@/platform/auth/sign-out";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";

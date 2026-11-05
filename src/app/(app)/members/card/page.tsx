@@ -7,11 +7,11 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { getDatabase } from "@/platform/database/client";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
-import { readMemberProfile } from "@/lib/members/profile";
+import { readMemberProfile } from "@/modules/members/service-profile";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 
-import { CardForm } from "./card-form";
+import { CardForm } from "@/modules/members/components/card-form";
 
 export const metadata: Metadata = { title: PAGE_TITLES.editCard };
 

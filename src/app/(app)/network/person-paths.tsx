@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { readIntroPromise } from "@/lib/intros/intro-copy";
 import { ROUTES } from "@/platform/http/routes";
-import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
+import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
 import { LOW_LOOKUPS_LEFT, type Connector } from "@/lib/village/network-api";
 
 import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";

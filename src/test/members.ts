@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 
 import { user } from "../platform/database/auth-schema.ts";
 import type { Database } from "../platform/database/client.ts";
-import { memberProfile, memberTag } from "../database/members-schema.ts";
-import { normalizeTag } from "../lib/members/profile-api.ts";
+import { memberProfile, memberTag } from "../modules/members/schema.ts";
+import { normalizeTag } from "../modules/members/contract-profile.ts";
 
 type DirectoryMemberSeed = {
   name: string;

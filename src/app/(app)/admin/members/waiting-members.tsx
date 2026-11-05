@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import { QueryBoundary } from "@/components/query-boundary";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import type { WaitingMember } from "@/lib/invites/invite-api";
+import type { WaitingMember } from "@/modules/members/contract-invites";
 
 import { ConfirmDialog } from "@/app/(app)/admin/confirm-dialog";
 
-import { confirmMemberRequest, INVITE_QUERY_KEYS, waitingMembersQuery } from "./invite-queries";
+import { confirmMemberRequest, INVITE_QUERY_KEYS, waitingMembersQuery } from "@/modules/members/queries-invites";
 import { ADMIN_MEMBER_QUERY_KEYS } from "./member-queries";
 import { ReclaimAction } from "./reclaim-action";
 

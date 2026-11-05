@@ -1,22 +1,6 @@
-import { jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { jsonb, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
 
 import { user } from "../platform/database/auth-schema.ts";
-
-export const memberNetwork = pgTable("member_network", {
-  userId: text("user_id")
-    .primaryKey()
-    .references(() => user.id, { onDelete: "cascade" }),
-  villageExternalId: uuid("village_external_id").notNull().unique().defaultRandom(),
-  linkedinSlug: text("linkedin_slug").unique(),
-  linkedinConfirmedSlug: text("linkedin_confirmed_slug"),
-  sharingConsentedAt: timestamp("sharing_consented_at", { withTimezone: true }),
-  groupJoinedAt: timestamp("group_joined_at", { withTimezone: true }),
-  villageLinkedAt: timestamp("village_linked_at", { withTimezone: true }),
-  staleGroupExternalId: uuid("stale_group_external_id"),
-  pendingVillageEmail: text("pending_village_email"),
-  approvedMemberEmail: text("approved_member_email"),
-  approvedVillageEmail: text("approved_village_email"),
-});
 
 export const memberPathResult = pgTable(
   "member_path_result",

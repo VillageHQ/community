@@ -12,7 +12,7 @@ import { Tag } from "@/components/ui/tag";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { INTRO_STATES, type IntroState } from "@/lib/intros/intro-api";
 import { ROUTES } from "@/platform/http/routes";
-import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
+import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
 import type { Connector } from "@/lib/village/network-api";
 
 import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";

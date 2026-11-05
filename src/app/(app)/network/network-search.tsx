@@ -22,7 +22,7 @@ import { PersonPaths } from "./person-paths";
 import { PersonResult } from "./person-result";
 import { SearchWaiting } from "./search-waiting";
 import { useIsDesktop } from "./use-is-desktop";
-import type { WelcomeContext } from "./welcome-context";
+import type { WelcomeContext } from "@/modules/members/components/welcome-context";
 
 const PROMPT_FIELD = "prompt";
 const SEARCH_EXAMPLES = ["Fintech founders in London", "Angels who back climate", "Heads of sales at SaaS companies"];

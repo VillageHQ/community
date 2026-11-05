@@ -1,5 +1,5 @@
-import { createInviteBodySchema } from "@/lib/invites/invite-api";
-import { createInvite } from "@/lib/invites/invites";
+import { createInviteBodySchema } from "@/modules/members/contract-invites";
+import { createInvite } from "@/modules/members/service-invites";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 const CREATED_STATUS = 201;

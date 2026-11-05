@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
 import { formatShortDate } from "@/platform/text/format-date";
-import { INVITE_FILTERS, type InviteFilter, type InviteList as InviteListData, type InviteSummary, type IssuedInvite } from "@/lib/invites/invite-api";
-import { INVITE_EMAIL_STATUSES, INVITE_STATES, type InviteState } from "@/lib/invites/invite-state";
+import { INVITE_FILTERS, type InviteFilter, type InviteList as InviteListData, type InviteSummary, type IssuedInvite } from "@/modules/members/contract-invites";
+import { INVITE_EMAIL_STATUSES, INVITE_STATES, type InviteState } from "@/modules/members/contract-invite-state";
 import { ROUTES } from "@/platform/http/routes";
 
 import {
@@ -23,8 +23,8 @@ import {
   inviteListQuery,
   resendInviteRequest,
   revokeInviteRequest,
-} from "./invite-queries";
-import { IssuedLink } from "./issued-link";
+} from "@/modules/members/queries-invites";
+import { IssuedLink } from "@/modules/members/components/issued-link";
 import { ReclaimAction } from "./reclaim-action";
 
 const INVITE_AVATAR_SIZE_PX = 44;

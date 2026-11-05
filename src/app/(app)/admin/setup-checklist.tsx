@@ -19,7 +19,7 @@ import { BRAND_NAME_INPUT_ID } from "./brand-fields";
 import { DomainStep } from "./domain-step";
 import { GroupForm } from "./group-form";
 import { KeysForm } from "./keys-form";
-import { InviteStep } from "./members/invite-step";
+import { InviteStep } from "@/modules/members/components/invite-step";
 
 function readStepState(isDone: boolean, isOpen: boolean): StepState {
   if (isOpen) return STEP_STATES.current;

@@ -2,7 +2,8 @@ import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { memberDailyUsage } from "@/platform/village/schema";
-import { memberNetwork, memberPathResult } from "@/database/village-schema";
+import { memberNetwork } from "@/modules/members/schema";
+import { memberPathResult } from "@/database/village-schema";
 import { readVillageLinks } from "@/lib/village/member-network";
 import { NETWORK_ERROR_CODES, NETWORK_STAGES, networkStatusSchema } from "@/lib/village/network-api";
 import { saveVillageGroup } from "@/lib/village/settings";

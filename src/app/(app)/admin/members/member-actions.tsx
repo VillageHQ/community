@@ -15,8 +15,8 @@ import { readFirstName } from "@/platform/design/avatar-identity";
 
 import { ConfirmDialog } from "@/app/(app)/admin/confirm-dialog";
 import { RemoveMemberDialog } from "@/app/(app)/admin/remove-member-dialog";
-import { clearLinkedinRequest, confirmLinkedinRequest, confirmMemberRequest } from "./invite-queries";
-import { IssuedLink } from "./issued-link";
+import { clearLinkedinRequest, confirmLinkedinRequest, confirmMemberRequest } from "@/modules/members/queries-invites";
+import { IssuedLink } from "@/modules/members/components/issued-link";
 import {
   approveVillageLinkRequest,
   leaveGroupRequest,

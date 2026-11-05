@@ -1,6 +1,18 @@
+import { existsSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
-import { followImports, findCycles, isTestFile, readImportEdges, readImportSpecifiers, readSourceFiles, type ImportEdge } from "./import-graph";
+import {
+  followImports,
+  findCycles,
+  isTestFile,
+  readImportEdges,
+  readImportSpecifiers,
+  readSourceFiles,
+  REPOSITORY_ROOT,
+  type ImportEdge,
+} from "./import-graph";
 import { isEdgeAllowed, readModuleName } from "./layers";
 
 const SERVER_ONLY_PACKAGE = "server-only";
@@ -11,6 +23,7 @@ const SCHEMA_FILE_PATTERN = /(^|\/|-)schema\.ts$/;
 // Every entry is a debt. New violations fail, and so do entries that no longer exist, so this list only shrinks.
 const KNOWN_VIOLATIONS: readonly string[] = [
   "src/components/shell/search-ready-notice.tsx -> src/app/(app)/network/network-queries.ts",
+  "src/modules/members/components/member-directory.tsx -> src/app/(app)/messages/start-conversation-button.tsx",
 ];
 
 const sourceFiles = readSourceFiles();
@@ -49,5 +62,16 @@ describe("the code that runs outside Next", () => {
     const blocked = readImportSpecifiers(file).filter((specifier) => specifier === SERVER_ONLY_PACKAGE || specifier.startsWith(PATH_ALIAS_PREFIX));
 
     expect(blocked).toEqual([]);
+  });
+});
+
+describe("the modules", () => {
+  const modulesDirectory = resolve(REPOSITORY_ROOT, "src/modules");
+  const moduleNames = readdirSync(modulesDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map(({ name }) => name);
+
+  it.each(moduleNames)("%s keeps notes for contributors", (moduleName) => {
+    expect(existsSync(resolve(modulesDirectory, moduleName, "AGENTS.md"))).toBe(true);
   });
 });

@@ -4,10 +4,10 @@ import { and, count, eq, isNotNull } from "drizzle-orm";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { memberNetwork } from "../../database/village-schema.ts";
+import { memberNetwork } from "../../modules/members/schema.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { isAdminMember } from "../../platform/auth/roles.ts";
-import { isMemberEmailTrusted } from "../members/linkedin-claim.ts";
+import { isMemberEmailTrusted } from "../../modules/members/service-linkedin.ts";
 import { type SessionMember } from "../../platform/http/request-context.ts";
 import { NETWORK_PROGRESS, type NetworkProgress } from "./network-progress-stages.ts";
 import { readVillageGroup } from "./settings.ts";

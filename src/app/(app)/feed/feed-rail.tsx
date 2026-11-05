@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { INTRO_LIMITS, INTRO_STATES, type Intro } from "@/lib/intros/intro-api";
-import type { readNewMembers } from "@/lib/members/directory";
+import type { readNewMembers } from "@/modules/members/reads-directory";
 import type { NextStep } from "@/lib/next-steps";
 import { ROUTES } from "@/platform/http/routes";
 

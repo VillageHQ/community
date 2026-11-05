@@ -7,7 +7,7 @@ import {
   readThroughReason,
   readUnexplainedReason,
 } from "./connector-reason.ts";
-import { readLinkedinSlug } from "./linkedin-slug.ts";
+import { readLinkedinSlug } from "../../modules/members/contract-linkedin.ts";
 import { namesMatch } from "./name-match.ts";
 import type { Connector, NetworkPath, NetworkPaths } from "./network-api.ts";
 

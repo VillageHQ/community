@@ -8,11 +8,11 @@ import type { Database } from "../../platform/database/client.ts";
 import { comment, post, reaction } from "../../database/feed-schema.ts";
 import { introRequest } from "../../database/intro-schema.ts";
 import { directMessage } from "../../database/messages-schema.ts";
-import { memberNetwork } from "../../database/village-schema.ts";
+import { memberNetwork } from "../../modules/members/schema.ts";
 import { readIntroStateCounts } from "../intros/intro-reads.ts";
-import { readInviteCounts } from "../invites/invites.ts";
+import { readInviteCounts } from "../../modules/members/service-invites.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
-import { readActiveMemberCount } from "../members/directory.ts";
+import { readActiveMemberCount } from "../../modules/members/reads-directory.ts";
 import { readSharingMemberCount } from "../village/network-progress.ts";
 
 const MILLISECONDS_PER_DAY = 86_400_000;

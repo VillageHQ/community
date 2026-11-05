@@ -1,5 +1,5 @@
-import { inviteIdBodySchema } from "@/lib/invites/invite-api";
-import { revokeInvite } from "@/lib/invites/invites";
+import { inviteIdBodySchema } from "@/modules/members/contract-invites";
+import { revokeInvite } from "@/modules/members/service-invites";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(

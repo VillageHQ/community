@@ -4,7 +4,7 @@ import { and, asc, count, desc, eq, gt, ilike, inArray, isNull, lt, ne, or, sql 
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { memberAvatar, memberProfile } from "../../database/members-schema.ts";
+import { memberAvatar, memberProfile } from "../../modules/members/schema.ts";
 import {
   conversation,
   conversationReadCursor,
@@ -13,8 +13,8 @@ import {
   messageReport,
 } from "../../database/messages-schema.ts";
 import { isBanActive } from "../../platform/auth/member-status.ts";
-import { toContainsPattern } from "../members/directory.ts";
-import { toAvatarUrl } from "../members/profile.ts";
+import { toContainsPattern } from "../../modules/members/reads-directory.ts";
+import { toAvatarUrl } from "../../modules/members/service-profile.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import { readPeerId } from "./conversation-pair.ts";
 import {

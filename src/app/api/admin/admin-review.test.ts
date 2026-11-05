@@ -8,10 +8,10 @@ import { communityBranding } from "@/platform/branding/schema";
 import { getDatabase } from "@/platform/database/client";
 import { post } from "@/database/feed-schema";
 import { instanceSettings, INSTANCE_SETTING_KEYS } from "@/platform/settings/schema";
-import { invite } from "@/database/members-schema";
+import { invite, memberNetwork } from "@/modules/members/schema";
 import { conversation, directMessage, messageReport } from "@/database/messages-schema";
 import { memberDailyUsage } from "@/platform/village/schema";
-import { memberNetwork, memberPathResult } from "@/database/village-schema";
+import { memberPathResult } from "@/database/village-schema";
 import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import {
   CONTENT_CHOICES,
@@ -25,9 +25,9 @@ import { MEMBER_ROLES } from "@/platform/auth/roles";
 import { describeCreditEstimate, estimateCreditCost, readCreditUsage } from "@/lib/admin/credit-usage";
 import { REPORT_SAVED_MESSAGES } from "@/lib/admin/reports";
 import { setDailyLookupLimit } from "@/lib/admin/settings-actions";
-import { issuedInviteSchema } from "@/lib/invites/invite-api";
-import { createInvite, reinviteRemovedMember, revokeInvite } from "@/lib/invites/invites";
-import { confirmMemberEmail } from "@/lib/members/member-admin";
+import { issuedInviteSchema } from "@/modules/members/contract-invites";
+import { createInvite, reinviteRemovedMember, revokeInvite } from "@/modules/members/service-invites";
+import { confirmMemberEmail } from "@/modules/members/service-admin";
 import { createNetworkContext } from "@/platform/http/request-context";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { NETWORK_ERROR_CODES, networkPathsSchema } from "@/lib/village/network-api";

@@ -1,12 +1,12 @@
 import { getDatabase } from "@/platform/database/client";
 import { getAuth } from "@/platform/auth/auth";
 import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/platform/http/body-limit";
-import { acceptFieldsBodySchema, acceptTokenBodySchema, INVITE_ERROR_CODES } from "@/lib/invites/invite-api";
-import { sendEmailConfirmation } from "@/lib/invites/email-confirmation";
-import { recordFailedInviteAttempt } from "@/lib/invites/invite-attempts";
-import { INVITE_STATES, type InviteState } from "@/lib/invites/invite-state";
-import { INVITE_UNUSABLE_COPY, INVITE_INVALID_COPY } from "@/lib/invites/invite-copy";
-import { acceptInvite, readInviteByToken } from "@/lib/invites/invites";
+import { acceptFieldsBodySchema, acceptTokenBodySchema, INVITE_ERROR_CODES } from "@/modules/members/contract-invites";
+import { sendEmailConfirmation } from "@/modules/members/service-email-confirmation";
+import { recordFailedInviteAttempt } from "@/modules/members/limits-invites";
+import { INVITE_STATES, type InviteState } from "@/modules/members/contract-invite-state";
+import { INVITE_UNUSABLE_COPY, INVITE_INVALID_COPY } from "@/modules/members/copy-invites";
+import { acceptInvite, readInviteByToken } from "@/modules/members/service-invites";
 import { readJsonBody } from "@/platform/http/read-json-body";
 import { logError, withRouteLogging } from "@/platform/observability/route-logging";
 import { hasTrustedOrigin, readSessionMember } from "@/platform/http/member-route";

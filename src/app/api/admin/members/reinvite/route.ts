@@ -1,5 +1,5 @@
 import { adminMemberIdBodySchema } from "@/lib/admin/admin-api";
-import { reinviteRemovedMember } from "@/lib/invites/invites";
+import { reinviteRemovedMember } from "@/modules/members/service-invites";
 import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

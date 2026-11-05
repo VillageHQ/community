@@ -3,11 +3,11 @@
 import { useState } from "react";
 
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import type { IssuedInvite } from "@/lib/invites/invite-api";
+import type { IssuedInvite } from "@/modules/members/contract-invites";
 
-import { InviteForm } from "./invite-form";
+import { InviteForm } from "@/modules/members/components/invite-form";
 import { InviteList } from "./invite-list";
-import { LinkedinClaimCard } from "./linkedin-claim-card";
+import { LinkedinClaimCard } from "@/modules/members/components/linkedin-claim-card";
 import { MemberManager } from "./member-manager";
 import { WaitingMembers } from "./waiting-members";
 

@@ -9,7 +9,7 @@ import { communityBranding } from "../platform/branding/schema.ts";
 import { createDatabase, type Database } from "../platform/database/client.ts";
 import { moderationRecord } from "../database/feed-schema.ts";
 import { instanceSettings } from "../platform/settings/schema.ts";
-import { invite } from "../database/members-schema.ts";
+import { invite } from "../modules/members/schema.ts";
 import { messageReport } from "../database/messages-schema.ts";
 
 export function readTestConnectionString() {

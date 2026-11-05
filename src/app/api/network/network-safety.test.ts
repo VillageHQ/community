@@ -3,7 +3,8 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { user } from "@/platform/database/auth-schema";
 import { memberDailyUsage } from "@/platform/village/schema";
-import { memberNetwork, memberPathResult } from "@/database/village-schema";
+import { memberNetwork } from "@/modules/members/schema";
+import { memberPathResult } from "@/database/village-schema";
 import { NETWORK_ERROR_CODES, NETWORK_STAGES, networkPathsSchema, networkStatusSchema } from "@/lib/village/network-api";
 import { deleteVillageGroup, readVillageGroup, saveVillageGroup } from "@/lib/village/settings";
 import { saveVillageKeys } from "@/platform/village/settings";

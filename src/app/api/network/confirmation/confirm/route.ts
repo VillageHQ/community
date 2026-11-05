@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { confirmEmailWithToken } from "@/lib/invites/email-confirmation";
+import { confirmEmailWithToken } from "@/modules/members/service-email-confirmation";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 const confirmBodySchema = z.object({ token: z.string() });

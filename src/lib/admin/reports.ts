@@ -8,7 +8,7 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
 import { comment, post } from "../../database/feed-schema.ts";
 import { messageReport } from "../../database/messages-schema.ts";
-import { memberNetwork } from "../../database/village-schema.ts";
+import { memberNetwork } from "../../modules/members/schema.ts";
 import { deleteCommentWithin, deletePostWithin } from "../feed/feed-actions.ts";
 import { FEED_ERROR_CODES } from "../feed/feed-api.ts";
 import { isAuthorVisibleTo, isPostVisible } from "../feed/feed-reads.ts";

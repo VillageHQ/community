@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { readWaitingMemberCount, readWaitingMembers } from "@/lib/members/member-admin";
+import { readWaitingMemberCount, readWaitingMembers } from "@/modules/members/service-admin";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(

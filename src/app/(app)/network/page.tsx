@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { getDatabase } from "@/platform/database/client";
-import { resolveOnboardingStep } from "@/lib/members/onboarding";
+import { resolveOnboardingStep } from "@/shell/onboarding";
 import { requireMember } from "@/platform/auth/session";
 import { NETWORK_PROGRESS, readNetworkProgress } from "@/lib/village/network-progress";
 
 import { ConsentStep } from "./consent-step";
 import { LinkedinWelcome } from "./linkedin-step";
-import { loadWelcomeContext } from "./load-welcome-context";
+import { loadWelcomeContext } from "@/shell/load-welcome-context";
 import { NetworkFlowLoader } from "./network-flow-loader";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 

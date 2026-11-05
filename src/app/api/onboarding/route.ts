@@ -1,5 +1,5 @@
-import { completeCardStep, completeOnboarding } from "@/lib/members/onboarding";
-import { ONBOARDING_STEPS, onboardingBodySchema } from "@/lib/members/profile-api";
+import { completeCardStep, completeOnboarding } from "@/modules/members/service-onboarding";
+import { ONBOARDING_STEPS, onboardingBodySchema } from "@/modules/members/contract-profile";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("onboarding-advance", onboardingBodySchema, async ({ database, member }, { step }) => {
