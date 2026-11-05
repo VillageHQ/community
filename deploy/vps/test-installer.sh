@@ -101,6 +101,7 @@ printf '%s\n' "curl $*" >>/tmp/stub-calls
 case "$*" in
   *--resolve*) [ -z "${STUB_HTTPS_FAILS:-}" ]; exit ;;
   *raw.githubusercontent.com*) cp /source/install.sh "${@: -1}"; exit ;;
+  *codeload.github.com*) tar -cz -C / source/deploy; exit ;;
   *-4*ipify*) printf '%s' "${STUB_PUBLIC_IP:-203.0.113.20}"; exit ;;
   *dns.google*) [ -z "${STUB_GOOGLE_DNS_DOWN:-}" ] || exit 7 ;;
   *cloudflare-dns*) [ -z "${STUB_CLOUDFLARE_DNS_DOWN:-}" ] || exit 7 ;;
@@ -559,6 +560,8 @@ test_helper() {
   output="$(env PATH="$STUBS:$PATH" COMMUNITY_NONINTERACTIVE=1 community upgrade 2>&1)" || exit_code=$?
   assert_exit 0
   assert_says "up to date at https://$DOMAIN"
+  assert_says "Downloading Community's files (main)"
+  assert_called "codeload.github.com/VillageHQ/community/tar.gz/main"
   assert_never_says "unbound variable"
 
   it "shows help with no command and rejects an unknown one"

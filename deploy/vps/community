@@ -103,7 +103,12 @@ restart_app() {
 
 restore() {
   local file="${1:-}" safety_copy
-  [ -n "$file" ] || die "Say which backup to restore: sudo community restore $BACKUPS_DIRECTORY/<file>.dump"
+  if [ -z "$file" ]; then
+    say "Say which backup to restore: sudo community restore <file>"
+    say "Your backups:"
+    printf '  %s\n' "$BACKUPS_DIRECTORY"/*.dump
+    exit 1
+  fi
   [ -f "$file" ] || die "There's no file at $file."
   is_valid_dump "$file" || die "$file isn't a Community backup, or it's damaged. Nothing changed."
   confirm_restore "$file"

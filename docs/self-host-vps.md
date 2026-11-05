@@ -137,7 +137,7 @@ Then run `scp` with your username and the file's new place in your home folder. 
 
 Backups hold everything in your community, including private messages in plain text. Keep your copies somewhere private.
 
-To restore a backup:
+To restore a backup, first run `sudo community restore` on its own to see your backups. Then pass the one you want:
 
 ```sh
 sudo community restore /opt/community/backups/community-20260101-030000.dump
