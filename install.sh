@@ -277,12 +277,10 @@ explain_dns_record() {
   say ""
   say "Log in to the company where you bought your domain, open its DNS settings and create this record:"
   say ""
-  for address in "${server_addresses[@]}"; do
-    say "  Type:   $(record_type_for "$address")"
-    say "  Name:   $(record_name_for_domain)"
-    say "  Value:  $address"
-    say ""
-  done
+  say "  Type:   $(record_type_for "${server_addresses[0]}")"
+  say "  Name:   $(record_name_for_domain)"
+  say "  Value:  ${server_addresses[0]}"
+  say ""
   say "If $domain is your main domain, with nothing in front of it, use @ as the name."
   for address in "${domain_addresses[@]}"; do
     is_server_address "$address" || say "Right now $domain points at $address. Change or delete that old record."

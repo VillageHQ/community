@@ -241,6 +241,7 @@ test_dns_failure() {
   assert_says "Name:   nowhere"
   assert_says "Value:  $SERVER_IP"
   assert_says "run the same command again"
+  assert_never_says "AAAA"
   assert_nothing_set_up
 
   it "names the old address when the domain points elsewhere"
