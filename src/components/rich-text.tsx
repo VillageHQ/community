@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { collapseSegments, splitIntoSegments, TEXT_SEGMENTS, type TextSegment } from "@/lib/feed/post-text";
+import { collapseSegments, splitIntoSegments, TEXT_SEGMENTS, type TextSegment } from "@/platform/text/post-text";
 
 const LINK_RELATIONSHIP = "noopener noreferrer";
 

@@ -1,7 +1,7 @@
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
-import type { DirectMessage } from "./message-api.ts";
-import { formatMessageDay, readMessageDayKey } from "./message-time.ts";
-import { keepUnconfirmedPending, PENDING_STATUSES, type PendingMessage } from "./thread-cache.ts";
+import type { DirectMessage } from "./contract.ts";
+import { formatMessageDay, readMessageDayKey } from "./rules-time.ts";
+import { keepUnconfirmedPending, PENDING_STATUSES, type PendingMessage } from "./rules-thread-cache.ts";
 
 const MAXIMUM_ANNOUNCED_MESSAGES = 3;
 const MAXIMUM_ANNOUNCED_CHARACTERS = 280;

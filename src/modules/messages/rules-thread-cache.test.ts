@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { DirectMessage, ThreadChanges, ThreadPage } from "./message-api";
+import type { DirectMessage, ThreadChanges, ThreadPage } from "./contract";
 import {
   addPending,
   applyThreadChanges,
@@ -14,7 +14,7 @@ import {
   removePending,
   type PendingMessage,
   type ThreadPages,
-} from "./thread-cache";
+} from "./rules-thread-cache";
 
 const CREATED_AT = "2026-11-05T12:00:00.000Z";
 

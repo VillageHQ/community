@@ -4,21 +4,15 @@ import { and, eq, isNull, max, or, sql } from "drizzle-orm";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import {
-  conversation,
-  conversationReadCursor,
-  directMessage,
-  memberBlock,
-  messageReport,
-} from "../../database/messages-schema.ts";
-import { stopOpenAsksOnBlock } from "../intros/intro-blocks.ts";
+import { conversation, conversationReadCursor, directMessage, messageReport } from "./schema.ts";
+import { memberBlock } from "../members/schema.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { NetworkRequestError } from "../../platform/http/request-error.ts";
 import { type NetworkContext } from "../../platform/http/request-context.ts";
-import { readPeerId, toConversationPair } from "./conversation-pair.ts";
-import { MESSAGE_ERROR_CODES, type MarkReadBody, type SendMessageBody, type SetBlockBody } from "./message-api.ts";
-import { isConversationParticipant, isMessageVisibleTo, readMessageForViewer } from "./message-reads.ts";
-import { enforceMessagingLimit, MESSAGING_KINDS } from "./sending-limit.ts";
+import { readPeerId, toConversationPair } from "./rules-conversation-pair.ts";
+import { MESSAGE_ERROR_CODES, type MarkReadBody, type SendMessageBody } from "./contract.ts";
+import { isConversationParticipant, isMessageVisibleTo, readMessageForViewer } from "./reads.ts";
+import { enforceMessagingLimit, MESSAGING_KINDS } from "./limits.ts";
 
 const FORBIDDEN_STATUS = 403;
 const NOT_FOUND_STATUS = 404;
@@ -258,22 +252,4 @@ export async function reportMessage({ database, member }: NetworkContext, messag
     .from(messageReport)
     .where(and(eq(messageReport.messageId, messageId), eq(messageReport.reporterId, member.id)));
   return existing?.resolvedAt ? "An admin already reviewed your report on this message." : "You already reported this. It's waiting for an admin.";
-}
-
-export async function setMemberBlocked({ database, member }: NetworkContext, { memberId, isBlocked }: SetBlockBody) {
-  if (memberId === member.id) {
-    throw new NetworkRequestError(UNPROCESSABLE_STATUS, MESSAGE_ERROR_CODES.ownConversation, "You can't block yourself.");
-  }
-  if (!isBlocked) {
-    await database.delete(memberBlock).where(and(eq(memberBlock.blockerId, member.id), eq(memberBlock.blockedId, memberId)));
-    return { isBlocked };
-  }
-
-  const [target] = await database.select({ id: user.id }).from(user).where(eq(user.id, memberId));
-  if (!target) throw memberGoneError();
-  await database.transaction(async (transaction) => {
-    await transaction.insert(memberBlock).values({ blockerId: member.id, blockedId: memberId }).onConflictDoNothing();
-    await stopOpenAsksOnBlock(transaction, member.id, memberId);
-  });
-  return { isBlocked };
 }

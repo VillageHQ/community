@@ -1,5 +1,5 @@
-import { deleteOwnMessage } from "@/lib/messages/message-actions";
-import { messageIdBodySchema } from "@/lib/messages/message-api";
+import { deleteOwnMessage } from "@/modules/messages/service";
+import { messageIdBodySchema } from "@/modules/messages/contract";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("messages-delete", messageIdBodySchema, async (context, { messageId }) =>

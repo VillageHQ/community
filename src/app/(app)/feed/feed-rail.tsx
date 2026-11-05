@@ -10,7 +10,7 @@ import type { readNewMembers } from "@/modules/members/reads-directory";
 import type { NextStep } from "@/lib/next-steps";
 import { ROUTES } from "@/platform/http/routes";
 
-import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
+import { MemberConversationSlot } from "@/modules/members/slots";
 import { FEED_AVATAR_SIZES } from "./feed-display";
 
 type NewMember = Awaited<ReturnType<typeof readNewMembers>>["newMembers"][number];
@@ -26,7 +26,7 @@ function NewMemberRow({ member }: { member: NewMember }) {
         </Link>
         <div className="type-micro font-medium wrap-anywhere text-muted-foreground">{company ?? title ?? "New member"}</div>
       </div>
-      <StartConversationButton
+      <MemberConversationSlot
         memberId={id}
         label="Say hi"
         accessibleName={`Say hi to ${name}`}

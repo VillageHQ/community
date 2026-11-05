@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
-import type { DirectMessage } from "@/lib/messages/message-api";
+import type { DirectMessage } from "@/modules/messages/contract";
 import {
   deleteMessageRequest,
   INBOX_QUERY_FILTER,
@@ -10,10 +10,10 @@ import {
   pendingMessagesQuery,
   reportMessageRequest,
   sendMessageRequest,
-  setBlockRequest,
   threadQuery,
   unreadCountQuery,
-} from "@/lib/messages/message-queries";
+} from "@/modules/messages/queries";
+import { setBlockRequest } from "@/modules/members/queries-blocks";
 import {
   addPending,
   clearConversationUnread,
@@ -24,7 +24,7 @@ import {
   updateNewestPage,
   type InboxPages,
   type PendingMessage,
-} from "@/lib/messages/thread-cache";
+} from "@/modules/messages/rules-thread-cache";
 
 type DraftMessage = Pick<PendingMessage, "clientKey" | "body">;
 

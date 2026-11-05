@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-import { feedTextSchema } from "../feed/feed-api.ts";
+import { feedTextSchema } from "../../platform/text/text-schema.ts";
 import { removeNullBytes } from "../../platform/text/safe-text.ts";
+import { memberIdSchema } from "../members/contract-blocks.ts";
 
 export const MESSAGE_LIMITS = {
   bodyLength: 4000,
@@ -10,7 +11,6 @@ export const MESSAGE_LIMITS = {
   conversationsPerPage: 30,
   previewLength: 140,
   searchLength: 80,
-  memberIdLength: 256,
 } as const;
 
 export const MESSAGE_ERROR_CODES = {
@@ -27,12 +27,6 @@ const LARGEST_POSTGRES_INTEGER = 2_147_483_647;
 
 const timestampSchema = z.iso.datetime();
 const sequenceSchema = z.number().int().nonnegative().max(LARGEST_POSTGRES_INTEGER);
-
-const memberIdSchema = z
-  .string()
-  .overwrite(removeNullBytes)
-  .min(1)
-  .max(MESSAGE_LIMITS.memberIdLength);
 
 export const messageBodySchema = feedTextSchema("your message", MESSAGE_LIMITS.bodyLength);
 
@@ -51,7 +45,6 @@ export const sendMessageBodySchema = z.object({
 });
 export const messageIdBodySchema = z.object({ messageId: z.uuid() });
 export const markReadBodySchema = z.object({ conversationId: conversationIdSchema, sequence: sequenceSchema });
-export const setBlockBodySchema = z.object({ memberId: memberIdSchema, isBlocked: z.boolean() });
 
 const inboxCursorSchema = z.object({ lastMessageAt: timestampSchema, conversationId: conversationIdSchema });
 
@@ -117,7 +110,6 @@ export const inboxSchema = z.object({
 });
 export const unreadCountSchema = z.object({ unreadCount: z.number().int().nonnegative() });
 export const startedConversationSchema = z.object({ conversationId: conversationIdSchema });
-export const blockStateSchema = z.object({ isBlocked: z.boolean() });
 export const markedReadSchema = z.object({ lastReadSequence: sequenceSchema });
 
 export type DirectMessage = z.infer<typeof directMessageSchema>;
@@ -128,6 +120,5 @@ export type Inbox = z.infer<typeof inboxSchema>;
 export type InboxCursor = z.infer<typeof inboxCursorSchema>;
 export type InboxRequest = z.infer<typeof inboxBodySchema>;
 export type SendMessageBody = z.infer<typeof sendMessageBodySchema>;
-export type SetBlockBody = z.infer<typeof setBlockBodySchema>;
 export type MarkReadBody = z.infer<typeof markReadBodySchema>;
 export type ConversationPeer = z.infer<typeof peerSchema>;

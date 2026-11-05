@@ -1,6 +1,5 @@
 import { z } from "zod";
-
-import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
+import { feedTextSchema } from "../../platform/text/text-schema.ts";
 
 export const FEED_LIMITS = {
   postLength: 3000,
@@ -22,25 +21,6 @@ export const FEED_ERROR_CODES = {
   tooFast: "feed_too_fast",
   authorBanned: "feed_author_banned",
 } as const;
-
-const REPEATED_BLANK_LINES = /\n{3,}/g;
-const WINDOWS_LINE_BREAK = /\r\n?/g;
-const VISIBLE_CHARACTER = /[\p{L}\p{N}\p{P}\p{S}]/u;
-
-function normalizeLineBreaks(text: string) {
-  return text.replace(WINDOWS_LINE_BREAK, "\n").replace(REPEATED_BLANK_LINES, "\n\n");
-}
-
-export function feedTextSchema(label: string, maximumLength: number) {
-  return z
-    .string({ error: `Write ${label} first.` })
-    .overwrite(removeNullBytes)
-    .overwrite(removeBidiControls)
-    .overwrite(normalizeLineBreaks)
-    .trim()
-    .refine((text) => VISIBLE_CHARACTER.test(text), `Write ${label} first.`)
-    .refine((text) => text.length <= maximumLength, `Keep ${label} under ${maximumLength.toLocaleString("en-US")} characters.`);
-}
 
 const postBodySchema = feedTextSchema("your post", FEED_LIMITS.postLength);
 const commentBodySchema = feedTextSchema("your reply", FEED_LIMITS.commentLength);

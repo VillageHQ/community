@@ -3,7 +3,7 @@ import "server-only";
 import { and, eq, gt, inArray } from "drizzle-orm";
 
 import { introRequest } from "../../database/intro-schema.ts";
-import { memberBlock } from "../../database/messages-schema.ts";
+import { memberBlock } from "../../modules/members/schema.ts";
 import { runAfterResponse } from "../../platform/observability/after-response.ts";
 import { readAskableConnectors } from "../village/member-network.ts";
 import { NetworkRequestError } from "../../platform/http/request-error.ts";

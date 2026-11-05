@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { introCountsQuery } from "@/lib/intros/intro-queries";
-import { unreadCountQuery } from "@/lib/messages/message-queries";
+import { unreadCountQuery } from "@/modules/messages/queries";
 import {
   describeBadge,
   describeNavigationBadge,

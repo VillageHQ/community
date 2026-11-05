@@ -4,8 +4,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ConversationSummary, InboxCursor } from "@/lib/messages/message-api";
-import { inboxQuery } from "@/lib/messages/message-queries";
+import type { ConversationSummary, InboxCursor } from "@/modules/messages/contract";
+import { inboxQuery } from "@/modules/messages/queries";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 
 import { ConversationList } from "./conversation-list";

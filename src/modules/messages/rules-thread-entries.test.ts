@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import type { DirectMessage } from "./message-api";
-import { formatConversationTime, formatMessageDay, formatMessageTime } from "./message-time";
-import { PENDING_STATUSES, type PendingMessage } from "./thread-cache";
-import { buildThreadEntries, describeNewMessages, readNewestPeerSequence } from "./thread-entries";
-import { toConversationPair } from "./conversation-pair";
-import { readInboxPollMs, readThreadPollMs, THREAD_CATCH_UP_POLL_MS, THREAD_POLL_AFTER_FAILURE_MS, THREAD_POLL_MS } from "./message-polling";
+import type { DirectMessage } from "./contract";
+import { formatConversationTime, formatMessageDay, formatMessageTime } from "./rules-time";
+import { PENDING_STATUSES, type PendingMessage } from "./rules-thread-cache";
+import { buildThreadEntries, describeNewMessages, readNewestPeerSequence } from "./rules-thread-entries";
+import { toConversationPair } from "./rules-conversation-pair";
+import { readInboxPollMs } from "@/platform/http/polling";
+import {
+  readThreadPollMs,
+  THREAD_CATCH_UP_POLL_MS,
+  THREAD_POLL_AFTER_FAILURE_MS,
+  THREAD_POLL_MS,
+} from "./rules-polling";
 
 const TIME_ZONE = "America/Sao_Paulo";
 const NOW = new Date("2026-11-05T15:00:00.000Z");

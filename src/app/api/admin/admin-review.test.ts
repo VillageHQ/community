@@ -9,7 +9,7 @@ import { getDatabase } from "@/platform/database/client";
 import { post } from "@/database/feed-schema";
 import { instanceSettings, INSTANCE_SETTING_KEYS } from "@/platform/settings/schema";
 import { invite, memberNetwork } from "@/modules/members/schema";
-import { conversation, directMessage, messageReport } from "@/database/messages-schema";
+import { conversation, directMessage, messageReport } from "@/modules/messages/schema";
 import { memberDailyUsage } from "@/platform/village/schema";
 import { memberPathResult } from "@/database/village-schema";
 import { AUDIT_ACTIONS } from "@/platform/audit/actions";

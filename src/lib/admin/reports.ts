@@ -7,7 +7,7 @@ import { contentReport } from "../../database/admin-schema.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
 import { comment, post } from "../../database/feed-schema.ts";
-import { messageReport } from "../../database/messages-schema.ts";
+import { messageReport } from "../../modules/messages/schema.ts";
 import { memberNetwork } from "../../modules/members/schema.ts";
 import { deleteCommentWithin, deletePostWithin } from "../feed/feed-actions.ts";
 import { FEED_ERROR_CODES } from "../feed/feed-api.ts";
@@ -16,7 +16,7 @@ import { introGoneError } from "../intros/intro-actions.ts";
 import { INTRO_ROLES } from "../intros/intro-api.ts";
 import { readIntroForViewer } from "../intros/intro-reads.ts";
 import { isBanActive } from "../../platform/auth/member-status.ts";
-import { enforceMessagingLimit, MESSAGING_KINDS } from "../messages/sending-limit.ts";
+import { enforceMessagingLimit, MESSAGING_KINDS } from "../../modules/messages/limits.ts";
 import { NetworkRequestError } from "../../platform/http/request-error.ts";
 import { type NetworkContext } from "../../platform/http/request-context.ts";
 import {

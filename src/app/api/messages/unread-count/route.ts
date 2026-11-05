@@ -1,6 +1,6 @@
 import { emptyBodySchema } from "@/platform/http/contract";
-import { readUnreadCount } from "@/lib/messages/message-reads";
-import { enforceMessagingLimit, MESSAGING_KINDS } from "@/lib/messages/sending-limit";
+import { readUnreadCount } from "@/modules/messages/reads";
+import { enforceMessagingLimit, MESSAGING_KINDS } from "@/modules/messages/limits";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("messages-unread-count", emptyBodySchema, async ({ database, member }) => {

@@ -1,19 +1,25 @@
 "use client";
 
+import { useMutation, useQueryClient, type QueryFilters } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/form-error";
 
-import { ConfirmAction } from "./confirm-action";
-import { describeBlock } from "./message-copy";
-import { useSetBlock } from "./use-message-mutations";
+import { ConfirmAction } from "@/components/confirm-action";
 
-type BlockMemberButtonProps = { memberId: string; memberName: string; isBlocked: boolean };
+import { describeBlock } from "../contract-blocks";
+import { setBlockRequest } from "../queries-blocks";
 
-export function BlockMemberButton({ memberId, memberName, isBlocked: wasBlocked }: BlockMemberButtonProps) {
+type BlockMemberButtonProps = { memberId: string; memberName: string; isBlocked: boolean; refreshesAfterChange: QueryFilters };
+
+export function BlockMemberButton({ memberId, memberName, isBlocked: wasBlocked, refreshesAfterChange }: BlockMemberButtonProps) {
   const [isConfirming, setIsConfirming] = useState(false);
-  const setBlock = useSetBlock(memberId, null);
+  const queryClient = useQueryClient();
+  const setBlock = useMutation({
+    mutationFn: (isBlocked: boolean) => setBlockRequest({ memberId, isBlocked }),
+    onSuccess: () => queryClient.invalidateQueries(refreshesAfterChange),
+  });
   const isBlocked = setBlock.data?.isBlocked ?? wasBlocked;
 
   if (isConfirming) {

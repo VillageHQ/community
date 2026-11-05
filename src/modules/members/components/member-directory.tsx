@@ -19,7 +19,7 @@ import { parseDirectoryFilters, toDirectoryQueryString } from "@/modules/members
 import { PROFILE_LIMITS, type DirectoryFilters, type DirectoryMember } from "@/modules/members/contract-profile";
 import { ROUTES } from "@/platform/http/routes";
 
-import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
+import { MemberConversationSlot } from "@/modules/members/slots";
 import { directoryQuery } from "@/modules/members/queries-directory";
 
 const SEARCH_DEBOUNCE_MS = 250;
@@ -81,7 +81,7 @@ function MemberCard({ member, viewerId }: { member: DirectoryMember; viewerId: s
         </div>
         <div className="mt-auto grid gap-2">
           {id === viewerId ? null : (
-            <StartConversationButton memberId={id} label="Message" accessibleName={`Message ${name}`} className="w-full" />
+            <MemberConversationSlot memberId={id} label="Message" accessibleName={`Message ${name}`} className="w-full" />
           )}
           <Button asChild variant="outline" className="w-full">
             <Link href={`${ROUTES.members}/${id}`} aria-label={`View profile of ${name}`}>

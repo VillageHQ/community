@@ -3,21 +3,15 @@
 import { useMutation } from "@tanstack/react-query";
 import { MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTransition, type ComponentProps } from "react";
+import { useTransition } from "react";
 
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
-import { startConversationRequest } from "@/lib/messages/message-queries";
+import type { MemberConversationProps } from "@/modules/members/slots";
+import { startConversationRequest } from "@/modules/messages/queries";
 import { ROUTES } from "@/platform/http/routes";
 
 import { requestThreadFocus, THREAD_FOCUS_TARGETS } from "./thread-focus";
-
-type StartConversationButtonProps = Pick<ComponentProps<typeof Button>, "variant" | "size" | "className"> & {
-  memberId: string;
-  accessibleName: string;
-  label: string;
-  showsIcon?: boolean;
-};
 
 export function StartConversationButton({
   memberId,
@@ -25,7 +19,7 @@ export function StartConversationButton({
   label,
   showsIcon = true,
   ...buttonProps
-}: StartConversationButtonProps) {
+}: MemberConversationProps) {
   const router = useRouter();
   const [isNavigating, startNavigating] = useTransition();
   const start = useMutation({

@@ -4,8 +4,9 @@ import { eq, like } from "drizzle-orm";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { rateLimit, session, user } from "@/platform/database/auth-schema";
-import { conversation, conversationReadCursor, directMessage, memberBlock, messageReport } from "@/database/messages-schema";
-import { toConversationPair } from "@/lib/messages/conversation-pair";
+import { conversation, conversationReadCursor, directMessage, messageReport } from "@/modules/messages/schema";
+import { memberBlock } from "@/modules/members/schema";
+import { toConversationPair } from "@/modules/messages/rules-conversation-pair";
 import {
   directMessageSchema,
   inboxSchema,
@@ -16,23 +17,23 @@ import {
   threadPageSchema,
   unreadCountSchema,
   type Inbox,
-} from "@/lib/messages/message-api";
-import { MESSAGING_KINDS, MESSAGING_MAXIMUM_PER_MINUTE } from "@/lib/messages/sending-limit";
+} from "@/modules/messages/contract";
+import { MESSAGING_KINDS, MESSAGING_MAXIMUM_PER_MINUTE } from "@/modules/messages/limits";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { seedMember } from "@/test/members";
 import { seedConversation, seedMessages } from "@/test/messages";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postBlock } from "./block/route";
-import { POST as postChanges } from "./changes/route";
-import { POST as postDelete } from "./delete/route";
-import { POST as postRead } from "./read/route";
-import { POST as postReport } from "./report/route";
-import { POST as postInbox } from "./route";
-import { POST as postSend } from "./send/route";
-import { POST as postStart } from "./start/route";
-import { POST as postThread } from "./thread/route";
-import { POST as postUnreadCount } from "./unread-count/route";
+import { POST as postBlock } from "@/app/api/messages/block/route";
+import { POST as postChanges } from "@/app/api/messages/changes/route";
+import { POST as postDelete } from "@/app/api/messages/delete/route";
+import { POST as postRead } from "@/app/api/messages/read/route";
+import { POST as postReport } from "@/app/api/messages/report/route";
+import { POST as postInbox } from "@/app/api/messages/route";
+import { POST as postSend } from "@/app/api/messages/send/route";
+import { POST as postStart } from "@/app/api/messages/start/route";
+import { POST as postThread } from "@/app/api/messages/thread/route";
+import { POST as postUnreadCount } from "@/app/api/messages/unread-count/route";
 
 const APP_URL = "http://localhost:3000";
 const OK_STATUS = 200;

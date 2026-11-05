@@ -26,7 +26,7 @@ import {
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatLongDate } from "@/platform/text/format-date";
 
-import { useDebouncedValue } from "@/app/(app)/messages/use-debounced-value";
+import { useDebouncedValue } from "@/components/use-debounced-value";
 import { INVITE_QUERY_KEYS } from "@/modules/members/queries-invites";
 import { MemberActions, VILLAGE_STATUS_DETAILS } from "./member-actions";
 import { ADMIN_MEMBER_QUERY_KEYS, memberPageQuery } from "./member-queries";

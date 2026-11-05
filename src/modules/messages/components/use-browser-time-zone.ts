@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-import { SERVER_TIME_ZONE } from "@/lib/messages/message-time";
+import { SERVER_TIME_ZONE } from "@/modules/messages/rules-time";
 
 function subscribeToNothing() {
   return () => undefined;

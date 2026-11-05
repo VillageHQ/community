@@ -16,11 +16,11 @@ import { readFirstName } from "@/platform/design/avatar-identity";
 import { FEED_LIMITS, type Comment, type Post } from "@/lib/feed/feed-api";
 import { hasWholeThread } from "@/lib/feed/feed-cache";
 
-import { ConfirmAction } from "@/app/(app)/messages/confirm-action";
+import { ConfirmAction } from "@/components/confirm-action";
 import { AuthorName, readRemovedAuthorLabel } from "./author-name";
 import { LengthCounter, submitOnCommandEnter, submitWithoutReload } from "./composer";
-import { ConfirmDelete } from "./confirm-delete";
-import { ContentMenu, type ContentAction } from "./content-menu";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { ContentMenu, type ContentAction } from "@/components/content-menu";
 import { useFeedContext, type FeedViewer } from "./feed-context";
 import {
   ADMIN_DELETE_NOTE,
@@ -33,7 +33,7 @@ import {
 } from "./feed-display";
 import { commentsQuery } from "./feed-queries";
 import { RelativeTime } from "./relative-time";
-import { RichText } from "./rich-text";
+import { RichText } from "@/components/rich-text";
 import { useCreateComment, useDeleteComment, useEditComment, useReportFeedContent } from "./use-feed-mutations";
 
 const COMMENT_MODES = { reading: "reading", editing: "editing", confirmingDelete: "confirmingDelete", confirmingReport: "confirmingReport" } as const;

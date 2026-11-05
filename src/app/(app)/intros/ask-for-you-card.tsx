@@ -26,7 +26,7 @@ import {
   readIntroLinkLabel,
   type HeadingLevel,
 } from "./intro-parts";
-import { ConfirmAction } from "@/app/(app)/messages/confirm-action";
+import { ConfirmAction } from "@/components/confirm-action";
 import { useIntroTransition } from "./use-intro-actions";
 
 function TargetLink({ intro }: { intro: Intro }) {

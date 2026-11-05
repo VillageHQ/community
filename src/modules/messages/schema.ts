@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, index, integer, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
-import { MESSAGE_LIMITS } from "../lib/messages/message-api.ts";
-import { user } from "../platform/database/auth-schema.ts";
+import { MESSAGE_LIMITS } from "./contract.ts";
+import { user } from "../../platform/database/auth-schema.ts";
 
 const MILLISECOND_PRECISION = 3;
 const MAXIMUM_BODY_LENGTH = sql.raw(String(MESSAGE_LIMITS.bodyLength));
@@ -75,24 +75,6 @@ export const conversationReadCursor = pgTable(
   (table) => [
     primaryKey({ columns: [table.conversationId, table.memberId] }),
     index("conversation_read_cursor_member_id_idx").on(table.memberId),
-  ],
-);
-
-export const memberBlock = pgTable(
-  "member_block",
-  {
-    blockerId: text("blocker_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    blockedId: text("blocked_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    createdAt: messageTimestamp("created_at").notNull().defaultNow(),
-  },
-  (table) => [
-    primaryKey({ columns: [table.blockerId, table.blockedId] }),
-    index("member_block_blocked_id_idx").on(table.blockedId),
-    check("member_block_not_self", sql`${table.blockerId} <> ${table.blockedId}`),
   ],
 );
 

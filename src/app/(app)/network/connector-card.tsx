@@ -15,7 +15,7 @@ import { ROUTES } from "@/platform/http/routes";
 import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
 import type { Connector } from "@/lib/village/network-api";
 
-import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
+import { MemberConversationSlot } from "@/modules/members/slots";
 import { AskIntroDialog } from "./ask-intro-dialog";
 
 const CONNECTOR_AVATAR_SIZE_PX = 52;
@@ -123,7 +123,7 @@ function MemberActions({ connector, isTop, targetSlug, targetName, viewer }: Con
         }
       />
       <div className="grid grid-cols-2 gap-2">
-        <StartConversationButton memberId={member.id} label="Message" accessibleName={`Message ${name}`} variant="outline" size="sm" />
+        <MemberConversationSlot memberId={member.id} label="Message" accessibleName={`Message ${name}`} variant="outline" size="sm" />
         <Button asChild variant="outline" size="sm">
           <Link href={`${ROUTES.members}/${member.id}`} aria-label={`See ${name}'s profile`}>
             <UserRound aria-hidden="true" />

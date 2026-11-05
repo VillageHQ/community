@@ -1,5 +1,5 @@
-import { reportMessage } from "@/lib/messages/message-actions";
-import { messageIdBodySchema } from "@/lib/messages/message-api";
+import { reportMessage } from "@/modules/messages/service";
+import { messageIdBodySchema } from "@/modules/messages/contract";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("messages-report", messageIdBodySchema, async (context, { messageId }) => {

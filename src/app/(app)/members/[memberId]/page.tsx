@@ -13,15 +13,16 @@ import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatMonthAndYear } from "@/platform/text/format-date";
 import { readExternalHost } from "@/modules/members/rules-external-url";
-import { isBlockedBy } from "@/lib/messages/message-reads";
+import { isBlockedBy } from "@/modules/members/service-blocks";
 import { isCardFilledIn, readMemberProfile } from "@/modules/members/service-profile";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
 import { isAdminMember } from "@/platform/auth/roles";
 
-import { BlockMemberButton } from "@/app/(app)/messages/block-member-button";
-import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
+import { BlockMemberButton } from "@/modules/members/components/block-member-button";
+import { MemberConversationSlot } from "@/modules/members/slots";
+import { INBOX_QUERY_FILTER } from "@/modules/messages/queries";
 import { AdminMemberPanel } from "@/modules/members/components/admin-member-panel";
 
 export const metadata: Metadata = { title: PAGE_TITLES.profile };
@@ -93,7 +94,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
               </Link>
             </Button>
           ) : (
-            <StartConversationButton
+            <MemberConversationSlot
               memberId={profile.id}
               label="Message"
               accessibleName={`Message ${profile.name}`}
@@ -148,7 +149,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
 
       <p className="type-small px-1 text-muted-foreground">Joined {formatMonthAndYear(profile.createdAt)}.</p>
 
-      {isOwnProfile ? null : <BlockMemberButton memberId={profile.id} memberName={profile.name} isBlocked={isBlockedByViewer} />}
+      {isOwnProfile ? null : <BlockMemberButton memberId={profile.id} memberName={profile.name} isBlocked={isBlockedByViewer} refreshesAfterChange={INBOX_QUERY_FILTER} />}
 
       {isAdminMember(viewer) ? (
         <AdminMemberPanel email={profile.email} isEmailConfirmed={profile.emailVerified} isLinkedinConfirmed={profile.isLinkedinConfirmed} />

@@ -6,7 +6,7 @@ import { useState, type KeyboardEvent, type Ref } from "react";
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { readFirstName } from "@/platform/design/avatar-identity";
-import { MESSAGE_LIMITS, messageBodySchema } from "@/lib/messages/message-api";
+import { MESSAGE_LIMITS, messageBodySchema } from "@/modules/messages/contract";
 
 const COUNTER_APPEARS_WITHIN = 200;
 const COMPOSER_HINT_ID = "message-composer-hint";

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 
-import { readInboxPollMs, INBOX_POLL_MS } from "../messages/message-polling.ts";
+import { readInboxPollMs, INBOX_POLL_MS } from "../../platform/http/polling.ts";
 import { API_ROUTES } from "../../platform/http/routes.ts";
 import { acknowledgedResponseSchema } from "../../platform/http/contract.ts";
 import { postNetworkRequest } from "../../platform/http/post-request.ts";

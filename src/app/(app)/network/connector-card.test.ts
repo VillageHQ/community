@@ -8,6 +8,8 @@ import { INTRO_STATES } from "@/lib/intros/intro-api";
 import { API_ROUTES } from "@/platform/http/routes";
 import type { Connector } from "@/lib/village/network-api";
 
+import { MessagesSlotProvider } from "@/modules/messages/components/messages-slot-provider";
+
 import { ConnectorCard, OUTSIDE_COMMUNITY_LABEL } from "./connector-card";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -37,7 +39,7 @@ function renderCard(connector: Connector, isTop = true) {
     targetName: "Clara Bergström",
     viewer: VIEWER,
   });
-  return render(createElement(QueryClientProvider, { client: queryClient }, element));
+  return render(createElement(QueryClientProvider, { client: queryClient }, createElement(MessagesSlotProvider, null, element)));
 }
 
 describe("a connector", () => {

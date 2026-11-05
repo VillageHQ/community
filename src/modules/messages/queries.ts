@@ -4,7 +4,6 @@ import { API_ROUTES } from "../../platform/http/routes.ts";
 import { acknowledgedResponseSchema } from "../../platform/http/contract.ts";
 import { postNetworkRequest } from "../../platform/http/post-request.ts";
 import {
-  blockStateSchema,
   directMessageSchema,
   inboxSchema,
   markedReadSchema,
@@ -15,10 +14,10 @@ import {
   type InboxCursor,
   type MarkReadBody,
   type SendMessageBody,
-  type SetBlockBody,
-} from "./message-api.ts";
-import { INBOX_POLL_MS, readInboxPollMs, readThreadPollMs } from "./message-polling.ts";
-import { applyThreadChanges, type PendingMessage } from "./thread-cache.ts";
+} from "./contract.ts";
+import { INBOX_POLL_MS, readInboxPollMs } from "../../platform/http/polling.ts";
+import { readThreadPollMs } from "./rules-polling.ts";
+import { applyThreadChanges, type PendingMessage } from "./rules-thread-cache.ts";
 
 export const MESSAGE_QUERY_KEYS = {
   inbox: "messages-inbox",
@@ -123,8 +122,4 @@ export function reportMessageRequest(messageId: string) {
 
 export function markReadRequest(body: MarkReadBody) {
   return postNetworkRequest(API_ROUTES.messageRead, body, markedReadSchema);
-}
-
-export function setBlockRequest(body: SetBlockBody) {
-  return postNetworkRequest(API_ROUTES.messageBlock, body, blockStateSchema);
 }

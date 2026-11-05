@@ -1,7 +1,7 @@
-import { conversationGoneError } from "@/lib/messages/message-actions";
-import { threadPageBodySchema } from "@/lib/messages/message-api";
-import { readThreadPage } from "@/lib/messages/message-reads";
-import { enforceMessagingLimit, MESSAGING_KINDS } from "@/lib/messages/sending-limit";
+import { conversationGoneError } from "@/modules/messages/service";
+import { threadPageBodySchema } from "@/modules/messages/contract";
+import { readThreadPage } from "@/modules/messages/reads";
+import { enforceMessagingLimit, MESSAGING_KINDS } from "@/modules/messages/limits";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("messages-thread", threadPageBodySchema, async ({ database, member }, body) => {

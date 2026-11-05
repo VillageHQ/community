@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { feedTextSchema } from "../feed/feed-api.ts";
+import { feedTextSchema } from "../../platform/text/text-schema.ts";
 import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
 
 export const INTRO_LIFETIME_DAYS = 14;

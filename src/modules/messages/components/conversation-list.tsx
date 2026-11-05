@@ -12,17 +12,17 @@ import { QueryBoundary } from "@/components/query-boundary";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MESSAGE_LIMITS, type ConversationSummary } from "@/lib/messages/message-api";
-import { inboxQuery } from "@/lib/messages/message-queries";
-import { formatConversationTime } from "@/lib/messages/message-time";
-import { readInboxConversations } from "@/lib/messages/thread-cache";
+import { MESSAGE_LIMITS, type ConversationSummary } from "@/modules/messages/contract";
+import { inboxQuery } from "@/modules/messages/queries";
+import { formatConversationTime } from "@/modules/messages/rules-time";
+import { readInboxConversations } from "@/modules/messages/rules-thread-cache";
 import { describeUnreadMessages } from "@/lib/navigation";
 import { ROUTES } from "@/platform/http/routes";
 
-import { ADMIN_PRIVACY_NOTE } from "./message-copy";
+import { ADMIN_PRIVACY_NOTE } from "@/modules/messages/copy";
 import { requestThreadFocus, takeInboxFocusRequest, THREAD_FOCUS_TARGETS, toConversationLinkId } from "./thread-focus";
 import { useBrowserTimeZone } from "./use-browser-time-zone";
-import { useDebouncedValue } from "./use-debounced-value";
+import { useDebouncedValue } from "@/components/use-debounced-value";
 
 const CONVERSATION_AVATAR_SIZE_PX = 52;
 const SEARCH_INPUT_ID = "conversation-search";

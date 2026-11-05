@@ -4,19 +4,13 @@ import { and, asc, count, desc, eq, gt, ilike, inArray, isNull, lt, ne, or, sql 
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { memberAvatar, memberProfile } from "../../modules/members/schema.ts";
-import {
-  conversation,
-  conversationReadCursor,
-  directMessage,
-  memberBlock,
-  messageReport,
-} from "../../database/messages-schema.ts";
+import { memberAvatar, memberProfile, memberBlock } from "../members/schema.ts";
+import { conversation, conversationReadCursor, directMessage, messageReport } from "./schema.ts";
 import { isBanActive } from "../../platform/auth/member-status.ts";
-import { toContainsPattern } from "../../modules/members/reads-directory.ts";
-import { toAvatarUrl } from "../../modules/members/service-profile.ts";
+import { toContainsPattern } from "../members/reads-directory.ts";
+import { toAvatarUrl } from "../members/service-profile.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
-import { readPeerId } from "./conversation-pair.ts";
+import { readPeerId } from "./rules-conversation-pair.ts";
 import {
   conversationSummarySchema,
   directMessageSchema,
@@ -28,7 +22,8 @@ import {
   type InboxRequest,
   type ThreadChanges,
   type ThreadPage,
-} from "./message-api.ts";
+} from "./contract.ts";
+import { isBlockedBy } from "../members/service-blocks.ts";
 
 const NOTHING_READ = 0;
 
@@ -133,14 +128,6 @@ async function readOwnReadSequence(database: Database, conversationId: string, v
     .from(conversationReadCursor)
     .where(and(eq(conversationReadCursor.conversationId, conversationId), eq(conversationReadCursor.memberId, viewerId)));
   return cursor?.sequence ?? NOTHING_READ;
-}
-
-export async function isBlockedBy(database: Database, blockerId: string, blockedId: string) {
-  const [block] = await database
-    .select({ blockerId: memberBlock.blockerId })
-    .from(memberBlock)
-    .where(and(eq(memberBlock.blockerId, blockerId), eq(memberBlock.blockedId, blockedId)));
-  return block !== undefined;
 }
 
 type ThreadPageRequest = { viewerId: string; conversationId: string; beforeSequence: number | null };

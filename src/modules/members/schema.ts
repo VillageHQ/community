@@ -6,6 +6,8 @@ import { MAXIMUM_AVATAR_BYTES } from "./contract-avatar.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import { bytea } from "../../platform/database/bytea.ts";
 
+const MILLISECOND_PRECISION = 3;
+
 export const invite = pgTable(
   "invite",
   {
@@ -92,3 +94,21 @@ export const memberNetwork = pgTable("member_network", {
   approvedMemberEmail: text("approved_member_email"),
   approvedVillageEmail: text("approved_village_email"),
 });
+
+export const memberBlock = pgTable(
+  "member_block",
+  {
+    blockerId: text("blocker_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    blockedId: text("blocked_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true, precision: MILLISECOND_PRECISION }).notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.blockerId, table.blockedId] }),
+    index("member_block_blocked_id_idx").on(table.blockedId),
+    check("member_block_not_self", sql`${table.blockerId} <> ${table.blockedId}`),
+  ],
+);

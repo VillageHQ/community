@@ -14,7 +14,7 @@ import { ROUTES } from "@/platform/http/routes";
 import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
 import { LOW_LOOKUPS_LEFT, type Connector } from "@/lib/village/network-api";
 
-import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
+import { MemberConversationSlot } from "@/modules/members/slots";
 import { ConnectorCard } from "./connector-card";
 import { networkPathsQuery } from "./network-queries";
 
@@ -70,7 +70,7 @@ function FellowMemberNote({ memberId, targetName }: { memberId: string; targetNa
         <span>{firstName} is in this community, so you can just say hello.</span>
       </p>
       <div className="grid grid-cols-2 gap-2">
-        <StartConversationButton memberId={memberId} label="Message" accessibleName={`Message ${targetName}`} size="sm" />
+        <MemberConversationSlot memberId={memberId} label="Message" accessibleName={`Message ${targetName}`} size="sm" />
         <Button asChild variant="outline" size="sm">
           <Link href={`${ROUTES.members}/${memberId}`} aria-label={`See ${targetName}'s profile`}>
             Profile

@@ -10,8 +10,8 @@ import { formatShortDate } from "@/platform/text/format-date";
 import { INTRO_ROLES, INTRO_STATES, type Intro, type IntroPerson, type IntroState } from "@/lib/intros/intro-api";
 import { ROUTES } from "@/platform/http/routes";
 
-import { RichText } from "@/app/(app)/feed/rich-text";
-import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
+import { RichText } from "@/components/rich-text";
+import { MemberConversationSlot } from "@/modules/members/slots";
 
 export type HeadingLevel = "h1" | "h2" | "h3";
 
@@ -74,7 +74,7 @@ export function IntroReason({ reason }: { reason: string }) {
 export function IntroMessageButton({ person, isPrimary }: { person: IntroPerson; isPrimary: boolean }) {
   if (!person.isAvailable) return null;
   return (
-    <StartConversationButton
+    <MemberConversationSlot
       memberId={person.id}
       label={`Message ${readFirstName(person.name)}`}
       accessibleName={`Message ${person.name}`}

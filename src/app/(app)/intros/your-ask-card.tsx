@@ -11,7 +11,7 @@ import { formatShortDate } from "@/platform/text/format-date";
 import { INTRO_ACTIONS, INTRO_STATES, type Intro } from "@/lib/intros/intro-api";
 import { readIntroPromise } from "@/lib/intros/intro-copy";
 
-import { ConfirmAction } from "@/app/(app)/messages/confirm-action";
+import { ConfirmAction } from "@/components/confirm-action";
 import {
   IntroCardFrame,
   IntroMessageButton,

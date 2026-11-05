@@ -8,7 +8,7 @@ import { session, user } from "@/platform/database/auth-schema";
 import { comment, moderationRecord, post, reaction } from "@/database/feed-schema";
 import { introRequest } from "@/database/intro-schema";
 import { invite, memberNetwork } from "@/modules/members/schema";
-import { directMessage, messageReport } from "@/database/messages-schema";
+import { directMessage, messageReport } from "@/modules/messages/schema";
 import { memberDailyUsage } from "@/platform/village/schema";
 import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import {

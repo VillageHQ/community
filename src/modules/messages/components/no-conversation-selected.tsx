@@ -7,11 +7,11 @@ import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { QueryBoundary } from "@/components/query-boundary";
 import { Button } from "@/components/ui/button";
-import { inboxQuery } from "@/lib/messages/message-queries";
-import { readInboxConversations } from "@/lib/messages/thread-cache";
+import { inboxQuery } from "@/modules/messages/queries";
+import { readInboxConversations } from "@/modules/messages/rules-thread-cache";
 import { ROUTES } from "@/platform/http/routes";
 
-import { ADMIN_PRIVACY_NOTE } from "./message-copy";
+import { ADMIN_PRIVACY_NOTE } from "@/modules/messages/copy";
 
 function SelectionPrompt() {
   const { data: inbox } = useSuspenseInfiniteQuery(inboxQuery());

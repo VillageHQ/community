@@ -1,4 +1,4 @@
-import type { DirectMessage, Inbox, ThreadChanges, ThreadPage } from "./message-api.ts";
+import type { DirectMessage, Inbox, ThreadChanges, ThreadPage } from "./contract.ts";
 
 export type ThreadPages = { pages: ThreadPage[]; pageParams: unknown[] };
 export type InboxPages = { pages: Inbox[]; pageParams: unknown[] };

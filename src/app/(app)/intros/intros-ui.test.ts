@@ -8,6 +8,8 @@ import { INTRO_ACTIONS, INTRO_ROLES, INTRO_STATES, type Intro, type IntroBoard }
 import { introBoardQuery } from "@/lib/intros/intro-queries";
 import { API_ROUTES } from "@/platform/http/routes";
 
+import { MessagesSlotProvider } from "@/modules/messages/components/messages-slot-provider";
+
 import { AskForYouCard } from "./ask-for-you-card";
 import { IntroBoardView } from "./intro-board";
 import { YourAskCard } from "./your-ask-card";
@@ -44,7 +46,7 @@ function makeIntro(overrides: Partial<Intro> = {}): Intro {
 function renderWithClient(element: ReactElement, board?: IntroBoard) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } } });
   if (board) queryClient.setQueryData(introBoardQuery().queryKey, board);
-  return render(createElement(QueryClientProvider, { client: queryClient }, element));
+  return render(createElement(QueryClientProvider, { client: queryClient }, createElement(MessagesSlotProvider, null, element)));
 }
 
 function makeBoard(overrides: Partial<IntroBoard> = {}): IntroBoard {

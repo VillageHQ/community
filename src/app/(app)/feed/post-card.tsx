@@ -13,13 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
 import { Textarea } from "@/components/ui/textarea";
 import { FEED_LIMITS, POST_TYPES, type Post, type PostType } from "@/lib/feed/feed-api";
-import { splitAnnouncement } from "@/lib/feed/post-text";
+import { splitAnnouncement } from "@/platform/text/post-text";
 
 import { AuthorName, BannedTag } from "./author-name";
 import { CommentThread } from "./comment-thread";
 import { LengthCounter, PostTypeChips, submitOnCommandEnter, submitWithoutReload } from "./composer";
-import { ConfirmDelete } from "./confirm-delete";
-import { ContentMenu, type ContentAction } from "./content-menu";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { ContentMenu, type ContentAction } from "@/components/content-menu";
 import { useFeedContext, type FeedViewer } from "./feed-context";
 import {
   ADMIN_DELETE_NOTE,
@@ -34,9 +34,9 @@ import {
 } from "./feed-display";
 import { ReactionBar } from "./reaction-bar";
 import { RelativeTime } from "./relative-time";
-import { RichText } from "./rich-text";
+import { RichText } from "@/components/rich-text";
 import { useDeletePost, useEditPost, usePinPost, useReportFeedContent } from "./use-feed-mutations";
-import { ConfirmAction } from "@/app/(app)/messages/confirm-action";
+import { ConfirmAction } from "@/components/confirm-action";
 
 const POST_MODES = { reading: "reading", editing: "editing", confirmingDelete: "confirmingDelete", confirmingReport: "confirmingReport" } as const;
 
