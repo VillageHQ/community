@@ -1,0 +1,32 @@
+.tour [hidden] {
+  display: block !important;
+}
+
+.tour-tabs,
+.tour-controls,
+.swatches,
+.frame-tabbar {
+  display: none !important;
+}
+
+.frame {
+  display: block !important;
+}
+
+.frame-sidebar {
+  display: none !important;
+}
+
+.tour-panel + .tour-panel {
+  border-top: 1.5px solid var(--line);
+}
+
+@media (max-width: 1180px) {
+  .site-header .mobile-nav {
+    display: grid !important;
+  }
+}
+
+.site-header {
+  position: static;
+}
