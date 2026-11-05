@@ -4,6 +4,8 @@
 
 FROM node:24-alpine AS builder
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 NEXT_TELEMETRY_DISABLED=1 COMMUNITY_STANDALONE_BUILD=true
+# Node sizes its heap from physical memory. On a 1 GB server the type check runs out unless it can use swap.
+ENV NODE_OPTIONS=--max-old-space-size=2048
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile

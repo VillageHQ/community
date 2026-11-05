@@ -82,6 +82,7 @@ install_stubs() {
   mkdir -p "$STUBS"
   write_stub docker '
 args="$*"
+case "$args" in *" up -d"*) printf "compose saw domain: %s\n" "${COMMUNITY_DOMAIN-only .env}" >>'"$CALLS"' ;; *) ;; esac
 [ -z "${STUB_DOCKER_DOWN:-}" ] || [ "$1" != "info" ] || exit 1
 case "$args" in
   "volume inspect "*) [ -n "${STUB_VOLUME_EXISTS:-}" ] ;;
@@ -309,6 +310,7 @@ test_fresh_install() {
   run_installer COMMUNITY_DOMAIN="https://Community.Example.Test/"
   assert_exit 0
   assert_true "stores the clean domain" has_setting "COMMUNITY_DOMAIN=$DOMAIN"
+  assert_called "compose saw domain: only .env"
 
   it "leaves a running service and prints what to do next"
   point_domain_at "$SERVER_IP"
@@ -381,7 +383,7 @@ test_image_fallback() {
   run_installer COMMUNITY_DOMAIN="$DOMAIN" STUB_PULL_FAILS=1
   assert_exit 0
   assert_says "building it on this server"
-  assert_says "2 GB"
+  assert_says "2.5 GB"
   assert_called "docker build -f /source/deploy/vps/Dockerfile -t ghcr.io/villagehq/community:latest /source"
 
   it "doesn't build when the download works"
@@ -418,6 +420,8 @@ test_rerun() {
   assert_true "keeps .env private" is_mode 600 "$ENV_FILE"
   assert_called "exec -T postgres pg_dump"
   assert_called "up -d --remove-orphans"
+  assert_called "compose saw domain: only .env"
+  assert_not_called "compose saw domain: different"
   assert_not_called "volume rm"
   assert_not_called "down"
 

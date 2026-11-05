@@ -489,11 +489,16 @@ schedule_backups() {
   warn "We couldn't schedule daily backups. Make them by hand with: sudo community backup"
 }
 
+use_only_saved_settings() {
+  unset COMMUNITY_DOMAIN COMMUNITY_IMAGE COMMUNITY_HTTP_PORT COMMUNITY_HTTPS_PORT
+}
+
 write_configuration() {
   step "Writing your settings"
   locate_source
   install -d -m 700 "$INSTALL_DIRECTORY" "$INSTALL_DIRECTORY/backups"
   write_settings
+  use_only_saved_settings
   install_files
   schedule_backups
 }
@@ -513,7 +518,8 @@ backup_before_upgrade() {
 }
 
 app_image() {
-  local image="${COMMUNITY_IMAGE:-$(read_setting COMMUNITY_IMAGE)}"
+  local image
+  image="$(read_setting COMMUNITY_IMAGE)"
   printf '%s' "${image:-$DEFAULT_IMAGE}"
 }
 
@@ -524,7 +530,7 @@ image_id() {
 build_from_source() {
   local image="$1" previous_image_id="$2"
   warn "We couldn't download the ready-made app, so we're building it on this server instead."
-  say "This needs about 2 GB of free memory and can take 10 minutes or more. On a small server it may fail."
+  say "This needs about 2.5 GB of memory and swap together. On a small server it can take 10 minutes or more."
   docker build -f "$source_directory/deploy/vps/Dockerfile" -t "$image" "$source_directory" && return 0
 
   [ -n "$previous_image_id" ] || die "The build failed. This usually means the server ran out of memory.

@@ -168,13 +168,15 @@ Keep a copy of this file in your password manager. It holds your secrets.
 
 ## Troubleshooting
 
+**"sudo: command not found":** You're already the administrator. Run the same command without the word `sudo`.
+
 **"doesn't point at this server yet":** Your DNS record is missing or wrong. The message shows the exact record to create. Wait a few minutes after you create it, because changes take time to spread. On Cloudflare, use **DNS only**.
 
 **"couldn't get a security certificate":** The app is fine, but it can't get the certificate that makes `https://` work. Check three things: your domain points at this server, your hosting company's firewall allows ports 80 and 443, and Cloudflare is on **DNS only**. It keeps trying by itself. Run `sudo community logs caddy` to see what's happening. Caddy is the program that handles certificates.
 
 **"already using the web ports":** Another program, often `nginx` or `apache2`, holds port 80 or 443. Remove it, or start with a fresh server.
 
-**"We couldn't download the ready-made app":** Your server builds the app itself instead. That needs about 2 GB of memory and can take 10 minutes or more. If it fails, try again later, or use a server with more memory.
+**"We couldn't download the ready-made app":** Your server builds the app itself instead. That needs about 2.5 GB of memory and swap together, and the installer adds swap on small servers. It can take 10 minutes or more. If it fails, try again later, or use a server with more memory.
 
 **"The build failed":** Your server probably ran out of memory. Use a server with at least 2 GB of memory, then run the same command again.
 
