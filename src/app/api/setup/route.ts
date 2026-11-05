@@ -5,12 +5,12 @@ import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/platform/http/body-lim
 import { readRateLimitClientKey } from "@/platform/http/client-ip";
 import { claimFirstAdmin } from "@/platform/auth/first-admin";
 import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/platform/auth/password-policy";
-import { withRouteLogging } from "@/platform/observability/route-logging";
 import { pruneExpiredRateLimits } from "@/platform/rate-limit/rate-limit-pruning";
 import { readJsonBody } from "@/platform/http/read-json-body";
 import { secretsMatch } from "@/platform/secrets/secrets-match";
 import { recordFailedSetupAttempt } from "@/platform/rate-limit/setup-rate-limit";
 import { readSetupToken } from "@/platform/secrets/setup-token";
+import { platformRoutes } from "@/platform/modules/platform-routes";
 
 const CREATED_STATUS = 201;
 const UNAUTHORIZED_STATUS = 401;
@@ -30,7 +30,7 @@ const firstAdminSchema = z.object({
     .max(MAXIMUM_PASSWORD_LENGTH, `Use at most ${MAXIMUM_PASSWORD_LENGTH} characters.`),
 });
 
-export const POST = withRouteLogging(
+export const POST = platformRoutes.open(
   "setup",
   withBodyLimit(MAXIMUM_JSON_BODY_BYTES, async (request) => {
     const setupToken = readSetupToken(process.env);

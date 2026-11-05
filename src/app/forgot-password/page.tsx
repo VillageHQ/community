@@ -10,6 +10,8 @@ import { readResendConfig } from "@/platform/email/resend";
 import { ROUTES } from "@/platform/http/routes";
 
 import { ForgotPasswordForm } from "./forgot-password-form";
+import { PLATFORM_MANIFEST } from "@/platform/modules/platform-manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +56,7 @@ function WithEmail() {
   );
 }
 
-export default async function ForgotPasswordPage() {
+export default modulePage(PLATFORM_MANIFEST, async function ForgotPasswordPage() {
   const community = await readBrandingForPage();
   const isEmailConfigured = readResendConfig(process.env) !== null;
 
@@ -71,4 +73,4 @@ export default async function ForgotPasswordPage() {
       </div>
     </SplitLayout>
   );
-}
+});

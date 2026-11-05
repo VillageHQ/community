@@ -1,7 +1,7 @@
 import { getDatabase } from "@/platform/database/client";
 import { readAvatar } from "@/modules/members/service-profile";
-import { withRouteLogging } from "@/platform/observability/route-logging";
 import { readSessionMember } from "@/platform/http/member-route";
+import { membersRoutes } from "@/modules/members/routes";
 
 const NOT_MODIFIED_STATUS = 304;
 const UNAUTHORIZED_STATUS = 401;
@@ -14,7 +14,7 @@ const AVATAR_RESPONSE_HEADERS = {
   "X-Content-Type-Options": "nosniff",
 };
 
-export const GET = withRouteLogging(
+export const GET = membersRoutes.open(
   "member-avatar-read",
   async (request: Request, { params }: { params: Promise<{ memberId: string }> }) => {
     if (!(await readSessionMember(request))) {

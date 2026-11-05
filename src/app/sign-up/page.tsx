@@ -10,6 +10,8 @@ import { readBrandingForPage } from "@/platform/branding/branding";
 import { isFirstAdminClaimed } from "@/platform/auth/first-admin";
 import { ROUTES } from "@/platform/http/routes";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { PLATFORM_MANIFEST } from "@/platform/modules/platform-manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +30,7 @@ const CLOSED_NOTICES = {
 
 export const metadata: Metadata = { title: PAGE_TITLES.signUp };
 
-export default async function SignUpPage() {
+export default modulePage(PLATFORM_MANIFEST, async function SignUpPage() {
   const isClaimed = await isFirstAdminClaimed(getDatabase());
   const notice = isClaimed ? CLOSED_NOTICES.inviteOnly : CLOSED_NOTICES.awaitingFirstAdmin;
   const community = await readBrandingForPage();
@@ -47,4 +49,4 @@ export default async function SignUpPage() {
       </div>
     </SplitLayout>
   );
-}
+});

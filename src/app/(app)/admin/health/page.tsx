@@ -9,6 +9,8 @@ import { requireAdmin } from "@/platform/auth/session";
 import { AdminSection } from "@/shell/admin-section";
 import { IntroCountsCard } from "@/modules/admin/components/intro-counts-card";
 import { StatRows } from "@/modules/admin/components/stat-rows";
+import { adminManifest } from "@/modules/admin/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 const ACTIVE_MEMBER_MEANING = "An active member posted, replied, reacted, sent a message or asked for an intro. Reading doesn't count, because this site doesn't track it.";
 
@@ -21,7 +23,7 @@ function readInviteHeadline({ accepted, sent, acceptedPercent }: CommunityHealth
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminHealth };
 
-export default async function AdminHealthPage() {
+export default modulePage(adminManifest, async function AdminHealthPage() {
   await requireAdmin();
   const health = await readCommunityHealth(getDatabase());
   const { members, sharing, synced, windows, intros, invites } = health;
@@ -74,4 +76,4 @@ export default async function AdminHealthPage() {
       </div>
     </AdminSection>
   );
-}
+});

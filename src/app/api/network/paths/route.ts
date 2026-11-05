@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { readOpenAsks } from "@/modules/intros/reads-open-asks";
 import { readMemberPaths } from "@/modules/network/service";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { networkRoutes } from "@/modules/network/routes";
 
 const MAXIMUM_SLUG_LENGTH = 200;
 
@@ -14,7 +14,7 @@ const pathsBodySchema = z.object({
   linkedinSlug: z.string().trim().toLowerCase().min(1).max(MAXIMUM_SLUG_LENGTH),
 });
 
-export const POST = createMemberRoute(
+export const POST = networkRoutes.member(
   "network-paths",
   pathsBodySchema,
   async (context, body) => Response.json(await readMemberPaths(context, body.linkedinSlug, readOpenAsks)),

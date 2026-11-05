@@ -1,7 +1,7 @@
 import { feedReportBodySchema } from "@/modules/feed/contract";
 import { reportFeedContent } from "@/modules/admin/service-reports";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { feedRoutes } from "@/modules/feed/routes";
 
-export const POST = createMemberRoute("feed-report", feedReportBodySchema, async (context, body) => {
+export const POST = feedRoutes.member("feed-report", feedReportBodySchema, async (context, body) => {
   return Response.json({ message: await reportFeedContent(context, body) });
 });

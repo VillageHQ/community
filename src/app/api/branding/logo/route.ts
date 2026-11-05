@@ -11,8 +11,7 @@ import {
   MAXIMUM_LOGO_BYTES,
   parseLogoBackdrop,
 } from "@/platform/branding/logo-rules";
-import { withRouteLogging } from "@/platform/observability/route-logging";
-import { createAdminBinaryRoute, createMemberRoute } from "@/platform/village/member-routes";
+import { platformRoutes } from "@/platform/modules/platform-routes";
 
 const NOT_MODIFIED_STATUS = 304;
 const NOT_FOUND_STATUS = 404;
@@ -25,7 +24,7 @@ const LOGO_RESPONSE_HEADERS = {
   "X-Content-Type-Options": "nosniff",
 };
 
-export const GET = withRouteLogging("branding-logo-read", async (request: Request) => {
+export const GET = platformRoutes.open("branding-logo-read", async (request: Request) => {
   const logo = await readLogo(getDatabase());
   if (!logo) return Response.json({ message: "No logo." }, { status: NOT_FOUND_STATUS });
 
@@ -40,7 +39,7 @@ export const GET = withRouteLogging("branding-logo-read", async (request: Reques
   });
 });
 
-export const POST = createAdminBinaryRoute(
+export const POST = platformRoutes.adminBinary(
   "branding-logo-save",
   { maximumBytes: MAXIMUM_LOGO_BYTES, tooLargeMessage: LOGO_TOO_LARGE_MESSAGE },
   async (context, bytes, request) => {
@@ -55,7 +54,7 @@ export const POST = createAdminBinaryRoute(
   },
 );
 
-export const DELETE = createMemberRoute(
+export const DELETE = platformRoutes.member(
   "branding-logo-delete",
   z.unknown(),
   async (context) => {

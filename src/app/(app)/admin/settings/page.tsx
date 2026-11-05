@@ -18,6 +18,8 @@ import { requireAdmin } from "@/platform/auth/session";
 
 import { AdminSection } from "@/shell/admin-section";
 import { AdminBrandCard, SetupChecklist } from "@/shell/setup-checklist";
+import { adminManifest } from "@/modules/admin/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 const EMAIL_ON_EFFECTS = [
   "Invites go out by email, and you can still copy the link.",
@@ -143,7 +145,7 @@ function VersionCard() {
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminSettings };
 
-export default async function AdminSettingsPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
+export default modulePage(adminManifest, async function AdminSettingsPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
   const admin = await requireAdmin();
   const { step } = await searchParams;
   const database = getDatabase();
@@ -161,4 +163,4 @@ export default async function AdminSettingsPage({ searchParams }: { searchParams
       </div>
     </AdminSection>
   );
-}
+});

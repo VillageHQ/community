@@ -3,11 +3,11 @@ import { z } from "zod";
 import { detectImageContentType } from "@/platform/image-rules";
 import { AVATAR_TOO_LARGE_MESSAGE, AVATAR_WRONG_TYPE_MESSAGE, MAXIMUM_AVATAR_BYTES } from "@/modules/members/contract-avatar";
 import { deleteAvatar, saveAvatar } from "@/modules/members/service-profile";
-import { createMemberBinaryRoute, createMemberRoute } from "@/platform/village/member-routes";
+import { membersRoutes } from "@/modules/members/routes";
 
 const UNPROCESSABLE_STATUS = 422;
 
-export const POST = createMemberBinaryRoute(
+export const POST = membersRoutes.memberBinary(
   "profile-avatar-save",
   { maximumBytes: MAXIMUM_AVATAR_BYTES, tooLargeMessage: AVATAR_TOO_LARGE_MESSAGE },
   async ({ database, member }, bytes) => {
@@ -21,7 +21,7 @@ export const POST = createMemberBinaryRoute(
   },
 );
 
-export const DELETE = createMemberRoute("profile-avatar-delete", z.unknown(), async ({ database, member }) => {
+export const DELETE = membersRoutes.member("profile-avatar-delete", z.unknown(), async ({ database, member }) => {
   await deleteAvatar(database, member.id);
   return Response.json({ message: "Photo removed." });
 });

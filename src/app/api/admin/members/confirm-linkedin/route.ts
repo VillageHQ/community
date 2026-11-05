@@ -1,9 +1,9 @@
 import { memberIdBodySchema } from "@/modules/members/contract-invites";
 import { confirmLinkedinClaim } from "@/modules/members/service-admin";
 import { logAdminAction } from "@/platform/observability/route-logging";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { adminRoutes } from "@/modules/admin/routes";
 
-export const POST = createMemberRoute(
+export const POST = adminRoutes.member(
   "member-confirm-linkedin",
   memberIdBodySchema,
   async (context, { memberId }) => {

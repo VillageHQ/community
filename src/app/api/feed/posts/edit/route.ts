@@ -1,7 +1,7 @@
 import { editPost } from "@/modules/feed/service";
 import { editPostBodySchema } from "@/modules/feed/contract";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { feedRoutes } from "@/modules/feed/routes";
 
-export const POST = createMemberRoute("feed-post-edit", editPostBodySchema, async (context, body) =>
+export const POST = feedRoutes.member("feed-post-edit", editPostBodySchema, async (context, body) =>
   Response.json(await editPost(context, body)),
 );

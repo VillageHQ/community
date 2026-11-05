@@ -17,10 +17,12 @@ import { LinkedinWelcome } from "@/modules/network/components/linkedin-step";
 import { loadWelcomeContext } from "@/shell/load-welcome-context";
 import { CardStep } from "@/modules/members/components/card-step";
 import { ConfirmationStep } from "@/modules/members/components/confirmation-step";
+import { membersManifest } from "@/modules/members/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const metadata: Metadata = { title: PAGE_TITLES.welcome };
 
-export default async function WelcomePage() {
+export default modulePage(membersManifest, async function WelcomePage() {
   const member = await requireMember();
   const database = getDatabase();
   const step = await resolveOnboardingStep(database, member);
@@ -42,4 +44,4 @@ export default async function WelcomePage() {
   if (progress === NETWORK_PROGRESS.needsEmailConfirmation) return <ConfirmationStep welcome={welcome} />;
   if (progress === NETWORK_PROGRESS.needsLinkedin) return <LinkedinWelcome welcome={welcome} />;
   return <ConsentStep welcome={welcome} />;
-}
+});

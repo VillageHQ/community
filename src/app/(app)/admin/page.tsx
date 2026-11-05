@@ -11,6 +11,8 @@ import { requireAdmin } from "@/platform/auth/session";
 
 import { AdminSection } from "@/shell/admin-section";
 import { AdminBrandCard, SetupChecklist } from "@/shell/setup-checklist";
+import { adminManifest } from "@/modules/admin/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 const NEXT_STEP_AFTER_SETUP = "invite more members whenever you like";
 
@@ -25,7 +27,7 @@ function readNextStepName({ currentStepId }: SetupProgress) {
 
 export const metadata: Metadata = { title: PAGE_TITLES.admin };
 
-export default async function AdminPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
+export default modulePage(adminManifest, async function AdminPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
   const admin = await requireAdmin();
   const { step } = await searchParams;
 
@@ -63,4 +65,4 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       </div>
     </AdminSection>
   );
-}
+});

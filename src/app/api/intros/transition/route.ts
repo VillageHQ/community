@@ -1,7 +1,7 @@
 import { transitionIntro } from "@/modules/intros/service";
 import { introTransitionBodySchema } from "@/modules/intros/contract";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { introsRoutes } from "@/modules/intros/routes";
 
-export const POST = createMemberRoute("intros-transition", introTransitionBodySchema, async (context, body) =>
+export const POST = introsRoutes.member("intros-transition", introTransitionBodySchema, async (context, body) =>
   Response.json(await transitionIntro(context, body)),
 );

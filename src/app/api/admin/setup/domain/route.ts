@@ -2,13 +2,13 @@ import { z } from "zod";
 
 import { confirmVillageDomain } from "@/modules/network/service-settings";
 import { resolveAppUrl } from "@/platform/http/app-url";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { networkRoutes } from "@/modules/network/routes";
 
 const domainBodySchema = z.object({
   confirmed: z.literal(true, "Confirm that you added the domain."),
 });
 
-export const POST = createMemberRoute(
+export const POST = networkRoutes.member(
   "setup-domain",
   domainBodySchema,
   async (context) => {

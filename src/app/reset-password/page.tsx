@@ -8,12 +8,14 @@ import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { ROUTES } from "@/platform/http/routes";
 
 import { ResetPasswordForm } from "./reset-password-form";
+import { PLATFORM_MANIFEST } from "@/platform/modules/platform-manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: PAGE_TITLES.resetPassword };
 
-export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
+export default modulePage(PLATFORM_MANIFEST, async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const community = await readBrandingForPage();
   const { token } = await searchParams;
 
@@ -36,4 +38,4 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
       </div>
     </SplitLayout>
   );
-}
+});

@@ -46,7 +46,7 @@ export function hasTrustedOrigin(request: Request) {
   return origin !== null && resolveTrustedOrigins(process.env).includes(origin);
 }
 
-type MemberRouteOptions = { adminOnly?: boolean; deadlineMs?: number };
+export type MemberRouteOptions = { adminOnly?: boolean; deadlineMs?: number };
 
 async function readAuthorizedMember(request: Request, adminOnly: boolean) {
   if (!hasTrustedOrigin(request)) {
@@ -75,8 +75,8 @@ async function readAuthorizedMember(request: Request, adminOnly: boolean) {
   return member;
 }
 
-type BinaryRouteOptions = { maximumBytes: number; tooLargeMessage: string };
-type BinaryResponder = (context: RequestContext, bytes: Buffer, request: Request) => Promise<Response>;
+export type BinaryRouteOptions = { maximumBytes: number; tooLargeMessage: string };
+export type BinaryResponder = (context: RequestContext, bytes: Buffer, request: Request) => Promise<Response>;
 
 function createBinaryRoute(scope: string, adminOnly: boolean, options: BinaryRouteOptions, respond: BinaryResponder) {
   const { maximumBytes, tooLargeMessage } = options;

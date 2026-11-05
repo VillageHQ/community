@@ -27,6 +27,8 @@ import { feedQuery } from "@/modules/feed/queries";
 import { NewThisWeekCard } from "@/modules/members/components/new-this-week-card";
 import { NextStepCard } from "@/shell/next-step-card";
 import { WaitingOnYouCard } from "@/modules/intros/components/waiting-on-you-card";
+import { membersManifest } from "@/modules/members/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const metadata: Metadata = { title: PAGE_TITLES.feed };
 
@@ -35,7 +37,7 @@ function readWeekSentence(newCount: number) {
   return newCount === 1 ? "1 new member joined this week." : `${newCount} new members joined this week.`;
 }
 
-export default async function FeedPage() {
+export default modulePage(membersManifest, async function FeedPage() {
   const member = await requireMember();
   const database = getDatabase();
   if ((await resolveOnboardingStep(database, member)) !== ONBOARDING_STEPS.done) redirect(ROUTES.welcome);
@@ -104,4 +106,4 @@ export default async function FeedPage() {
       </div>
     </>
   );
-}
+});

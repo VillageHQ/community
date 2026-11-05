@@ -9,12 +9,14 @@ import { requireAdmin } from "@/platform/auth/session";
 import { AdminSection } from "@/shell/admin-section";
 import { AuditLog } from "@/modules/admin/components/audit-log";
 import { auditPageQuery } from "@/modules/admin/queries-audit";
+import { adminManifest } from "@/modules/admin/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 const FIRST_PAGE = 1;
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminAuditLog };
 
-export default async function AdminAuditLogPage() {
+export default modulePage(adminManifest, async function AdminAuditLogPage() {
   await requireAdmin();
   const auditPage = await readAuditLog(getDatabase(), FIRST_PAGE);
   const queryClient = new QueryClient();
@@ -27,4 +29,4 @@ export default async function AdminAuditLogPage() {
       </HydrationBoundary>
     </AdminSection>
   );
-}
+});

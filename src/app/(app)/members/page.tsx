@@ -15,6 +15,8 @@ import { requireMember } from "@/platform/auth/session";
 
 import { MemberDirectory } from "@/modules/members/components/member-directory";
 import { directoryQuery } from "@/modules/members/queries-directory";
+import { membersManifest } from "@/modules/members/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const metadata: Metadata = { title: PAGE_TITLES.members };
 
@@ -25,7 +27,7 @@ function readMemberSentence(memberCount: number, communityName: string, isCommun
 
 type MembersPageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-export default async function MembersPage({ searchParams }: MembersPageProps) {
+export default modulePage(membersManifest, async function MembersPage({ searchParams }: MembersPageProps) {
   const { id: viewerId } = await requireMember();
   const filters = parseDirectoryFilters(await searchParams);
   const [directory, community] = await Promise.all([readDirectory(getDatabase(), filters), readBrandingForPage()]);
@@ -52,4 +54,4 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
       </HydrationBoundary>
     </>
   );
-}
+});

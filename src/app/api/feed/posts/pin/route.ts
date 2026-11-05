@@ -1,8 +1,8 @@
 import { setPostPinned } from "@/modules/feed/service";
 import { pinPostBodySchema } from "@/modules/feed/contract";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { feedRoutes } from "@/modules/feed/routes";
 
-export const POST = createMemberRoute(
+export const POST = feedRoutes.member(
   "feed-post-pin",
   pinPostBodySchema,
   async (context, body) => {

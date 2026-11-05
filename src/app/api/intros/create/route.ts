@@ -1,7 +1,7 @@
 import { createIntroRequest } from "@/modules/intros/service";
 import { createIntroBodySchema } from "@/modules/intros/contract";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { introsRoutes } from "@/modules/intros/routes";
 
-export const POST = createMemberRoute("intros-create", createIntroBodySchema, async (context, body) =>
+export const POST = introsRoutes.member("intros-create", createIntroBodySchema, async (context, body) =>
   Response.json(await createIntroRequest(context, body)),
 );

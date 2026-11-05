@@ -10,10 +10,12 @@ import { readIntroBoard } from "@/modules/intros/reads";
 import { requireMember } from "@/platform/auth/session";
 
 import { IntroBoardView } from "@/modules/intros/components/intro-board";
+import { introsManifest } from "@/modules/intros/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const metadata: Metadata = { title: PAGE_TITLES.intros };
 
-export default async function IntrosPage() {
+export default modulePage(introsManifest, async function IntrosPage() {
   const member = await requireMember();
   const queryClient = new QueryClient();
   queryClient.setQueryData(introBoardQuery().queryKey, await readIntroBoard(getDatabase(), member.id));
@@ -28,4 +30,4 @@ export default async function IntrosPage() {
       </HydrationBoundary>
     </>
   );
-}
+});

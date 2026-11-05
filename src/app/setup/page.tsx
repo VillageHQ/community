@@ -13,6 +13,8 @@ import { MINIMUM_SETUP_TOKEN_LENGTH, readSetupToken } from "@/platform/secrets/s
 
 import { SetupForm } from "./setup-form";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { PLATFORM_MANIFEST } from "@/platform/modules/platform-manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +49,7 @@ function MissingTokenCopy() {
 
 export const metadata: Metadata = { title: PAGE_TITLES.setup };
 
-export default async function SetupPage() {
+export default modulePage(PLATFORM_MANIFEST, async function SetupPage() {
   const community = await readBrandingForPage();
 
   if (await isFirstAdminClaimed(getDatabase())) {
@@ -88,4 +90,4 @@ export default async function SetupPage() {
       </div>
     </SplitLayout>
   );
-}
+});

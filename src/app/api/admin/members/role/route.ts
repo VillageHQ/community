@@ -2,14 +2,14 @@ import { MEMBER_ROLES } from "@/platform/auth/roles";
 import { setMemberRoleBodySchema } from "@/modules/admin/contract";
 import { setMemberRole } from "@/modules/admin/service-roster";
 import { logAdminAction } from "@/platform/observability/route-logging";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { adminRoutes } from "@/modules/admin/routes";
 
 const ROLE_MESSAGES = {
   [MEMBER_ROLES.admin]: (name: string) => `${name} is now an admin.`,
   [MEMBER_ROLES.member]: (name: string) => `${name} is no longer an admin.`,
 };
 
-export const POST = createMemberRoute(
+export const POST = adminRoutes.member(
   "admin-member-role",
   setMemberRoleBodySchema,
   async (context, body) => {

@@ -1,9 +1,9 @@
 import { inviteIdBodySchema } from "@/modules/members/contract-invites";
 import { reclaimInvite } from "@/modules/admin/service-roster";
 import { logAdminAction } from "@/platform/observability/route-logging";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { membersRoutes } from "@/modules/members/routes";
 
-export const POST = createMemberRoute(
+export const POST = membersRoutes.member(
   "invite-reclaim",
   inviteIdBodySchema,
   async (context, { inviteId }) => {

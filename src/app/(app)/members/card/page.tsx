@@ -12,10 +12,12 @@ import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 
 import { CardForm } from "@/modules/members/components/card-form";
+import { membersManifest } from "@/modules/members/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const metadata: Metadata = { title: PAGE_TITLES.editCard };
 
-export default async function EditCardPage() {
+export default modulePage(membersManifest, async function EditCardPage() {
   const member = await requireMember();
   const profile = await readMemberProfile(getDatabase(), member.id);
   if (!profile) notFound();
@@ -39,4 +41,4 @@ export default async function EditCardPage() {
       </div>
     </div>
   );
-}
+});

@@ -1,14 +1,14 @@
 import { z } from "zod";
 
 import { approveVillageLink } from "@/modules/network/service";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { networkRoutes } from "@/modules/network/routes";
 
 const linkBodySchema = z.object({
   memberId: z.string().min(1),
   villageEmail: z.string().min(1),
 });
 
-export const POST = createMemberRoute(
+export const POST = networkRoutes.member(
   "village-links",
   linkBodySchema,
   async (context, body) => {

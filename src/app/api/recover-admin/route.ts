@@ -9,10 +9,10 @@ import { recoverAdminPassword } from "@/platform/auth/password-recovery";
 import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/platform/auth/password-policy";
 import { pruneExpiredRateLimits } from "@/platform/rate-limit/rate-limit-pruning";
 import { readJsonBody } from "@/platform/http/read-json-body";
-import { withRouteLogging } from "@/platform/observability/route-logging";
 import { secretsMatch } from "@/platform/secrets/secrets-match";
 import { readSetupToken } from "@/platform/secrets/setup-token";
 import { hasTrustedOrigin } from "@/platform/http/member-route";
+import { platformRoutes } from "@/platform/modules/platform-routes";
 
 const UNAUTHORIZED_STATUS = 401;
 const FORBIDDEN_STATUS = 403;
@@ -36,7 +36,7 @@ function respond(message: string, status: number) {
   return Response.json({ message }, { status });
 }
 
-export const POST = withRouteLogging(
+export const POST = platformRoutes.open(
   "recover-admin",
   withBodyLimit(MAXIMUM_JSON_BODY_BYTES, async (request) => {
     if (!hasTrustedOrigin(request)) return respond("This request came from another site.", FORBIDDEN_STATUS);

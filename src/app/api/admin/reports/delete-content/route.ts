@@ -1,9 +1,9 @@
 import { reportActionBodySchema } from "@/modules/admin/contract";
 import { deleteReportedContent } from "@/modules/admin/service-reports";
 import { logAdminAction } from "@/platform/observability/route-logging";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { adminRoutes } from "@/modules/admin/routes";
 
-export const POST = createMemberRoute(
+export const POST = adminRoutes.member(
   "admin-report-delete-content",
   reportActionBodySchema,
   async (context, body) => {
