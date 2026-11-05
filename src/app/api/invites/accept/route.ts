@@ -9,7 +9,7 @@ import { INVITE_UNUSABLE_COPY, INVITE_INVALID_COPY } from "@/lib/invites/invite-
 import { acceptInvite, readInviteByToken } from "@/lib/invites/invites";
 import { readJsonBody } from "@/platform/http/read-json-body";
 import { logError, withRouteLogging } from "@/platform/observability/route-logging";
-import { hasTrustedOrigin, readSessionMember } from "@/lib/village/member-route";
+import { hasTrustedOrigin, readSessionMember } from "@/platform/http/member-route";
 import { NETWORK_ERROR_CODES } from "@/lib/village/network-api";
 
 const CREATED_STATUS = 201;

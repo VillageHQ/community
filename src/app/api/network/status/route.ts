@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { advanceNetwork } from "@/lib/village/member-network";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 const emptyBodySchema = z.unknown();
 

@@ -15,15 +15,14 @@ import { isAuthorVisibleTo, isPostVisible } from "../feed/feed-reads.ts";
 import { introGoneError } from "../intros/intro-actions.ts";
 import { INTRO_ROLES } from "../intros/intro-api.ts";
 import { readIntroForViewer } from "../intros/intro-reads.ts";
-import { isBanActive } from "../members/active-member.ts";
+import { isBanActive } from "../../platform/auth/member-status.ts";
 import { enforceMessagingLimit, MESSAGING_KINDS } from "../messages/sending-limit.ts";
-import { NetworkRequestError, type NetworkContext } from "../village/member-network.ts";
+import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import { type NetworkContext } from "../../platform/http/request-context.ts";
 import {
   ADMIN_ERROR_CODES,
   ADMIN_PAGE_SIZES,
-  AUDIT_ACTIONS,
   FEED_REPORT_TARGETS,
-  MEMBER_ROLES,
   REPORT_FILTERS,
   REPORT_RESOLUTIONS,
   REPORT_TARGETS,
@@ -35,8 +34,10 @@ import {
   type ReportResolution,
   type ReportTarget,
 } from "./admin-api.ts";
-import { withAdminTransaction } from "./admin-transaction.ts";
-import { recordAdminAction } from "./audit.ts";
+import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
+import { MEMBER_ROLES } from "../../platform/auth/roles.ts";
+import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
+import { recordAdminAction } from "../../platform/audit/record.ts";
 import { readResolvedFields } from "./report-resolution.ts";
 
 const NOT_FOUND_STATUS = 404;

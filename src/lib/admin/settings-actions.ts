@@ -1,11 +1,12 @@
 import "server-only";
 
 import { saveBranding, saveLogo, deleteLogo, type BrandingFields, type LogoFile } from "../../platform/branding/branding.ts";
-import type { NetworkContext } from "../village/member-network.ts";
-import { saveConfirmedVillageDomain, saveDailyLookupLimit } from "../village/settings.ts";
-import { AUDIT_ACTIONS } from "./admin-api.ts";
-import { withAdminTransaction } from "./admin-transaction.ts";
-import { recordAdminAction } from "./audit.ts";
+import type { NetworkContext } from "../../platform/http/request-context.ts";
+import { saveConfirmedVillageDomain } from "../village/settings.ts";
+import { saveDailyLookupLimit } from "../../platform/village/settings.ts";
+import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
+import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
+import { recordAdminAction } from "../../platform/audit/record.ts";
 
 export function setDailyLookupLimit({ database, member }: NetworkContext, limit: number) {
   return withAdminTransaction(database, member.id, async (transaction) => {

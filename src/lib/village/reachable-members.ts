@@ -6,7 +6,7 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberAvatar, memberProfile } from "../../database/members-schema.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
-import { isActiveMember } from "../members/active-member.ts";
+import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { toAvatarUrl } from "../members/profile.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import type { ReachableMember } from "./member-paths.ts";

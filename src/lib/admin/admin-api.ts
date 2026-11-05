@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { MEMBER_ROLES } from "../../platform/auth/roles.ts";
+import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 
-export const MEMBER_ROLES = { admin: "admin", member: "user" } as const;
 export const CONTENT_CHOICES = { keep: "keep", delete: "delete" } as const;
 export const MEMBER_FILTERS = { all: "all", admins: "admins", attention: "attention", removed: "removed" } as const;
 export const VILLAGE_STATUSES = {
@@ -24,37 +25,6 @@ export const REPORT_RESOLUTIONS = {
   memberRemoved: "member_removed",
 } as const;
 export const REPORT_FILTERS = { open: "open", resolved: "resolved" } as const;
-
-export const AUDIT_ACTIONS = {
-  rolePromoted: "role_promoted",
-  roleDemoted: "role_demoted",
-  memberRemoved: "member_removed",
-  memberUnbanned: "member_unbanned",
-  emailConfirmed: "email_confirmed",
-  villageLinkApproved: "village_link_approved",
-  villageLinkReset: "village_link_reset",
-  linkedinConfirmed: "linkedin_confirmed",
-  linkedinCleared: "linkedin_cleared",
-  inviteCreated: "invite_created",
-  inviteResent: "invite_resent",
-  inviteRevoked: "invite_revoked",
-  inviteReclaimed: "invite_reclaimed",
-  reportDismissed: "report_dismissed",
-  reportedContentDeleted: "reported_content_deleted",
-  postPinned: "post_pinned",
-  postUnpinned: "post_unpinned",
-  dailyLimitChanged: "daily_limit_changed",
-  villageKeysSaved: "village_keys_saved",
-  villageGroupCreated: "village_group_created",
-  brandingSaved: "branding_saved",
-  logoSaved: "logo_saved",
-  logoRemoved: "logo_removed",
-  villageGroupLeft: "village_group_left",
-  memberReinvited: "member_reinvited",
-  passwordReset: "password_reset",
-  adminPasswordRecovered: "admin_password_recovered",
-  domainConfirmed: "domain_confirmed",
-} as const;
 export const GROUP_DEPARTURE_OUTCOMES = { left: "left", creatorRefused: "creator_refused", failed: "failed" } as const;
 export const AUDIT_KINDS = { action: "action", postDeleted: "post_deleted", commentDeleted: "comment_deleted" } as const;
 
@@ -70,7 +40,6 @@ export const ADMIN_ERROR_CODES = {
 } as const;
 
 export const ADMIN_PAGE_SIZES = { members: 12, reports: 10, auditEntries: 20 } as const;
-export const DAILY_LOOKUP_LIMITS = { default: 50, minimum: 1, maximum: 500 } as const;
 export const USD_PER_CREDIT = 0.02;
 export const CREDITS_PER_PATH_LOOKUP = 5;
 export const CREDITS_PER_FULL_SEARCH = 11;
@@ -98,14 +67,6 @@ export const feedReportBodySchema = z.object({ targetType: z.enum(FEED_REPORT_TA
 export const introReportBodySchema = z.object({ introId: z.uuid() });
 
 export const auditLogBodySchema = z.object({ page: pageSchema });
-
-export const dailyLimitBodySchema = z.object({
-  limit: z
-    .number("Enter a whole number.")
-    .int("Enter a whole number.")
-    .min(DAILY_LOOKUP_LIMITS.minimum, `Use at least ${DAILY_LOOKUP_LIMITS.minimum} lookup a day.`)
-    .max(DAILY_LOOKUP_LIMITS.maximum, `Use ${DAILY_LOOKUP_LIMITS.maximum} lookups a day or fewer.`),
-});
 
 const adminMemberSchema = z.object({
   id: z.string(),
@@ -201,7 +162,6 @@ export type VillageStatus = (typeof VILLAGE_STATUSES)[keyof typeof VILLAGE_STATU
 export type ReportTarget = (typeof REPORT_TARGETS)[keyof typeof REPORT_TARGETS];
 export type ReportFilter = (typeof REPORT_FILTERS)[keyof typeof REPORT_FILTERS];
 export type ReportResolution = (typeof REPORT_RESOLUTIONS)[keyof typeof REPORT_RESOLUTIONS];
-export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
 export type AdminMember = z.infer<typeof adminMemberSchema>;
 export type MemberPage = z.infer<typeof memberPageSchema>;
 export type Report = z.infer<typeof reportSchema>;

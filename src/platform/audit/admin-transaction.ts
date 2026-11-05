@@ -2,12 +2,12 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 
-import { user } from "../../platform/database/auth-schema.ts";
-import type { Database, Transaction } from "../../platform/database/client.ts";
-import { isBanActive } from "../members/active-member.ts";
-import { NetworkRequestError } from "../village/member-network.ts";
-import { NETWORK_ERROR_CODES } from "../village/network-api.ts";
-import { MEMBER_ROLES } from "./admin-api.ts";
+import { user } from "../database/auth-schema.ts";
+import type { Database, Transaction } from "../database/client.ts";
+import { isBanActive } from "../auth/member-status.ts";
+import { NetworkRequestError } from "../http/request-error.ts";
+import { REQUEST_ERROR_CODES } from "../http/error-codes.ts";
+import { MEMBER_ROLES } from "../auth/roles.ts";
 
 const FORBIDDEN_STATUS = 403;
 
@@ -21,7 +21,7 @@ export async function requireCurrentAdmin(transaction: Transaction, actorId: str
   if (actor && actor.role === MEMBER_ROLES.admin && !isBanActive(actor)) return;
   throw new NetworkRequestError(
     FORBIDDEN_STATUS,
-    NETWORK_ERROR_CODES.forbidden,
+    REQUEST_ERROR_CODES.forbidden,
     "You aren't an admin anymore, so nothing changed. Another admin may have just changed your role.",
   );
 }

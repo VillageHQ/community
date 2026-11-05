@@ -2,12 +2,12 @@ import { hashPassword } from "better-auth/crypto";
 import { eq, like } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { adminAuditEntry } from "@/database/admin-schema";
+import { adminAuditEntry } from "@/platform/audit/schema";
 import { account, session, user, verification } from "@/platform/database/auth-schema";
 import { EVENTUALLY } from "@/test/async-timeouts";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
-import { AUDIT_ACTIONS } from "@/lib/admin/admin-api";
+import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import { createAuth } from "./create-auth";
 
 const APP_URL = "http://localhost:3000";

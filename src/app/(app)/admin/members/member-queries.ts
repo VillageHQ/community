@@ -3,8 +3,8 @@ import { queryOptions } from "@tanstack/react-query";
 import { departureResponseSchema, memberPageSchema, type MemberFilter, type SetMemberRoleBody } from "@/lib/admin/admin-api";
 import { issuedInviteSchema } from "@/lib/invites/invite-api";
 import { API_ROUTES } from "@/platform/http/routes";
-import { acknowledgedResponseSchema } from "@/lib/village/network-api";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { acknowledgedResponseSchema } from "@/platform/http/contract";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 export const ADMIN_MEMBER_QUERY_KEYS = { list: "admin-member-list" } as const;
 

@@ -2,8 +2,8 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { readInboxPollMs, INBOX_POLL_MS } from "../messages/message-polling.ts";
 import { API_ROUTES } from "../../platform/http/routes.ts";
-import { acknowledgedResponseSchema } from "../village/network-api.ts";
-import { postNetworkRequest } from "../village/post-network-request.ts";
+import { acknowledgedResponseSchema } from "../../platform/http/contract.ts";
+import { postNetworkRequest } from "../../platform/http/post-request.ts";
 import { introBoardSchema, introCountsSchema, introSchema, type CreateIntroBody, type IntroTransitionBody } from "./intro-api.ts";
 
 export const INTRO_QUERY_KEYS = {

@@ -1,6 +1,6 @@
 import type { z } from "zod";
 
-import { readResponseFailure } from "../../platform/http/read-response-message.ts";
+import { readResponseFailure } from "./read-response-message.ts";
 
 const FALLBACK_ERROR_MESSAGE = "Something went wrong. Try again.";
 const UNREACHABLE_ERROR_MESSAGE = "We couldn't reach the server. Check your connection and try again.";

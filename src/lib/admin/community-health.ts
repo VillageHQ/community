@@ -11,7 +11,7 @@ import { directMessage } from "../../database/messages-schema.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
 import { readIntroStateCounts } from "../intros/intro-reads.ts";
 import { readInviteCounts } from "../invites/invites.ts";
-import { isActiveMember } from "../members/active-member.ts";
+import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { readActiveMemberCount } from "../members/directory.ts";
 import { readSharingMemberCount } from "../village/network-progress.ts";
 

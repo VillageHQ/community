@@ -1,7 +1,7 @@
 import { linkedinClaimBodySchema } from "@/lib/invites/invite-api";
 import { clearLinkedinClaim } from "@/lib/members/member-admin";
 import { logAdminAction } from "@/platform/observability/route-logging";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(
   "member-clear-linkedin",

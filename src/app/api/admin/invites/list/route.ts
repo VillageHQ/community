@@ -1,6 +1,6 @@
 import { inviteListBodySchema } from "@/lib/invites/invite-api";
 import { readInvites } from "@/lib/invites/invites";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(
   "invite-list",

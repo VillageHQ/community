@@ -4,8 +4,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { createElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import {
-  AUDIT_ACTIONS,
   AUDIT_KINDS,
   CONTENT_CHOICES,
   GROUP_DEPARTURE_OUTCOMES,

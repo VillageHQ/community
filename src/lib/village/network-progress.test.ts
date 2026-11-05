@@ -5,7 +5,8 @@ import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { advanceNetwork, createNetworkContext } from "./member-network";
+import { advanceNetwork } from "./member-network";
+import { createNetworkContext } from "@/platform/http/request-context";
 import { NETWORK_STAGES } from "./network-api";
 import {
   NETWORK_PROGRESS,
@@ -14,7 +15,8 @@ import {
   readSharingMemberCount,
   readWelcomeNeighbours,
 } from "./network-progress";
-import { saveVillageGroup, saveVillageKeys } from "./settings";
+import { saveVillageGroup } from "./settings";
+import { saveVillageKeys } from "@/platform/village/settings";
 
 const LINKEDIN_SLUG = "amara-osei";
 const GROUP = { id: "group-1", inviteLink: "https://village.test/join/invite-code" };

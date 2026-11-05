@@ -7,8 +7,8 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { invite, memberAvatar } from "../../database/members-schema.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
-import { isReclaimedEmail } from "../invites/invite-state.ts";
-import { isActiveMember, isBanActive, isBanInEffect } from "../members/active-member.ts";
+import { isReclaimedEmail } from "../../platform/auth/reclaimed-email.ts";
+import { isActiveMember, isBanActive, isBanInEffect } from "../../platform/auth/member-status.ts";
 import { toContainsPattern } from "../members/directory.ts";
 import { toAvatarUrl } from "../members/profile.ts";
 import { toLinkedinUrl } from "../village/linkedin-slug.ts";
@@ -17,12 +17,12 @@ import {
   ADMIN_PAGE_SIZES,
   CONTENT_CHOICES,
   MEMBER_FILTERS,
-  MEMBER_ROLES,
   memberPageSchema,
   type MemberFilter,
   type MemberListBody,
   type MemberPage,
 } from "./admin-api.ts";
+import { MEMBER_ROLES } from "../../platform/auth/roles.ts";
 
 function matchesMemberSearch(search: string) {
   if (!search) return undefined;

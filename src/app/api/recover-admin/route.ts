@@ -12,7 +12,7 @@ import { readJsonBody } from "@/platform/http/read-json-body";
 import { withRouteLogging } from "@/platform/observability/route-logging";
 import { secretsMatch } from "@/platform/secrets/secrets-match";
 import { readSetupToken } from "@/platform/secrets/setup-token";
-import { hasTrustedOrigin } from "@/lib/village/member-route";
+import { hasTrustedOrigin } from "@/platform/http/member-route";
 
 const UNAUTHORIZED_STATUS = 401;
 const FORBIDDEN_STATUS = 403;

@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { CONFIRMATION_VIEWS, type ConfirmationView } from "@/lib/invites/email-confirmation-views";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { signOutAndGoTo } from "@/platform/auth/sign-out";
-import { acknowledgedResponseSchema } from "@/lib/village/network-api";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { acknowledgedResponseSchema } from "@/platform/http/contract";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 function confirmEmail(token: string) {
   return postNetworkRequest(API_ROUTES.networkConfirm, { token }, acknowledgedResponseSchema);

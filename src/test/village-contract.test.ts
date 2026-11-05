@@ -11,7 +11,7 @@ import {
   searchVillageNetwork,
   VillageApiError,
   VILLAGE_LEAVE_OUTCOMES,
-} from "../lib/village/client.ts";
+} from "../platform/village/client.ts";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "./fake-village-server.ts";
 import {
   type ResponseShape,

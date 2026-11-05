@@ -9,7 +9,7 @@ import {
   type NetworkStage,
   type NetworkStatus,
 } from "@/lib/village/network-api";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 const STATUS_POLL_INTERVAL_MS = 5_000;
 const POLLED_STAGES: ReadonlySet<NetworkStage> = new Set([

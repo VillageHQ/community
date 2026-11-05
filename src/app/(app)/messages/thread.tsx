@@ -18,7 +18,7 @@ import { pendingMessagesQuery, threadChangesQuery, threadQuery } from "@/lib/mes
 import { readThreadMessages } from "@/lib/messages/thread-cache";
 import { buildThreadEntries, describeNewMessages, readNewestPeerSequence } from "@/lib/messages/thread-entries";
 import { ROUTES } from "@/platform/http/routes";
-import { RequestFailure } from "@/lib/village/post-network-request";
+import { RequestFailure } from "@/platform/http/post-request";
 
 import { ContentMenu } from "@/app/(app)/feed/content-menu";
 import { ConfirmAction } from "./confirm-action";

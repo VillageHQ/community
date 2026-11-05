@@ -4,7 +4,7 @@ import { and, eq, isNull } from "drizzle-orm";
 
 import type { Database } from "../../platform/database/client.ts";
 import { memberProfile } from "../../database/members-schema.ts";
-import type { SessionMember } from "../village/member-network.ts";
+import type { SessionMember } from "../../platform/http/request-context.ts";
 import { NETWORK_PROGRESS, readNetworkProgress } from "../village/network-progress.ts";
 import type { NetworkProgress } from "../village/network-progress-stages.ts";
 import { ONBOARDING_STEPS, type OnboardingStep } from "./profile-api.ts";

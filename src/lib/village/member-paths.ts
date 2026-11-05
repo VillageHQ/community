@@ -1,5 +1,5 @@
 import { INTRO_LIMITS } from "../intros/intro-api.ts";
-import type { VillagePaths } from "./client.ts";
+import type { VillagePaths } from "../../platform/village/client.ts";
 import {
   cleanVillageText,
   readScoreMetaReason,

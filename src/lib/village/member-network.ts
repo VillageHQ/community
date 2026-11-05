@@ -2,17 +2,15 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq, isNotNull, ne, or, sql } from "drizzle-orm";
-import { z } from "zod";
+import { and, eq, isNotNull, or, sql } from "drizzle-orm";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberNetwork, memberPathResult } from "../../database/village-schema.ts";
-import { AUDIT_ACTIONS } from "../admin/admin-api.ts";
-import { withAdminTransaction } from "../admin/admin-transaction.ts";
-import { recordAdminAction } from "../admin/audit.ts";
-import { isActiveMember } from "../members/active-member.ts";
-import type { Environment } from "../../platform/environment.ts";
+import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
+import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
+import { recordAdminAction } from "../../platform/audit/record.ts";
+import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { INTRO_ERROR_CODES, INTRO_LIMITS } from "../intros/intro-api.ts";
 import { readOpenAsks } from "../intros/open-asks.ts";
 import {
@@ -34,9 +32,9 @@ import {
   type VillagePaths,
   type VillageSession,
   villagePathsSchema,
-} from "./client.ts";
+} from "../../platform/village/client.ts";
 import { cleanVillageText } from "./connector-reason.ts";
-import { CREDIT_CALL_KINDS, readDailyLookupsLeft, withCreditCall } from "./daily-usage.ts";
+import { CREDIT_CALL_KINDS, readDailyLookupsLeft, withCreditCall } from "../../platform/village/credit-ledger.ts";
 import { readLinkedinSlug, toLinkedinUrl } from "./linkedin-slug.ts";
 import {
   describeMemberPaths,
@@ -54,20 +52,16 @@ import {
   type NetworkStage,
   type NetworkStatus,
 } from "./network-api.ts";
-import {
-  deleteVillageGroup,
-  readVillageGroup,
-  readVillageKeys,
-  saveVillageGroup,
-  saveVillageKeys,
-  type VillageKeys,
-} from "./settings.ts";
+import { deleteVillageGroup, readVillageGroup, saveVillageGroup } from "./settings.ts";
+import { readVillageKeys, saveVillageKeys, type VillageKeys } from "../../platform/village/settings.ts";
 import { readReachableMembers } from "./reachable-members.ts";
-import { resolveVillageApiUrl, resolveVillageSdkUrl } from "./urls.ts";
+import { resolveVillageApiUrl, resolveVillageSdkUrl } from "../../platform/village/urls.ts";
+import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import type { SessionMember, NetworkContext } from "../../platform/http/request-context.ts";
+import { isAdminMember } from "../../platform/auth/roles.ts";
+import { ensureMemberNetwork, normalizeEmail, isMemberEmailTrusted } from "../members/linkedin-claim.ts";
 
-const ADMIN_ROLE = "admin";
 const PATH_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-const DEFAULT_ROUTE_DEADLINE_MS = 60_000;
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const UNPROCESSABLE_STATUS = 422;
@@ -80,64 +74,7 @@ const SEARCH_CUT_OFF_TYPES: ReadonlySet<string> = new Set([
   VILLAGE_FAILURE_TYPES.unreadableError,
 ]);
 
-export type SessionMember = { id: string; email: string; role?: string | null };
-
-export type NetworkContext = {
-  database: Database;
-  environment: Environment;
-  member: SessionMember;
-  deadlineAtMs: number;
-};
-
-export function createNetworkContext(
-  database: Database,
-  environment: Environment,
-  member: SessionMember,
-  deadlineMs = DEFAULT_ROUTE_DEADLINE_MS,
-): NetworkContext {
-  return { database, environment, member, deadlineAtMs: Date.now() + deadlineMs };
-}
-
-export class NetworkRequestError extends Error {
-  readonly status: number;
-  readonly code: string;
-
-  constructor(status: number, code: string, message: string) {
-    super(message);
-    this.status = status;
-    this.code = code;
-  }
-}
-
-export function isAdminMember(member: SessionMember) {
-  return member.role === ADMIN_ROLE;
-}
-
 type MemberNetworkRow = typeof memberNetwork.$inferSelect;
-
-async function ensureMemberNetwork(database: Database, userId: string) {
-  await database.insert(memberNetwork).values({ userId }).onConflictDoNothing();
-  const [network] = await database
-    .select()
-    .from(memberNetwork)
-    .where(eq(memberNetwork.userId, userId));
-  if (!network) throw new Error("The member network row is missing.");
-  return network;
-}
-
-function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
-}
-
-export async function isMemberEmailTrusted(database: Database, member: SessionMember) {
-  const [row] = await database
-    .select({ emailVerified: user.emailVerified, approvedMemberEmail: memberNetwork.approvedMemberEmail })
-    .from(user)
-    .leftJoin(memberNetwork, eq(memberNetwork.userId, user.id))
-    .where(eq(user.id, member.id));
-  if (!row) return false;
-  return row.emailVerified || row.approvedMemberEmail === normalizeEmail(member.email);
-}
 
 function emailNotConfirmedError() {
   return new NetworkRequestError(
@@ -224,60 +161,6 @@ async function requireVillageKeys(database: Database) {
     NETWORK_ERROR_CODES.notConfigured,
     "An admin needs to connect Village first.",
   );
-}
-
-const UNIQUE_VIOLATION_CODE = "23505";
-
-const uniqueViolationSchema = z.object({ code: z.literal(UNIQUE_VIOLATION_CODE) });
-
-function isUniqueViolation(error: unknown) {
-  return error instanceof Error && uniqueViolationSchema.safeParse(error.cause).success;
-}
-
-function linkedinTakenError() {
-  return new NetworkRequestError(
-    CONFLICT_STATUS,
-    NETWORK_ERROR_CODES.linkedinTaken,
-    "Another member already uses this LinkedIn profile. Ask an admin to clear it from Admin, then Members.",
-  );
-}
-
-export async function readIsLinkedinConfirmed(database: Database, memberId: string) {
-  const [network] = await database
-    .select({ linkedinSlug: memberNetwork.linkedinSlug, linkedinConfirmedSlug: memberNetwork.linkedinConfirmedSlug })
-    .from(memberNetwork)
-    .where(eq(memberNetwork.userId, memberId));
-  return Boolean(network?.linkedinSlug) && network?.linkedinSlug === network?.linkedinConfirmedSlug;
-}
-
-export async function saveMemberLinkedinUrl(
-  { database, member }: NetworkContext,
-  linkedinUrl: string,
-) {
-  const linkedinSlug = readLinkedinSlug(linkedinUrl);
-  if (!linkedinSlug) {
-    throw new NetworkRequestError(
-      UNPROCESSABLE_STATUS,
-      NETWORK_ERROR_CODES.linkedinInvalid,
-      "Enter your LinkedIn profile URL, like https://www.linkedin.com/in/your-name.",
-    );
-  }
-
-  await ensureMemberNetwork(database, member.id);
-
-  const [claimedByAnotherMember] = await database
-    .select({ userId: memberNetwork.userId })
-    .from(memberNetwork)
-    .where(and(eq(memberNetwork.linkedinSlug, linkedinSlug), ne(memberNetwork.userId, member.id)));
-  if (claimedByAnotherMember) throw linkedinTakenError();
-
-  await database
-    .update(memberNetwork)
-    .set({ linkedinSlug })
-    .where(eq(memberNetwork.userId, member.id))
-    .catch((error: unknown) => {
-      throw isUniqueViolation(error) ? linkedinTakenError() : error;
-    });
 }
 
 export async function recordSharingConsent({ database, member }: NetworkContext) {

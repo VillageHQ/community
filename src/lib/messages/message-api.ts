@@ -52,7 +52,6 @@ export const sendMessageBodySchema = z.object({
 export const messageIdBodySchema = z.object({ messageId: z.uuid() });
 export const markReadBodySchema = z.object({ conversationId: conversationIdSchema, sequence: sequenceSchema });
 export const setBlockBodySchema = z.object({ memberId: memberIdSchema, isBlocked: z.boolean() });
-export const emptyBodySchema = z.object({});
 
 const inboxCursorSchema = z.object({ lastMessageAt: timestampSchema, conversationId: conversationIdSchema });
 

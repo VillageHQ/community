@@ -15,8 +15,8 @@ import { ONBOARDING_STEPS, PROFILE_LIMITS } from "@/lib/members/profile-api";
 import { parseTagsText, toProfileBody } from "@/lib/members/profile-form";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
-import { acknowledgedResponseSchema } from "@/lib/village/network-api";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { acknowledgedResponseSchema } from "@/platform/http/contract";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 import { AvatarField } from "./avatar-field";
 

@@ -1,7 +1,8 @@
 import { eq, sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { adminAuditEntry, contentReport, memberRemoval } from "@/database/admin-schema";
+import { adminAuditEntry } from "@/platform/audit/schema";
+import { contentReport, memberRemoval } from "@/database/admin-schema";
 import { session, user } from "@/platform/database/auth-schema";
 import { communityBranding } from "@/platform/branding/schema";
 import { getDatabase } from "@/platform/database/client";
@@ -9,26 +10,29 @@ import { post } from "@/database/feed-schema";
 import { instanceSettings, INSTANCE_SETTING_KEYS } from "@/platform/settings/schema";
 import { invite } from "@/database/members-schema";
 import { conversation, directMessage, messageReport } from "@/database/messages-schema";
-import { memberDailyUsage, memberNetwork, memberPathResult } from "@/database/village-schema";
+import { memberDailyUsage } from "@/platform/village/schema";
+import { memberNetwork, memberPathResult } from "@/database/village-schema";
+import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import {
-  AUDIT_ACTIONS,
   CONTENT_CHOICES,
   departureResponseSchema,
   GROUP_DEPARTURE_OUTCOMES,
   memberPageSchema,
-  MEMBER_ROLES,
   REPORT_TARGETS,
   reportPageSchema,
 } from "@/lib/admin/admin-api";
+import { MEMBER_ROLES } from "@/platform/auth/roles";
 import { describeCreditEstimate, estimateCreditCost, readCreditUsage } from "@/lib/admin/credit-usage";
 import { REPORT_SAVED_MESSAGES } from "@/lib/admin/reports";
 import { setDailyLookupLimit } from "@/lib/admin/settings-actions";
 import { issuedInviteSchema } from "@/lib/invites/invite-api";
 import { createInvite, reinviteRemovedMember, revokeInvite } from "@/lib/invites/invites";
 import { confirmMemberEmail } from "@/lib/members/member-admin";
-import { createNetworkContext } from "@/lib/village/member-network";
-import { acknowledgedResponseSchema, NETWORK_ERROR_CODES, networkPathsSchema } from "@/lib/village/network-api";
-import { readDailyLookupLimit, saveVillageGroup, saveVillageKeys, readVillageOutOfCreditsAt, readVillageGroup } from "@/lib/village/settings";
+import { createNetworkContext } from "@/platform/http/request-context";
+import { acknowledgedResponseSchema } from "@/platform/http/contract";
+import { NETWORK_ERROR_CODES, networkPathsSchema } from "@/lib/village/network-api";
+import { readDailyLookupLimit, saveVillageKeys, readVillageOutOfCreditsAt } from "@/platform/village/settings";
+import { saveVillageGroup, readVillageGroup } from "@/lib/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { seedPost } from "@/test/feed";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";

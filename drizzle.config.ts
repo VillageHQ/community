@@ -5,9 +5,11 @@ export default defineConfig({
   schema: [
     "./src/database/admin-schema.ts",
     "./src/platform/database/auth-schema.ts",
+    "./src/platform/audit/schema.ts",
     "./src/platform/branding/schema.ts",
     "./src/database/feed-schema.ts",
     "./src/platform/settings/schema.ts",
+    "./src/platform/village/schema.ts",
     "./src/database/intro-schema.ts",
     "./src/database/members-schema.ts",
     "./src/database/messages-schema.ts",

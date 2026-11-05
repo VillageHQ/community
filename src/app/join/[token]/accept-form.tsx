@@ -10,7 +10,7 @@ import { acceptedInviteSchema } from "@/lib/invites/invite-api";
 import { MAXIMUM_NAME_LENGTH } from "@/platform/auth/member-name";
 import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/platform/auth/password-policy";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 type AcceptState = { errorMessage: string | null; name: string };
 

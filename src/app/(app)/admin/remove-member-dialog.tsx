@@ -6,7 +6,7 @@ import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { CONTENT_CHOICES, departureResponseSchema, type ContentChoice } from "@/lib/admin/admin-api";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { API_ROUTES } from "@/platform/http/routes";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 import { ConfirmDialog } from "./confirm-dialog";
 

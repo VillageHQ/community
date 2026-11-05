@@ -1,10 +1,12 @@
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { memberDailyUsage, memberNetwork, memberPathResult } from "@/database/village-schema";
+import { memberDailyUsage } from "@/platform/village/schema";
+import { memberNetwork, memberPathResult } from "@/database/village-schema";
 import { readVillageLinks } from "@/lib/village/member-network";
 import { NETWORK_ERROR_CODES, NETWORK_STAGES, networkStatusSchema } from "@/lib/village/network-api";
-import { saveVillageGroup, saveVillageKeys } from "@/lib/village/settings";
+import { saveVillageGroup } from "@/lib/village/settings";
+import { saveVillageKeys } from "@/platform/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";

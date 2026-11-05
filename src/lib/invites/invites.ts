@@ -13,18 +13,28 @@ import { memberNetwork, memberPathResult } from "../../database/village-schema.t
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
 import { readBranding } from "../../platform/branding/branding.ts";
 import { ROUTES } from "../../platform/http/routes.ts";
-import { AUDIT_ACTIONS, type AuditAction } from "../admin/admin-api.ts";
-import { withAdminTransaction } from "../admin/admin-transaction.ts";
-import { recordAdminAction } from "../admin/audit.ts";
+import { AUDIT_ACTIONS, type AuditAction } from "../../platform/audit/actions.ts";
+import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
+import { recordAdminAction } from "../../platform/audit/record.ts";
 import { withAdminRosterLock } from "../admin/member-roster.ts";
-import { isActiveMember, isBanActive } from "../members/active-member.ts";
+import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { secretsMatch } from "../../platform/secrets/secrets-match.ts";
 import { DEPARTURE_SENTENCES, leaveGroupOnBehalf } from "../village/group-departure.ts";
-import { isAdminMember, NetworkRequestError, staleGroupAfterLinkClears, type NetworkContext } from "../village/member-network.ts";
+import { isAdminMember } from "../../platform/auth/roles.ts";
+import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import { staleGroupAfterLinkClears } from "../village/member-network.ts";
+import { type NetworkContext } from "../../platform/http/request-context.ts";
 import { INVITE_ERROR_CODES, INVITE_FILTERS, type InviteFilter, type InviteSummary } from "./invite-api.ts";
 import { toConfirmationIdentifier } from "./email-confirmation.ts";
 import { deliverInviteEmail } from "./invite-email.ts";
-import { INVITE_STATES, isReclaimedEmail, parseInviteEmailStatus, RECLAIMED_EMAIL_DOMAIN, readInviteExpiry, readInviteState, type InviteState } from "./invite-state.ts";
+import {
+  INVITE_STATES,
+  parseInviteEmailStatus,
+  readInviteExpiry,
+  readInviteState,
+  type InviteState,
+} from "./invite-state.ts";
+import { isReclaimedEmail, RECLAIMED_EMAIL_DOMAIN } from "../../platform/auth/reclaimed-email.ts";
 import { createInviteToken, hashInviteToken, isInviteTokenShape } from "./invite-token.ts";
 
 const CONFLICT_STATUS = 409;

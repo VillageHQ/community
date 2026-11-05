@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { session as sessionTable } from "../database/auth-schema.ts";
 import { getDatabase } from "../database/client.ts";
 import { getAuth } from "./auth.ts";
-import { isBanActive } from "../../lib/members/active-member.ts";
+import { isBanActive } from "./member-status.ts";
 
 export async function readActiveSession(headers: Headers) {
   const auth = await getAuth();

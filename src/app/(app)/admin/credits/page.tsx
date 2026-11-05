@@ -12,7 +12,7 @@ import { VILLAGE_PLATFORM_LINKS } from "@/lib/admin/settings-copy";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { formatDateAndTimeUtc, formatLongDate } from "@/platform/text/format-date";
 import { requireAdmin } from "@/platform/auth/session";
-import { readDailyLookupLimit, readVillageOutOfCreditsAt } from "@/lib/village/settings";
+import { readDailyLookupLimit, readVillageOutOfCreditsAt } from "@/platform/village/settings";
 
 import { AdminSection } from "@/app/(app)/admin/admin-section";
 import { StatRows } from "@/app/(app)/admin/stat-rows";

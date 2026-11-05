@@ -9,7 +9,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState, RetryButton } from "@/components/error-state";
 import { Button } from "@/components/ui/button";
 import { NETWORK_ERROR_CODES } from "@/lib/village/network-api";
-import { RequestFailure } from "@/lib/village/post-network-request";
+import { RequestFailure } from "@/platform/http/post-request";
 
 import { NETWORK_QUERY_KEYS } from "./network-queries";
 

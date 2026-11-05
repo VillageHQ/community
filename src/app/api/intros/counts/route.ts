@@ -1,7 +1,7 @@
 import { enforceIntroLimit, INTRO_LIMIT_KINDS } from "@/lib/intros/intro-limit";
 import { readIntroCounts } from "@/lib/intros/intro-reads";
-import { emptyBodySchema } from "@/lib/messages/message-api";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { emptyBodySchema } from "@/platform/http/contract";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("intros-counts", emptyBodySchema, async ({ database, member }) => {
   await enforceIntroLimit(database, member.id, INTRO_LIMIT_KINDS.read);

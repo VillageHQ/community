@@ -8,9 +8,11 @@ import { memberAvatar, memberProfile, memberTag } from "../../database/members-s
 import { memberNetwork } from "../../database/village-schema.ts";
 import type { ImageContentType } from "../../platform/image-rules.ts";
 import { API_ROUTES } from "../../platform/http/routes.ts";
-import { saveMemberLinkedinUrl, NetworkRequestError, type NetworkContext } from "../village/member-network.ts";
+import { saveMemberLinkedinUrl } from "./linkedin-claim.ts";
+import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import { type NetworkContext } from "../../platform/http/request-context.ts";
 import { NETWORK_ERROR_CODES } from "../village/network-api.ts";
-import { isActiveMember } from "./active-member.ts";
+import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { parseExternalUrl } from "./external-url.ts";
 import { normalizeTag, type ProfileBody } from "./profile-api.ts";
 

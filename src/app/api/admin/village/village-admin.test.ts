@@ -1,7 +1,8 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NETWORK_ERROR_CODES, networkStatusSchema, NETWORK_STAGES } from "@/lib/village/network-api";
-import { readVillageGroup, readVillageKeys, saveVillageKeys } from "@/lib/village/settings";
+import { readVillageGroup } from "@/lib/village/settings";
+import { readVillageKeys, saveVillageKeys } from "@/platform/village/settings";
 import { memberNetwork } from "@/database/village-schema";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";

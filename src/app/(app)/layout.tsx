@@ -9,7 +9,7 @@ import { readAvatarUrl } from "@/lib/members/profile";
 import { readUnreadCount } from "@/lib/messages/message-reads";
 import { readNavigationBadges } from "@/lib/navigation-badges";
 import { requireMember } from "@/platform/auth/session";
-import { isAdminMember } from "@/lib/village/member-network";
+import { isAdminMember } from "@/platform/auth/roles";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const { id, name, email, role } = await requireMember();

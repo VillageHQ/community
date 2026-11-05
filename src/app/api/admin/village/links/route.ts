@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { approveVillageLink } from "@/lib/village/member-network";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 const linkBodySchema = z.object({
   memberId: z.string().min(1),

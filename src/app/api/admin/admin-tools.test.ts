@@ -2,21 +2,21 @@ import { and, eq, isNull } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { adminAuditEntry, contentReport } from "@/database/admin-schema";
+import { adminAuditEntry } from "@/platform/audit/schema";
+import { contentReport } from "@/database/admin-schema";
 import { session, user } from "@/platform/database/auth-schema";
 import { comment, moderationRecord, post, reaction } from "@/database/feed-schema";
 import { introRequest } from "@/database/intro-schema";
 import { invite } from "@/database/members-schema";
 import { directMessage, messageReport } from "@/database/messages-schema";
-import { memberDailyUsage, memberNetwork } from "@/database/village-schema";
+import { memberDailyUsage } from "@/platform/village/schema";
+import { memberNetwork } from "@/database/village-schema";
+import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import {
-  AUDIT_ACTIONS,
   AUDIT_KINDS,
   auditPageSchema,
   CONTENT_CHOICES,
-  DAILY_LOOKUP_LIMITS,
   MEMBER_FILTERS,
-  MEMBER_ROLES,
   memberPageSchema,
   REPORT_FILTERS,
   REPORT_RESOLUTIONS,
@@ -24,6 +24,8 @@ import {
   reportPageSchema,
   VILLAGE_STATUSES,
 } from "@/lib/admin/admin-api";
+import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
+import { MEMBER_ROLES } from "@/platform/auth/roles";
 import { readCommunityHealth } from "@/lib/admin/community-health";
 import { describeCreditEstimate, estimateCreditCost, readCreditUsage } from "@/lib/admin/credit-usage";
 import { readOpenReportCount } from "@/lib/admin/reports";
@@ -33,7 +35,8 @@ import { issuedInviteSchema } from "@/lib/invites/invite-api";
 import { readMemberProfile } from "@/lib/members/profile";
 import { readNavigationBadges } from "@/lib/navigation-badges";
 import { readVillageStatus } from "@/lib/village/member-village-status";
-import { readDailyLookupLimit, saveVillageGroup, saveVillageKeys, readVillageOutOfCreditsAt } from "@/lib/village/settings";
+import { readDailyLookupLimit, saveVillageKeys, readVillageOutOfCreditsAt } from "@/platform/village/settings";
+import { saveVillageGroup } from "@/lib/village/settings";
 import { NETWORK_ERROR_CODES, networkStatusSchema } from "@/lib/village/network-api";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { seedComment, seedPost } from "@/test/feed";

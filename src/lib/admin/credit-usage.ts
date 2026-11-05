@@ -4,8 +4,8 @@ import { and, desc, eq, gte, sql, sum } from "drizzle-orm";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { memberDailyUsage } from "../../database/village-schema.ts";
-import { isBanActive } from "../members/active-member.ts";
+import { memberDailyUsage } from "../../platform/village/schema.ts";
+import { isBanActive } from "../../platform/auth/member-status.ts";
 import { CREDITS_PER_FULL_SEARCH, CREDITS_PER_PATH_LOOKUP, USD_PER_CREDIT } from "./admin-api.ts";
 
 const USAGE_WINDOW_DAYS = 30;

@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { NETWORK_ERROR_CODES } from "@/lib/village/network-api";
-import { RequestFailure } from "@/lib/village/post-network-request";
+import { RequestFailure } from "@/platform/http/post-request";
 
 import { NetworkFailure } from "./network-failure";
 

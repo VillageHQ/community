@@ -5,7 +5,9 @@ import { readBrandingForPage } from "@/platform/branding/branding";
 import { readResendConfig } from "@/platform/email/resend";
 import { readAvatarUrl } from "@/lib/members/profile";
 import { ROUTES } from "@/platform/http/routes";
-import { isAdminMember, readIsLinkedinConfirmed, type SessionMember } from "@/lib/village/member-network";
+import { isAdminMember } from "@/platform/auth/roles";
+import { readIsLinkedinConfirmed } from "@/lib/members/linkedin-claim";
+import { type SessionMember } from "@/platform/http/request-context";
 import { hasFirstAndLastName } from "@/lib/village/name-match";
 import { readSharingMemberCount, readWelcomeNeighbours } from "@/lib/village/network-progress";
 

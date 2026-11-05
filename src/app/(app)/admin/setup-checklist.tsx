@@ -9,8 +9,10 @@ import { SETUP_STEP_COPY } from "@/lib/admin-setup-copy";
 import { resolveAppUrl } from "@/platform/http/app-url";
 import { readBranding, type Branding } from "@/platform/branding/branding";
 import { readResendConfig } from "@/platform/email/resend";
-import { createNetworkContext, readVillageGroupReadiness, type SessionMember } from "@/lib/village/member-network";
-import { readVillageGroup, readVillageKeys, type VillageGroup, type VillageKeys } from "@/lib/village/settings";
+import { createNetworkContext, type SessionMember } from "@/platform/http/request-context";
+import { readVillageGroupReadiness } from "@/lib/village/member-network";
+import { readVillageGroup, type VillageGroup } from "@/lib/village/settings";
+import { readVillageKeys, type VillageKeys } from "@/platform/village/settings";
 
 import { BrandCard } from "./brand-card";
 import { BRAND_NAME_INPUT_ID } from "./brand-fields";

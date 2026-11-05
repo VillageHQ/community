@@ -7,24 +7,25 @@ import { session, user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
 import { memberPathResult } from "../../database/village-schema.ts";
 import { deleteMemberContent } from "../feed/feed-actions.ts";
-import { isReclaimedEmail } from "../invites/invite-state.ts";
-import { isActiveMember, isBanActive } from "../members/active-member.ts";
+import { isReclaimedEmail } from "../../platform/auth/reclaimed-email.ts";
+import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { DEPARTURE_SENTENCES, leaveGroupOnBehalf } from "../village/group-departure.ts";
-import { NetworkRequestError, type NetworkContext } from "../village/member-network.ts";
+import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import { type NetworkContext } from "../../platform/http/request-context.ts";
 import { NETWORK_ERROR_CODES } from "../village/network-api.ts";
 import {
   ADMIN_ERROR_CODES,
-  AUDIT_ACTIONS,
   CONTENT_CHOICES,
   isDepartureIncomplete,
-  MEMBER_ROLES,
   REPORT_RESOLUTIONS,
   type GroupDepartureOutcome,
   type RemoveMemberBody,
   type SetMemberRoleBody,
 } from "./admin-api.ts";
-import { requireCurrentAdmin } from "./admin-transaction.ts";
-import { recordAdminAction } from "./audit.ts";
+import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
+import { MEMBER_ROLES } from "../../platform/auth/roles.ts";
+import { requireCurrentAdmin } from "../../platform/audit/admin-transaction.ts";
+import { recordAdminAction } from "../../platform/audit/record.ts";
 import { resolveOpenReportsAgainstMember } from "./report-resolution.ts";
 
 const ADMIN_ROSTER_LOCK_ID = 7260413;

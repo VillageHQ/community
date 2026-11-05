@@ -1,8 +1,8 @@
 import { infiniteQueryOptions, queryOptions, skipToken } from "@tanstack/react-query";
 
 import { API_ROUTES } from "../../platform/http/routes.ts";
-import { acknowledgedResponseSchema } from "../village/network-api.ts";
-import { postNetworkRequest } from "../village/post-network-request.ts";
+import { acknowledgedResponseSchema } from "../../platform/http/contract.ts";
+import { postNetworkRequest } from "../../platform/http/post-request.ts";
 import {
   blockStateSchema,
   directMessageSchema,

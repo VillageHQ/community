@@ -20,9 +20,10 @@ import {
 import { ASKED_EMAIL_COOLDOWN_MS } from "@/lib/intros/intro-email";
 import { INTRO_MAXIMUM_PER_MINUTE } from "@/lib/intros/intro-limit";
 import { readIntroStateCounts } from "@/lib/intros/intro-reads";
-import { DAILY_LOOKUP_LIMITS } from "@/lib/admin/admin-api";
+import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
 import { NETWORK_ERROR_CODES, networkPathsSchema, networkSearchResultSchema } from "@/lib/village/network-api";
-import { saveVillageGroup, saveVillageKeys } from "@/lib/village/settings";
+import { saveVillageGroup } from "@/lib/village/settings";
+import { saveVillageKeys } from "@/platform/village/settings";
 import { EVENTUALLY } from "@/test/async-timeouts";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";

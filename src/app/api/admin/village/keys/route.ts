@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { verifyAndSaveVillageKeys } from "@/lib/village/member-network";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 const keysBodySchema = z.object({
   publicKey: z.string().trim().min(1, "Enter the public key."),

@@ -1,7 +1,7 @@
 import { memberIdBodySchema } from "@/lib/invites/invite-api";
 import { confirmLinkedinClaim } from "@/lib/members/member-admin";
 import { logAdminAction } from "@/platform/observability/route-logging";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(
   "member-confirm-linkedin",

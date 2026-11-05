@@ -12,8 +12,9 @@ import {
   messageReport,
 } from "../../database/messages-schema.ts";
 import { stopOpenAsksOnBlock } from "../intros/intro-blocks.ts";
-import { isActiveMember } from "../members/active-member.ts";
-import { NetworkRequestError, type NetworkContext } from "../village/member-network.ts";
+import { isActiveMember } from "../../platform/auth/member-status.ts";
+import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import { type NetworkContext } from "../../platform/http/request-context.ts";
 import { readPeerId, toConversationPair } from "./conversation-pair.ts";
 import { MESSAGE_ERROR_CODES, type MarkReadBody, type SendMessageBody, type SetBlockBody } from "./message-api.ts";
 import { isConversationParticipant, isMessageVisibleTo, readMessageForViewer } from "./message-reads.ts";

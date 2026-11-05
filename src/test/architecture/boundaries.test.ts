@@ -11,16 +11,6 @@ const SCHEMA_FILE_PATTERN = /(^|\/|-)schema\.ts$/;
 // Every entry is a debt. New violations fail, and so do entries that no longer exist, so this list only shrinks.
 const KNOWN_VIOLATIONS: readonly string[] = [
   "src/components/shell/search-ready-notice.tsx -> src/app/(app)/network/network-queries.ts",
-  "src/platform/auth/active-session.ts -> src/lib/members/active-member.ts",
-  "src/platform/auth/password-recovery.ts -> src/lib/admin/admin-api.ts",
-  "src/platform/auth/password-recovery.ts -> src/lib/admin/audit.ts",
-  "src/platform/auth/password-recovery.ts -> src/lib/invites/invite-state.ts",
-  "src/platform/auth/password-recovery.ts -> src/lib/members/active-member.ts",
-  "src/platform/auth/session.ts -> src/lib/village/member-network.ts",
-];
-
-const KNOWN_CYCLES: readonly string[] = [
-  "src/lib/admin/admin-transaction.ts <-> src/lib/members/profile.ts <-> src/lib/village/member-network.ts <-> src/lib/village/reachable-members.ts",
 ];
 
 const sourceFiles = readSourceFiles();
@@ -43,7 +33,7 @@ describe("the import graph", () => {
   });
 
   it("has no file cycles", () => {
-    expect(findCycles(productionEdges)).toEqual([...KNOWN_CYCLES].toSorted());
+    expect(findCycles(productionEdges)).toEqual([]);
   });
 
   it("has no cycles between modules", () => {

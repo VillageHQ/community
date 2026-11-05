@@ -18,8 +18,8 @@ import {
 } from "@/lib/feed/feed-api";
 import { readNewPostPollMs } from "@/lib/feed/new-post-polling";
 import { API_ROUTES } from "@/platform/http/routes";
-import { acknowledgedResponseSchema } from "@/lib/village/network-api";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { acknowledgedResponseSchema } from "@/platform/http/contract";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 export const FEED_QUERY_KEYS = {
   timeline: "feed-timeline",

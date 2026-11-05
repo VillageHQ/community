@@ -6,7 +6,7 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberAvatar, memberProfile, memberTag } from "../../database/members-schema.ts";
 import { type Directory, type DirectoryFilters, normalizeTag } from "./profile-api.ts";
-import { isActiveMember } from "./active-member.ts";
+import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { toAvatarUrl } from "./profile.ts";
 
 export const DIRECTORY_PAGE_SIZE = 12;

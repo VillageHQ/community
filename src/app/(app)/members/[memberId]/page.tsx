@@ -18,7 +18,7 @@ import { isCardFilledIn, readMemberProfile } from "@/lib/members/profile";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
-import { isAdminMember } from "@/lib/village/member-network";
+import { isAdminMember } from "@/platform/auth/roles";
 
 import { BlockMemberButton } from "@/app/(app)/messages/block-member-button";
 import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";

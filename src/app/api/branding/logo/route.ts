@@ -12,7 +12,7 @@ import {
   parseLogoBackdrop,
 } from "@/platform/branding/logo-rules";
 import { withRouteLogging } from "@/platform/observability/route-logging";
-import { createAdminBinaryRoute, createMemberRoute } from "@/lib/village/member-route";
+import { createAdminBinaryRoute, createMemberRoute } from "@/platform/village/member-routes";
 
 const NOT_MODIFIED_STATUS = 304;
 const NOT_FOUND_STATUS = 404;

@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { CheckboxCard } from "@/components/ui/checkbox-card";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
-import { acknowledgedResponseSchema } from "@/lib/village/network-api";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { acknowledgedResponseSchema } from "@/platform/http/contract";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 import { JOIN_STEPS, JoinSteps } from "./join-steps";
 import { JoinLayout } from "./join-layout";

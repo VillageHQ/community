@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { postNetworkRequest, RequestFailure } from "./post-network-request";
+import { postNetworkRequest, RequestFailure } from "./post-request";
 
 const CUT_OFF_MESSAGE = "This search was cut off.";
 

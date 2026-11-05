@@ -6,7 +6,7 @@ import { resolveOnboardingStep } from "@/lib/members/onboarding";
 import { ONBOARDING_STEPS } from "@/lib/members/profile-api";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
-import { isAdminMember } from "@/lib/village/member-network";
+import { isAdminMember } from "@/platform/auth/roles";
 
 export default async function LandingPage() {
   const member = await requireMember();

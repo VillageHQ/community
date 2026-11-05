@@ -1,8 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { memberDailyUsage, memberNetwork, memberPathResult } from "@/database/village-schema";
-import { DAILY_LOOKUP_LIMITS } from "@/lib/admin/admin-api";
+import { memberDailyUsage } from "@/platform/village/schema";
+import { memberNetwork, memberPathResult } from "@/database/village-schema";
+import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
 import {
   NETWORK_ERROR_CODES,
   NETWORK_STAGES,
@@ -10,7 +11,8 @@ import {
   networkSearchResultSchema,
   networkStatusSchema,
 } from "@/lib/village/network-api";
-import { readVillageGroup, saveVillageGroup, saveVillageKeys } from "@/lib/village/settings";
+import { readVillageGroup, saveVillageGroup } from "@/lib/village/settings";
+import { saveVillageKeys } from "@/platform/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";

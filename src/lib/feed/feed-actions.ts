@@ -5,12 +5,14 @@ import { and, count, eq, inArray, isNotNull, notInArray, sql } from "drizzle-orm
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
 import { comment, moderationRecord, post, reaction } from "../../database/feed-schema.ts";
-import { AUDIT_ACTIONS } from "../admin/admin-api.ts";
-import { requireCurrentAdmin, withAdminTransaction } from "../admin/admin-transaction.ts";
-import { recordAdminAction } from "../admin/audit.ts";
-import { isActiveMember, isBanActive } from "../members/active-member.ts";
+import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
+import { requireCurrentAdmin, withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
+import { recordAdminAction } from "../../platform/audit/record.ts";
+import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { logAdminAction } from "../../platform/observability/route-logging.ts";
-import { isAdminMember, NetworkRequestError, type NetworkContext, type SessionMember } from "../village/member-network.ts";
+import { isAdminMember } from "../../platform/auth/roles.ts";
+import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import { type NetworkContext, type SessionMember } from "../../platform/http/request-context.ts";
 import {
   FEED_ERROR_CODES,
   FEED_LIMITS,

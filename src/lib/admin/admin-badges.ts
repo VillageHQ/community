@@ -5,7 +5,7 @@ import type { Environment } from "../../platform/environment.ts";
 import { readSetupProgress } from "../admin-setup.ts";
 import { readConfirmationBadgeCount } from "../members/member-admin.ts";
 import { readPendingLinkCount } from "../village/network-progress.ts";
-import { readVillageOutOfCreditsAt } from "../village/settings.ts";
+import { readVillageOutOfCreditsAt } from "../../platform/village/settings.ts";
 import { readOpenReportCount } from "./reports.ts";
 
 export async function readAdminTabFacts(database: Database, environment: Environment) {

@@ -1,6 +1,6 @@
 import { reportListBodySchema } from "@/lib/admin/admin-api";
 import { readReports } from "@/lib/admin/reports";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(
   "admin-report-list",

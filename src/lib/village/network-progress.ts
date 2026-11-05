@@ -5,10 +5,13 @@ import { and, count, eq, isNotNull } from "drizzle-orm";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
-import { isActiveMember } from "../members/active-member.ts";
-import { isAdminMember, isMemberEmailTrusted, type SessionMember } from "./member-network.ts";
+import { isActiveMember } from "../../platform/auth/member-status.ts";
+import { isAdminMember } from "../../platform/auth/roles.ts";
+import { isMemberEmailTrusted } from "../members/linkedin-claim.ts";
+import { type SessionMember } from "../../platform/http/request-context.ts";
 import { NETWORK_PROGRESS, type NetworkProgress } from "./network-progress-stages.ts";
-import { readVillageGroup, readVillageKeys } from "./settings.ts";
+import { readVillageGroup } from "./settings.ts";
+import { readVillageKeys } from "../../platform/village/settings.ts";
 
 const MAXIMUM_WELCOME_NEIGHBOURS = 6;
 

@@ -1,31 +1,13 @@
 import "server-only";
 
-import { count, desc, eq, sql } from "drizzle-orm";
+import { count, desc, sql } from "drizzle-orm";
 import { unionAll } from "drizzle-orm/pg-core";
 
-import { adminAuditEntry } from "../../database/admin-schema.ts";
-import { user } from "../../platform/database/auth-schema.ts";
-import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
+import { adminAuditEntry } from "../../platform/audit/schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { moderationRecord } from "../../database/feed-schema.ts";
 import { MODERATION_TARGETS } from "../feed/feed-api.ts";
-import { ADMIN_PAGE_SIZES, AUDIT_KINDS, auditPageSchema, type AuditAction, type AuditPage } from "./admin-api.ts";
-
-type AuditFacts = {
-  action: AuditAction;
-  targetMemberId?: string | null;
-  targetName?: string | null;
-  detail?: string | null;
-};
-
-async function readActorName(connection: DatabaseOrTransaction, actorId: string) {
-  const [actor] = await connection.select({ name: user.name }).from(user).where(eq(user.id, actorId));
-  return actor?.name ?? "";
-}
-
-export async function recordAdminAction(connection: DatabaseOrTransaction, actorId: string, facts: AuditFacts) {
-  const actorName = await readActorName(connection, actorId);
-  await connection.insert(adminAuditEntry).values({ ...facts, actorId, actorName });
-}
+import { ADMIN_PAGE_SIZES, AUDIT_KINDS, auditPageSchema, type AuditPage } from "./admin-api.ts";
 
 function selectAdminActions(database: Database) {
   return database

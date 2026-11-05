@@ -19,7 +19,7 @@ import { ONBOARDING_STEPS } from "@/lib/members/profile-api";
 import { selectNextSteps } from "@/lib/next-steps";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
-import { isAdminMember } from "@/lib/village/member-network";
+import { isAdminMember } from "@/platform/auth/roles";
 import { readNetworkProgress } from "@/lib/village/network-progress";
 
 import { Feed } from "./feed/feed";

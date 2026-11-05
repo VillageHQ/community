@@ -8,9 +8,11 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { comment, post, reaction } from "../../database/feed-schema.ts";
 import { memberAvatar, memberProfile } from "../../database/members-schema.ts";
-import { isActiveMember, isBanActive } from "../members/active-member.ts";
+import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { toAvatarUrl } from "../members/profile.ts";
-import { isAdminMember, NetworkRequestError, type SessionMember } from "../village/member-network.ts";
+import { isAdminMember } from "../../platform/auth/roles.ts";
+import { NetworkRequestError } from "../../platform/http/request-error.ts";
+import { type SessionMember } from "../../platform/http/request-context.ts";
 import {
   commentSchema,
   FEED_ERROR_CODES,

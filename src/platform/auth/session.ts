@@ -6,7 +6,7 @@ import { cache } from "react";
 
 import { readActiveSession } from "./active-session.ts";
 import { ROUTES } from "../http/routes.ts";
-import { isAdminMember } from "../../lib/village/member-network.ts";
+import { isAdminMember } from "./roles.ts";
 
 const readSession = cache(async () => readActiveSession(await headers()));
 

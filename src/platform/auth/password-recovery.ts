@@ -5,16 +5,17 @@ import { and, eq } from "drizzle-orm";
 
 import { account, session, user } from "../database/auth-schema.ts";
 import type { Database } from "../database/client.ts";
-import { AUDIT_ACTIONS, MEMBER_ROLES } from "../../lib/admin/admin-api.ts";
-import { recordAdminAction } from "../../lib/admin/audit.ts";
+import { AUDIT_ACTIONS } from "../audit/actions.ts";
+import { MEMBER_ROLES } from "./roles.ts";
+import { recordAdminAction } from "../audit/record.ts";
 import { resolveAppUrl } from "../http/app-url.ts";
 import { readBranding } from "../branding/branding.ts";
 import { recordFailedAttempt } from "../rate-limit/attempt-rate-limit.ts";
 import { PASSWORD_RESET_LIFETIME_SECONDS, renderPasswordResetEmail } from "../email/password-reset-email.ts";
 import { readResendConfig, sendResendEmail } from "../email/resend.ts";
 import type { Environment } from "../environment.ts";
-import { isReclaimedEmail } from "../../lib/invites/invite-state.ts";
-import { isActiveMember, isBanActive } from "../../lib/members/active-member.ts";
+import { isReclaimedEmail } from "./reclaimed-email.ts";
+import { isActiveMember, isBanActive } from "./member-status.ts";
 import { logError } from "../observability/route-logging.ts";
 import { ROUTES } from "../http/routes.ts";
 

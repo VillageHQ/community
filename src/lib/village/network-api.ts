@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { REQUEST_ERROR_CODES } from "../../platform/http/error-codes.ts";
+import { VILLAGE_ERROR_CODES } from "../../platform/village/error-codes.ts";
 import { INTRO_STATES } from "../intros/intro-api.ts";
 
 export const NETWORK_STAGES = {
@@ -16,30 +18,19 @@ export const NETWORK_STAGES = {
 } as const;
 
 export const NETWORK_ERROR_CODES = {
-  invalidRequest: "invalid_request",
-  unauthenticated: "unauthenticated",
-  forbidden: "forbidden",
+  ...REQUEST_ERROR_CODES,
+  ...VILLAGE_ERROR_CODES,
   linkedinInvalid: "linkedin_invalid",
   linkedinTaken: "linkedin_taken",
   emailNotConfirmed: "email_not_confirmed",
   notConfigured: "not_configured",
   notReady: "network_not_ready",
-  notSynced: "network_not_synced",
-  dailyLimitReached: "daily_limit_reached",
-  keysRejected: "village_keys_rejected",
   keysMismatched: "village_keys_mismatched",
-  outOfCredits: "village_out_of_credits",
-  notLinked: "village_not_linked",
-  rateLimited: "village_rate_limited",
-  unavailable: "village_unavailable",
   groupExists: "group_exists",
-  forbiddenOrigin: "forbidden_origin",
   linkMismatch: "village_link_mismatch",
   linkChanged: "village_link_changed",
   searchCutOff: "search_cut_off",
-  timedOut: "village_timed_out",
   leaveNotConfirmed: "leave_not_confirmed",
-  memberNotFound: "member_not_found",
   groupAdminCannotLeave: "group_admin_cannot_leave",
 } as const;
 
@@ -129,5 +120,3 @@ export type NetworkPaths = z.infer<typeof networkPathsSchema>;
 export type NetworkPath = NetworkPaths["paths"][number];
 
 export const LOW_LOOKUPS_LEFT = 10;
-
-export const acknowledgedResponseSchema = z.object({ message: z.string() });

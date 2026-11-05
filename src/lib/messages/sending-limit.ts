@@ -3,7 +3,7 @@ import "server-only";
 import type { Database } from "../../platform/database/client.ts";
 import { recordFailedAttempt } from "../../platform/rate-limit/attempt-rate-limit.ts";
 import { pruneExpiredRateLimits } from "../../platform/rate-limit/rate-limit-pruning.ts";
-import { NetworkRequestError } from "../village/member-network.ts";
+import { NetworkRequestError } from "../../platform/http/request-error.ts";
 import { MESSAGE_ERROR_CODES } from "./message-api.ts";
 
 const TOO_MANY_REQUESTS_STATUS = 429;

@@ -10,8 +10,8 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CheckboxCard } from "@/components/ui/checkbox-card";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
-import { acknowledgedResponseSchema } from "@/lib/village/network-api";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { acknowledgedResponseSchema } from "@/platform/http/contract";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 type GroupState = { errorMessage: string | null };
 

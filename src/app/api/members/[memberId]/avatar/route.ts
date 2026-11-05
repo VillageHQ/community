@@ -1,7 +1,7 @@
 import { getDatabase } from "@/platform/database/client";
 import { readAvatar } from "@/lib/members/profile";
 import { withRouteLogging } from "@/platform/observability/route-logging";
-import { readSessionMember } from "@/lib/village/member-route";
+import { readSessionMember } from "@/platform/http/member-route";
 
 const NOT_MODIFIED_STATUS = 304;
 const UNAUTHORIZED_STATUS = 401;

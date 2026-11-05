@@ -1,0 +1,25 @@
+import "server-only";
+
+import { eq } from "drizzle-orm";
+
+import { adminAuditEntry } from "./schema.ts";
+import { user } from "../database/auth-schema.ts";
+import type { DatabaseOrTransaction } from "../database/client.ts";
+import { type AuditAction } from "./actions.ts";
+
+type AuditFacts = {
+  action: AuditAction;
+  targetMemberId?: string | null;
+  targetName?: string | null;
+  detail?: string | null;
+};
+
+async function readActorName(connection: DatabaseOrTransaction, actorId: string) {
+  const [actor] = await connection.select({ name: user.name }).from(user).where(eq(user.id, actorId));
+  return actor?.name ?? "";
+}
+
+export async function recordAdminAction(connection: DatabaseOrTransaction, actorId: string, facts: AuditFacts) {
+  const actorName = await readActorName(connection, actorId);
+  await connection.insert(adminAuditEntry).values({ ...facts, actorId, actorName });
+}

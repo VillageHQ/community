@@ -9,7 +9,7 @@ import { introRequest } from "../../database/intro-schema.ts";
 import { memberAvatar, memberProfile } from "../../database/members-schema.ts";
 import { memberBlock } from "../../database/messages-schema.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
-import { isActiveMember, isBanActive } from "../members/active-member.ts";
+import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { toAvatarUrl } from "../members/profile.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import {

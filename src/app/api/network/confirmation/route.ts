@@ -4,7 +4,7 @@ import { z } from "zod";
 import { user } from "@/platform/database/auth-schema";
 import { recordFailedAttempt } from "@/platform/rate-limit/attempt-rate-limit";
 import { sendEmailConfirmation } from "@/lib/invites/email-confirmation";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 const CONFIRMATION_KEY_PREFIX = "email-confirmation";
 const MAXIMUM_SENDS_PER_MINUTE = 3;

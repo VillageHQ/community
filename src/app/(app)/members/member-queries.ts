@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { directorySchema, type DirectoryFilters } from "@/lib/members/profile-api";
 import { API_ROUTES } from "@/platform/http/routes";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 export const MEMBER_QUERY_KEYS = { directory: "member-directory" } as const;
 

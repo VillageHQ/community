@@ -12,7 +12,7 @@ import {
   memberBlock,
   messageReport,
 } from "../../database/messages-schema.ts";
-import { isBanActive } from "../members/active-member.ts";
+import { isBanActive } from "../../platform/auth/member-status.ts";
 import { toContainsPattern } from "../members/directory.ts";
 import { toAvatarUrl } from "../members/profile.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";

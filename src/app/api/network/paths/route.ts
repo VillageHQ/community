@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { readMemberPaths } from "@/lib/village/member-network";
-import { createMemberRoute } from "@/lib/village/member-route";
+import { createMemberRoute } from "@/platform/village/member-routes";
 
 const MAXIMUM_SLUG_LENGTH = 200;
 

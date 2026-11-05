@@ -9,8 +9,8 @@ import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { VILLAGE_PLATFORM_LINKS } from "@/lib/admin/settings-copy";
 import { API_ROUTES } from "@/platform/http/routes";
-import { acknowledgedResponseSchema } from "@/lib/village/network-api";
-import { postNetworkRequest } from "@/lib/village/post-network-request";
+import { acknowledgedResponseSchema } from "@/platform/http/contract";
+import { postNetworkRequest } from "@/platform/http/post-request";
 
 type DomainState = { errorMessage: string | null };
 
