@@ -31,7 +31,7 @@ No terminal, no code. It's MIT licensed, and you run your own copy.
 
 ### On your own server
 
-Rent a server, point a domain at it and paste one command. It leaves your community running on HTTPS, restarts it by itself and backs it up every day. We've tested it on fresh virtual machines, but not yet on a rented server with a real certificate.
+Rent a server, point a domain at it and paste one command. It leaves your community running on HTTPS, restarts it by itself and backs it up every day. We've run it on one rented server with a real certificate, and on fresh Ubuntu and Debian test machines.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh | sudo bash

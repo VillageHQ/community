@@ -72,7 +72,7 @@ backup() {
   remove_old_backups
   say "Backup saved: $target"
   say "This copy sits on the same disk as your data. If the server is lost, it's lost too."
-  say "Copy backups to another place regularly. docs/self-host-vps.md shows how."
+  say "Copy backups to another place regularly. The guide shows how: https://github.com/VillageHQ/community/blob/main/docs/self-host-vps.md"
 }
 
 wait_for_healthy_app() {

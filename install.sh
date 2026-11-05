@@ -185,7 +185,7 @@ choose_domain() {
     app_url="$(read_setting APP_URL)"
     say "Keeping your current address: $app_url"
     if [ -n "${COMMUNITY_DOMAIN:-}" ] && [ "$(normalize_domain "$COMMUNITY_DOMAIN")" != "$domain" ]; then
-      warn "You passed ${COMMUNITY_DOMAIN}, but we never change existing settings. docs/self-host-vps.md shows how to change the address."
+      warn "You passed ${COMMUNITY_DOMAIN}, but we never change existing settings. The guide shows how to change the address: https://github.com/VillageHQ/community/blob/main/docs/self-host-vps.md"
     fi
     if [ -n "${COMMUNITY_BIND_ADDRESS:-}" ] && [ "$COMMUNITY_BIND_ADDRESS" != "$(read_setting COMMUNITY_BIND_ADDRESS)" ]; then
       warn "You passed COMMUNITY_BIND_ADDRESS=${COMMUNITY_BIND_ADDRESS}, but we never change existing settings."
