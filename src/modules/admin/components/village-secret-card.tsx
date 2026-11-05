@@ -52,6 +52,10 @@ const SECRET_COPY: Partial<Record<VillageKeyStatus, SecretCopy>> = {
     tag: NEEDS_ACTION_TAG,
     description: (isNetworkOn) => `We can't read your saved Village keys. If you just went back to an older version, update again. Otherwise ${readPasteAdvice(isNetworkOn)}.`,
   },
+  [VILLAGE_KEY_STATUSES.preview]: {
+    tag: <Tag>Preview</Tag>,
+    description: () => "This is a preview, which may share your live site's database, so it never seals or changes your Village keys. Your live site handles that.",
+  },
   [VILLAGE_KEY_STATUSES.unavailable]: {
     tag: <Tag tone="gold">Try again soon</Tag>,
     description: () => "We couldn't read your Village keys just now. Reload this page in a moment. Your keys are safe, and you don't need to paste them.",

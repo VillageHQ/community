@@ -7,12 +7,12 @@ import { and, eq } from "drizzle-orm";
 import type { Database, DatabaseOrTransaction } from "../database/client.ts";
 import type { Environment } from "../environment.ts";
 import { logError } from "../observability/route-logging.ts";
-import { isPreviewSharingDatabase } from "../database/migration-plan.ts";
+import { isPreview } from "../database/migration-plan.ts";
 import { RequestError } from "../http/request-error.ts";
-import { looksSealed, openSealedSecret, OPEN_OUTCOMES, sealSecret } from "../secrets/sealed.ts";
+import { isReadableSealedValue, looksSealed, openSealedSecret, OPEN_OUTCOMES, sealSecret, type OpenResult } from "../secrets/sealed.ts";
 import { readSetupToken } from "../secrets/setup-token.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../settings/schema.ts";
-import { DAILY_LOOKUP_LIMITS, dailyLimitBodySchema, VILLAGE_KEY_STATUSES, type VillageKeyStatus } from "./contract.ts";
+import { DAILY_LOOKUP_LIMITS, dailyLimitBodySchema, KEY_STORAGE, VILLAGE_KEY_STATUSES, type VillageKeyStatus } from "./contract.ts";
 import { VILLAGE_ERROR_CODES } from "./error-codes.ts";
 import { readSettings, saveSettings } from "../settings/store.ts";
 
@@ -31,7 +31,7 @@ const SECRET_KEY_LABEL = INSTANCE_SETTING_KEYS.villageSecretKey;
 const SEAL_RETRY_DELAY_MS = 5 * 60 * 1000;
 const UNPROCESSABLE_STATUS = 422;
 
-const STATUS_BY_OUTCOME = {
+const STATUS_BY_OUTCOME: Record<UnopenedResult["outcome"], VillageKeyStatus> = {
   [OPEN_OUTCOMES.wrongToken]: VILLAGE_KEY_STATUSES.tokenDifferent,
   [OPEN_OUTCOMES.unsupported]: VILLAGE_KEY_STATUSES.damaged,
   [OPEN_OUTCOMES.derivationFailed]: VILLAGE_KEY_STATUSES.unavailable,
@@ -109,12 +109,20 @@ export function sealStoredPlaintext(database: Database, plaintext: string, token
 
 async function readPlaintextState(database: Database, storedSecret: string, publicKey: string, environment: Environment): Promise<VillageKeyState> {
   const keys = { publicKey, secretKey: storedSecret };
+  if (isPreview(environment)) return { status: VILLAGE_KEY_STATUSES.preview, publicKey, keys };
   const token = readSetupToken(environment);
   if (!token) return { status: VILLAGE_KEY_STATUSES.plain, publicKey, keys };
 
-  // A preview may share production's database and have its own token. Sealing from it would lock production out.
-  const isSealed = !isPreviewSharingDatabase(environment) && (await sealStoredPlaintext(database, storedSecret, token));
+  const isSealed = await sealStoredPlaintext(database, storedSecret, token);
   return { status: isSealed ? VILLAGE_KEY_STATUSES.sealed : VILLAGE_KEY_STATUSES.sealFailed, publicKey, keys };
+}
+
+type UnopenedResult = Exclude<OpenResult, { outcome: typeof OPEN_OUTCOMES.opened }>;
+
+function readUnopenedStatus(storedSecret: string, result: UnopenedResult | null, environment: Environment) {
+  if (!isReadableSealedValue(storedSecret)) return VILLAGE_KEY_STATUSES.damaged;
+  if (isPreview(environment)) return VILLAGE_KEY_STATUSES.preview;
+  return result ? STATUS_BY_OUTCOME[result.outcome] : VILLAGE_KEY_STATUSES.tokenMissing;
 }
 
 async function readSealedState(storedSecret: string, publicKey: string, environment: Environment): Promise<VillageKeyState> {
@@ -122,7 +130,7 @@ async function readSealedState(storedSecret: string, publicKey: string, environm
   const result = token ? await openSealedSecret(storedSecret, token, SECRET_KEY_LABEL) : null;
   if (result?.outcome === OPEN_OUTCOMES.opened) return { status: VILLAGE_KEY_STATUSES.sealed, publicKey, keys: { publicKey, secretKey: result.secret } };
 
-  const status = result ? STATUS_BY_OUTCOME[result.outcome] : VILLAGE_KEY_STATUSES.tokenMissing;
+  const status = readUnopenedStatus(storedSecret, result ?? null, environment);
   logProblemOnce(status, storedSecret);
   return { status, publicKey, keys: null };
 }
@@ -149,7 +157,17 @@ export async function sealVillageSecretOnBoot(database: Database, environment: E
   }
 }
 
+// Says how a save would store the secret, so the form can warn before the admin pastes anything.
+export function readKeyStorage(environment: Environment = process.env) {
+  if (isPreview(environment)) return KEY_STORAGE.refused;
+  return readSetupToken(environment) ? KEY_STORAGE.sealed : KEY_STORAGE.unencrypted;
+}
+
 export async function saveVillageKeys(database: DatabaseOrTransaction, keys: VillageKeys, environment: Environment = process.env) {
+  // A preview may share production's database. Its token would seal the keys so production can't read them.
+  if (isPreview(environment)) {
+    throw new RequestError(UNPROCESSABLE_STATUS, VILLAGE_ERROR_CODES.keysUnstorable, "Village keys can't be changed from a preview. Save them on your live site.");
+  }
   const token = readSetupToken(environment);
   if (!token && looksSealed(keys.secretKey)) {
     throw new RequestError(UNPROCESSABLE_STATUS, VILLAGE_ERROR_CODES.keysUnstorable, "This key can't be saved until this site has a setup token. Add SETUP_TOKEN on your host, then try again.");

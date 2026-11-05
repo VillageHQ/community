@@ -9,9 +9,14 @@ export const VILLAGE_KEY_STATUSES = {
   tokenDifferent: "token_different",
   damaged: "damaged",
   unavailable: "unavailable",
+  preview: "preview",
 } as const;
 
 export type VillageKeyStatus = (typeof VILLAGE_KEY_STATUSES)[keyof typeof VILLAGE_KEY_STATUSES];
+
+export const KEY_STORAGE = { sealed: "sealed", unencrypted: "unencrypted", refused: "refused" } as const;
+
+export type KeyStorage = (typeof KEY_STORAGE)[keyof typeof KEY_STORAGE];
 
 export const DAILY_LOOKUP_LIMITS = { default: 50, minimum: 1, maximum: 500 } as const;
 

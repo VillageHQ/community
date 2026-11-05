@@ -225,7 +225,7 @@ The domain and keys steps of setup also offer "Run without Village", so a new co
 
 The key comes from `SETUP_TOKEN` through scrypt, not HKDF. HKDF assumes its input is already high entropy, and this token is a password a person chose: `readSetupToken` accepts any 32 characters with 8 distinct ones and no repeated 8-character run. Scrypt makes a stolen backup slow to guess. Each derivation costs tens of milliseconds and about 32 MiB. A process remembers its keys, shares one derivation between callers at the same moment, and forgets a failed one so it can try again.
 
-Plaintext is sealed once at boot, after migrations, whatever the toggles say. It's also sealed on first read, for a token that appears later. Both use a compare-and-set update, so they can't overwrite keys another instance just saved. A failed attempt waits five minutes before the next. A Vercel preview that shares production's database never seals, because its token could lock production out.
+Plaintext is sealed once at boot, after migrations, whatever the toggles say. It's also sealed on first read, for a token that appears later. Both use a compare-and-set update, so they can't overwrite keys another instance just saved. A failed attempt waits five minutes before the next. A Vercel preview never seals, and refuses to save keys, because it may share production's database and its own token would lock production out. `MIGRATE_ON_PREVIEW=true` doesn't change this: it says whether to migrate, not whether the database is separate.
 
 The status comes from what's stored:
 
@@ -235,9 +235,10 @@ The status comes from what's stored:
 | Sealed | Different | `token_different` | The app asks for the old token or the keys. One log line, no secret, no crash. |
 | Sealed | Missing or too weak | `token_missing` | The app asks to restore the token, and warns that keys pasted without it are stored unencrypted. |
 | Sealed | Key couldn't be derived | `unavailable` | The app says to reload. It doesn't blame the token. |
-| Starts with `sealed.`, otherwise unreadable | Any | `damaged` | Fails closed. It's never used as a key, or re-sealed. |
+| Starts with `sealed.`, otherwise unreadable | Any, or none | `damaged` | Fails closed. It's never used as a key, or re-sealed. |
+| Any | On a Vercel preview, when it can't be read or would need sealing | `preview` | Keys work if readable. Nothing is sealed or saved. |
 | Plain | Usable | `sealed`, or `seal_failed` if the write failed | Keys work. `seal_failed` shows a warning. |
-| Plain | Missing or too weak | `plain` | Keys work. **Settings** shows a warning. |
+| Plain | Missing or too weak | `plain` | Keys work. **Settings** shows a warning, and the keys form warns before a save that it would be unencrypted. |
 | Nothing | Any | `missing` | The not-configured path. |
 
 Anything starting with `sealed.` counts as sealed, so a version this build doesn't know can't be read as a plain key. A real key starting that way round-trips when a token is set, and is refused without one.

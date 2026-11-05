@@ -4,8 +4,12 @@ export type MigrationPlan =
   | { shouldRun: true; connectionString: string }
   | { shouldRun: false; reason: string };
 
+export function isPreview(environment: Environment) {
+  return environment.VERCEL_ENV === "preview";
+}
+
 export function isPreviewSharingDatabase(environment: Environment) {
-  return environment.VERCEL_ENV === "preview" && environment.MIGRATE_ON_PREVIEW !== "true";
+  return isPreview(environment) && environment.MIGRATE_ON_PREVIEW !== "true";
 }
 
 export function resolveMigrationPlan(environment: Environment): MigrationPlan {

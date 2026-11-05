@@ -8,8 +8,8 @@ import { createSignedInMember } from "@/test/signed-in-member";
 
 import { clearDatabase, createTestDatabase } from "../../test/database.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../settings/schema.ts";
-import { VILLAGE_KEY_STATUSES } from "./contract.ts";
-import { readVillageKeyState, readVillageKeys, saveVillageKeys, sealStoredPlaintext, sealVillageSecretOnBoot } from "./settings.ts";
+import { KEY_STORAGE, VILLAGE_KEY_STATUSES } from "./contract.ts";
+import { readKeyStorage, readVillageKeyState, readVillageKeys, saveVillageKeys, sealStoredPlaintext, sealVillageSecretOnBoot } from "./settings.ts";
 
 const APP_URL = "http://localhost:3000";
 const TOKEN = "a-strong-setup-token-with-more-than-32-characters";
@@ -264,6 +264,16 @@ describe("the Village keys at rest", () => {
   });
 
   describe("a stored value that looks sealed but isn't readable", () => {
+    it.each(["sealed.v2.a.b.c", "sealed.key-from-somewhere"])("calls %s damaged with no token too", async (value) => {
+      vi.stubEnv("SETUP_TOKEN", "");
+      await database.insert(instanceSettings).values([
+        { key: INSTANCE_SETTING_KEYS.villagePublicKey, value: KEYS.publicKey },
+        { key: INSTANCE_SETTING_KEYS.villageSecretKey, value },
+      ]);
+
+      expect((await readVillageKeyState(database)).status).toBe(VILLAGE_KEY_STATUSES.damaged);
+    });
+
     it.each(["sealed.v2.a.b.c", "sealed.key-from-somewhere"])("fails closed for %s, and leaves it alone", async (value) => {
       await database.insert(instanceSettings).values([
         { key: INSTANCE_SETTING_KEYS.villagePublicKey, value: KEYS.publicKey },
@@ -295,16 +305,44 @@ describe("the Village keys at rest", () => {
     });
   });
 
-  describe("on a preview that may share production's database", () => {
+  describe.each([
+    ["shares production's database", { VERCEL_ENV: "preview" }],
+    ["sets MIGRATE_ON_PREVIEW, which can't say whether the database is shared", { VERCEL_ENV: "preview", MIGRATE_ON_PREVIEW: "true" }],
+  ])("on a preview that %s", (_name, previewEnvironment) => {
+    const PREVIEW = { ...previewEnvironment, SETUP_TOKEN: NEW_TOKEN };
+
     it("leaves a plaintext secret alone, so its token can't lock production out", async () => {
       await storePlaintextKeys();
 
-      const state = await readVillageKeyState(database, { SETUP_TOKEN: TOKEN, VERCEL_ENV: "preview" });
+      const state = await readVillageKeyState(database, PREVIEW);
 
-      expect(state.keys).toEqual(KEYS);
-      expect(state.status).toBe(VILLAGE_KEY_STATUSES.sealFailed);
+      expect(state).toEqual({ status: VILLAGE_KEY_STATUSES.preview, publicKey: KEYS.publicKey, keys: KEYS });
       expect(await readStoredSecret()).toBe(KEYS.secretKey);
     });
+
+    it("refuses to save keys, so production can still read them", async () => {
+      await saveVillageKeys(database, KEYS);
+      const sealed = await readStoredSecret();
+
+      await expect(saveVillageKeys(database, { ...KEYS, secretKey: "sk_from_preview" }, PREVIEW)).rejects.toThrow("live site");
+      expect(await readStoredSecret()).toBe(sealed);
+      expect(await readVillageKeys(database)).toEqual(KEYS);
+    });
+
+    it("says it's a preview, not that the token changed", async () => {
+      await saveVillageKeys(database, KEYS);
+
+      expect((await readVillageKeyState(database, PREVIEW)).status).toBe(VILLAGE_KEY_STATUSES.preview);
+    });
+
+    it("tells the form a save would be refused", () => {
+      expect(readKeyStorage(PREVIEW)).toBe(KEY_STORAGE.refused);
+    });
+  });
+
+  it("tells the form a save without a token is stored unencrypted", () => {
+    expect(readKeyStorage({ SETUP_TOKEN: "" })).toBe(KEY_STORAGE.unencrypted);
+    expect(readKeyStorage({ SETUP_TOKEN: TOKEN })).toBe(KEY_STORAGE.sealed);
   });
 
   describe("at boot", () => {

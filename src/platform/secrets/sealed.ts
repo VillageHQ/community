@@ -64,6 +64,10 @@ export function looksSealed(value: string) {
   return value.startsWith(SEALED_PREFIX);
 }
 
+export function isReadableSealedValue(value: string) {
+  return parseEnvelope(value) !== null;
+}
+
 export async function sealSecret(secret: string, token: string, label: string) {
   const salt = readSealingSalt();
   const iv = randomBytes(IV_BYTES);

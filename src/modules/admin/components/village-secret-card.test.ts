@@ -29,6 +29,13 @@ describe("the Village secret card", () => {
     expect(renderCard(VILLAGE_KEY_STATUSES.tokenDifferent, false)).toContain("turn on Network");
   });
 
+  it("doesn't tell a preview to check its database", () => {
+    const card = renderCard(VILLAGE_KEY_STATUSES.preview);
+
+    expect(card).toContain("preview");
+    expect(card).not.toContain("check your database");
+  });
+
   it("shows nothing with no keys saved", () => {
     expect(renderCard(VILLAGE_KEY_STATUSES.missing)).toBe("");
   });

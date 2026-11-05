@@ -13,7 +13,7 @@ import { createRequestContext, type SessionMember } from "@/platform/http/reques
 import { readVillageGroupReadiness } from "@/modules/network/service";
 import { readVillageGroup, type VillageGroup } from "@/modules/network/service-settings";
 import { VILLAGE_KEY_STATUSES, type VillageKeyStatus } from "@/platform/village/contract";
-import { readVillageKeyState, type VillageKeys } from "@/platform/village/settings";
+import { readKeyStorage, readVillageKeyState, type VillageKeys } from "@/platform/village/settings";
 
 import { RunWithoutVillage } from "@/modules/admin/components/run-without-village";
 import { networkManifest } from "@/modules/network/manifest";
@@ -85,7 +85,7 @@ const STEP_BODIES: Partial<Record<SetupStepId, (facts: StepBodyFacts) => ReactNo
   ),
   [SETUP_STEPS.keys]: ({ keys, savedPublicKey, keyStatus }) => (
     <>
-      <KeysForm savedPublicKey={savedPublicKey} hasSavedKeys={Boolean(keys)} keyStatus={keyStatus} />
+      <KeysForm savedPublicKey={savedPublicKey} hasSavedKeys={Boolean(keys)} keyStatus={keyStatus} keyStorage={readKeyStorage(process.env)} />
       {keys ? null : <RunWithoutVillage moduleId={networkManifest.id} />}
     </>
   ),
