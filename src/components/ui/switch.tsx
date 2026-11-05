@@ -8,6 +8,7 @@ const SWITCH_SIZES = {
   large: { root: "h-11 w-[72px]", thumb: "size-9 translate-x-1 data-[state=checked]:translate-x-8" },
 };
 
+// A dialog trigger overwrites data-state on its child, so the track follows aria-checked, which only the switch sets.
 type SwitchProps = ComponentProps<typeof SwitchPrimitive.Root> & { size?: keyof typeof SWITCH_SIZES };
 
 export function Switch({ size = "default", ...props }: SwitchProps) {
@@ -15,7 +16,7 @@ export function Switch({ size = "default", ...props }: SwitchProps) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
-      className={`relative block shrink-0 rounded-full bg-muted shadow-[inset_0_0_0_1.5px_var(--input)] disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:shadow-[inset_0_0_0_1.5px_var(--brand-edge)] ${root}`}
+      className={`relative block shrink-0 rounded-full bg-muted shadow-[inset_0_0_0_1.5px_var(--input)] disabled:opacity-50 aria-checked:bg-primary aria-checked:shadow-[inset_0_0_0_1.5px_var(--brand-edge)] ${root}`}
       {...props}
     >
       <SwitchPrimitive.Thumb className={`block rounded-full bg-foreground transition-transform duration-150 data-[state=checked]:bg-primary-foreground ${thumb}`} />
