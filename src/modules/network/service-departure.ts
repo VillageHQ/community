@@ -2,8 +2,7 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 
-import { memberRemoval } from "../../database/admin-schema.ts";
-import { memberNetwork } from "../members/schema.ts";
+import { memberRemoval, memberNetwork } from "../members/schema.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { GROUP_DEPARTURE_OUTCOMES, type GroupDepartureOutcome } from "./contract.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";

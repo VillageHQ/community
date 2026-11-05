@@ -1,5 +1,5 @@
-import { adminMemberIdBodySchema } from "@/lib/admin/admin-api";
-import { retryGroupDeparture } from "@/lib/admin/member-roster";
+import { adminMemberIdBodySchema } from "@/modules/admin/contract";
+import { retryGroupDeparture } from "@/modules/admin/service-roster";
 import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

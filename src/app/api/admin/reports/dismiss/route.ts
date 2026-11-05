@@ -1,5 +1,5 @@
-import { reportActionBodySchema } from "@/lib/admin/admin-api";
-import { dismissReport } from "@/lib/admin/reports";
+import { reportActionBodySchema } from "@/modules/admin/contract";
+import { dismissReport } from "@/modules/admin/service-reports";
 import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

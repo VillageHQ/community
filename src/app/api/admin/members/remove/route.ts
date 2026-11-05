@@ -1,5 +1,5 @@
-import { removeMemberBodySchema } from "@/lib/admin/admin-api";
-import { removeMember } from "@/lib/admin/member-roster";
+import { removeMemberBodySchema } from "@/modules/admin/contract";
+import { removeMember } from "@/modules/admin/service-roster";
 import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

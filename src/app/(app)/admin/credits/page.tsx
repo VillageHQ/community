@@ -14,8 +14,8 @@ import { formatDateAndTimeUtc, formatLongDate } from "@/platform/text/format-dat
 import { requireAdmin } from "@/platform/auth/session";
 import { readDailyLookupLimit, readVillageOutOfCreditsAt } from "@/platform/village/settings";
 
-import { AdminSection } from "@/app/(app)/admin/admin-section";
-import { StatRows } from "@/app/(app)/admin/stat-rows";
+import { AdminSection } from "@/shell/admin-section";
+import { StatRows } from "@/modules/admin/components/stat-rows";
 import { DailyLimitForm } from "@/modules/network/components/daily-limit-form";
 
 function ExternalButton({ href, children, isPrimary = false }: { href: string; children: ReactNode; isPrimary?: boolean }) {

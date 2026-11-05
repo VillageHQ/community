@@ -122,3 +122,7 @@ export type InboxRequest = z.infer<typeof inboxBodySchema>;
 export type SendMessageBody = z.infer<typeof sendMessageBodySchema>;
 export type MarkReadBody = z.infer<typeof markReadBodySchema>;
 export type ConversationPeer = z.infer<typeof peerSchema>;
+
+export function describeUnreadMessages(count: number) {
+  return count === 1 ? "1 unread message" : `${count} unread messages`;
+}

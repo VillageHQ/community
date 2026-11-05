@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 
 import { adminAuditEntry } from "../platform/audit/schema.ts";
-import { contentReport } from "../database/admin-schema.ts";
+import { contentReport } from "../modules/admin/schema.ts";
 import { rateLimit, user, verification } from "../platform/database/auth-schema.ts";
 import { communityBranding } from "../platform/branding/schema.ts";
 import { createDatabase, type Database } from "../platform/database/client.ts";

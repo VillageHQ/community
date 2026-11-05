@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ProgressTrack } from "@/components/progress-track";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import type { NextStep } from "@/lib/next-steps";
+import type { NextStep } from "@/shell/next-steps";
 
 export function NextStepCard({ nextStep }: { nextStep: NextStep }) {
   const { icon: Icon, kicker, title, description, action, progress } = nextStep;

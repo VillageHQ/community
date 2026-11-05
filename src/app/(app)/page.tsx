@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
 import { getDatabase } from "@/platform/database/client";
-import { readSetupProgress } from "@/lib/admin-setup";
+import { readSetupProgress } from "@/shell/admin-setup";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readFirstName } from "@/platform/design/avatar-identity";
@@ -16,7 +16,7 @@ import { describeEmailConfirmation } from "@/modules/members/contract-email-conf
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { isCardFilledIn, readAvatarUrl, readMemberProfile } from "@/modules/members/service-profile";
 import { ONBOARDING_STEPS } from "@/modules/members/contract-profile";
-import { selectNextSteps } from "@/lib/next-steps";
+import { selectNextSteps } from "@/shell/next-steps";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 import { isAdminMember } from "@/platform/auth/roles";

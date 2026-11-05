@@ -3,11 +3,10 @@ import "server-only";
 import { and, asc, count, desc, eq, exists, gt, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { alias, QueryBuilder } from "drizzle-orm/pg-core";
 
-import { memberRemoval } from "../../database/admin-schema.ts";
+import { memberRemoval, memberAvatar, memberProfile } from "../members/schema.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { comment, post, reaction } from "./schema.ts";
-import { memberAvatar, memberProfile } from "../members/schema.ts";
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { toAvatarUrl } from "../members/service-profile.ts";
 import { isAdminMember } from "../../platform/auth/roles.ts";

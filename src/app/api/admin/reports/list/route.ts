@@ -1,5 +1,5 @@
-import { reportListBodySchema } from "@/lib/admin/admin-api";
-import { readReports } from "@/lib/admin/reports";
+import { reportListBodySchema } from "@/modules/admin/contract";
+import { readReports } from "@/modules/admin/service-reports";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute(

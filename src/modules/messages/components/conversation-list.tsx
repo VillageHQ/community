@@ -12,11 +12,10 @@ import { QueryBoundary } from "@/components/query-boundary";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MESSAGE_LIMITS, type ConversationSummary } from "@/modules/messages/contract";
+import { MESSAGE_LIMITS, type ConversationSummary, describeUnreadMessages } from "@/modules/messages/contract";
 import { inboxQuery } from "@/modules/messages/queries";
 import { formatConversationTime } from "@/modules/messages/rules-time";
 import { readInboxConversations } from "@/modules/messages/rules-thread-cache";
-import { describeUnreadMessages } from "@/lib/navigation";
 import { ROUTES } from "@/platform/http/routes";
 
 import { ADMIN_PRIVACY_NOTE } from "@/modules/messages/copy";

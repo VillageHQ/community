@@ -1,5 +1,5 @@
 import { feedReportBodySchema } from "@/modules/feed/contract";
-import { reportFeedContent } from "@/lib/admin/reports";
+import { reportFeedContent } from "@/modules/admin/service-reports";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("feed-report", feedReportBodySchema, async (context, body) => {

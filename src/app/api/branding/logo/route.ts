@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { getDatabase } from "@/platform/database/client";
-import { deleteLogoAsAdmin, saveLogoAsAdmin } from "@/lib/admin/settings-actions";
+import { deleteLogoAsAdmin, saveLogoAsAdmin } from "@/platform/branding/admin-actions";
 import { readLogo } from "@/platform/branding/branding";
 import {
   detectLogoContentType,

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { IssuedInvite } from "@/modules/members/contract-invites";
 import { ROUTES } from "@/platform/http/routes";
 
-import { InviteForm } from "./invite-form";
+import { InviteForm } from "./shared/invite-form";
 
 export function InviteStep({ isEmailConfigured }: { isEmailConfigured: boolean }) {
   const [issued, setIssued] = useState<IssuedInvite | null>(null);

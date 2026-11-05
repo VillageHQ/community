@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { getDatabase } from "@/platform/database/client";
-import { readSetupProgress } from "@/lib/admin-setup";
+import { readSetupProgress } from "@/shell/admin-setup";
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { ONBOARDING_STEPS } from "@/modules/members/contract-profile";
 import { ROUTES } from "@/platform/http/routes";

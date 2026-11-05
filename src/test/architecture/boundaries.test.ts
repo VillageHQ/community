@@ -20,13 +20,6 @@ const PATH_ALIAS_PREFIX = "@/";
 const BOOT_ENTRY_FILE = "scripts/migrate.ts";
 const SCHEMA_FILE_PATTERN = /(^|\/|-)schema\.ts$/;
 
-// Every entry is a debt. New violations fail, and so do entries that no longer exist, so this list only shrinks.
-const KNOWN_VIOLATIONS: readonly string[] = [
-  "src/components/shell/navigation-links.tsx -> src/modules/intros/queries.ts",
-  "src/components/shell/navigation-links.tsx -> src/modules/messages/queries.ts",
-  "src/components/shell/search-ready-notice.tsx -> src/modules/network/queries.ts",
-];
-
 const sourceFiles = readSourceFiles();
 const productionFiles = sourceFiles.filter((file) => !isTestFile(file));
 const productionEdges = readImportEdges(productionFiles);
@@ -43,7 +36,7 @@ describe("the import graph", () => {
   it("keeps every import inside the layer rules", () => {
     const violations = productionEdges.filter(({ from, to }) => !isEdgeAllowed(from, to)).map(({ from, to }) => `${from} -> ${to}`);
 
-    expect([...new Set(violations)].toSorted()).toEqual([...KNOWN_VIOLATIONS].toSorted());
+    expect([...new Set(violations)].toSorted()).toEqual([]);
   });
 
   it("has no file cycles", () => {

@@ -1,4 +1,4 @@
-import { saveBrandingAsAdmin } from "@/lib/admin/settings-actions";
+import { saveBrandingAsAdmin } from "@/platform/branding/admin-actions";
 import { brandingBodySchema } from "@/platform/branding/branding-api";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 
 import { QueryProvider } from "@/components/query-provider";
 import { MessagesSlotProvider } from "@/modules/messages/components/messages-slot-provider";
-import { AppShell } from "@/components/shell/app-shell";
+import { AppShell } from "@/shell/app-shell";
 import { getDatabase } from "@/platform/database/client";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { readIntroBadgeCount, readIntroCounts } from "@/modules/intros/reads";
 import { readAvatarUrl } from "@/modules/members/service-profile";
 import { readUnreadCount } from "@/modules/messages/reads";
-import { readNavigationBadges } from "@/lib/navigation-badges";
+import { readNavigationBadges } from "@/shell/navigation-badges";
 import { requireMember } from "@/platform/auth/session";
 import { isAdminMember } from "@/platform/auth/roles";
 

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { check, index, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid, boolean } from "drizzle-orm/pg-core";
 
 import { INVITE_EMAIL_STATUSES } from "./contract-invite-state.ts";
 import { MAXIMUM_AVATAR_BYTES } from "./contract-avatar.ts";
@@ -112,3 +112,13 @@ export const memberBlock = pgTable(
     check("member_block_not_self", sql`${table.blockerId} <> ${table.blockedId}`),
   ],
 );
+
+export const memberRemoval = pgTable("member_removal", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  keepsContent: boolean("keeps_content").notNull(),
+  removedByUserId: text("removed_by_user_id").references(() => user.id, { onDelete: "set null" }),
+  removedAt: timestamp("removed_at", { withTimezone: true, precision: MILLISECOND_PRECISION }).notNull().defaultNow(),
+  villageLeaveOutcome: text("village_leave_outcome"),
+});

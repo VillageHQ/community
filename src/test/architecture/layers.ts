@@ -8,7 +8,6 @@ export const LAYERS = {
   registry: "registry",
   components: "components",
   platform: "platform",
-  legacy: "legacy",
   other: "other",
 } as const;
 
@@ -31,19 +30,16 @@ const LAYER_PREFIXES: readonly (readonly [string, Layer])[] = [
   ["src/modules/", LAYERS.module],
   ["src/components/", LAYERS.components],
   ["src/platform/", LAYERS.platform],
-  ["src/lib/", LAYERS.legacy],
-  ["src/database/", LAYERS.legacy],
 ];
 
 const ALLOWED_LAYER_IMPORTS: Readonly<Record<Layer, ReadonlySet<Layer>>> = {
-  [LAYERS.app]: new Set([LAYERS.app, LAYERS.shell, LAYERS.registry, LAYERS.module, LAYERS.components, LAYERS.platform, LAYERS.legacy, LAYERS.other]),
-  [LAYERS.shell]: new Set([LAYERS.shell, LAYERS.registry, LAYERS.module, LAYERS.components, LAYERS.platform, LAYERS.legacy, LAYERS.other]),
+  [LAYERS.app]: new Set([LAYERS.app, LAYERS.shell, LAYERS.registry, LAYERS.module, LAYERS.components, LAYERS.platform, LAYERS.other]),
+  [LAYERS.shell]: new Set([LAYERS.shell, LAYERS.registry, LAYERS.module, LAYERS.components, LAYERS.platform, LAYERS.other]),
   [LAYERS.registry]: new Set([LAYERS.module, LAYERS.platform]),
-  [LAYERS.module]: new Set([LAYERS.module, LAYERS.components, LAYERS.platform, LAYERS.legacy]),
-  [LAYERS.components]: new Set([LAYERS.components, LAYERS.platform, LAYERS.legacy]),
+  [LAYERS.module]: new Set([LAYERS.module, LAYERS.components, LAYERS.platform]),
+  [LAYERS.components]: new Set([LAYERS.components, LAYERS.platform]),
   [LAYERS.platform]: new Set([LAYERS.platform]),
-  [LAYERS.legacy]: new Set([LAYERS.module, LAYERS.components, LAYERS.platform, LAYERS.legacy, LAYERS.shell, LAYERS.other]),
-  [LAYERS.other]: new Set([LAYERS.platform, LAYERS.legacy, LAYERS.other]),
+  [LAYERS.other]: new Set([LAYERS.platform, LAYERS.other]),
 };
 
 export function readLayer(file: string): Layer {

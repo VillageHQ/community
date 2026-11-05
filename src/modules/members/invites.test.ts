@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { user } from "@/platform/database/auth-schema";
 import { invite } from "@/modules/members/schema";
-import { readSetupProgress, SETUP_STEPS } from "@/lib/admin-setup";
+import { readSetupProgress, SETUP_STEPS } from "@/shell/admin-setup";
 import { inviteListSchema, issuedInviteSchema } from "@/modules/members/contract-invites";
 import { INVITE_EMAIL_STATUSES, INVITE_STATES } from "@/modules/members/contract-invite-state";
 import { hashInviteToken } from "@/modules/members/service-invite-token";

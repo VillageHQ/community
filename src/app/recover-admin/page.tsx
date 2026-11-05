@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ExternalTextLink } from "@/components/external-text-link";
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
 import { Button } from "@/components/ui/button";
-import { SETUP_TOKEN_GUIDE_URL } from "@/lib/admin/settings-copy";
+import { SETUP_TOKEN_GUIDE_URL } from "@/modules/admin/copy";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readResendConfig } from "@/platform/email/resend";
