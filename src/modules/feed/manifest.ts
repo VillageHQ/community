@@ -1,11 +1,11 @@
 import { House } from "lucide-react";
 
 import { API_ROUTES, ROUTES } from "../../platform/http/routes.ts";
-import { MODULE_KINDS, NAVIGATION_SECTIONS, type ToggleableManifest } from "../../platform/modules/manifest.ts";
+import { HOME_FEED_MODULE_ID, MODULE_KINDS, NAVIGATION_SECTIONS, type ToggleableManifest } from "../../platform/modules/manifest.ts";
 
 export const feedManifest = {
   kind: MODULE_KINDS.toggleable,
-  id: "feed",
+  id: HOME_FEED_MODULE_ID,
   label: "Feed",
   description: "Members post updates, reply and react on the home page.",
   icon: House,

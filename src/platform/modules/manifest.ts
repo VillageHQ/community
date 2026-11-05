@@ -1,5 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 
+// Other modules link to the home feed when it's on. They check this id, so they needn't import the feed.
+export const HOME_FEED_MODULE_ID = "feed";
+
 export const MODULE_KINDS = { core: "core", toggleable: "toggleable" } as const;
 export const NAVIGATION_SECTIONS = { primary: "primary", admin: "admin" } as const;
 

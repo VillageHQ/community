@@ -12,6 +12,7 @@ export type WelcomeContext = {
   needsFullName?: boolean;
   memberEmail?: string;
   isEmailConfigured?: boolean;
+  isNetworkOn?: boolean;
   isOnboarding?: boolean;
   inviter?: { id: string | null; name: string; title: string | null } | null;
 };

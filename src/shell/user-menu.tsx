@@ -8,7 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { NetworkByVillage } from "@/components/village-mark";
-import { describeBadge } from "@/shell/navigation";
+import { describeBadge } from "./navigation-rules";
 import { ROUTES } from "@/platform/http/routes";
 import { signOut } from "@/platform/auth/sign-out";
 
@@ -104,9 +104,9 @@ export function AdminSheetRow({ badgeCount }: { badgeCount: number | undefined }
   );
 }
 
-type PhoneUserMenuProps = { member: ShellMember; adminBadgeCount: number | undefined };
+type PhoneUserMenuProps = { member: ShellMember; adminBadgeCount: number | undefined; showsVillageMark?: boolean };
 
-export function PhoneUserMenu({ member, adminBadgeCount }: PhoneUserMenuProps) {
+export function PhoneUserMenu({ member, adminBadgeCount, showsVillageMark = true }: PhoneUserMenuProps) {
   const isDark = useIsDarkTheme();
   return (
     <Dialog.Root>
@@ -158,7 +158,7 @@ export function PhoneUserMenu({ member, adminBadgeCount }: PhoneUserMenuProps) {
             </button>
           </div>
           <div className="mt-3 px-4">
-            <NetworkByVillage />
+            {showsVillageMark ? <NetworkByVillage /> : null}
           </div>
         </Dialog.Content>
       </Dialog.Portal>

@@ -3,15 +3,10 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  describeBadge,
-  describeNavigationBadge,
-  isNavigationItemActive,
-  NAVIGATION,
-  NAVIGATION_BADGES,
-  NAVIGATION_SECTIONS,
-  selectNavigationItems,
-} from "./navigation";
+import { NAVIGATION_SECTIONS } from "@/platform/modules/manifest";
+
+import { NAVIGATION, selectNavigationItems } from "./navigation";
+import { describeBadge, describeNavigationBadge, isNavigationItemActive, NAVIGATION_BADGES } from "./navigation-rules";
 import { ROUTES } from "@/platform/http/routes";
 
 const APP_GROUP = resolve(import.meta.dirname, "../app/(app)");
@@ -23,7 +18,7 @@ function hasPage(href: string) {
 
 describe("the navigation", () => {
   it("lists only routes with a page", () => {
-    for (const { href } of Object.values(NAVIGATION)) {
+    for (const { href } of NAVIGATION) {
       expect(hasPage(href)).toBe(true);
     }
   });

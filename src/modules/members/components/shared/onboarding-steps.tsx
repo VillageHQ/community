@@ -9,6 +9,7 @@ const ONBOARDING_PILL_ORDER = [
   { id: ONBOARDING_PILLS.network, label: "Your network" },
 ];
 
-export function OnboardingSteps({ current }: { current: OnboardingPill }) {
+export function OnboardingSteps({ current, showsNetworkStep = true }: { current: OnboardingPill; showsNetworkStep?: boolean }) {
+  if (!showsNetworkStep) return null;
   return <StepPills label="Getting started" steps={ONBOARDING_PILL_ORDER} current={current} />;
 }

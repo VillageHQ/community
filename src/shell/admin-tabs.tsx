@@ -43,7 +43,8 @@ const ADMIN_TABS: AdminTab[] = [
 
 export function AdminTabs({ facts }: { facts: AdminTabFacts }) {
   const pathname = usePathname();
-  const tabs = facts.isSetupComplete ? ADMIN_TABS : [SETUP_TAB, ...ADMIN_TABS];
+  const visibleTabs = ADMIN_TABS.filter(({ href }) => !facts.hiddenTabHrefs.includes(href));
+  const tabs = facts.isSetupComplete ? visibleTabs : [SETUP_TAB, ...visibleTabs];
   return (
     <nav aria-label="Admin sections" className="mb-5 flex flex-wrap gap-2 lg:mb-6">
       {tabs.map(({ label, href, readBadge, badgeDescription }) => {

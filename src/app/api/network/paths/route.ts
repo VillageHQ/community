@@ -1,7 +1,9 @@
 import { z } from "zod";
 
+import { introsManifest } from "@/modules/intros/manifest";
 import { readOpenAsks } from "@/modules/intros/reads-open-asks";
-import { readMemberPaths } from "@/modules/network/service";
+import { NO_OPEN_ASKS, readMemberPaths } from "@/modules/network/service";
+import { isModuleEnabled } from "@/platform/modules/enablement";
 import { networkRoutes } from "@/modules/network/routes";
 
 const MAXIMUM_SLUG_LENGTH = 200;
@@ -17,6 +19,9 @@ const pathsBodySchema = z.object({
 export const POST = networkRoutes.member(
   "network-paths",
   pathsBodySchema,
-  async (context, body) => Response.json(await readMemberPaths(context, body.linkedinSlug, readOpenAsks)),
+  async (context, body) => {
+    const isIntrosOn = await isModuleEnabled(context.database, introsManifest);
+    return Response.json(await readMemberPaths(context, body.linkedinSlug, isIntrosOn ? readOpenAsks : NO_OPEN_ASKS));
+  },
   { deadlineMs: DEADLINE_MS },
 );

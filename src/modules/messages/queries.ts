@@ -15,7 +15,7 @@ import {
   type MarkReadBody,
   type SendMessageBody,
 } from "./contract.ts";
-import { INBOX_POLL_MS, readInboxPollMs } from "../../platform/http/polling.ts";
+import { INBOX_POLL_MS, readInboxPollMs, readBadgePollMs } from "../../platform/http/polling.ts";
 import { readThreadPollMs } from "./rules-polling.ts";
 import { applyThreadChanges, type PendingMessage } from "./rules-thread-cache.ts";
 
@@ -52,7 +52,7 @@ export function unreadCountQuery() {
     queryKey: [MESSAGE_QUERY_KEYS.unreadCount],
     queryFn: () => postRequest(API_ROUTES.messageUnreadCount, {}, unreadCountSchema),
     staleTime: INBOX_POLL_MS,
-    refetchInterval: ({ state }) => readInboxPollMs(state.status === "error"),
+    refetchInterval: readBadgePollMs,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });

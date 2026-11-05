@@ -110,7 +110,12 @@ type SetupChecklistProps = {
 };
 
 export async function SetupChecklist({ database, admin, progress, openStepId, basePath }: SetupChecklistProps) {
-  const [branding, keys, group] = await Promise.all([readBranding(database), readVillageKeys(database), readVillageGroup(database)]);
+  const isNetworkStepShown = progress.steps.some(({ id }) => id === SETUP_STEPS.keys);
+  const [branding, keys, group] = await Promise.all([
+    readBranding(database),
+    isNetworkStepShown ? readVillageKeys(database) : null,
+    isNetworkStepShown ? readVillageGroup(database) : null,
+  ]);
   const context = createRequestContext(database, process.env, admin);
   const { villageUser, isVillageReachable } =
     openStepId === SETUP_STEPS.group ? await readAdminUserSafely(context) : { villageUser: null, isVillageReachable: true };

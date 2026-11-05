@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 
+import { buildShellNavigation } from "./navigation";
 import { SidebarNavigation, TabBar } from "./navigation-links";
 
 vi.mock("next/navigation", () => ({ usePathname: () => ROUTES.feed }));
@@ -37,7 +38,7 @@ describe("the messages badge", () => {
 
   it("shows the unread count on the phone tab bar", () => {
     stubUnreadCount(3);
-    renderWithClient(createElement(TabBar, { badges: { messages: 3 } }));
+    renderWithClient(createElement(TabBar, { items: buildShellNavigation(), badges: { messages: 3 } }));
 
     const messagesTab = screen.getByRole("link", { name: /Messages/ });
 
@@ -46,21 +47,21 @@ describe("the messages badge", () => {
 
   it("shows the unread count in the sidebar", () => {
     stubUnreadCount(1);
-    renderWithClient(createElement(SidebarNavigation, { isAdmin: false, badges: { messages: 1 } }));
+    renderWithClient(createElement(SidebarNavigation, { items: buildShellNavigation(), isAdmin: false, badges: { messages: 1 } }));
 
     expect(screen.getByRole("img", { name: "1 unread message" })).toBeTruthy();
   });
 
   it("shows nothing with no unread messages", () => {
     stubUnreadCount(0);
-    renderWithClient(createElement(TabBar, { badges: { messages: 0 } }));
+    renderWithClient(createElement(TabBar, { items: buildShellNavigation(), badges: { messages: 0 } }));
 
     expect(screen.queryByRole("img")).toBeNull();
   });
 
   it("follows the count the server reports", async () => {
     stubUnreadCount(4);
-    const queryClient = renderWithClient(createElement(TabBar, { badges: { messages: 1 } }));
+    const queryClient = renderWithClient(createElement(TabBar, { items: buildShellNavigation(), badges: { messages: 1 } }));
 
     await queryClient.invalidateQueries();
 

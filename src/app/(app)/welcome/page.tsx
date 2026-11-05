@@ -18,6 +18,8 @@ import { loadWelcomeContext } from "@/shell/load-welcome-context";
 import { CardStep } from "@/modules/members/components/card-step";
 import { ConfirmationStep } from "@/modules/members/components/confirmation-step";
 import { membersManifest } from "@/modules/members/manifest";
+import { networkManifest } from "@/modules/network/manifest";
+import { isModuleEnabled } from "@/platform/modules/enablement";
 import { modulePage } from "@/platform/modules/module-page";
 
 export const metadata: Metadata = { title: PAGE_TITLES.welcome };
@@ -28,11 +30,12 @@ export default modulePage(membersManifest, async function WelcomePage() {
   const step = await resolveOnboardingStep(database, member);
   if (step === ONBOARDING_STEPS.done) redirect(ROUTES.feed);
 
+  const isNetworkOn = await isModuleEnabled(database, networkManifest);
   const [context, inviter, profile, progress, memberNeighbours, memberCount] = await Promise.all([
     loadWelcomeContext(database, member),
     readInviterOfMember(database, member.id),
     readMemberProfile(database, member.id),
-    readNetworkProgress(database, member),
+    isNetworkOn ? readNetworkProgress(database, member) : null,
     readMemberNeighbours(database, member.id),
     readActiveMemberCount(database),
   ]);

@@ -12,6 +12,8 @@ import { loadWelcomeContext } from "@/shell/load-welcome-context";
 import { NetworkFlowLoader } from "@/modules/network/components/network-flow-loader";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { networkManifest } from "@/modules/network/manifest";
+import { introsManifest } from "@/modules/intros/manifest";
+import { isModuleEnabled } from "@/platform/modules/enablement";
 import { modulePage } from "@/platform/modules/module-page";
 
 export const metadata: Metadata = { title: PAGE_TITLES.network };
@@ -27,9 +29,6 @@ export default modulePage(networkManifest, async function NetworkPage() {
 
   if (progress === NETWORK_PROGRESS.needsLinkedin) return <LinkedinWelcome welcome={welcome} />;
   if (progress === NETWORK_PROGRESS.needsConsent) return <ConsentStep welcome={welcome} />;
-  return (
-    <IntrosConnectorProvider>
-      <NetworkFlowLoader welcome={welcome} />
-    </IntrosConnectorProvider>
-  );
+  const flow = <NetworkFlowLoader welcome={welcome} />;
+  return (await isModuleEnabled(database, introsManifest)) ? <IntrosConnectorProvider>{flow}</IntrosConnectorProvider> : flow;
 });

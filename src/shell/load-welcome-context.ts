@@ -1,5 +1,7 @@
 import "server-only";
 
+import { networkManifest } from "@/modules/network/manifest";
+import { isModuleEnabled } from "@/platform/modules/enablement";
 import type { Database } from "@/platform/database/client";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { readResendConfig } from "@/platform/email/resend";
@@ -17,10 +19,11 @@ export async function loadWelcomeContext(
   database: Database,
   member: SessionMember & { name: string },
 ): Promise<WelcomeContext> {
+  const isNetworkOn = await isModuleEnabled(database, networkManifest);
   const [{ name, descriptor, logo }, neighbours, sharingMemberCount, avatarUrl, isLinkedinConfirmed] = await Promise.all([
     readBrandingForPage(),
-    readWelcomeNeighbours(database, member.id),
-    readSharingMemberCount(database),
+    isNetworkOn ? readWelcomeNeighbours(database, member.id) : [],
+    isNetworkOn ? readSharingMemberCount(database) : 0,
     readAvatarUrl(database, member.id),
     readIsLinkedinConfirmed(database, member.id),
   ]);
@@ -33,5 +36,6 @@ export async function loadWelcomeContext(
     needsFullName: !isLinkedinConfirmed && !hasFirstAndLastName(member.name),
     memberEmail: member.email,
     isEmailConfigured: readResendConfig(process.env) !== null,
+    isNetworkOn,
   };
 }

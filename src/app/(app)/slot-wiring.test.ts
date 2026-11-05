@@ -3,7 +3,10 @@ import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { introsManifest } from "@/modules/intros/manifest";
 import { MemberConversationSlot } from "@/modules/members/slots";
+import { messagesManifest } from "@/modules/messages/manifest";
+import { saveModuleState } from "@/platform/modules/enablement";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";
 
@@ -56,6 +59,21 @@ describe("the slots in the app", () => {
     const slot = createElement(MemberConversationSlot, { memberId: "jonas", label: "Message", accessibleName: "Message Jonas" });
 
     expect(renderTree(await AppLayout({ children: slot }))).toContain("Message Jonas");
+  });
+
+  it("hides the Message button with messages off", async () => {
+    await saveModuleState(database, messagesManifest, false);
+    const { default: AppLayout } = await import("./layout");
+    const slot = createElement(MemberConversationSlot, { memberId: "jonas", label: "Message", accessibleName: "Message Jonas" });
+
+    expect(renderTree(await AppLayout({ children: slot }))).not.toContain("Message Jonas");
+  });
+
+  it("hides the intro ask with intros off", async () => {
+    await saveModuleState(database, introsManifest, false);
+    const { default: NetworkPage } = await import("./network/page");
+
+    expect(renderTree(await NetworkPage())).not.toContain("Ask Jonas for an intro");
   });
 
   it("gives the network page the intro ask", async () => {

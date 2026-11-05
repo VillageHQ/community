@@ -25,6 +25,8 @@ import { NETWORK_ERROR_CODES, networkPathsSchema, networkSearchResultSchema } fr
 import { saveVillageGroup } from "@/modules/network/service-settings";
 import { saveVillageKeys } from "@/platform/village/settings";
 import { EVENTUALLY } from "@/test/async-timeouts";
+import { introsManifest } from "@/modules/intros/manifest";
+import { saveModuleState } from "@/platform/modules/enablement";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
@@ -240,6 +242,15 @@ describe("intro requests", () => {
       expect(connectors[0]?.reason).toBe(
         "Both worked at Corvane Logistics 2017 - 2021. Jonas as CTO while Clara as VP. Both are connected on LinkedIn.",
       );
+    });
+
+    it("shows no ask once intros is turned off", async () => {
+      await createIntro();
+      await saveModuleState(database, introsManifest, false);
+
+      const { connectors } = await lookUpPaths();
+
+      expect(connectors.every(({ openAsk }) => openAsk === null)).toBe(true);
     });
 
     it("labels an introducer outside the community and offers no member link", async () => {

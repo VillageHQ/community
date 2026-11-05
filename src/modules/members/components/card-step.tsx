@@ -18,7 +18,7 @@ type CardStepProps = { welcome: WelcomeContext; profile: MemberProfile; memberCo
 export function CardStep({ welcome, profile, memberCount }: CardStepProps) {
   return (
     <JoinLayout welcome={welcome}>
-      <OnboardingSteps current={ONBOARDING_PILLS.card} />
+      <OnboardingSteps current={ONBOARDING_PILLS.card} showsNetworkStep={welcome.isNetworkOn} />
       <h1 className="type-h1 lg:type-display">Welcome in, {readFirstName(welcome.member.name)}.</h1>
       <p className="type-lead mt-3 text-foreground-soft">{readMembersHereSentence(welcome, memberCount)}</p>
       <section

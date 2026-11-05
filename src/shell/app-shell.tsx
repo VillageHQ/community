@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { LogoTile } from "@/components/logo-tile";
 import { MAIN_CONTENT_ID } from "@/components/skip-link";
 import { NetworkByVillage } from "@/components/village-mark";
-import type { NavigationBadgeCounts } from "@/shell/navigation";
+import type { NavigationBadgeCounts, ShellNavigationItem } from "./navigation-rules";
 
 import { SidebarNavigation, TabBar } from "./navigation-links";
 import { SearchReadyNotice } from "./search-ready-notice";
@@ -15,11 +15,14 @@ type ShellCommunity = { name: string; descriptor: string; logo: CommunityLogo | 
 type AppShellProps = {
   community: ShellCommunity;
   member: ShellMember;
+  navigation: readonly ShellNavigationItem[];
   badges: NavigationBadgeCounts;
+  isNetworkOn: boolean;
+  runsOnVillage: boolean;
   children: ReactNode;
 };
 
-export function AppShell({ community, member, badges, children }: AppShellProps) {
+export function AppShell({ community, member, navigation, badges, isNetworkOn, runsOnVillage, children }: AppShellProps) {
   return (
     <div data-slot="app-shell" className="min-h-dvh lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
       <aside data-slot="sidebar" aria-label="Community" className="hidden border-r lg:block">
@@ -33,12 +36,14 @@ export function AppShell({ community, member, badges, children }: AppShellProps)
               ) : null}
             </div>
           </div>
-          <SidebarNavigation isAdmin={member.isAdmin} badges={badges} />
+          <SidebarNavigation items={navigation} isAdmin={member.isAdmin} badges={badges} />
           <div className="mt-auto flex flex-col gap-3 pt-6">
             <SidebarUserMenu member={member} />
-            <div className="px-3">
-              <NetworkByVillage />
-            </div>
+            {runsOnVillage ? (
+              <div className="px-3">
+                <NetworkByVillage />
+              </div>
+            ) : null}
           </div>
         </div>
       </aside>
@@ -50,15 +55,15 @@ export function AppShell({ community, member, badges, children }: AppShellProps)
         <span className="min-w-0 flex-1 truncate text-[17px] leading-[22px] font-bold tracking-[-0.012em]">
           {community.name}
         </span>
-        <PhoneUserMenu member={member} adminBadgeCount={badges.admin} />
+        <PhoneUserMenu member={member} adminBadgeCount={badges.admin} showsVillageMark={runsOnVillage} />
       </header>
       <main id={MAIN_CONTENT_ID} tabIndex={-1} className="min-w-0 px-3.5 pt-2 pb-32 lg:px-10 lg:pt-9 lg:pb-12">
         <div data-slot="page-width" className="mx-auto w-full max-w-[1040px]">
           {children}
         </div>
       </main>
-      <SearchReadyNotice />
-      <TabBar badges={badges} />
+      {isNetworkOn ? <SearchReadyNotice /> : null}
+      <TabBar items={navigation} badges={badges} />
     </div>
   );
 }
