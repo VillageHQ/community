@@ -1,4 +1,4 @@
-import { House, ShieldCheck, Waypoints, type LucideIcon } from "lucide-react";
+import { House, ShieldCheck, Users, Waypoints, type LucideIcon } from "lucide-react";
 
 import { ROUTES } from "./routes.ts";
 
@@ -19,6 +19,7 @@ type NavigationItem = {
 
 export const NAVIGATION = {
   home: { label: "Home", href: ROUTES.home, icon: House, section: NAVIGATION_SECTIONS.primary },
+  members: { label: "Members", href: ROUTES.members, icon: Users, section: NAVIGATION_SECTIONS.primary },
   network: { label: "Network", href: ROUTES.network, icon: Waypoints, section: NAVIGATION_SECTIONS.primary },
   admin: {
     label: "Admin",

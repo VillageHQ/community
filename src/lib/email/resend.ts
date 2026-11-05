@@ -1,0 +1,36 @@
+import type { Environment } from "../environment.ts";
+
+const RESEND_API_URL = "https://api.resend.com";
+const EMAILS_PATH = "/emails";
+const SEND_TIMEOUT_MS = 8_000;
+
+export type ResendConfig = { apiKey: string; fromAddress: string; apiUrl: string };
+
+type OutgoingEmail = { to: string; subject: string; html: string; text: string; idempotencyKey: string };
+
+export function readResendConfig(environment: Environment): ResendConfig | null {
+  const apiKey = environment.RESEND_API_KEY?.trim();
+  const fromAddress = environment.RESEND_FROM_ADDRESS?.trim();
+  if (!apiKey || !fromAddress) return null;
+  return { apiKey, fromAddress, apiUrl: environment.RESEND_API_URL?.trim() || RESEND_API_URL };
+}
+
+export async function sendResendEmail({ apiKey, fromAddress, apiUrl }: ResendConfig, email: OutgoingEmail) {
+  const response = await fetch(`${apiUrl}${EMAILS_PATH}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": email.idempotencyKey,
+    },
+    body: JSON.stringify({
+      from: fromAddress,
+      to: [email.to],
+      subject: email.subject,
+      html: email.html,
+      text: email.text,
+    }),
+    signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`Resend answered ${response.status}.`);
+}

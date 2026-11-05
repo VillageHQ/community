@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const NETWORK_STAGES = {
   notConfigured: "not_configured",
+  needsEmailConfirmation: "needs_email_confirmation",
   needsLinkedin: "needs_linkedin",
   awaitingGroup: "awaiting_group",
   needsConsent: "needs_consent",
@@ -18,6 +19,7 @@ export const NETWORK_ERROR_CODES = {
   forbidden: "forbidden",
   linkedinInvalid: "linkedin_invalid",
   linkedinTaken: "linkedin_taken",
+  emailNotConfirmed: "email_not_confirmed",
   notConfigured: "not_configured",
   notReady: "network_not_ready",
   notSynced: "network_not_synced",
@@ -41,6 +43,7 @@ export const NETWORK_ERROR_CODES = {
 
 const networkStageSchema = z.enum([
   NETWORK_STAGES.notConfigured,
+  NETWORK_STAGES.needsEmailConfirmation,
   NETWORK_STAGES.needsLinkedin,
   NETWORK_STAGES.awaitingGroup,
   NETWORK_STAGES.needsConsent,

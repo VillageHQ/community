@@ -2,6 +2,7 @@ import { NETWORK_STAGES } from "./network-api.ts";
 
 export const NETWORK_PROGRESS = {
   notConfigured: NETWORK_STAGES.notConfigured,
+  needsEmailConfirmation: NETWORK_STAGES.needsEmailConfirmation,
   needsLinkedin: NETWORK_STAGES.needsLinkedin,
   awaitingGroup: NETWORK_STAGES.awaitingGroup,
   needsConsent: NETWORK_STAGES.needsConsent,

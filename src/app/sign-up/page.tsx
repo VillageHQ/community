@@ -20,7 +20,7 @@ const CLOSED_NOTICES = {
     href: ROUTES.setup,
   },
   inviteOnly: {
-    description: "This community is private, and new accounts aren't open yet. Ask an admin when you can join.",
+    description: "This community is invite-only. Ask an admin for an invite link, and you'll be right in.",
     linkText: "Sign in",
     href: ROUTES.signIn,
   },

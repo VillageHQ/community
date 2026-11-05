@@ -37,13 +37,24 @@ describe("security headers", () => {
     expect(headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
 
-  it("sandbox uploaded logos, and keep the framing rules", async () => {
-    const rules = await nextConfig.headers();
-    const logoRule = rules.find(({ source }) => source === "/api/branding/logo");
-    const policy = logoRule?.headers.find(({ key }) => key === "Content-Security-Policy")?.value;
+  it.each(["/api/branding/logo", "/api/members/:memberId/avatar"])(
+    "sandbox uploaded images at %s, and keep the framing rules",
+    async (path) => {
+      const rules = await nextConfig.headers();
+      const imageRule = rules.find(({ source }) => source === path);
+      const policy = imageRule?.headers.find(({ key }) => key === "Content-Security-Policy")?.value;
 
-    expect(policy).toContain("default-src 'none'");
-    expect(policy).toContain("sandbox");
-    expect(policy).toContain("frame-ancestors 'none'");
+      expect(policy).toContain("default-src 'none'");
+      expect(policy).toContain("sandbox");
+      expect(policy).toContain("frame-ancestors 'none'");
+    },
+  );
+
+  it.each(["/join/:token", "/confirm-email"])("keep tokens at %s out of referrers and search engines", async (path) => {
+    const rules = await nextConfig.headers();
+    const inviteRule = rules.find(({ source }) => source === path);
+
+    expect(inviteRule?.headers).toContainEqual({ key: "Referrer-Policy", value: "no-referrer" });
+    expect(inviteRule?.headers).toContainEqual({ key: "X-Robots-Tag", value: "noindex" });
   });
 });

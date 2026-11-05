@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, ChevronsUpDown, LogOut, Moon, ShieldCheck, X } from "lucide-react";
+import { ChevronRight, ChevronsUpDown, LogOut, Moon, ShieldCheck, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DropdownMenu } from "radix-ui";
 
@@ -63,6 +63,12 @@ export function SidebarUserMenu({ member }: { member: ShellMember }) {
         className="z-40 w-[248px] rounded-card bg-popover p-2 text-foreground shadow-panel data-[state=open]:animate-in data-[state=open]:fade-in-0"
       >
           <p className="type-small truncate px-4 py-2 text-muted-foreground">{member.email}</p>
+          <DropdownMenu.Item asChild className={MENU_ITEM}>
+            <Link href={ROUTES.editCard}>
+              <UserRound aria-hidden="true" />
+              My card
+            </Link>
+          </DropdownMenu.Item>
           <DropdownMenu.CheckboxItem
             checked={isDark}
             onCheckedChange={applyTheme}
@@ -132,6 +138,13 @@ export function PhoneUserMenu({ member, adminBadgeCount }: PhoneUserMenuProps) {
           </div>
           <div className="flex flex-col gap-1">
             {member.isAdmin ? <AdminSheetRow badgeCount={adminBadgeCount} /> : null}
+            <Dialog.Close asChild>
+              <Link href={ROUTES.editCard} className={`${SHEET_ROW} hover:bg-muted`}>
+                <UserRound aria-hidden="true" />
+                My card
+                <ChevronRight aria-hidden="true" className="ml-auto" />
+              </Link>
+            </Dialog.Close>
             <label htmlFor="phone-dark-mode" className={SHEET_ROW}>
               <Moon aria-hidden="true" />
               Dark mode

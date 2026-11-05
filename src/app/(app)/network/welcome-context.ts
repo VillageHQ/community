@@ -9,6 +9,10 @@ export type WelcomeContext = {
   neighbours: ConstellationPerson[];
   sharingMemberCount: number;
   notNowHref: string;
+  memberEmail?: string;
+  isEmailConfigured?: boolean;
+  isOnboarding?: boolean;
+  inviter?: { id: string | null; name: string; title: string | null } | null;
 };
 
 export function readSharingSentence({ community, sharingMemberCount }: WelcomeContext) {

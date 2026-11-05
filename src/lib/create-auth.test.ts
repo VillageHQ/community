@@ -236,4 +236,32 @@ describe("createAuth", () => {
       expect(response.status).toBe(200);
     });
   });
+
+  describe("changing a name through update-user", () => {
+    async function updateName(name: string) {
+      await claimFirstAdmin(database, ADMIN);
+      const { cookie } = await signInAsAdmin();
+      return post("/update-user", { name }, { Cookie: cookie });
+    }
+
+    it("refuses a name too long for the directory", async () => {
+      const response = await updateName("n".repeat(15_000));
+
+      expect(response.ok).toBe(false);
+      const [admin] = await database.select({ name: user.name }).from(user);
+      expect(admin?.name).toBe(ADMIN.name);
+    });
+
+    it("refuses a NUL byte with a 400, not a 500", async () => {
+      const response = await updateName("Ada\0");
+
+      expect(response.status).toBe(400);
+      const [admin] = await database.select({ name: user.name }).from(user);
+      expect(admin?.name).toBe(ADMIN.name);
+    });
+
+    it("accepts a normal name", async () => {
+      expect((await updateName("Ada Lovelace")).ok).toBe(true);
+    });
+  });
 });

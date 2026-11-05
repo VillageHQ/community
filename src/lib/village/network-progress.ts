@@ -1,11 +1,12 @@
 import "server-only";
 
-import { count, eq, isNotNull } from "drizzle-orm";
+import { and, count, eq, isNotNull } from "drizzle-orm";
 
 import { user } from "../../database/auth-schema.ts";
 import type { Database } from "../../database/client.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
-import { isAdminMember, type SessionMember } from "./member-network.ts";
+import { isActiveMember } from "../members/active-member.ts";
+import { isAdminMember, isMemberEmailTrusted, type SessionMember } from "./member-network.ts";
 import { NETWORK_PROGRESS, type NetworkProgress } from "./network-progress-stages.ts";
 import { readVillageGroup, readVillageKeys } from "./settings.ts";
 
@@ -16,6 +17,7 @@ export { NETWORK_PROGRESS };
 export async function readNetworkProgress(database: Database, member: SessionMember): Promise<NetworkProgress> {
   const keys = await readVillageKeys(database);
   if (!keys) return NETWORK_PROGRESS.notConfigured;
+  if (!(await isMemberEmailTrusted(database, member))) return NETWORK_PROGRESS.needsEmailConfirmation;
 
   const [memberRow] = await database.select().from(memberNetwork).where(eq(memberNetwork.userId, member.id));
   if (!memberRow?.linkedinSlug) return NETWORK_PROGRESS.needsLinkedin;
@@ -32,7 +34,8 @@ export async function readSharingMemberCount(database: Database) {
   const [row] = await database
     .select({ memberCount: count() })
     .from(memberNetwork)
-    .where(isNotNull(memberNetwork.groupJoinedAt));
+    .innerJoin(user, eq(user.id, memberNetwork.userId))
+    .where(and(isNotNull(memberNetwork.groupJoinedAt), isActiveMember()));
   return row?.memberCount ?? 0;
 }
 
@@ -41,7 +44,7 @@ export async function readWelcomeNeighbours(database: Database, excludedMemberId
     .select({ id: user.id, name: user.name })
     .from(memberNetwork)
     .innerJoin(user, eq(user.id, memberNetwork.userId))
-    .where(isNotNull(memberNetwork.groupJoinedAt))
+    .where(and(isNotNull(memberNetwork.groupJoinedAt), isActiveMember()))
     .limit(MAXIMUM_WELCOME_NEIGHBOURS + 1);
   return neighbours.filter(({ id }) => id !== excludedMemberId).slice(0, MAXIMUM_WELCOME_NEIGHBOURS);
 }

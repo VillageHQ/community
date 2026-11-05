@@ -9,6 +9,7 @@ import { ROUTES } from "@/lib/routes";
 import { NETWORK_STAGES, type NetworkStatus } from "@/lib/village/network-api";
 
 import { ConsentStep } from "./consent-step";
+import { EmailConfirmationNotice } from "./email-confirmation-notice";
 import { LinkedinWelcome } from "./linkedin-step";
 import { NetworkSkeleton } from "./network-skeleton";
 import { networkStatusQuery } from "./network-queries";
@@ -40,6 +41,11 @@ function renderNotConfigured({ isAdmin }: NetworkStatus) {
 
 const STAGE_VIEWS: Record<NetworkStatus["stage"], (status: NetworkStatus, welcome: WelcomeContext) => ReactNode> = {
   [NETWORK_STAGES.notConfigured]: renderNotConfigured,
+  [NETWORK_STAGES.needsEmailConfirmation]: (_status, welcome) => (
+    <div className="rounded-panel bg-card shadow-panel">
+      <EmailConfirmationNotice welcome={welcome} />
+    </div>
+  ),
   [NETWORK_STAGES.needsLinkedin]: (_status, welcome) => <LinkedinWelcome welcome={welcome} />,
   [NETWORK_STAGES.awaitingGroup]: () => (
     <NoticeCard

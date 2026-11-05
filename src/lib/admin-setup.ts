@@ -1,6 +1,7 @@
 import type { Database } from "../database/client.ts";
 import { resolveAppUrl } from "./app-url.ts";
 import { readBranding } from "./branding/branding.ts";
+import { hasOpenOrAcceptedInvite } from "./invites/invites.ts";
 import type { Environment } from "./environment.ts";
 import { SETUP_STEPS, type SetupStepId } from "./admin-setup-steps.ts";
 import { readConfirmedVillageDomain, readVillageGroup, readVillageKeys } from "./village/settings.ts";
@@ -12,15 +13,23 @@ export type SetupFacts = {
   isDomainConfirmed: boolean;
   hasKeys: boolean;
   hasGroup: boolean;
+  hasInvite: boolean;
 };
 
-const SETUP_STEP_ORDER: SetupStepId[] = [SETUP_STEPS.brand, SETUP_STEPS.domain, SETUP_STEPS.keys, SETUP_STEPS.group];
+const SETUP_STEP_ORDER: SetupStepId[] = [
+  SETUP_STEPS.brand,
+  SETUP_STEPS.domain,
+  SETUP_STEPS.keys,
+  SETUP_STEPS.group,
+  SETUP_STEPS.invite,
+];
 
 const SETUP_STEP_COMPLETION: Record<SetupStepId, (facts: SetupFacts) => boolean> = {
   [SETUP_STEPS.brand]: ({ isBrandSaved }) => isBrandSaved,
   [SETUP_STEPS.domain]: ({ isDomainConfirmed }) => isDomainConfirmed,
   [SETUP_STEPS.keys]: ({ hasKeys }) => hasKeys,
   [SETUP_STEPS.group]: ({ hasGroup }) => hasGroup,
+  [SETUP_STEPS.invite]: ({ hasInvite }) => hasInvite,
 };
 
 export const SETUP_STEP_NAMES: Record<SetupStepId, string> = {
@@ -28,6 +37,7 @@ export const SETUP_STEP_NAMES: Record<SetupStepId, string> = {
   [SETUP_STEPS.domain]: "register your domain",
   [SETUP_STEPS.keys]: "add your Village keys",
   [SETUP_STEPS.group]: "create the group",
+  [SETUP_STEPS.invite]: "invite your first members",
 };
 
 export function describeSetupProgress(facts: SetupFacts) {
@@ -51,16 +61,18 @@ export function parseSetupStep(value: unknown): SetupStepId | null {
 }
 
 export async function readSetupProgress(database: Database, environment: Environment) {
-  const [branding, confirmedDomain, keys, group] = await Promise.all([
+  const [branding, confirmedDomain, keys, group, hasInvite] = await Promise.all([
     readBranding(database),
     readConfirmedVillageDomain(database),
     readVillageKeys(database),
     readVillageGroup(database),
+    hasOpenOrAcceptedInvite(database),
   ]);
   return describeSetupProgress({
     isBrandSaved: branding.isSaved,
     isDomainConfirmed: confirmedDomain === new URL(resolveAppUrl(environment)).hostname,
     hasKeys: Boolean(keys),
     hasGroup: Boolean(group),
+    hasInvite,
   });
 }

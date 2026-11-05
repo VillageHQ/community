@@ -2,7 +2,6 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { ArrowRight, CircleAlert, DoorOpen, Mail, UsersRound, Waypoints } from "lucide-react";
-import Link from "next/link";
 
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,8 @@ import { postNetworkRequest } from "@/lib/village/post-network-request";
 
 import { JOIN_STEPS, JoinSteps } from "./join-steps";
 import { JoinLayout } from "./join-layout";
+import { NotNowAction } from "./not-now-action";
+import { OnboardingSteps, ONBOARDING_PILLS } from "./onboarding-steps";
 import { readSharingSentence, type WelcomeContext } from "./welcome-context";
 
 const CONSENT_FIELD_ID = "sharing-consent";
@@ -50,7 +51,7 @@ export function ConsentStep({ welcome }: { welcome: WelcomeContext }) {
 
   return (
     <JoinLayout welcome={welcome}>
-      <JoinSteps current={JOIN_STEPS.share} />
+      {welcome.isOnboarding ? <OnboardingSteps current={ONBOARDING_PILLS.network} /> : <JoinSteps current={JOIN_STEPS.share} />}
       <h1 className="type-h1 lg:type-display">Welcome in, {readFirstName(welcome.member.name)}.</h1>
       <p className="type-lead mt-3 text-foreground-soft">{readSharingSentence(welcome)}</p>
       <section
@@ -101,9 +102,7 @@ export function ConsentStep({ welcome }: { welcome: WelcomeContext }) {
               {consentMutation.isPending ? "Saving…" : "Share my network"}
               <ArrowRight aria-hidden="true" />
             </Button>
-            <Button asChild variant="quiet" size="lg">
-              <Link href={welcome.notNowHref}>Not now</Link>
-            </Button>
+            <NotNowAction welcome={welcome} />
           </div>
           <p className="type-small text-muted-foreground">
             Not now shares nothing. Network search waits until you share, and you can come back here from Network any

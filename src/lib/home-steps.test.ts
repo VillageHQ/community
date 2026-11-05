@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { describeJoinSteps, HOME_HEROES } from "./home-steps";
+import { describeEmailConfirmation } from "./members/email-confirmation-copy";
 import { NETWORK_PROGRESS } from "./village/network-progress-stages";
 
 const FORBIDDEN_CLAIMS = /yes or no to every intro|feed|messages|directory|\b\d{2,}\b/i;
@@ -44,6 +45,20 @@ describe("the home page's next steps", () => {
   it("offers no action a member can't take yet", () => {
     expect(HOME_HEROES[NETWORK_PROGRESS.notConfigured].action).toBeUndefined();
     expect(HOME_HEROES[NETWORK_PROGRESS.awaitingGroup].action).toBeUndefined();
+  });
+
+  describe("for a member whose email isn't confirmed", () => {
+    it("waits on the fund by name when no email can be sent", () => {
+      expect(describeEmailConfirmation("Northwind", false).title).toBe("Waiting for Northwind to confirm you");
+    });
+
+    it("points at the inbox when email is set up", () => {
+      expect(describeEmailConfirmation("Northwind", true).title).toBe("Check your email to confirm it's you");
+    });
+
+    it("always offers somewhere to go", () => {
+      expect(HOME_HEROES[NETWORK_PROGRESS.needsEmailConfirmation].action).toBeDefined();
+    });
   });
 
   it("makes no claim the app can't back", () => {

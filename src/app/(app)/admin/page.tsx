@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { Mail } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/page-header";
 import { ProgressTrack } from "@/components/progress-track";
-import { STEP_STATES, StepRow, type StepState } from "@/components/step-row";
+import { StepRow, type StepState, STEP_STATES } from "@/components/step-row";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { Tag } from "@/components/ui/tag";
 import { getDatabase } from "@/database/client";
 import {
   parseSetupStep,
@@ -21,6 +19,8 @@ import {
 import { SETUP_STEP_COPY } from "@/lib/admin-setup-copy";
 import { resolveAppUrl } from "@/lib/app-url";
 import { readBranding, type Branding } from "@/lib/branding/branding";
+import { readResendConfig } from "@/lib/email/resend";
+import { readConfirmationBadgeCount } from "@/lib/members/member-admin";
 import { ROUTES } from "@/lib/routes";
 import { requireAdmin } from "@/lib/session";
 import {
@@ -30,15 +30,17 @@ import {
 } from "@/lib/village/member-network";
 import { readVillageGroup, readVillageKeys, type VillageGroup, type VillageKeys } from "@/lib/village/settings";
 
+import { AdminTabs } from "./admin-tabs";
 import { BrandCard } from "./brand-card";
 import { BRAND_NAME_INPUT_ID } from "./brand-fields";
 import { DomainStep } from "./domain-step";
 import { GroupForm } from "./group-form";
 import { KeysForm } from "./keys-form";
+import { InviteStep } from "./members/invite-step";
 import { VillageLinks } from "./village-links";
 import { PAGE_TITLES } from "@/lib/branding/page-metadata";
 
-const NEXT_STEP_AFTER_SETUP = "invite members, when that's ready";
+const NEXT_STEP_AFTER_SETUP = "invite more members whenever you like";
 
 function toStepHref(stepId: SetupStepId) {
   return `${ROUTES.admin}?step=${stepId}`;
@@ -100,6 +102,7 @@ type StepBodyFacts = {
   isDone: boolean;
   isVillageReachable: boolean;
   isSynced: boolean;
+  isEmailConfigured: boolean;
 };
 
 const STEP_BODIES: Partial<Record<SetupStepId, (facts: StepBodyFacts) => ReactNode>> = {
@@ -114,6 +117,7 @@ const STEP_BODIES: Partial<Record<SetupStepId, (facts: StepBodyFacts) => ReactNo
       defaultName={branding.isSaved ? branding.name : ""}
     />
   ),
+  [SETUP_STEPS.invite]: ({ isEmailConfigured }) => <InviteStep isEmailConfigured={isEmailConfigured} />,
 };
 
 function StepBody({ stepId, facts }: { stepId: SetupStepId; facts: StepBodyFacts }) {
@@ -146,12 +150,13 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const { step } = await searchParams;
 
   const database = getDatabase();
-  const [progress, branding, keys, group, villageLinks] = await Promise.all([
+  const [progress, branding, keys, group, villageLinks, confirmationBadgeCount] = await Promise.all([
     readSetupProgress(database, process.env),
     readBranding(database),
     readVillageKeys(database),
     readVillageGroup(database),
     readVillageLinks(database),
+    readConfirmationBadgeCount(database, process.env),
   ]);
   const openStepId = parseSetupStep(step) ?? progress.currentStepId;
   const isGroupStepOpen = openStepId === SETUP_STEPS.group;
@@ -168,6 +173,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         title={readHeading(progress.isComplete, branding.name, branding.isSaved)}
         description={readStepsLeftSentence(progress.stepsLeft)}
       />
+
+      <AdminTabs membersBadgeCount={confirmationBadgeCount} />
 
       <section aria-label="Setup progress" className="mb-5 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:px-7 sm:py-6">
         <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -203,24 +210,12 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                   {isOpen ? (
                     <StepBody
                       stepId={id}
-                      facts={{ branding, keys, group, domain, isDone, isVillageReachable, isSynced: Boolean(villageUser?.isSyncComplete) }}
+                      facts={{ branding, keys, group, domain, isDone, isVillageReachable, isSynced: Boolean(villageUser?.isSyncComplete), isEmailConfigured: readResendConfig(process.env) !== null }}
                     />
                   ) : null}
                 </StepRow>
               );
             })}
-            <StepRow
-              state={STEP_STATES.todo}
-              number={progress.totalCount + 1}
-              title="Invite members"
-              description="Comes in a later update. Sign-up stays closed until then."
-              action={
-                <Tag>
-                  <Mail aria-hidden="true" />
-                  Coming soon
-                </Tag>
-              }
-            />
           </ol>
 
           <Card className="grid gap-4">

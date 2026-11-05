@@ -3,6 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { and, eq, isNotNull, ne, or } from "drizzle-orm";
+import { z } from "zod";
 
 import { user } from "../../database/auth-schema.ts";
 import type { Database } from "../../database/client.ts";
@@ -107,20 +108,40 @@ async function ensureMemberNetwork(database: Database, userId: string) {
   return network;
 }
 
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+export async function isMemberEmailTrusted(database: Database, member: SessionMember) {
+  const [row] = await database
+    .select({ emailVerified: user.emailVerified, approvedMemberEmail: memberNetwork.approvedMemberEmail })
+    .from(user)
+    .leftJoin(memberNetwork, eq(memberNetwork.userId, user.id))
+    .where(eq(user.id, member.id));
+  if (!row) return false;
+  return row.emailVerified || row.approvedMemberEmail === normalizeEmail(member.email);
+}
+
+function emailNotConfirmedError() {
+  return new NetworkRequestError(
+    CONFLICT_STATUS,
+    NETWORK_ERROR_CODES.emailNotConfirmed,
+    "We need to confirm this email is yours before you can use network search.",
+  );
+}
+
 async function connectMember(
   { database, environment, member, deadlineAtMs }: NetworkContext,
   keys: VillageKeys,
 ) {
+  if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
+
   const network = await ensureMemberNetwork(database, member.id);
   const session = createVillageSession(
     { apiUrl: resolveVillageApiUrl(environment), secretKey: keys.secretKey, deadlineAtMs },
     { externalId: network.villageExternalId, email: member.email },
   );
   return { session, network };
-}
-
-function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
 }
 
 function linkMismatchError() {
@@ -146,8 +167,12 @@ async function confirmVillageLink(
 ) {
   const memberEmail = normalizeEmail(member.email);
   const normalizedVillageEmail = normalizeEmail(villageEmail);
+  const [account] = await database
+    .select({ emailVerified: user.emailVerified })
+    .from(user)
+    .where(eq(user.id, member.id));
   const isTrusted =
-    memberEmail === normalizedVillageEmail ||
+    (memberEmail === normalizedVillageEmail && account?.emailVerified === true) ||
     (network.approvedMemberEmail === memberEmail &&
       network.approvedVillageEmail === normalizedVillageEmail);
 
@@ -182,6 +207,22 @@ async function requireVillageKeys(database: Database) {
   );
 }
 
+const UNIQUE_VIOLATION_CODE = "23505";
+
+const uniqueViolationSchema = z.object({ code: z.literal(UNIQUE_VIOLATION_CODE) });
+
+function isUniqueViolation(error: unknown) {
+  return error instanceof Error && uniqueViolationSchema.safeParse(error.cause).success;
+}
+
+function linkedinTakenError() {
+  return new NetworkRequestError(
+    CONFLICT_STATUS,
+    NETWORK_ERROR_CODES.linkedinTaken,
+    "Another member already uses this LinkedIn profile. Ask an admin to clear it from Admin, then Members.",
+  );
+}
+
 export async function saveMemberLinkedinUrl(
   { database, member }: NetworkContext,
   linkedinUrl: string,
@@ -201,21 +242,20 @@ export async function saveMemberLinkedinUrl(
     .select({ userId: memberNetwork.userId })
     .from(memberNetwork)
     .where(and(eq(memberNetwork.linkedinSlug, linkedinSlug), ne(memberNetwork.userId, member.id)));
-  if (claimedByAnotherMember) {
-    throw new NetworkRequestError(
-      CONFLICT_STATUS,
-      NETWORK_ERROR_CODES.linkedinTaken,
-      "Another member already uses this LinkedIn profile. Ask an admin for help.",
-    );
-  }
+  if (claimedByAnotherMember) throw linkedinTakenError();
 
   await database
     .update(memberNetwork)
     .set({ linkedinSlug })
-    .where(eq(memberNetwork.userId, member.id));
+    .where(eq(memberNetwork.userId, member.id))
+    .catch((error: unknown) => {
+      throw isUniqueViolation(error) ? linkedinTakenError() : error;
+    });
 }
 
 export async function recordSharingConsent({ database, member }: NetworkContext) {
+  if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
+
   await ensureMemberNetwork(database, member.id);
   await database
     .update(memberNetwork)
@@ -232,6 +272,9 @@ export async function advanceNetwork(context: NetworkContext): Promise<NetworkSt
 
   const keys = await readVillageKeys(database);
   if (!keys) return describeStage(context, NETWORK_STAGES.notConfigured);
+  if (!(await isMemberEmailTrusted(database, member))) {
+    return describeStage(context, NETWORK_STAGES.needsEmailConfirmation);
+  }
 
   const memberRow = await ensureMemberNetwork(database, member.id);
   if (!memberRow.linkedinSlug) return describeStage(context, NETWORK_STAGES.needsLinkedin);

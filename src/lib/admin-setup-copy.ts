@@ -25,4 +25,10 @@ export const SETUP_STEP_COPY: Record<SetupStepId, { title: string; todo: string;
     done: "Members can join from their network page.",
     manageLabel: "Review",
   },
+  [SETUP_STEPS.invite]: {
+    title: "Invite your first members",
+    todo: "Create a personal invite link for each person you want to bring in.",
+    done: "Your invites are out. Add more any time.",
+    manageLabel: "Invite more",
+  },
 };

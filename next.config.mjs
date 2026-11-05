@@ -12,6 +12,11 @@ const SECURITY_HEADERS = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
 ];
 
+const SECRET_LINK_HEADERS = [
+  { key: "Referrer-Policy", value: "no-referrer" },
+  { key: "X-Robots-Tag", value: "noindex" },
+];
+
 const UPLOADED_IMAGE_CONTENT_SECURITY_POLICY = `default-src 'none'; sandbox; ${CONTENT_SECURITY_POLICY}`;
 
 export const nextConfig = {
@@ -23,6 +28,12 @@ export const nextConfig = {
       source: "/api/branding/logo",
       headers: [{ key: "Content-Security-Policy", value: UPLOADED_IMAGE_CONTENT_SECURITY_POLICY }],
     },
+    {
+      source: "/api/members/:memberId/avatar",
+      headers: [{ key: "Content-Security-Policy", value: UPLOADED_IMAGE_CONTENT_SECURITY_POLICY }],
+    },
+    { source: "/join/:token", headers: SECRET_LINK_HEADERS },
+    { source: "/confirm-email", headers: SECRET_LINK_HEADERS },
   ],
   redirects: async () => [{ source: "/admin/village", destination: "/admin", permanent: false }],
 };

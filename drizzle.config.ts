@@ -6,6 +6,7 @@ export default defineConfig({
     "./src/database/auth-schema.ts",
     "./src/database/branding-schema.ts",
     "./src/database/instance-settings.ts",
+    "./src/database/members-schema.ts",
     "./src/database/village-schema.ts",
   ],
   out: "./drizzle",

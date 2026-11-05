@@ -10,6 +10,10 @@ export function logError(scope: string, error: unknown) {
   console.error(JSON.stringify({ level: "error", scope, reason: readErrorReason(error) }));
 }
 
+export function logAdminAction(action: string, adminId: string, target: string) {
+  console.log(JSON.stringify({ level: "info", scope: "admin", action, adminId, target }));
+}
+
 export function withRouteLogging<Arguments extends unknown[]>(
   scope: string,
   handler: (...handlerArguments: Arguments) => Promise<Response>,
@@ -19,7 +23,7 @@ export function withRouteLogging<Arguments extends unknown[]>(
       return await handler(...handlerArguments);
     } catch (error) {
       logError(scope, error);
-      return Response.json({ message: "Internal server error." }, { status: INTERNAL_ERROR_STATUS });
+      return Response.json({ message: "Something went wrong on our side. Try again in a moment." }, { status: INTERNAL_ERROR_STATUS });
     }
   };
 }

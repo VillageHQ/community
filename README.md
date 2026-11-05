@@ -1,6 +1,6 @@
 # Community
 
-A self-hostable community portal for VC networks, built on Village. Members search their own Village network, including the relationships of everyone in the community. Feed, DMs, intro workflow and invites come later.
+A self-hostable community portal for VC networks, built on Village. Members join by invite, fill in a card, find each other in a directory, and search their own Village network, including the relationships of everyone in the community. Feed, DMs and intro workflow come later.
 
 ## Deploy
 
@@ -17,7 +17,7 @@ A self-hostable community portal for VC networks, built on Village. Members sear
 3. Wait for the deploy to finish.
 4. Open `/setup` on your new site. Enter the token and your name, email and password.
 5. Sign in. Setup closes for good after this.
-6. Follow the checklist you land on: brand your community, register the domain, add your Village keys, and create the group. See [Connect Village](#connect-village).
+6. Follow the checklist you land on: brand your community, register the domain, add your Village keys, create the group, and invite your first members. See [Connect Village](#connect-village) and [Invite members](#invite-members).
 
 ### Connect Village
 
@@ -29,6 +29,22 @@ You need a Village platform account and an active app. Billing is credits only, 
 4. Back in **Admin**, create the group. **Your own Village network becomes shared with every current and future member.**
 
 Members then open **Network**, add their LinkedIn URL, agree to share, and sync. The app joins them to the group after that. A member can choose **Not now** and keep using the app, then opt in from **Network** later. Members can leave from the same page. Removing someone from this portal doesn't yet remove them from the Village group, so they should leave first. Village won't let the group's creator leave while other members remain.
+
+### Invite members
+
+Open **Admin**, then **Members**. Enter someone's email and you get a personal link to send them. It works once, for that email, and lasts 14 days. You can invite people before Village is connected.
+
+The app stores only a hash of each link, so it can show a link only when it creates one. **New link** replaces the link and restarts the 14 days. The old link stops working. **Revoke** cancels a pending invite.
+
+The person opens the link, chooses a name and password, and lands in a short first-run flow: their card, then an optional step to share their network. They can skip either one and pick it up later.
+
+**Confirming who accepted:** Anyone holding a link can accept it, so holding one doesn't prove the person owns that inbox. Network search stays off until the email is confirmed. With email set up, the app sends a link to the invite's address, and the person can ask for another from **Network**. Opening the link changes nothing: they must be signed in to that same account and press **Confirm**, so a mail scanner following the link can't confirm anyone. Without it, **Admin**, **Members** shows them under **Waiting for approval**, with a badge, and one click confirms them. Everything else in the portal works while they wait.
+
+**If someone else used the link:** The real owner sees "already used" and is told to contact you. Click **Wrong person?** on that invite. It bans the account, signs it out, frees its email and LinkedIn, and makes a new invite for the same address. If that account already joined the Village group, it stays in the group: this portal can't remove it from Village. Full member management comes later.
+
+**A LinkedIn profile someone else holds:** Paste it under **Free up a LinkedIn profile** in **Members**, or use **Clear their LinkedIn** on their profile.
+
+**Optional email:** To also send invites by email, set `RESEND_API_KEY` and `RESEND_FROM_ADDRESS`, using a sender on a domain you verified in [Resend](https://resend.com). The deploy buttons don't ask for these. Without both, the copyable link is the whole flow. If sending fails, the invite stays valid and the admin still gets the link.
 
 ### Setup token
 
@@ -56,13 +72,19 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 
 **Migrations:** The app migrates itself at boot, from `src/instrumentation.ts`, on every platform. It waits for one attempt. If that fails, it logs the cause, starts anyway, and retries in the background with a capped backoff. `/api/health` returns 503 until migrations land. A cheap check skips all of this once they're applied. A Postgres advisory lock serializes concurrent instances, and it needs a session, so set `DATABASE_URL_UNPOOLED` if `DATABASE_URL` goes through a transaction pooler. Vercel previews skip migrations unless `MIGRATE_ON_PREVIEW=true`, because a preview may share the production database. `node scripts/migrate.ts` runs the same migrations by hand from the repo root and exits non-zero with the cause.
 
-**Sign-up:** Sign-up is closed until an admin exists and stays closed afterward. Invites are out of scope, so `/sign-up` shows a notice and `POST /api/auth/sign-up/email` refuses every request. `/setup` is the only way to create an account in this skeleton.
+**Sign-up:** Public sign-up is closed. `/sign-up` shows a notice and `POST /api/auth/sign-up/email` refuses every request. `/setup` creates the first admin, and after that a valid invite is the only way to create an account.
+
+**Invites:** Links are `/join/<token>`, with 256 random bits in the token and only its SHA-256 hash in the `invite` table. One transaction claims the invite and creates the account, so a token can't be used twice, even under concurrency. The account email is always the invite's email, and that's the email Village receives. Accounts start with `email_verified` false. Until the member confirms through the emailed link, or an admin confirms them, the app mints no Village token, records no consent, and refuses join, search and paths. Confirming takes a `POST` with an Origin check, from a signed-in session of the account the token was issued for. Tokens are single-use, last 7 days, and are stored only as hashes. The first admin from `/setup` starts verified, because they hold the deploy password. Migration `0005` marks accounts that predate invites as verified, so existing members keep working. Better Auth's `verify-email` route is refused, because it verifies on a `GET`, and its public `send-verification-email` route stays disabled. `POST /api/invites/accept` checks the Origin and the body size, and answers a used link and an email that already has an account the same way. Unknown links and failed accepts answer 429 after 10 in a minute, per client, but a valid link is never blocked, so one abuser can't lock out an invitee. Someone already signed in must sign out before accepting, so the Village browser session gets cleared.
+
+**Members:** `/members` lists everyone except banned members. Only signed-in members can see it, and emails stay private to admins. Search uses the query builder with `LIKE` wildcards escaped. Profile websites accept only `http` and `https`, checked on save and again on read. LinkedIn is the same `member_network.linkedin_slug` that network search matches on, so its uniqueness rule applies, and a member can change a saved one but not clear it. An admin can clear a claim.
+
+**Avatars:** Photos live in Postgres, like logos, so one-click deploys need no file storage. The browser crops each one to a 320 px JPEG, which also drops location metadata. The limit is 256 KB, and only PNG, JPEG and WebP pass, verified by magic bytes. SVG is refused. `GET /api/members/<id>/avatar` needs a signed-in member and serves the detected content type with `nosniff` and a sandboxing CSP. The app ignores Better Auth's `user.image`, because a member could point it at any URL.
 
 **Auth secret:** The app uses `BETTER_AUTH_SECRET` when set. Otherwise it generates a secret on first boot and stores it in the `instance_settings` table, so anyone with database read access can read it. Changing the secret later signs everyone out.
 
 **Village:** The server mints each member's token with `POST /v2/auth/tokens`, then calls the v2 API. The secret key and tokens never reach the browser, and the app never reads the SDK's `village.token` cookie. The browser only runs the App SDK for sync, and it's identified by an opaque UUID per member. Tokens need an email, so Village receives the member's email. Keys and the invite link live in `instance_settings` in plaintext, like the generated auth secret, so anyone with database read access can read them. Sign-out clears the SDK's `village.token` from this site only. Village's own session on its domain stays, so on a shared browser the next member's popup can reuse the first member's Village account. The email check below blocks that link until an admin approves it.
 
-**Village link check:** Village doesn't sign the member reference in its widget, so anyone can send someone else a link that ties that person's Village account to their member ID. The app compares the email on `/v2/user/me` with the member's email, case-insensitively, before every join, search and path lookup. On a mismatch it blocks them and tells the member to ask an admin. **Admin** lists the mismatch, and an admin can approve that exact pair of emails. A later change to either email blocks again. An admin can also reset a member's link there, which gives the member a new ID and clears their consent, group status and cached paths on this site. Reset removes nothing on Village's side: the old Village account stays linked to the old ID and stays in the group until it leaves inside Village, and Village won't link that same account to this site again yet.
+**Village link check:** Village doesn't sign the member reference in its widget, so anyone can send someone else a link that ties that person's Village account to their member ID. The app compares the email on `/v2/user/me` with the member's email, case-insensitively, before every join, search and path lookup. A match counts only when the member's email is verified, because a forwarded invite could otherwise own an account with someone else's email. On a mismatch it blocks them and tells the member to ask an admin. **Admin** lists the mismatch, and an admin can approve that exact pair of emails. A later change to either email blocks again. An admin can also reset a member's link there, which gives the member a new ID and clears their consent, group status and cached paths on this site. Reset removes nothing on Village's side: the old Village account stays linked to the old ID and stays in the group until it leaves inside Village, and Village won't link that same account to this site again yet.
 
 **Credit limits:** Each member gets `DAILY_CREDIT_CALL_LIMIT` searches and uncached path lookups per UTC day, 50 by default, in `src/lib/village/daily-usage.ts`. Path results stay cached per member for 24 hours. Village error responses (400 and up) don't count, because Village doesn't debit them. Timeouts, network errors and any response that isn't a Village JSON error do count, including a proxy's HTML 502, because Village may have debited them.
 
@@ -74,7 +96,7 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 UPDATE "user" SET role = 'admin', banned = false WHERE email = 'you@example.com';
 ```
 
-**Rate limits:** Better Auth's limits and the `/api/setup` limit live in the `rate_limit` table, so they hold across instances. Normal requests prune expired rows in small batches. `POST /api/setup` answers 429 after 10 failed attempts in a minute, but it never blocks the correct token, so token length is what stops guessing. Each client is keyed by a header the platform overwrites, never by `X-Forwarded-For`:
+**Rate limits:** Better Auth's limits and the `/api/setup` and invite limits live in the `rate_limit` table, so they hold across instances. Normal requests prune expired rows in small batches. `POST /api/setup` answers 429 after 10 failed attempts in a minute, but it never blocks the correct token, so token length is what stops guessing. Each client is keyed by a header the platform overwrites, never by `X-Forwarded-For`:
 
 | Platform | Header | What we know |
 | --- | --- | --- |
@@ -96,6 +118,9 @@ With no trusted header, all clients share one bucket per path. That can't be spo
 | `VILLAGE_API_URL` | No | Village API origin. Defaults to production. |
 | `VILLAGE_SDK_URL` | No | Village App SDK URL. Defaults to production. |
 | `BETTER_AUTH_SECRET` | No | Overrides the generated auth secret. |
+| `RESEND_API_KEY` | No | Sends invites by email through Resend. Needs `RESEND_FROM_ADDRESS` too. |
+| `RESEND_FROM_ADDRESS` | No | The sender for invite emails, like `Northwind <hello@example.com>`. |
+| `RESEND_API_URL` | No | Resend API origin. Defaults to production. Tests point it at a fake server. |
 | `CLIENT_IP_HEADER` | No | Header your proxy overwrites with the client IP. Overrides the platform default. |
 | `DATABASE_CA_CERT` | No | PEM CA used to verify database TLS. Escaped `\n` is accepted. |
 | `DATABASE_TLS_ALLOW_UNVERIFIED` | No | `true` encrypts without verifying when no CA is available. No template sets it. |

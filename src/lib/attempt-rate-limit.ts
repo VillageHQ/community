@@ -1,0 +1,28 @@
+import { randomUUID } from "node:crypto";
+
+import { sql } from "drizzle-orm";
+
+import { rateLimit } from "../database/auth-schema.ts";
+import type { Database } from "../database/client.ts";
+
+const WINDOW_MS = 60_000;
+const MAXIMUM_FAILED_ATTEMPTS = 10;
+
+export async function recordFailedAttempt(database: Database, key: string, maximumAttempts = MAXIMUM_FAILED_ATTEMPTS) {
+  const now = Date.now();
+  const isWindowExpired = sql`${rateLimit.lastRequest} <= ${now - WINDOW_MS}`;
+
+  const [attempts] = await database
+    .insert(rateLimit)
+    .values({ id: randomUUID(), key, count: 1, lastRequest: now })
+    .onConflictDoUpdate({
+      target: rateLimit.key,
+      set: {
+        count: sql`case when ${isWindowExpired} then 1 else ${rateLimit.count} + 1 end`,
+        lastRequest: sql`case when ${isWindowExpired} then ${now} else ${rateLimit.lastRequest} end`,
+      },
+    })
+    .returning({ count: rateLimit.count });
+
+  return { isLimited: (attempts?.count ?? 0) > maximumAttempts };
+}

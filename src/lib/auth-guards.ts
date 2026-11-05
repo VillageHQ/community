@@ -4,9 +4,11 @@ import { z } from "zod";
 
 import { user } from "../database/auth-schema.ts";
 import type { Database } from "../database/client.ts";
+import { nameSchema } from "./invites/invite-api.ts";
 
 const ADMIN_ROLE = "admin";
 const ROLE_SEPARATOR = ",";
+const UPDATE_USER_PATH = "/update-user";
 
 const roleSchema = z.union([z.string(), z.array(z.string())]);
 
@@ -46,8 +48,30 @@ async function isLastActiveAdmin(database: Database, userId: string) {
   return admins.length === 1 && admins[0]?.id === userId;
 }
 
-export function createLastAdminGuard(database: Database) {
+const NULL_BYTE = "\0";
+const NULL_BYTE_MESSAGE = "This name has a character we can't save.";
+const REFUSED_PATHS: ReadonlySet<string> = new Set(["/verify-email"]);
+
+const nameUpdateSchema = z.object({
+  name: z
+    .string()
+    .refine((name) => !name.includes(NULL_BYTE), NULL_BYTE_MESSAGE)
+    .pipe(nameSchema)
+    .optional(),
+});
+
+function rejectUnsafeName(path: string, body: unknown) {
+  if (path !== UPDATE_USER_PATH) return;
+  const update = nameUpdateSchema.safeParse(body);
+  if (update.success) return;
+  throw new APIError("BAD_REQUEST", { message: update.error.issues[0]?.message ?? "This name won't work." });
+}
+
+export function createAuthGuards(database: Database) {
   return createAuthMiddleware(async (context) => {
+    if (REFUSED_PATHS.has(context.path)) throw new APIError("NOT_FOUND");
+    rejectUnsafeName(context.path, context.body);
+
     const losesAdmin = ADMIN_LOSS_CHECKS[context.path];
     if (!losesAdmin) return;
 

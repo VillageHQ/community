@@ -54,7 +54,7 @@ describe("the sign-in page", () => {
   });
 
   it("doesn't link to the closed sign-up page", async () => {
-    const html = renderToStaticMarkup(await SignInPage());
+    const html = renderToStaticMarkup(await SignInPage({ searchParams: Promise.resolve({}) }));
 
     expect(html).not.toContain(ROUTES.signUp);
     expect(html).not.toContain("Need an account");

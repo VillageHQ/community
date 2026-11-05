@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { ShieldCheck } from "lucide-react";
+import { MailPlus, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { LogoTile } from "@/components/logo-tile";
 import { PageHeader } from "@/components/page-header";
@@ -13,6 +14,14 @@ import { getDatabase } from "@/database/client";
 import { readSetupProgress, SETUP_STEP_NAMES, type SetupProgress, type SetupStepId } from "@/lib/admin-setup";
 import { SETUP_STEP_COPY } from "@/lib/admin-setup-copy";
 import { readBrandingForPage } from "@/lib/branding/branding";
+import { readResendConfig } from "@/lib/email/resend";
+import { readPendingInviteCount } from "@/lib/invites/invites";
+import { readActiveMemberCount, readNewMembers } from "@/lib/members/directory";
+import { resolveOnboardingStep } from "@/lib/members/onboarding";
+import { describeEmailConfirmation, type EmailConfirmationCopy } from "@/lib/members/email-confirmation-copy";
+import { readWaitingMemberCount } from "@/lib/members/member-admin";
+import { isCardFilledIn, readAvatarUrl, readMemberProfile } from "@/lib/members/profile";
+import { ONBOARDING_STEPS } from "@/lib/members/profile-api";
 import { readFirstName } from "@/lib/design/avatar-identity";
 import { describeJoinSteps, HOME_HEROES } from "@/lib/home-steps";
 import { ROUTES } from "@/lib/routes";
@@ -58,8 +67,12 @@ function AdminSetupHero({ progress, communityName }: { progress: SetupProgress; 
   );
 }
 
-function MemberHero({ networkProgress }: { networkProgress: NetworkProgress }) {
-  const { icon: Icon, kicker, title, description, action } = HOME_HEROES[networkProgress];
+type MemberHeroProps = { networkProgress: NetworkProgress; confirmationCopy: EmailConfirmationCopy };
+
+function MemberHero({ networkProgress, confirmationCopy }: MemberHeroProps) {
+  const hero = HOME_HEROES[networkProgress];
+  const { icon: Icon, kicker, action } = hero;
+  const { title, description } = networkProgress === NETWORK_PROGRESS.needsEmailConfirmation ? confirmationCopy : hero;
   return (
     <section aria-labelledby="home-hero-title" className={HERO_CLASSES}>
       <p className={HERO_KICKER_CLASSES}>
@@ -105,11 +118,18 @@ function SetupSteps({ progress }: { progress: SetupProgress }) {
   );
 }
 
+const JOIN_STEPS_TITLES: Partial<Record<NetworkProgress, string>> = {
+  [NETWORK_PROGRESS.ready]: "You've joined the network",
+  [NETWORK_PROGRESS.notConfigured]: "How the network will work",
+  [NETWORK_PROGRESS.awaitingGroup]: "How the network will work",
+  [NETWORK_PROGRESS.needsEmailConfirmation]: "How the network will work",
+};
+
 function JoinSteps({ networkProgress }: { networkProgress: NetworkProgress }) {
   return (
     <section aria-labelledby="home-steps-title">
       <h2 id="home-steps-title" className="type-h3 mb-3.5">
-        {networkProgress === NETWORK_PROGRESS.ready ? "You've joined the network" : "Your next steps"}
+        {JOIN_STEPS_TITLES[networkProgress] ?? "Your next steps"}
       </h2>
       <ol className="grid gap-2.5">
         {describeJoinSteps(networkProgress).map(({ title, description, number, state }) => (
@@ -118,6 +138,105 @@ function JoinSteps({ networkProgress }: { networkProgress: NetworkProgress }) {
       </ol>
     </section>
   );
+}
+
+type NewMember = Awaited<ReturnType<typeof readNewMembers>>["newMembers"][number];
+
+function NewMemberRow({ member }: { member: NewMember }) {
+  const { id, name, title, company, avatarUrl } = member;
+  return (
+    <li className="grid gap-2.5">
+      <div className="flex items-center gap-3">
+        <Avatar stableId={id} name={name} imageUrl={avatarUrl} sizePx={44} />
+        <div className="min-w-0">
+          <div className="type-label">{name}</div>
+          <div className="type-micro font-medium text-muted-foreground">{company ?? title ?? "New member"}</div>
+        </div>
+      </div>
+      <Button asChild variant="soft" size="sm" className="w-full">
+        <Link href={`${ROUTES.members}/${id}`} aria-label={`View profile of ${name}`}>
+          View profile
+        </Link>
+      </Button>
+    </li>
+  );
+}
+
+function NewThisWeekCard({ newMembers }: { newMembers: NewMember[] }) {
+  return (
+    <Card className="sm:p-5">
+      <CardTitle>New this week</CardTitle>
+      {newMembers.length === 0 ? (
+        <>
+          <p className="type-small mt-2 text-foreground-soft">Nobody new this week. Everyone else is one tap away.</p>
+          <Button asChild variant="outline" size="sm" className="mt-3.5 w-full">
+            <Link href={ROUTES.members}>Meet the members</Link>
+          </Button>
+        </>
+      ) : (
+        <ul className="mt-3.5 grid gap-3.5">
+          {newMembers.map((member) => (
+            <NewMemberRow key={member.id} member={member} />
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function CardNudge() {
+  return (
+    <section aria-labelledby="home-card-title" className="flex flex-wrap items-center gap-4 rounded-card bg-card p-card-phone shadow-panel sm:p-6">
+      <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
+        <UserRound className="size-icon" />
+      </span>
+      <div className="min-w-0 flex-[1_1_240px]">
+        <h2 id="home-card-title" className="type-h3">
+          Finish your card
+        </h2>
+        <p className="type-small text-foreground-soft">Add your photo and what you can help with, so members can find you.</p>
+      </div>
+      <Button asChild size="lg" className="max-sm:w-full">
+        <Link href={ROUTES.editCard}>Finish my card</Link>
+      </Button>
+    </section>
+  );
+}
+
+function InvitesCard({ pendingCount, waitingCount }: { pendingCount: number; waitingCount: number }) {
+  return (
+    <Card className="sm:p-5">
+      <CardTitle>Invites</CardTitle>
+      <p className="type-small mt-2 text-foreground-soft">{readPendingInvitesSentence(pendingCount)}</p>
+      {waitingCount > 0 ? (
+        <p className="type-small mt-1 font-semibold text-foreground">{readWaitingSentence(waitingCount)}</p>
+      ) : null}
+      <Button asChild variant="outline" size="sm" className="mt-3.5 w-full">
+        <Link href={ROUTES.adminMembers}>
+          <MailPlus aria-hidden="true" />
+          Manage invites
+        </Link>
+      </Button>
+    </Card>
+  );
+}
+
+function readPendingInvitesSentence(pendingCount: number) {
+  if (pendingCount === 0) return "No invites are waiting on anyone.";
+  return pendingCount === 1 ? "1 invite is waiting to be accepted." : `${pendingCount} invites are waiting to be accepted.`;
+}
+
+function readWaitingSentence(waitingCount: number) {
+  return waitingCount === 1 ? "1 member is waiting for you to confirm them." : `${waitingCount} members are waiting for you to confirm them.`;
+}
+
+function readWeekSentence(newCount: number) {
+  if (newCount === 0) return "Here's what's next.";
+  return newCount === 1 ? "1 new member joined this week." : `${newCount} new members joined this week.`;
+}
+
+function readMemberCountSentence(memberCount: number) {
+  return memberCount === 1 ? "1 member so far." : `${memberCount} members so far.`;
 }
 
 function readSharingSentence(memberCount: number) {
@@ -130,18 +249,37 @@ export const metadata: Metadata = { title: PAGE_TITLES.home };
 export default async function HomePage() {
   const member = await requireMember();
   const database = getDatabase();
+  if ((await resolveOnboardingStep(database, member)) !== ONBOARDING_STEPS.done) redirect(ROUTES.welcome);
+
   const isAdmin = isAdminMember(member);
-  const [community, networkProgress, sharingMemberCount, setupProgress] = await Promise.all([
+  const [
+    community,
+    networkProgress,
+    sharingMemberCount,
+    setupProgress,
+    memberCount,
+    { newCount, newMembers },
+    profile,
+    avatarUrl,
+    pendingInviteCount,
+    waitingMemberCount,
+  ] = await Promise.all([
     readBrandingForPage(),
     readNetworkProgress(database, member),
     readSharingMemberCount(database),
     isAdmin ? readSetupProgress(database, process.env) : null,
+    readActiveMemberCount(database),
+    readNewMembers(database, member.id),
+    readMemberProfile(database, member.id),
+    readAvatarUrl(database, member.id),
+    isAdmin ? readPendingInviteCount(database) : null,
+    isAdmin ? readWaitingMemberCount(database) : 0,
   ]);
   const isSetupPending = setupProgress !== null && !setupProgress.isComplete;
 
   return (
     <>
-      <PageHeader title={`Good to see you, ${readFirstName(member.name)}.`} description="Here's what's next." />
+      <PageHeader title={`Good to see you, ${readFirstName(member.name)}.`} description={readWeekSentence(newCount)} />
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_296px] lg:gap-7">
         <div className="grid gap-5">
           {isSetupPending ? (
@@ -150,11 +288,17 @@ export default async function HomePage() {
               communityName={community.isSaved ? community.name : "your community"}
             />
           ) : (
-            <MemberHero networkProgress={networkProgress} />
+            <MemberHero
+              networkProgress={networkProgress}
+              confirmationCopy={describeEmailConfirmation(community.isSaved ? community.name : "your admin", readResendConfig(process.env) !== null)}
+            />
           )}
+          {profile && isCardFilledIn(profile) ? null : <CardNudge />}
           {isSetupPending ? <SetupSteps progress={setupProgress} /> : <JoinSteps networkProgress={networkProgress} />}
         </div>
         <aside aria-label="About this community" className="grid gap-5">
+          <NewThisWeekCard newMembers={newMembers} />
+          {pendingInviteCount === null ? null : <InvitesCard pendingCount={pendingInviteCount} waitingCount={waitingMemberCount} />}
           <Card className="sm:p-5">
             <CardTitle>Your community</CardTitle>
             <div className="mt-3.5 flex items-center gap-3">
@@ -166,12 +310,14 @@ export default async function HomePage() {
                 ) : null}
               </div>
             </div>
-            <p className="type-small mt-3.5 text-foreground-soft">{readSharingSentence(sharingMemberCount)}</p>
+            <p className="type-small mt-3.5 text-foreground-soft">
+              {readMemberCountSentence(memberCount)} {readSharingSentence(sharingMemberCount)}
+            </p>
           </Card>
           <Card className="sm:p-5">
             <CardTitle>Your account</CardTitle>
             <div className="mt-3.5 flex items-center gap-3">
-              <Avatar stableId={member.id} name={member.name} imageUrl={member.image} sizePx={44} />
+              <Avatar stableId={member.id} name={member.name} imageUrl={avatarUrl} sizePx={44} />
               <dl className="min-w-0">
                 <dt className="sr-only">Name</dt>
                 <dd className="type-label">{member.name}</dd>

@@ -1,5 +1,6 @@
 const LINKEDIN_HOST = "linkedin.com";
 const PROFILE_PATH_PATTERN = /^\/in\/([^/]+)\/?$/;
+const CONTROL_CHARACTERS = /\p{Cc}/u;
 
 function parseUrl(linkedinUrl: string) {
   const trimmed = linkedinUrl.trim();
@@ -31,7 +32,9 @@ export function readLinkedinSlug(linkedinUrl: string | null | undefined) {
   const encodedSlug = url.pathname.match(PROFILE_PATH_PATTERN)?.[1];
   if (!encodedSlug) return null;
 
-  return decodeSlug(encodedSlug).trim().toLowerCase() || null;
+  const slug = decodeSlug(encodedSlug);
+  if (CONTROL_CHARACTERS.test(slug)) return null;
+  return slug.trim().toLowerCase() || null;
 }
 
 export function toLinkedinUrl(linkedinSlug: string) {

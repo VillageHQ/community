@@ -15,7 +15,7 @@ const INITIAL_STATE: SignInState = { errorMessage: null, email: "" };
 const ERROR_ID = "sign-in-error";
 const FALLBACK_ERROR_MESSAGE = "We could not sign you in. Try again.";
 
-async function signIn(_previousState: SignInState, formData: FormData): Promise<SignInState> {
+async function signIn(returnPath: string, formData: FormData): Promise<SignInState> {
   const email = String(formData.get("email"));
   const { error } = await authClient.signIn.email({
     email,
@@ -23,7 +23,7 @@ async function signIn(_previousState: SignInState, formData: FormData): Promise<
   });
   if (error) return { errorMessage: error.message ?? FALLBACK_ERROR_MESSAGE, email };
 
-  window.location.assign(ROUTES.landing);
+  window.location.assign(returnPath);
   return INITIAL_STATE;
 }
 
@@ -59,8 +59,11 @@ export function SignInFields({ state, passwordRef }: SignInFieldsProps) {
   );
 }
 
-export function SignInForm() {
-  const [state, formAction, isPending] = useActionState(signIn, INITIAL_STATE);
+export function SignInForm({ returnPath = ROUTES.landing }: { returnPath?: string | null }) {
+  const [state, formAction, isPending] = useActionState(
+    (_previousState: SignInState, formData: FormData) => signIn(returnPath ?? ROUTES.landing, formData),
+    INITIAL_STATE,
+  );
   const passwordRef = useFocusOnFailure(state);
 
   return (

@@ -3,6 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
@@ -14,6 +15,8 @@ import { postNetworkRequest } from "@/lib/village/post-network-request";
 
 import { JOIN_STEPS, JoinSteps } from "./join-steps";
 import { JoinLayout } from "./join-layout";
+import { NotNowAction } from "./not-now-action";
+import { OnboardingSteps, ONBOARDING_PILLS } from "./onboarding-steps";
 import { readSharingSentence, type WelcomeContext } from "./welcome-context";
 
 const LINKEDIN_FIELD = "linkedinUrl";
@@ -26,17 +29,18 @@ function saveLinkedinUrl(formData: FormData) {
   );
 }
 
-function reopenNetworkPage() {
-  window.location.assign(ROUTES.network);
+function reopenPage(path: string) {
+  window.location.assign(path);
 }
 
 type LinkedinFormProps = {
   onSaved: () => unknown;
   submitLabel: string;
   notNowHref?: string;
+  notNowAction?: ReactNode;
 };
 
-export function LinkedinForm({ onSaved, submitLabel, notNowHref }: LinkedinFormProps) {
+export function LinkedinForm({ onSaved, submitLabel, notNowHref, notNowAction }: LinkedinFormProps) {
   const saveMutation = useMutation({ mutationFn: saveLinkedinUrl, onSuccess: onSaved });
 
   return (
@@ -55,6 +59,7 @@ export function LinkedinForm({ onSaved, submitLabel, notNowHref }: LinkedinFormP
           {saveMutation.isPending ? "Saving…" : submitLabel}
           <ArrowRight aria-hidden="true" />
         </Button>
+        {notNowAction}
         {notNowHref ? (
           <Button asChild variant="quiet" size="lg">
             <Link href={notNowHref}>Not now</Link>
@@ -68,7 +73,7 @@ export function LinkedinForm({ onSaved, submitLabel, notNowHref }: LinkedinFormP
 export function LinkedinWelcome({ welcome }: { welcome: WelcomeContext }) {
   return (
     <JoinLayout welcome={welcome}>
-      <JoinSteps current={JOIN_STEPS.linkedin} />
+      {welcome.isOnboarding ? <OnboardingSteps current={ONBOARDING_PILLS.network} /> : <JoinSteps current={JOIN_STEPS.linkedin} />}
       <h1 className="type-h1 lg:type-display">Welcome in, {readFirstName(welcome.member.name)}.</h1>
       <p className="type-lead mt-3 text-foreground-soft">{readSharingSentence(welcome)}</p>
       <section
@@ -80,10 +85,15 @@ export function LinkedinWelcome({ welcome }: { welcome: WelcomeContext }) {
             Add your LinkedIn profile
           </h2>
           <p className="text-foreground-soft">
-            Other members see a community badge when you appear in their introduction paths.
+            It shows on your profile, and other members see a community badge when you appear in their introduction
+            paths.
           </p>
         </div>
-        <LinkedinForm onSaved={reopenNetworkPage} submitLabel="Save and continue" notNowHref={welcome.notNowHref} />
+        <LinkedinForm
+          onSaved={() => reopenPage(welcome.isOnboarding ? ROUTES.welcome : ROUTES.network)}
+          submitLabel="Save and continue"
+          notNowAction={<NotNowAction welcome={welcome} />}
+        />
       </section>
     </JoinLayout>
   );

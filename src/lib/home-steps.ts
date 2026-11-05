@@ -1,4 +1,4 @@
-import { ArrowRight, Clock, Link2, RefreshCw, Search, ShieldAlert, type LucideIcon } from "lucide-react";
+import { ArrowRight, Clock, Link2, MailCheck, RefreshCw, Search, ShieldAlert, type LucideIcon } from "lucide-react";
 
 import { STEP_STATES, type StepState } from "../components/step-row.tsx";
 import { NETWORK_PROGRESS, type NetworkProgress } from "./village/network-progress-stages.ts";
@@ -17,6 +17,13 @@ export const HOME_HEROES: Record<NetworkProgress, HomeHero> = {
     kicker: "Almost there",
     title: "Your admin is still setting things up",
     description: "Network search turns on once an admin connects this community to Village. There's nothing you need to do yet.",
+  },
+  [NETWORK_PROGRESS.needsEmailConfirmation]: {
+    icon: MailCheck,
+    kicker: "Almost there",
+    title: "We need to confirm it's you",
+    description: "Network search turns on once your email is confirmed. Everything else here is ready for you.",
+    action: "See where things stand",
   },
   [NETWORK_PROGRESS.needsLinkedin]: {
     icon: Link2,

@@ -20,10 +20,10 @@ describe("the navigation", () => {
     }
   });
 
-  it("shows members Home and Network", () => {
+  it("shows members Home, Members and Network", () => {
     const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false).map(({ label }) => label);
 
-    expect(labels).toEqual(["Home", "Network"]);
+    expect(labels).toEqual(["Home", "Members", "Network"]);
   });
 
   it("hides Admin from members", () => {

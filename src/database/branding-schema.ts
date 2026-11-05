@@ -6,7 +6,7 @@ import { LOGO_BACKDROPS, MAXIMUM_LOGO_BYTES } from "../lib/branding/logo-rules.t
 
 export const DEFAULT_COMMUNITY_NAME = "Your community";
 
-const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+export const bytea = customType<{ data: Buffer; driverData: Buffer }>({
   dataType: () => "bytea",
 });
 

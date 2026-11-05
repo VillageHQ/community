@@ -101,13 +101,13 @@ function respondToKnownError(error: unknown) {
   throw error;
 }
 
-async function readSessionMember(request: Request): Promise<SessionMember | null> {
+export async function readSessionMember(request: Request): Promise<SessionMember | null> {
   const auth = await getAuth();
   const session = await auth.api.getSession({ headers: request.headers });
   return session?.user ?? null;
 }
 
-function hasTrustedOrigin(request: Request) {
+export function hasTrustedOrigin(request: Request) {
   const origin = request.headers.get("origin");
   return origin !== null && resolveTrustedOrigins(process.env).includes(origin);
 }
@@ -173,14 +173,12 @@ export function createMemberRoute<Schema extends z.ZodType>(
 }
 
 type BinaryRouteOptions = { maximumBytes: number; tooLargeMessage: string };
+type BinaryResponder = (context: NetworkContext, bytes: Buffer, request: Request) => Promise<Response>;
 
-export function createAdminBinaryRoute(
-  scope: string,
-  { maximumBytes, tooLargeMessage }: BinaryRouteOptions,
-  respond: (context: NetworkContext, bytes: Buffer, request: Request) => Promise<Response>,
-) {
+function createBinaryRoute(scope: string, adminOnly: boolean, options: BinaryRouteOptions, respond: BinaryResponder) {
+  const { maximumBytes, tooLargeMessage } = options;
   return withRouteLogging(scope, async (request: Request) => {
-    const member = await readAuthorizedMember(request, true);
+    const member = await readAuthorizedMember(request, adminOnly);
     if (member instanceof Response) return member;
 
     const readBoundedBody = withBodyLimit(
@@ -193,4 +191,12 @@ export function createAdminBinaryRoute(
     );
     return readBoundedBody(request);
   });
+}
+
+export function createAdminBinaryRoute(scope: string, options: BinaryRouteOptions, respond: BinaryResponder) {
+  return createBinaryRoute(scope, true, options, respond);
+}
+
+export function createMemberBinaryRoute(scope: string, options: BinaryRouteOptions, respond: BinaryResponder) {
+  return createBinaryRoute(scope, false, options, respond);
 }

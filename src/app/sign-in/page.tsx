@@ -5,6 +5,7 @@ import { CommunityNote, SplitLayout } from "@/components/split-layout";
 import { getDatabase } from "@/database/client";
 import { readBrandingForPage } from "@/lib/branding/branding";
 import { isFirstAdminClaimed } from "@/lib/first-admin";
+import { parseReturnPath, RETURN_PATH_PARAM } from "@/lib/return-path";
 import { ROUTES } from "@/lib/routes";
 
 import { SignInForm } from "./sign-in-form";
@@ -14,10 +15,13 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: PAGE_TITLES.signIn };
 
-export default async function SignInPage() {
+type SignInPageProps = { searchParams: Promise<{ [RETURN_PATH_PARAM]?: string }> };
+
+export default async function SignInPage({ searchParams }: SignInPageProps) {
   if (!(await isFirstAdminClaimed(getDatabase()))) redirect(ROUTES.setup);
 
   const community = await readBrandingForPage();
+  const returnPath = parseReturnPath((await searchParams)[RETURN_PATH_PARAM]);
 
   return (
     <SplitLayout
@@ -27,8 +31,13 @@ export default async function SignInPage() {
       <div className="flex min-h-[60dvh] flex-col justify-center lg:min-h-[calc(100dvh-140px)]">
         <h1 className="type-h1 lg:type-display">Welcome back.</h1>
         <p className="type-lead mt-3 text-foreground-soft">Sign in to {community.isSaved ? community.name : "your community"}.</p>
+        {returnPath ? (
+          <p className="type-small mt-3 text-foreground-soft">
+            Sign in to finish confirming your email. If you never accepted this invite, tell your admin.
+          </p>
+        ) : null}
         <div className="mt-7 rounded-panel bg-card p-5 shadow-panel sm:p-7">
-          <SignInForm />
+          <SignInForm returnPath={returnPath} />
         </div>
       </div>
     </SplitLayout>

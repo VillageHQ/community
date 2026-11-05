@@ -17,12 +17,12 @@ const WELCOME = {
   notNowHref: ROUTES.home,
 };
 
-function renderMarkup() {
+function renderMarkup(welcome: Parameters<typeof ConsentStep>[0]["welcome"] = WELCOME) {
   return renderToStaticMarkup(
     createElement(
       QueryClientProvider,
       { client: new QueryClient() },
-      createElement(ConsentStep, { welcome: WELCOME }),
+      createElement(ConsentStep, { welcome }),
     ),
   );
 }
@@ -75,6 +75,37 @@ describe("the consent screen", () => {
 
   it("needs explicit agreement before sharing", () => {
     expect(renderMarkup()).toMatch(/<input[^>]*type="checkbox"[^>]*required/);
+  });
+});
+
+describe("the consent screen during onboarding", () => {
+  const ONBOARDING_WELCOME = {
+    ...WELCOME,
+    isOnboarding: true,
+    inviter: { id: "member-2", name: "Priya Raman", title: "Head of Platform" },
+  };
+
+  it("keeps Not now, as a button that records the choice", () => {
+    expect(renderMarkup(ONBOARDING_WELCOME)).toMatch(/<button[^>]*>Not now<\/button>/);
+  });
+
+  it("keeps every disclosure", () => {
+    const markup = renderMarkup(ONBOARDING_WELCOME);
+
+    expect(markup).toContain("Your email address goes to Village");
+    expect(markup).toContain("every current and future member");
+    expect(markup).toMatch(/<input[^>]*type="checkbox"[^>]*required/);
+  });
+
+  it("shows the getting-started steps and who invited them", () => {
+    const markup = renderMarkup(ONBOARDING_WELCOME);
+
+    expect(markup).toContain("Your card");
+    expect(markup).toContain("Priya Raman");
+  });
+
+  it("promises no step that doesn't exist", () => {
+    expect(renderMarkup(ONBOARDING_WELCOME)).not.toContain("Say hello");
   });
 });
 

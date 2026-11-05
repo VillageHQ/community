@@ -13,6 +13,7 @@ import { postNetworkRequest } from "@/lib/village/post-network-request";
 
 const STATUS_POLL_INTERVAL_MS = 5_000;
 const POLLED_STAGES: ReadonlySet<NetworkStage> = new Set([
+  NETWORK_STAGES.needsEmailConfirmation,
   NETWORK_STAGES.needsSync,
   NETWORK_STAGES.syncing,
   NETWORK_STAGES.linkMismatch,

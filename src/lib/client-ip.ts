@@ -18,7 +18,7 @@ export function resolveClientIpHeaders(environment: Environment) {
   return platform ? [platform.header] : [];
 }
 
-export function readRateLimitClientKey(request: Request, environment: Environment) {
+export function readRateLimitClientKey(request: Request | Headers, environment: Environment) {
   const ipAddress = { ipAddressHeaders: resolveClientIpHeaders(environment) };
   return getIP(request, { advanced: { ipAddress } }) ?? SHARED_BUCKET_KEY;
 }
