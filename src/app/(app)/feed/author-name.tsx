@@ -15,11 +15,15 @@ export function AuthorName({ author, className }: { author: Author; className?: 
   );
 }
 
-export function BannedTag({ author }: { author: Author }) {
+export function readRemovedAuthorLabel(isViewerAdmin: boolean) {
+  return isViewerAdmin ? "Banned" : "No longer a member";
+}
+
+export function BannedTag({ author, isViewerAdmin }: { author: Author; isViewerAdmin: boolean }) {
   if (!author.isBanned) return null;
   return (
-    <Tag tone="destructive" className="shrink-0">
-      Banned
+    <Tag tone={isViewerAdmin ? "destructive" : "neutral"} className="shrink-0">
+      {readRemovedAuthorLabel(isViewerAdmin)}
     </Tag>
   );
 }

@@ -2,12 +2,16 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
-import { and, eq, isNotNull, ne, or } from "drizzle-orm";
+import { and, eq, isNotNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { user } from "../../database/auth-schema.ts";
 import type { Database } from "../../database/client.ts";
 import { memberNetwork, memberPathResult } from "../../database/village-schema.ts";
+import { AUDIT_ACTIONS } from "../admin/admin-api.ts";
+import { withAdminTransaction } from "../admin/admin-transaction.ts";
+import { recordAdminAction } from "../admin/audit.ts";
+import { isActiveMember } from "../members/active-member.ts";
 import type { Environment } from "../environment.ts";
 import { INTRO_ERROR_CODES, INTRO_LIMITS } from "../intros/intro-api.ts";
 import { readOpenAsks } from "../intros/open-asks.ts";
@@ -32,7 +36,7 @@ import {
   villagePathsSchema,
 } from "./client.ts";
 import { cleanVillageText } from "./connector-reason.ts";
-import { readDailyLookupsLeft, withCreditCall } from "./daily-usage.ts";
+import { CREDIT_CALL_KINDS, readDailyLookupsLeft, withCreditCall } from "./daily-usage.ts";
 import { readLinkedinSlug, toLinkedinUrl } from "./linkedin-slug.ts";
 import {
   describeMemberPaths,
@@ -288,6 +292,10 @@ function describeStage(context: NetworkContext, stage: NetworkStage): NetworkSta
   return { stage, isAdmin: isAdminMember(context.member), sync: null };
 }
 
+async function markVillageLinked(database: Database, memberId: string) {
+  await database.update(memberNetwork).set({ villageLinkedAt: new Date() }).where(eq(memberNetwork.userId, memberId));
+}
+
 export async function advanceNetwork(context: NetworkContext): Promise<NetworkStatus> {
   const { database, environment, member } = context;
 
@@ -308,6 +316,7 @@ export async function advanceNetwork(context: NetworkContext): Promise<NetworkSt
 
   const { session, network } = await connectMember(context, keys);
   const villageUser = await readVillageUser(session);
+  if (villageUser && !network.villageLinkedAt) await markVillageLinked(database, member.id);
   const sync = {
     publicKey: keys.publicKey,
     externalId: network.villageExternalId,
@@ -354,7 +363,10 @@ export async function verifyAndSaveVillageKeys(context: NetworkContext, keys: Vi
     );
   }
 
-  await saveVillageKeys(context.database, keys);
+  await withAdminTransaction(context.database, context.member.id, async (transaction) => {
+    await saveVillageKeys(transaction, keys);
+    await recordAdminAction(transaction, context.member.id, { action: AUDIT_ACTIONS.villageKeysSaved });
+  });
 }
 
 export async function createCommunityGroup(context: NetworkContext, name: string) {
@@ -383,13 +395,15 @@ export async function createCommunityGroup(context: NetworkContext, name: string
   }
 
   const group = await createVillageGroup(session, name);
-  await saveVillageGroup(database, group);
-
-  const now = new Date();
-  await database
-    .update(memberNetwork)
-    .set({ sharingConsentedAt: now, groupJoinedAt: now })
-    .where(eq(memberNetwork.userId, member.id));
+  await withAdminTransaction(database, member.id, async (transaction) => {
+    await saveVillageGroup(transaction, group);
+    const now = new Date();
+    await transaction
+      .update(memberNetwork)
+      .set({ sharingConsentedAt: now, groupJoinedAt: now })
+      .where(eq(memberNetwork.userId, member.id));
+    await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.villageGroupCreated, detail: name });
+  });
 }
 
 export async function readVillageGroupReadiness(context: NetworkContext) {
@@ -403,7 +417,8 @@ async function readMemberSlugs(database: Database, ownSlug: string | null) {
   const members = await database
     .select({ linkedinSlug: memberNetwork.linkedinSlug })
     .from(memberNetwork)
-    .where(isNotNull(memberNetwork.groupJoinedAt));
+    .innerJoin(user, eq(user.id, memberNetwork.userId))
+    .where(and(isNotNull(memberNetwork.groupJoinedAt), isActiveMember()));
   const slugs = members.flatMap(({ linkedinSlug }) => (linkedinSlug ? [linkedinSlug] : []));
   return new Set(slugs.filter((slug) => slug !== ownSlug));
 }
@@ -438,7 +453,7 @@ export async function searchMemberNetwork(
   const { session } = await connectMember(context, keys);
   await requireTrustedVillageUser(context, network, session);
 
-  const { people, source } = await withCreditCall(database, member.id, () =>
+  const { people, source } = await withCreditCall(database, member.id, CREDIT_CALL_KINDS.search, () =>
     searchVillageNetwork(session, prompt),
   ).catch((error: unknown) => {
     throw toSearchCutOffError(error);
@@ -501,7 +516,7 @@ async function fetchVillagePathsOrNull(
   linkedinSlug: string,
 ) {
   try {
-    return await withCreditCall(context.database, context.member.id, () =>
+    return await withCreditCall(context.database, context.member.id, CREDIT_CALL_KINDS.path, () =>
       readVillagePaths(session, toLinkedinUrl(linkedinSlug)),
     );
   } catch (error) {
@@ -617,12 +632,12 @@ export async function readVillageLinks(database: Database) {
 }
 
 export async function approveVillageLink(
-  { database }: NetworkContext,
+  { database, member }: NetworkContext,
   memberId: string,
   villageEmail: string,
 ) {
   const [pendingLink] = await database
-    .select({ memberEmail: user.email, pendingVillageEmail: memberNetwork.pendingVillageEmail })
+    .select({ memberName: user.name, memberEmail: user.email, pendingVillageEmail: memberNetwork.pendingVillageEmail })
     .from(memberNetwork)
     .innerJoin(user, eq(user.id, memberNetwork.userId))
     .where(eq(memberNetwork.userId, memberId));
@@ -636,20 +651,28 @@ export async function approveVillageLink(
     );
   }
 
-  await database
-    .update(memberNetwork)
-    .set({
-      approvedMemberEmail: normalizeEmail(pendingLink.memberEmail),
-      approvedVillageEmail: normalizedVillageEmail,
-      pendingVillageEmail: null,
-    })
-    .where(eq(memberNetwork.userId, memberId));
+  await withAdminTransaction(database, member.id, async (transaction) => {
+    await transaction
+      .update(memberNetwork)
+      .set({
+        approvedMemberEmail: normalizeEmail(pendingLink.memberEmail),
+        approvedVillageEmail: normalizedVillageEmail,
+        pendingVillageEmail: null,
+      })
+      .where(eq(memberNetwork.userId, memberId));
+    await recordAdminAction(transaction, member.id, {
+      action: AUDIT_ACTIONS.villageLinkApproved,
+      targetMemberId: memberId,
+      targetName: pendingLink.memberName,
+      detail: normalizedVillageEmail,
+    });
+  });
 }
 
-async function clearMemberFromGroup(database: Database, userId: string) {
+export async function clearMemberFromGroup(database: Database, userId: string) {
   await database
     .update(memberNetwork)
-    .set({ sharingConsentedAt: null, groupJoinedAt: null })
+    .set({ sharingConsentedAt: null, groupJoinedAt: null, villageLinkedAt: null })
     .where(eq(memberNetwork.userId, userId));
   await database.delete(memberPathResult).where(eq(memberPathResult.userId, userId));
 
@@ -701,26 +724,36 @@ export async function leaveCommunityGroup(context: NetworkContext) {
   await clearMemberFromGroup(database, member.id);
 }
 
-export async function resetVillageLink({ database }: NetworkContext, memberId: string) {
-  const resetMembers = await database
-    .update(memberNetwork)
-    .set({
-      villageExternalId: randomUUID(),
-      sharingConsentedAt: null,
-      groupJoinedAt: null,
-      pendingVillageEmail: null,
-      approvedMemberEmail: null,
-      approvedVillageEmail: null,
-    })
-    .where(eq(memberNetwork.userId, memberId))
-    .returning({ userId: memberNetwork.userId });
-  if (resetMembers.length === 0) {
-    throw new NetworkRequestError(
-      NOT_FOUND_STATUS,
-      NETWORK_ERROR_CODES.memberNotFound,
-      "This member has no Village link to reset. Reload the page.",
-    );
-  }
+export function staleGroupAfterLinkClears() {
+  return sql`case when ${memberNetwork.groupJoinedAt} is not null then ${memberNetwork.villageExternalId} else ${memberNetwork.staleGroupExternalId} end`;
+}
 
-  await database.delete(memberPathResult).where(eq(memberPathResult.userId, memberId));
+export async function resetVillageLink({ database, member }: NetworkContext, memberId: string) {
+  await withAdminTransaction(database, member.id, async (transaction) => {
+    const resetMembers = await transaction
+      .update(memberNetwork)
+      .set({
+        staleGroupExternalId: staleGroupAfterLinkClears(),
+        villageExternalId: randomUUID(),
+        sharingConsentedAt: null,
+        groupJoinedAt: null,
+        villageLinkedAt: null,
+        pendingVillageEmail: null,
+        approvedMemberEmail: null,
+        approvedVillageEmail: null,
+      })
+      .where(eq(memberNetwork.userId, memberId))
+      .returning({ userId: memberNetwork.userId });
+    if (resetMembers.length === 0) {
+      throw new NetworkRequestError(
+        NOT_FOUND_STATUS,
+        NETWORK_ERROR_CODES.memberNotFound,
+        "This member has no Village link to reset. Reload the page.",
+      );
+    }
+
+    await transaction.delete(memberPathResult).where(eq(memberPathResult.userId, memberId));
+    const [target] = await transaction.select({ name: user.name }).from(user).where(eq(user.id, memberId));
+    await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.villageLinkReset, targetMemberId: memberId, targetName: target?.name ?? null });
+  });
 }

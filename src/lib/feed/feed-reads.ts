@@ -1,8 +1,9 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, gt, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { and, asc, count, desc, eq, exists, gt, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
+import { alias, QueryBuilder } from "drizzle-orm/pg-core";
 
+import { memberRemoval } from "../../database/admin-schema.ts";
 import { user } from "../../database/auth-schema.ts";
 import type { Database } from "../../database/client.ts";
 import { comment, post, reaction } from "../../database/feed-schema.ts";
@@ -59,8 +60,16 @@ function toAuthor(row: AuthorRow) {
   };
 }
 
+function isRemovedWithContentKept() {
+  const keptRemoval = new QueryBuilder()
+    .select({ userId: memberRemoval.userId })
+    .from(memberRemoval)
+    .where(and(eq(memberRemoval.userId, user.id), eq(memberRemoval.keepsContent, true)));
+  return exists(keptRemoval);
+}
+
 export function isAuthorVisibleTo(viewer: SessionMember) {
-  return isAdminMember(viewer) ? undefined : isActiveMember();
+  return isAdminMember(viewer) ? undefined : or(isActiveMember(), isRemovedWithContentKept());
 }
 
 function selectPosts(database: Database) {
@@ -251,7 +260,7 @@ export async function readNewPostCount(database: Database, viewerId: string, sin
   return row?.newPostCount ?? 0;
 }
 
-async function isPostVisible(database: Database, viewer: SessionMember, postId: string) {
+export async function isPostVisible(database: Database, viewer: SessionMember, postId: string) {
   const rows = await database
     .select({ id: post.id })
     .from(post)

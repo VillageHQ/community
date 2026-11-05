@@ -1,10 +1,13 @@
 import "server-only";
 
-import { and, count, eq, isNotNull, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNotNull, notInArray, sql } from "drizzle-orm";
 
 import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import type { Database, Transaction } from "../../database/client.ts";
 import { comment, moderationRecord, post, reaction } from "../../database/feed-schema.ts";
+import { AUDIT_ACTIONS } from "../admin/admin-api.ts";
+import { requireCurrentAdmin, withAdminTransaction } from "../admin/admin-transaction.ts";
+import { recordAdminAction } from "../admin/audit.ts";
 import { isActiveMember, isBanActive } from "../members/active-member.ts";
 import { logAdminAction } from "../route-logging.ts";
 import { isAdminMember, NetworkRequestError, type NetworkContext, type SessionMember } from "../village/member-network.ts";
@@ -27,7 +30,6 @@ const CONFLICT_STATUS = 409;
 const PIN_LOCK_ID = 7260412;
 const RECORD_BATCH_SIZE = 500;
 
-type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type ModerationRow = typeof moderationRecord.$inferInsert;
 
 function postGoneError() {
@@ -103,8 +105,10 @@ function assertAuthor(member: SessionMember, authorId: string) {
   if (authorId !== member.id) throw notYoursError();
 }
 
-function assertCanDelete(member: SessionMember, authorId: string) {
-  if (!isAdminMember(member)) assertAuthor(member, authorId);
+async function assertCanDelete(transaction: Transaction, member: SessionMember, authorId: string) {
+  if (authorId === member.id) return;
+  if (!isAdminMember(member)) throw notYoursError();
+  await requireCurrentAdmin(transaction, member.id);
 }
 
 async function readMemberName(transaction: Transaction, memberId: string) {
@@ -162,32 +166,71 @@ export async function editPost({ database, member }: NetworkContext, { postId, t
   return readRequiredPost(database, member, postId);
 }
 
-export async function deletePost({ database, member }: NetworkContext, postId: string) {
+export async function deletePostWithin(transaction: Transaction, member: SessionMember, postId: string) {
   const isAdmin = isAdminMember(member);
-  await database.transaction(async (transaction) => {
-    const target = await lockPost(transaction, postId, member);
-    assertCanDelete(member, target.authorId);
-    const replyRecords = isAdmin ? await readRepliesAsRecords(transaction, postId) : [];
-    await transaction.delete(post).where(eq(post.id, postId));
-    if (!isAdmin) return;
+  const target = await lockPost(transaction, postId, member);
+  await assertCanDelete(transaction, member, target.authorId);
+  const replyRecords = isAdmin ? await readRepliesAsRecords(transaction, postId) : [];
+  await transaction.delete(post).where(eq(post.id, postId));
+  if (!isAdmin) return;
 
-    const deletedBy = { deletedByUserId: member.id, deletedByName: await readMemberName(transaction, member.id) };
-    await writeRecords(
-      transaction,
-      [
-        {
-          targetType: MODERATION_TARGETS.post,
-          targetId: postId,
-          targetAuthorId: target.authorId,
-          targetAuthorName: target.authorName,
-          targetBody: target.body,
-          removedReplyCount: replyRecords.length,
-        },
-        ...replyRecords,
-      ].map((record) => ({ ...record, ...deletedBy })),
-    );
-  });
-  if (isAdmin) logAdminAction("post_deleted", member.id, postId);
+  const deletedBy = { deletedByUserId: member.id, deletedByName: await readMemberName(transaction, member.id) };
+  await writeRecords(
+    transaction,
+    [
+      {
+        targetType: MODERATION_TARGETS.post,
+        targetId: postId,
+        targetAuthorId: target.authorId,
+        targetAuthorName: target.authorName,
+        targetBody: target.body,
+        removedReplyCount: replyRecords.length,
+      },
+      ...replyRecords,
+    ].map((record) => ({ ...record, ...deletedBy })),
+  );
+}
+
+export async function deletePost({ database, member }: NetworkContext, postId: string) {
+  await database.transaction((transaction) => deletePostWithin(transaction, member, postId));
+  if (isAdminMember(member)) logAdminAction("post_deleted", member.id, postId);
+}
+
+type RemovedAuthor = { id: string; name: string };
+
+export async function deleteMemberContent(transaction: Transaction, author: RemovedAuthor, actorId: string) {
+  const posts = await transaction.select({ id: post.id, body: post.body }).from(post).where(eq(post.authorId, author.id));
+  const postIds = posts.map(({ id }) => id);
+  const replies = postIds.length === 0
+    ? []
+    : await transaction
+        .select({ targetId: comment.id, parentPostId: comment.postId, targetAuthorId: comment.authorId, targetAuthorName: user.name, targetBody: comment.body })
+        .from(comment)
+        .innerJoin(user, eq(user.id, comment.authorId))
+        .where(inArray(comment.postId, postIds));
+  const ownReplies = await transaction
+    .select({ targetId: comment.id, parentPostId: comment.postId, targetBody: comment.body })
+    .from(comment)
+    .where(and(eq(comment.authorId, author.id), postIds.length === 0 ? undefined : notInArray(comment.postId, postIds)));
+
+  const authorFields = { targetAuthorId: author.id, targetAuthorName: author.name };
+  const deletedBy = { deletedByUserId: actorId, deletedByName: await readMemberName(transaction, actorId) };
+  const records: ModerationRow[] = [
+    ...posts.map(({ id, body }) => ({
+      targetType: MODERATION_TARGETS.post,
+      targetId: id,
+      targetBody: body,
+      removedReplyCount: replies.filter(({ parentPostId }) => parentPostId === id).length,
+      ...authorFields,
+    })),
+    ...replies.map((reply) => ({ ...reply, targetType: MODERATION_TARGETS.comment })),
+    ...ownReplies.map((reply) => ({ ...reply, ...authorFields, targetType: MODERATION_TARGETS.comment })),
+  ].map((record) => ({ ...record, ...deletedBy }));
+
+  await transaction.delete(post).where(eq(post.authorId, author.id));
+  await transaction.delete(comment).where(eq(comment.authorId, author.id));
+  await transaction.delete(reaction).where(eq(reaction.userId, author.id));
+  await writeRecords(transaction, records);
 }
 
 async function readPinnedCount(transaction: Transaction) {
@@ -196,7 +239,7 @@ async function readPinnedCount(transaction: Transaction) {
 }
 
 export async function setPostPinned({ database, member }: NetworkContext, { postId, isPinned }: PinPostBody) {
-  await database.transaction(async (transaction) => {
+  await withAdminTransaction(database, member.id, async (transaction) => {
     await transaction.execute(sql`select pg_advisory_xact_lock(${PIN_LOCK_ID})`);
     const target = await lockPost(transaction, postId, member);
     if (isPinned === Boolean(target.pinnedAt)) return;
@@ -208,6 +251,11 @@ export async function setPostPinned({ database, member }: NetworkContext, { post
       .update(post)
       .set({ pinnedAt: isPinned ? new Date() : null, pinnedByUserId: isPinned ? member.id : null })
       .where(eq(post.id, postId));
+    await recordAdminAction(transaction, member.id, {
+      action: isPinned ? AUDIT_ACTIONS.postPinned : AUDIT_ACTIONS.postUnpinned,
+      targetMemberId: target.authorId,
+      targetName: target.authorName,
+    });
   });
   logAdminAction(isPinned ? "post_pinned" : "post_unpinned", member.id, postId);
 }
@@ -250,26 +298,27 @@ export async function editComment({ database, member }: NetworkContext, { commen
   return readRequiredComment(database, commentId);
 }
 
-export async function deleteComment({ database, member }: NetworkContext, commentId: string) {
-  const isAdmin = isAdminMember(member);
-  await database.transaction(async (transaction) => {
-    const target = await lockComment(transaction, commentId, member);
-    assertCanDelete(member, target.authorId);
-    await transaction.delete(comment).where(eq(comment.id, commentId));
-    if (!isAdmin) return;
+export async function deleteCommentWithin(transaction: Transaction, member: SessionMember, commentId: string) {
+  const target = await lockComment(transaction, commentId, member);
+  await assertCanDelete(transaction, member, target.authorId);
+  await transaction.delete(comment).where(eq(comment.id, commentId));
+  if (!isAdminMember(member)) return;
 
-    await writeRecords(transaction, [
-      {
-        targetType: MODERATION_TARGETS.comment,
-        targetId: commentId,
-        parentPostId: target.postId,
-        targetAuthorId: target.authorId,
-        targetAuthorName: target.authorName,
-        targetBody: target.body,
-        deletedByUserId: member.id,
-        deletedByName: await readMemberName(transaction, member.id),
-      },
-    ]);
-  });
-  if (isAdmin) logAdminAction("comment_deleted", member.id, commentId);
+  await writeRecords(transaction, [
+    {
+      targetType: MODERATION_TARGETS.comment,
+      targetId: commentId,
+      parentPostId: target.postId,
+      targetAuthorId: target.authorId,
+      targetAuthorName: target.authorName,
+      targetBody: target.body,
+      deletedByUserId: member.id,
+      deletedByName: await readMemberName(transaction, member.id),
+    },
+  ]);
+}
+
+export async function deleteComment({ database, member }: NetworkContext, commentId: string) {
+  await database.transaction((transaction) => deleteCommentWithin(transaction, member, commentId));
+  if (isAdminMember(member)) logAdminAction("comment_deleted", member.id, commentId);
 }

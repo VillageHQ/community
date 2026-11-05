@@ -46,3 +46,6 @@ export function getDatabase() {
   sharedDatabase = createDatabase(connectionString, process.env);
   return sharedDatabase;
 }
+
+export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+export type DatabaseOrTransaction = Database | Transaction;

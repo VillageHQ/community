@@ -1,0 +1,39 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
+import { CommunityNote, SplitLayout } from "@/components/split-layout";
+import { Button } from "@/components/ui/button";
+import { readBrandingForPage } from "@/lib/branding/branding";
+import { PAGE_TITLES } from "@/lib/branding/page-metadata";
+import { ROUTES } from "@/lib/routes";
+
+import { ResetPasswordForm } from "./reset-password-form";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { title: PAGE_TITLES.resetPassword };
+
+export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
+  const community = await readBrandingForPage();
+  const { token } = await searchParams;
+
+  return (
+    <SplitLayout community={community} note={<CommunityNote community={community}>Almost back in.</CommunityNote>}>
+      <div className="flex min-h-[60dvh] flex-col justify-center lg:min-h-[calc(100dvh-140px)]">
+        <h1 className="type-h1">Choose a new password</h1>
+        <div className="mt-7 rounded-panel bg-card p-5 shadow-panel sm:p-7">
+          {token ? (
+            <ResetPasswordForm token={token} />
+          ) : (
+            <div className="grid gap-4">
+              <p className="text-foreground-soft">This link isn&apos;t complete. Ask for a new one.</p>
+              <Button asChild size="lg">
+                <Link href={ROUTES.forgotPassword}>Ask for a new link</Link>
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </SplitLayout>
+  );
+}

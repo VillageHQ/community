@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { memberDailyUsage, memberNetwork, memberPathResult } from "@/database/village-schema";
-import { DAILY_CREDIT_CALL_LIMIT } from "@/lib/village/daily-usage";
+import { DAILY_LOOKUP_LIMITS } from "@/lib/admin/admin-api";
 import {
   NETWORK_ERROR_CODES,
   NETWORK_STAGES,
@@ -583,7 +583,7 @@ describe("the member network API", () => {
         if (usage) throw new Error("The test expected no usage yet.");
         await database
           .insert(memberDailyUsage)
-          .values({ userId: member.userId, usageDate, callCount: DAILY_CREDIT_CALL_LIMIT });
+          .values({ userId: member.userId, usageDate, callCount: DAILY_LOOKUP_LIMITS.default });
       }
 
       it("counts each search", async () => {
@@ -601,7 +601,7 @@ describe("the member network API", () => {
         expect(response.status).toBe(429);
         expect(await response.json()).toMatchObject({
           code: NETWORK_ERROR_CODES.dailyLimitReached,
-          message: expect.stringContaining(String(DAILY_CREDIT_CALL_LIMIT)),
+          message: expect.stringContaining(String(DAILY_LOOKUP_LIMITS.default)),
         });
         expect(village.readRequests(SEARCH_PATH)).toEqual([]);
       });
@@ -619,7 +619,7 @@ describe("the member network API", () => {
         await readPaths();
         await database
           .update(memberDailyUsage)
-          .set({ callCount: DAILY_CREDIT_CALL_LIMIT })
+          .set({ callCount: DAILY_LOOKUP_LIMITS.default })
           .where(eq(memberDailyUsage.userId, member.userId));
 
         const response = await postPaths(jsonRequest(member, { linkedinSlug: TARGET_SLUG }));
@@ -640,7 +640,7 @@ describe("the member network API", () => {
         const usageDate = new Date().toISOString().slice(0, UTC_DATE_LENGTH);
         await database
           .insert(memberDailyUsage)
-          .values({ userId: member.userId, usageDate, callCount: DAILY_CREDIT_CALL_LIMIT - 1 });
+          .values({ userId: member.userId, usageDate, callCount: DAILY_LOOKUP_LIMITS.default - 1 });
 
         const responses = await Promise.all([search("one"), search("two"), search("three")]);
 

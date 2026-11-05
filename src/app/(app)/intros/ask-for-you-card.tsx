@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, ExternalLink, HeartHandshake, Lock, X } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { Check, ExternalLink, Flag, HeartHandshake, Lock, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { CopyButton } from "@/components/copy-button";
@@ -12,6 +13,7 @@ import { readFirstName } from "@/lib/design/avatar-identity";
 import { formatShortDate } from "@/lib/format-date";
 import { INTRO_ACTIONS, INTRO_LIMITS, INTRO_STATES, type Intro } from "@/lib/intros/intro-api";
 import { composeForwardableBlurb } from "@/lib/intros/intro-copy";
+import { reportIntroNoteRequest } from "@/lib/intros/intro-queries";
 import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
 
 import {
@@ -24,6 +26,7 @@ import {
   readIntroLinkLabel,
   type HeadingLevel,
 } from "./intro-parts";
+import { ConfirmAction } from "../messages/confirm-action";
 import { useIntroTransition } from "./use-intro-actions";
 
 function TargetLink({ intro }: { intro: Intro }) {
@@ -190,6 +193,44 @@ function readClosedNote({ state, requester, target, declineReason }: Intro) {
   return notes[state] ?? null;
 }
 
+function ReportNote({ intro }: { intro: Intro }) {
+  const [isConfirming, setIsConfirming] = useState(false);
+  const reportButton = useRef<HTMLButtonElement>(null);
+  const report = useMutation({ mutationFn: reportIntroNoteRequest, onSuccess: () => setIsConfirming(false) });
+  if (report.data) {
+    return (
+      <p role="status" className="type-small text-foreground-soft">
+        {report.data.message}
+      </p>
+    );
+  }
+  if (isConfirming) {
+    return (
+      <ConfirmAction
+        message="Report this note? It's saved for this community's admins. They'll see a copy of the note, who wrote it and that you reported it, and nothing else about this ask."
+        confirmLabel="Report"
+        pendingLabel="Reporting…"
+        cancelLabel="Keep it"
+        isPending={report.isPending}
+        errorMessage={report.error?.message ?? null}
+        onCancel={() => {
+          setIsConfirming(false);
+          requestAnimationFrame(() => reportButton.current?.focus());
+        }}
+        onConfirm={() => report.mutate(intro.id)}
+      />
+    );
+  }
+  return (
+    <div>
+      <Button ref={reportButton} type="button" variant="quiet" size="sm" onClick={() => setIsConfirming(true)}>
+        <Flag aria-hidden="true" />
+        Report this note
+      </Button>
+    </div>
+  );
+}
+
 type AskForYouCardProps = { intro: Intro; headingLevel?: HeadingLevel };
 
 export function AskForYouCard({ intro, headingLevel: Heading = "h3" }: AskForYouCardProps) {
@@ -209,6 +250,7 @@ export function AskForYouCard({ intro, headingLevel: Heading = "h3" }: AskForYou
         {firstName} would like an intro to <TargetLink intro={intro} />
       </Heading>
       <IntroNote label={`${firstName}'s note to you`} note={note} />
+      <ReportNote intro={intro} />
       <div>
         <p className="type-micro mb-1.5 font-bold text-foreground-soft">Why they asked you</p>
         <IntroReason reason={reason} />

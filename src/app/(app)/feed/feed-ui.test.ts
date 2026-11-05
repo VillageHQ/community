@@ -146,10 +146,19 @@ describe("the feed on screen", () => {
   });
 
   describe("who can act", () => {
-    it("offers a member nothing on someone else's post", () => {
+    it("offers a member only Report on someone else's post", () => {
       renderFeed(MEMBER, [makePost()]);
 
-      expect(screen.queryByRole("button", { name: /Actions for/ })).toBeNull();
+      fireEvent.pointerDown(screen.getByRole("button", { name: /Actions for/ }), { button: 0, ctrlKey: false });
+
+      expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["Report"]);
+    });
+
+    it("tells a member a kept post's author is no longer a member, without the word banned", () => {
+      renderFeed(MEMBER, [makePost({ author: { ...makePost().author, isBanned: true } })]);
+
+      expect(screen.getByText("No longer a member")).toBeTruthy();
+      expect(screen.queryByText("Banned")).toBeNull();
     });
 
     it("offers a member actions on their own post", () => {
@@ -221,7 +230,8 @@ describe("the feed on screen", () => {
 
   describe("deleting", () => {
     function openDelete() {
-      fireEvent.pointerDown(screen.getByRole("button", { name: /Actions for/ }), { button: 0, ctrlKey: false });
+      const ownMenu = screen.queryByRole("button", { name: /Actions for your/ });
+      fireEvent.pointerDown(ownMenu ?? screen.getByRole("button", { name: /Actions for/ }), { button: 0, ctrlKey: false });
       fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
     }
 

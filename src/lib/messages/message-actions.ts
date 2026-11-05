@@ -239,7 +239,7 @@ export async function reportMessage({ database, member }: NetworkContext, messag
   }
 
   await enforceMessagingLimit(database, member.id, MESSAGING_KINDS.report);
-  await database
+  const [created] = await database
     .insert(messageReport)
     .values({
       messageId,
@@ -248,7 +248,15 @@ export async function reportMessage({ database, member }: NetworkContext, messag
       messageBody: target.body,
       messageSentAt: target.createdAt,
     })
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning({ id: messageReport.id });
+  if (created) return "Reported.";
+
+  const [existing] = await database
+    .select({ resolvedAt: messageReport.resolvedAt })
+    .from(messageReport)
+    .where(and(eq(messageReport.messageId, messageId), eq(messageReport.reporterId, member.id)));
+  return existing?.resolvedAt ? "An admin already reviewed your report on this message." : "You already reported this. It's waiting for an admin.";
 }
 
 export async function setMemberBlocked({ database, member }: NetworkContext, { memberId, isBlocked }: SetBlockBody) {

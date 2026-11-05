@@ -2,8 +2,9 @@ import "server-only";
 
 import { eq, inArray, or, sql } from "drizzle-orm";
 
-import type { Database } from "../../database/client.ts";
+import type { Database, DatabaseOrTransaction } from "../../database/client.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../../database/instance-settings.ts";
+import { DAILY_LOOKUP_LIMITS, dailyLimitBodySchema } from "../admin/admin-api.ts";
 
 export type VillageKeys = { publicKey: string; secretKey: string };
 export type VillageGroup = { id: string; inviteLink: string };
@@ -16,7 +17,7 @@ async function readSettings(database: Database, keys: string[]) {
   return new Map(settings.map(({ key, value }) => [key, value]));
 }
 
-async function saveSettings(database: Database, settings: Record<string, string>) {
+async function saveSettings(database: DatabaseOrTransaction, settings: Record<string, string>) {
   await database
     .insert(instanceSettings)
     .values(Object.entries(settings).map(([key, value]) => ({ key, value })))
@@ -37,7 +38,7 @@ export async function readVillageKeys(database: Database): Promise<VillageKeys |
   return { publicKey, secretKey };
 }
 
-export async function saveVillageKeys(database: Database, keys: VillageKeys) {
+export async function saveVillageKeys(database: DatabaseOrTransaction, keys: VillageKeys) {
   await saveSettings(database, {
     [INSTANCE_SETTING_KEYS.villagePublicKey]: keys.publicKey,
     [INSTANCE_SETTING_KEYS.villageSecretKey]: keys.secretKey,
@@ -49,8 +50,31 @@ export async function readConfirmedVillageDomain(database: Database) {
   return settings.get(INSTANCE_SETTING_KEYS.villageDomainConfirmed) ?? null;
 }
 
-export async function saveConfirmedVillageDomain(database: Database, domain: string) {
+export async function saveConfirmedVillageDomain(database: DatabaseOrTransaction, domain: string) {
   await saveSettings(database, { [INSTANCE_SETTING_KEYS.villageDomainConfirmed]: domain });
+}
+
+export async function readDailyLookupLimit(database: Database) {
+  const settings = await readSettings(database, [INSTANCE_SETTING_KEYS.dailyLookupLimit]);
+  const limit = dailyLimitBodySchema.shape.limit.safeParse(Number(settings.get(INSTANCE_SETTING_KEYS.dailyLookupLimit)));
+  return limit.success ? limit.data : DAILY_LOOKUP_LIMITS.default;
+}
+
+export async function saveDailyLookupLimit(database: DatabaseOrTransaction, limit: number) {
+  await saveSettings(database, { [INSTANCE_SETTING_KEYS.dailyLookupLimit]: String(limit) });
+}
+
+export async function readVillageOutOfCreditsAt(database: Database) {
+  const settings = await readSettings(database, [INSTANCE_SETTING_KEYS.villageOutOfCreditsAt]);
+  return settings.get(INSTANCE_SETTING_KEYS.villageOutOfCreditsAt) ?? null;
+}
+
+export async function recordVillageOutOfCredits(database: Database) {
+  await saveSettings(database, { [INSTANCE_SETTING_KEYS.villageOutOfCreditsAt]: new Date().toISOString() });
+}
+
+export async function clearVillageOutOfCredits(database: Database) {
+  await database.delete(instanceSettings).where(eq(instanceSettings.key, INSTANCE_SETTING_KEYS.villageOutOfCreditsAt));
 }
 
 export async function readVillageGroup(database: Database): Promise<VillageGroup | null> {
@@ -64,7 +88,7 @@ export async function readVillageGroup(database: Database): Promise<VillageGroup
   return { id, inviteLink };
 }
 
-export async function saveVillageGroup(database: Database, group: VillageGroup) {
+export async function saveVillageGroup(database: DatabaseOrTransaction, group: VillageGroup) {
   await saveSettings(database, {
     [INSTANCE_SETTING_KEYS.villageGroupId]: group.id,
     [INSTANCE_SETTING_KEYS.villageGroupInviteLink]: group.inviteLink,

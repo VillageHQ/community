@@ -70,7 +70,7 @@ type VillageRequest<Schema extends z.ZodType> = {
 };
 
 const errorBodySchema = z.object({
-  error: z.object({ type: z.string(), trace_id: z.string().optional() }),
+  error: z.union([z.string(), z.object({ type: z.string(), trace_id: z.string().optional() })]),
 });
 
 const tokenBodySchema = z.object({ data: z.object({ token: z.string() }) });
@@ -139,11 +139,9 @@ async function readVillageError(response: Response) {
   if (!parsed.success) {
     return { type: VILLAGE_FAILURE_TYPES.unreadableError, isVillageError: false };
   }
-  return {
-    type: parsed.data.error.type,
-    traceId: parsed.data.error.trace_id,
-    isVillageError: true,
-  };
+  const { error } = parsed.data;
+  if (typeof error === "string") return { type: error, isVillageError: true };
+  return { type: error.type, traceId: error.trace_id, isVillageError: true };
 }
 
 function logVillageFailure(path: string, status: number, type: string, traceId?: string) {

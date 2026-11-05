@@ -78,6 +78,20 @@
       "when": 1793860656961,
       "tag": "0010_linkedin_confirmation_and_email_cooldown",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793862406910,
+      "tag": "0011_admin_tools",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793866856002,
+      "tag": "0012_admin_review_fixes",
+      "breakpoints": true
     }
   ]
 }

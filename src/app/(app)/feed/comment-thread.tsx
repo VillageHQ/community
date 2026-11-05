@@ -2,11 +2,13 @@
 
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { Pencil, SendHorizontal, Trash2 } from "lucide-react";
+import { Flag, Pencil, SendHorizontal, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { FormError } from "@/components/form-error";
 import { QueryBoundary } from "@/components/query-boundary";
+import { FEED_REPORT_TARGETS } from "@/lib/admin/admin-api";
+import { Alert } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,7 +16,8 @@ import { readFirstName } from "@/lib/design/avatar-identity";
 import { FEED_LIMITS, type Comment, type Post } from "@/lib/feed/feed-api";
 import { hasWholeThread } from "@/lib/feed/feed-cache";
 
-import { AuthorName } from "./author-name";
+import { ConfirmAction } from "../messages/confirm-action";
+import { AuthorName, readRemovedAuthorLabel } from "./author-name";
 import { LengthCounter, submitOnCommandEnter, submitWithoutReload } from "./composer";
 import { ConfirmDelete } from "./confirm-delete";
 import { ContentMenu, type ContentAction } from "./content-menu";
@@ -22,6 +25,7 @@ import { useFeedContext, type FeedViewer } from "./feed-context";
 import {
   ADMIN_DELETE_NOTE,
   FEED_AVATAR_SIZES,
+  REPORT_NOTE,
   SURFACE_TONE_CLASSES,
   toPostElementId,
   toReplyInputId,
@@ -30,9 +34,9 @@ import {
 import { commentsQuery } from "./feed-queries";
 import { RelativeTime } from "./relative-time";
 import { RichText } from "./rich-text";
-import { useCreateComment, useDeleteComment, useEditComment } from "./use-feed-mutations";
+import { useCreateComment, useDeleteComment, useEditComment, useReportFeedContent } from "./use-feed-mutations";
 
-const COMMENT_MODES = { reading: "reading", editing: "editing", confirmingDelete: "confirmingDelete" } as const;
+const COMMENT_MODES = { reading: "reading", editing: "editing", confirmingDelete: "confirmingDelete", confirmingReport: "confirmingReport" } as const;
 
 type CommentMode = (typeof COMMENT_MODES)[keyof typeof COMMENT_MODES];
 
@@ -52,11 +56,11 @@ function moveFocusAfterDeletedReply(postId: string) {
   target?.focus();
 }
 
-type CommentHandlers = { onEdit: () => void; onDelete: () => void };
+type CommentHandlers = { onEdit: () => void; onDelete: () => void; onReport: () => void };
 
-function readCommentActions(comment: Comment, viewer: FeedViewer, { onEdit, onDelete }: CommentHandlers): ContentAction[] {
+function readCommentActions(comment: Comment, viewer: FeedViewer, { onEdit, onDelete, onReport }: CommentHandlers): ContentAction[] {
   const isAuthor = comment.author.id === viewer.id;
-  if (!isAuthor && !viewer.isAdmin) return [];
+  if (!isAuthor && !viewer.isAdmin) return [{ id: "report", label: "Report", icon: Flag, onSelect: onReport, movesFocus: true }];
   const deleteAction = { id: "delete", label: "Delete", icon: Trash2, onSelect: onDelete, movesFocus: true };
   if (!isAuthor) return [deleteAction];
   return [{ id: "edit", label: "Edit", icon: Pencil, onSelect: onEdit, movesFocus: true }, deleteAction];
@@ -106,6 +110,7 @@ function CommentRow({ comment, tone }: CommentRowProps) {
     announce("Reply deleted.");
     moveFocusAfterDeletedReply(comment.postId);
   });
+  const reportComment = useReportFeedContent();
   const { author } = comment;
   const toneClass = SURFACE_TONE_CLASSES[tone];
 
@@ -129,7 +134,7 @@ function CommentRow({ comment, tone }: CommentRowProps) {
               <span className="font-medium text-muted-foreground">
                 · <RelativeTime timestamp={comment.createdAt} />
                 {comment.editedAt ? " · edited" : null}
-                {author.isBanned ? " · banned" : null}
+                {author.isBanned ? ` · ${readRemovedAuthorLabel(viewer.isAdmin).toLowerCase()}` : null}
               </span>
             </div>
             <RichText text={comment.body} className="type-note" />
@@ -147,6 +152,39 @@ function CommentRow({ comment, tone }: CommentRowProps) {
             }}
           />
         ) : null}
+        {reportComment.data ? (
+          <Alert role="none" className="mt-2">
+            {reportComment.data.message}
+          </Alert>
+        ) : null}
+        {mode === COMMENT_MODES.confirmingReport ? (
+          <div className="mt-2">
+            <ConfirmAction
+              message={`Report this reply? ${REPORT_NOTE}`}
+              confirmLabel="Report"
+              pendingLabel="Reporting…"
+              cancelLabel="Keep it"
+              isPending={reportComment.isPending}
+              errorMessage={reportComment.error?.message ?? null}
+              onCancel={() => {
+                setMode(COMMENT_MODES.reading);
+                menuTriggerRef.current?.focus();
+              }}
+              onConfirm={() =>
+                reportComment.mutate(
+                  { targetType: FEED_REPORT_TARGETS.comment, targetId: comment.id },
+                  {
+                    onSuccess: ({ message }) => {
+                      announce(message);
+                      setMode(COMMENT_MODES.reading);
+                      menuTriggerRef.current?.focus();
+                    },
+                  },
+                )
+              }
+            />
+          </div>
+        ) : null}
       </div>
       <ContentMenu
         label={readCommentMenuLabel(comment, viewer)}
@@ -154,6 +192,7 @@ function CommentRow({ comment, tone }: CommentRowProps) {
         actions={readCommentActions(comment, viewer, {
           onEdit: () => setMode(COMMENT_MODES.editing),
           onDelete: () => setMode(COMMENT_MODES.confirmingDelete),
+          onReport: () => setMode(COMMENT_MODES.confirmingReport),
         })}
       />
     </li>

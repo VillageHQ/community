@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { getDatabase } from "@/database/client";
-import { deleteLogo, readLogo, saveLogo } from "@/lib/branding/branding";
+import { deleteLogoAsAdmin, saveLogoAsAdmin } from "@/lib/admin/settings-actions";
+import { readLogo } from "@/lib/branding/branding";
 import {
   detectLogoContentType,
   LOGO_BACKDROP_PARAM,
@@ -42,14 +43,14 @@ export const GET = withRouteLogging("branding-logo-read", async (request: Reques
 export const POST = createAdminBinaryRoute(
   "branding-logo-save",
   { maximumBytes: MAXIMUM_LOGO_BYTES, tooLargeMessage: LOGO_TOO_LARGE_MESSAGE },
-  async ({ database }, bytes, request) => {
+  async (context, bytes, request) => {
     const contentType = detectLogoContentType(bytes);
     if (!contentType) {
       return Response.json({ message: LOGO_WRONG_TYPE_MESSAGE }, { status: UNPROCESSABLE_STATUS });
     }
 
     const backdrop = parseLogoBackdrop(new URL(request.url).searchParams.get(LOGO_BACKDROP_PARAM));
-    await saveLogo(database, { bytes, contentType, backdrop });
+    await saveLogoAsAdmin(context, { bytes, contentType, backdrop });
     return Response.json({ message: "Logo saved." });
   },
 );
@@ -57,8 +58,8 @@ export const POST = createAdminBinaryRoute(
 export const DELETE = createMemberRoute(
   "branding-logo-delete",
   z.unknown(),
-  async ({ database }) => {
-    await deleteLogo(database);
+  async (context) => {
+    await deleteLogoAsAdmin(context);
     return Response.json({ message: "Logo removed." });
   },
   { adminOnly: true },

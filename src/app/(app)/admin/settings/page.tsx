@@ -1,0 +1,162 @@
+import { ExternalLink, Mail, MailX, PackageCheck } from "lucide-react";
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Tag } from "@/components/ui/tag";
+import { getDatabase } from "@/database/client";
+import { UPDATE_GUIDE_URL } from "@/lib/admin/settings-copy";
+import { parseSetupStep, readSetupProgress } from "@/lib/admin-setup";
+import { APP_VERSION } from "@/lib/app-version";
+import { readBranding } from "@/lib/branding/branding";
+import { PAGE_TITLES } from "@/lib/branding/page-metadata";
+import { readResendConfig, type ResendConfig } from "@/lib/email/resend";
+import { ROUTES } from "@/lib/routes";
+import { requireAdmin } from "@/lib/session";
+
+import { AdminSection } from "../admin-section";
+import { AdminBrandCard, SetupChecklist } from "../setup-checklist";
+
+const EMAIL_ON_EFFECTS = [
+  "Invites go out by email, and you can still copy the link.",
+  "New members confirm their own email from a link we send.",
+  "Introducers and requesters get a short email about intro asks.",
+];
+
+const EMAIL_OFF_EFFECTS = [
+  "You copy each invite link and send it yourself.",
+  "You confirm each new member by hand in Members. They can't use network search until you do.",
+  "Intro asks only show up as a badge in the app.",
+];
+
+const PLATFORM_UPDATES = [
+  { platform: "Railway", steps: "Railway tells you when a new version is out, and you choose when to apply it." },
+  { platform: "Vercel", steps: "Pull the changes from VillageHQ/community into your copy on GitHub. Each push redeploys." },
+  { platform: "DigitalOcean", steps: "Start a new deploy from your app's dashboard. It doesn't update by itself." },
+];
+
+function EffectList({ effects }: { effects: string[] }) {
+  return (
+    <ul className="type-small grid list-disc gap-1.5 pl-5 text-foreground-soft">
+      {effects.map((effect) => (
+        <li key={effect}>{effect}</li>
+      ))}
+    </ul>
+  );
+}
+
+function EmailOn({ fromAddress }: { fromAddress: string }) {
+  return (
+    <>
+      <p className="type-small wrap-anywhere text-foreground-soft">
+        Sending as <strong className="font-bold text-foreground">{fromAddress}</strong>. What that means:
+      </p>
+      <EffectList effects={EMAIL_ON_EFFECTS} />
+    </>
+  );
+}
+
+function EmailOff() {
+  return (
+    <>
+      <p className="type-small text-foreground-soft">Everything still works without email. What changes:</p>
+      <EffectList effects={EMAIL_OFF_EFFECTS} />
+      <p className="type-small text-foreground-soft">
+        To turn it on, add <code className="font-bold">RESEND_API_KEY</code> and <code className="font-bold">RESEND_FROM_ADDRESS</code> in your host&apos;s settings, then
+        redeploy. You need a free{" "}
+        <a href="https://resend.com" target="_blank" rel="noreferrer" className="font-bold text-brand-emphasis underline underline-offset-3 hover:no-underline">
+          Resend
+          <span className="sr-only"> (opens in a new tab)</span>
+        </a>{" "}
+        account and a sending domain you verified there.
+      </p>
+    </>
+  );
+}
+
+function SettingCard({ title, tag, children }: { title: string; tag: ReactNode; children: ReactNode }) {
+  return (
+    <Card className="grid gap-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <CardTitle>{title}</CardTitle>
+        {tag}
+      </div>
+      {children}
+    </Card>
+  );
+}
+
+function EmailCard({ config }: { config: ResendConfig | null }) {
+  const tag = config ? (
+    <Tag tone="sage">
+      <Mail aria-hidden="true" />
+      On
+    </Tag>
+  ) : (
+    <Tag tone="gold">
+      <MailX aria-hidden="true" />
+      Off
+    </Tag>
+  );
+  return (
+    <SettingCard title="Email" tag={tag}>
+      {config ? <EmailOn fromAddress={config.fromAddress} /> : <EmailOff />}
+    </SettingCard>
+  );
+}
+
+function VersionCard() {
+  return (
+    <SettingCard
+      title="Version and updates"
+      tag={
+        <Tag>
+          <PackageCheck aria-hidden="true" />
+          Version {APP_VERSION}
+        </Tag>
+      }
+    >
+      <CardDescription>Updates aren&apos;t automatic. How to get one depends on where you deployed:</CardDescription>
+      <dl className="type-small grid gap-2.5">
+        {PLATFORM_UPDATES.map(({ platform, steps }) => (
+          <div key={platform} className="rounded-field bg-muted px-4 py-3">
+            <dt className="font-bold">{platform}</dt>
+            <dd className="text-foreground-soft">{steps}</dd>
+          </div>
+        ))}
+      </dl>
+      <div>
+        <Button asChild variant="outline" className="max-sm:w-full">
+          <a href={UPDATE_GUIDE_URL} target="_blank" rel="noreferrer">
+            Read the update guide
+            <ExternalLink aria-hidden="true" />
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        </Button>
+      </div>
+    </SettingCard>
+  );
+}
+
+export const metadata: Metadata = { title: PAGE_TITLES.adminSettings };
+
+export default async function AdminSettingsPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
+  const admin = await requireAdmin();
+  const { step } = await searchParams;
+  const database = getDatabase();
+  const [progress, branding] = await Promise.all([readSetupProgress(database, process.env), readBranding(database)]);
+
+  return (
+    <AdminSection title="Settings" description="Come back to any part of setup, any time.">
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_312px]">
+        <div className="grid gap-5">
+          <SetupChecklist database={database} admin={admin} progress={progress} openStepId={parseSetupStep(step)} basePath={ROUTES.adminSettings} />
+          <EmailCard config={readResendConfig(process.env)} />
+          <VersionCard />
+        </div>
+        <AdminBrandCard branding={branding} isCurrentStep={false} />
+      </div>
+    </AdminSection>
+  );
+}

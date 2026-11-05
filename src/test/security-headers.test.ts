@@ -50,7 +50,7 @@ describe("security headers", () => {
     },
   );
 
-  it.each(["/join/:token", "/confirm-email"])("keep tokens at %s out of referrers and search engines", async (path) => {
+  it.each(["/join/:token", "/confirm-email", "/reset-password"])("keep tokens at %s out of referrers and search engines", async (path) => {
     const rules = await nextConfig.headers();
     const inviteRule = rules.find(({ source }) => source === path);
 

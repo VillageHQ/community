@@ -33,6 +33,8 @@ type FakeVillageState = {
   mintedEmails: Map<string, string>;
   unparsableBodyPaths: Set<string>;
   leftMembers: Set<string>;
+  groupCreatorIds: Set<string>;
+  isLeaveStrict: boolean;
   delayMsByPath: Map<string, number>;
   isUnlinkedOnPathsRequest: boolean;
   isUnlinkedOnLeaveRequest: boolean;
@@ -55,6 +57,8 @@ export function createFakeVillageState(): FakeVillageState {
     mintedEmails: new Map(),
     unparsableBodyPaths: new Set(),
     leftMembers: new Set(),
+    groupCreatorIds: new Set(),
+    isLeaveStrict: false,
     delayMsByPath: new Map(),
     isUnlinkedOnPathsRequest: false,
     isUnlinkedOnLeaveRequest: false,
@@ -87,8 +91,15 @@ function respond(response: ServerResponse, status: number, body: unknown) {
   response.end(JSON.stringify(body));
 }
 
+const FLAT_ERROR_BODIES: Record<number, { error: string; message: string }> = {
+  402: { error: "insufficient_credits", message: "Insufficient credits. Top up to continue." },
+  429: { error: "Rate limit exceeded", message: "Too many requests for this user" },
+};
+
 function respondWithError(response: ServerResponse, status: number, type: string) {
-  respond(response, status, { error: { type, status, detail: "fake", trace_id: "trace_fake" } });
+  const flatBody = FLAT_ERROR_BODIES[status];
+  if (flatBody) return respond(response, status, flatBody);
+  respond(response, status, { error: { type, title: "Fake", status, detail: "fake", trace_id: "trace_fake" }, metadata: { request_id: "fake" } });
 }
 
 function readExternalId(request: IncomingMessage) {
@@ -173,6 +184,8 @@ function respondToAuthenticated(
       state.linkedMembers.delete(externalId);
       return respondWithError(response, 404, "not_found");
     }
+    if (state.groupCreatorIds.has(externalId)) return respondWithError(response, 400, "bad_request");
+    if (!state.joinedMembers.has(externalId) && state.isLeaveStrict) return respondWithError(response, 404, "not_found");
     state.leftMembers.add(externalId);
     return respond(response, 200, { data: { success: true, message: "Left" } });
   }

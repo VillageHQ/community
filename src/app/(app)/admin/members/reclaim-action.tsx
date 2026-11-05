@@ -1,66 +1,52 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import type { RefObject } from "react";
 
-import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import type { IssuedInvite } from "@/lib/invites/invite-api";
 
+import { ConfirmDialog } from "../confirm-dialog";
 import { INVITE_QUERY_KEYS, reclaimInviteRequest } from "./invite-queries";
+import { IssuedLink } from "./issued-link";
+import { ADMIN_MEMBER_QUERY_KEYS } from "./member-queries";
 
-type ReclaimActionProps = { inviteId: string; email: string; onReclaimed: (issued: IssuedInvite) => void };
+type ReclaimActionProps = {
+  inviteId: string;
+  email: string;
+  returnFocusRef?: RefObject<HTMLElement | null>;
+  fallbackFocusId?: string;
+  onReclaimed?: (issued: IssuedInvite) => void;
+};
 
-export function ReclaimAction({ inviteId, email, onReclaimed }: ReclaimActionProps) {
+export function ReclaimAction({ inviteId, email, returnFocusRef, fallbackFocusId, onReclaimed }: ReclaimActionProps) {
   const queryClient = useQueryClient();
-  const [isConfirming, setIsConfirming] = useState(false);
-  const reclaimMutation = useMutation({
-    mutationFn: reclaimInviteRequest,
-    onSuccess: (issued) => {
-      onReclaimed(issued);
-      return Promise.all([
-        queryClient.invalidateQueries({ queryKey: [INVITE_QUERY_KEYS.list] }),
-        queryClient.invalidateQueries({ queryKey: [INVITE_QUERY_KEYS.waiting] }),
-      ]);
-    },
-  });
-
-  if (!isConfirming) {
-    return (
-      <Button
-        type="button"
-        variant="quiet"
-        size="sm"
-        onClick={() => setIsConfirming(true)}
-      >
-        Wrong person?
-        <span className="sr-only"> {email}</span>
-      </Button>
-    );
-  }
-
   return (
-    <div className="grid basis-full gap-2 rounded-field bg-muted p-3.5">
-      <p className="type-small text-foreground-soft">
-        This locks the account that used this invite and makes a new invite for {email}. Do this if someone else got
-        hold of the link. If that account already joined the Village group, it stays in the group. This can&apos;t remove
-        it from Village.
-      </p>
-      <FormError message={reclaimMutation.error?.message ?? null} />
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant="destructive"
-          size="sm"
-          disabled={reclaimMutation.isPending}
-          onClick={() => reclaimMutation.mutate(inviteId)}
-        >
-          {reclaimMutation.isPending ? "Locking…" : "Lock it and make a new invite"}
+    <ConfirmDialog
+      trigger={
+        <Button type="button" variant="quiet" size="sm">
+          Wrong person?
+          <span className="sr-only"> {email}</span>
         </Button>
-        <Button type="button" variant="quiet" size="sm" onClick={() => setIsConfirming(false)}>
-          Cancel
-        </Button>
-      </div>
-    </div>
+      }
+      title="Did someone else use this invite?"
+      successTitle="We locked it. Here's the new invite"
+      confirmLabel="Lock it and make a new invite"
+      pendingLabel="Locking…"
+      isDestructive
+      returnFocusRef={returnFocusRef}
+      fallbackFocusId={fallbackFocusId}
+      action={() => reclaimInviteRequest(inviteId)}
+      onDone={(issued) => {
+        onReclaimed?.(issued);
+        void Promise.all(
+          [INVITE_QUERY_KEYS.list, INVITE_QUERY_KEYS.waiting, ADMIN_MEMBER_QUERY_KEYS.list].map((queryKey) => queryClient.invalidateQueries({ queryKey: [queryKey] })),
+        );
+      }}
+      renderSuccess={(issued) => <IssuedLink issued={issued} />}
+    >
+      <p className="wrap-anywhere">This locks the account that used this invite and makes a new invite for {email}. Do this if someone else got hold of the link.</p>
+      <p>If that account already joined the Village group, we ask Village to take it out too, and tell you how that went.</p>
+    </ConfirmDialog>
   );
 }

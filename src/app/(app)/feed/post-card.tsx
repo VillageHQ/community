@@ -1,11 +1,13 @@
 "use client";
 
 import { cn } from "cn";
-import { MessageCircle, Pencil, Pin, PinOff, Trash2 } from "lucide-react";
+import { Flag, MessageCircle, Pencil, Pin, PinOff, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { flushSync } from "react-dom";
 
 import { FormError } from "@/components/form-error";
+import { FEED_REPORT_TARGETS } from "@/lib/admin/admin-api";
+import { Alert } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
@@ -23,6 +25,7 @@ import {
   ADMIN_DELETE_NOTE,
   FEED_AVATAR_SIZES,
   POSTS_REGION_ID,
+  REPORT_NOTE,
   POST_TYPE_DISPLAY,
   SURFACE_TONES,
   toPostElementId,
@@ -32,9 +35,10 @@ import {
 import { ReactionBar } from "./reaction-bar";
 import { RelativeTime } from "./relative-time";
 import { RichText } from "./rich-text";
-import { useDeletePost, useEditPost, usePinPost } from "./use-feed-mutations";
+import { useDeletePost, useEditPost, usePinPost, useReportFeedContent } from "./use-feed-mutations";
+import { ConfirmAction } from "../messages/confirm-action";
 
-const POST_MODES = { reading: "reading", editing: "editing", confirmingDelete: "confirmingDelete" } as const;
+const POST_MODES = { reading: "reading", editing: "editing", confirmingDelete: "confirmingDelete", confirmingReport: "confirmingReport" } as const;
 
 type PostMode = (typeof POST_MODES)[keyof typeof POST_MODES];
 
@@ -117,9 +121,9 @@ function readDeleteMessage(post: Post, viewer: FeedViewer) {
   return `Delete ${subject} post and its replies for everyone? ${ADMIN_DELETE_NOTE}`;
 }
 
-type PostHandlers = { onEdit: () => void; onDelete: () => void; onTogglePin: () => void };
+type PostHandlers = { onEdit: () => void; onDelete: () => void; onTogglePin: () => void; onReport: () => void };
 
-function readPostActions(post: Post, viewer: FeedViewer, { onEdit, onDelete, onTogglePin }: PostHandlers): ContentAction[] {
+function readPostActions(post: Post, viewer: FeedViewer, { onEdit, onDelete, onTogglePin, onReport }: PostHandlers): ContentAction[] {
   const isAuthor = post.author.id === viewer.id;
   const actions: ContentAction[] = [];
   if (viewer.isAdmin && (post.pin || !post.author.isBanned)) {
@@ -135,6 +139,7 @@ function readPostActions(post: Post, viewer: FeedViewer, { onEdit, onDelete, onT
   if (isAuthor || viewer.isAdmin) {
     actions.push({ id: "delete", label: "Delete", icon: Trash2, onSelect: onDelete, movesFocus: true });
   }
+  if (!isAuthor && !viewer.isAdmin) actions.push({ id: "report", label: "Report", icon: Flag, onSelect: onReport, movesFocus: true });
   return actions;
 }
 
@@ -166,6 +171,7 @@ function PostMenu({ post, triggerRef, onModeChange, onPinFailure }: PostMenuProp
       actions={readPostActions(post, viewer, {
         onEdit: () => onModeChange(POST_MODES.editing),
         onDelete: () => onModeChange(POST_MODES.confirmingDelete),
+        onReport: () => onModeChange(POST_MODES.confirmingReport),
         onTogglePin: () => {
           onPinFailure(null);
           pinPost.mutate(
@@ -215,6 +221,7 @@ function Replies({ post, tone }: RepliesProps) {
 type PostLayoutProps = { post: Post; menu: ReactNode; editor: ReactNode; footer: ReactNode };
 
 function PinnedPostLayout({ post, menu, editor, footer }: PostLayoutProps) {
+  const { viewer: { isAdmin: isViewerAdmin } } = useFeedContext();
   const { heading, body } = splitAnnouncement(post.body);
   const { author, pin } = post;
   return (
@@ -229,7 +236,7 @@ function PinnedPostLayout({ post, menu, editor, footer }: PostLayoutProps) {
           <Pin aria-hidden="true" className="size-[17px] shrink-0" />
           {pin?.pinnedByName ? `Pinned by ${pin.pinnedByName}` : "Pinned"}
         </p>
-        <BannedTag author={author} />
+        <BannedTag author={author} isViewerAdmin={isViewerAdmin} />
         <PostTypeTag type={post.type} />
         <div className="-my-1.5">{menu}</div>
       </div>
@@ -249,6 +256,7 @@ function PinnedPostLayout({ post, menu, editor, footer }: PostLayoutProps) {
 }
 
 function PlainPostLayout({ post, menu, editor, footer }: PostLayoutProps) {
+  const { viewer: { isAdmin: isViewerAdmin } } = useFeedContext();
   const { author } = post;
   const roleLine = [author.title, author.company].filter(Boolean).join(", ");
   const shortRole = author.company ?? author.title;
@@ -272,7 +280,7 @@ function PlainPostLayout({ post, menu, editor, footer }: PostLayoutProps) {
             {post.editedAt ? " · edited" : null}
           </p>
         </div>
-        <BannedTag author={author} />
+        <BannedTag author={author} isViewerAdmin={isViewerAdmin} />
         <PostTypeTag type={post.type} />
         {menu}
       </div>
@@ -291,6 +299,7 @@ export function PostCard({ post }: { post: Post }) {
     announce("Post deleted.");
     focusElement(POSTS_REGION_ID);
   });
+  const reportPost = useReportFeedContent();
   const Layout = post.pin ? PinnedPostLayout : PlainPostLayout;
 
   useEffect(() => {
@@ -327,6 +336,39 @@ export function PostCard({ post }: { post: Post }) {
                 menuTriggerRef.current?.focus();
               }}
             />
+          ) : null}
+          {reportPost.data ? (
+            <Alert role="none" className="mt-3.5">
+              {reportPost.data.message}
+            </Alert>
+          ) : null}
+          {mode === POST_MODES.confirmingReport ? (
+            <div className="mt-3.5">
+              <ConfirmAction
+                message={`Report this post? ${REPORT_NOTE}`}
+                confirmLabel="Report"
+                pendingLabel="Reporting…"
+                cancelLabel="Keep it"
+                isPending={reportPost.isPending}
+                errorMessage={reportPost.error?.message ?? null}
+                onCancel={() => {
+                  setMode(POST_MODES.reading);
+                  menuTriggerRef.current?.focus();
+                }}
+                onConfirm={() =>
+                  reportPost.mutate(
+                    { targetType: FEED_REPORT_TARGETS.post, targetId: post.id },
+                    {
+                      onSuccess: ({ message }) => {
+                        announce(message);
+                        setMode(POST_MODES.reading);
+                        menuTriggerRef.current?.focus();
+                      },
+                    },
+                  )
+                }
+              />
+            </div>
           ) : null}
           {pinFailure ? (
             <div className="mt-3">

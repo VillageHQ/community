@@ -106,6 +106,10 @@ export const messageReport = pgTable(
     messageBody: text("message_body").notNull(),
     messageSentAt: messageTimestamp("message_sent_at").notNull(),
     createdAt: messageTimestamp("created_at").notNull().defaultNow(),
+    resolution: text("resolution"),
+    resolvedAt: messageTimestamp("resolved_at"),
+    resolvedByUserId: text("resolved_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    resolvedByName: text("resolved_by_name"),
   },
   (table) => [
     unique("message_report_reporter_message_unique").on(table.reporterId, table.messageId),

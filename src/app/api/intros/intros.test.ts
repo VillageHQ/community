@@ -20,7 +20,7 @@ import {
 import { ASKED_EMAIL_COOLDOWN_MS } from "@/lib/intros/intro-email";
 import { INTRO_MAXIMUM_PER_MINUTE } from "@/lib/intros/intro-limit";
 import { readIntroStateCounts } from "@/lib/intros/intro-reads";
-import { DAILY_CREDIT_CALL_LIMIT } from "@/lib/village/daily-usage";
+import { DAILY_LOOKUP_LIMITS } from "@/lib/admin/admin-api";
 import { NETWORK_ERROR_CODES, networkPathsSchema, networkSearchResultSchema } from "@/lib/village/network-api";
 import { saveVillageGroup, saveVillageKeys } from "@/lib/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
@@ -316,7 +316,7 @@ describe("intro requests", () => {
     });
 
     it("reports how many lookups are left today", async () => {
-      expect((await lookUpPaths()).dailyLookupsLeft).toBe(DAILY_CREDIT_CALL_LIMIT - 1);
+      expect((await lookUpPaths()).dailyLookupsLeft).toBe(DAILY_LOOKUP_LIMITS.default - 1);
     });
   });
 

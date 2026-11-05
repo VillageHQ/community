@@ -7,7 +7,13 @@ import { ROUTES } from "@/lib/routes";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 
 import SignInPage from "./page";
-import { SignInFields } from "./sign-in-form";
+import { SignInFields, SignInForm } from "./sign-in-form";
+
+describe("the sign-in form", () => {
+  it("links to Forgot your password", () => {
+    expect(renderToStaticMarkup(createElement(SignInForm, {}))).toContain(`href="${ROUTES.forgotPassword}"`);
+  });
+});
 
 describe("a failed sign-in", () => {
   function renderFailure() {

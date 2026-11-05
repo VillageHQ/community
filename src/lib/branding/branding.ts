@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { cache } from "react";
 
 import { communityBranding, DEFAULT_COMMUNITY_NAME } from "../../database/branding-schema.ts";
-import { getDatabase, type Database } from "../../database/client.ts";
+import { getDatabase, type Database, type DatabaseOrTransaction } from "../../database/client.ts";
 import { DEFAULT_ACCENT_COLOR, parseAccentColor } from "../design/accent.ts";
 import { withLoggedFallback } from "../route-logging.ts";
 import { API_ROUTES } from "../routes.ts";
@@ -68,7 +68,7 @@ const readBrandingOrDefault = withLoggedFallback("branding", DEFAULT_BRANDING, (
 
 export const readBrandingForPage = cache(readBrandingOrDefault);
 
-export async function saveBranding(database: Database, { name, descriptor, accentColor }: BrandingFields) {
+export async function saveBranding(database: DatabaseOrTransaction, { name, descriptor, accentColor }: BrandingFields) {
   const fields = { name, descriptor, accentColor, savedAt: new Date() };
   await database
     .insert(communityBranding)
@@ -76,7 +76,7 @@ export async function saveBranding(database: Database, { name, descriptor, accen
     .onConflictDoUpdate({ target: communityBranding.isSingleton, set: fields });
 }
 
-export async function saveLogo(database: Database, { bytes, contentType, backdrop }: LogoFile) {
+export async function saveLogo(database: DatabaseOrTransaction, { bytes, contentType, backdrop }: LogoFile) {
   const fields = { logoBytes: bytes, logoContentType: contentType, logoBackdrop: backdrop, logoUpdatedAt: new Date() };
   await database
     .insert(communityBranding)
@@ -84,7 +84,7 @@ export async function saveLogo(database: Database, { bytes, contentType, backdro
     .onConflictDoUpdate({ target: communityBranding.isSingleton, set: fields });
 }
 
-export async function deleteLogo(database: Database) {
+export async function deleteLogo(database: DatabaseOrTransaction) {
   await database
     .update(communityBranding)
     .set({ logoBytes: null, logoContentType: null, logoBackdrop: LOGO_BACKDROPS.light, logoUpdatedAt: null })

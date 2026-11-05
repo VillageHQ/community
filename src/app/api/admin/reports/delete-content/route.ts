@@ -1,0 +1,15 @@
+import { reportActionBodySchema } from "@/lib/admin/admin-api";
+import { deleteReportedContent } from "@/lib/admin/reports";
+import { logAdminAction } from "@/lib/route-logging";
+import { createMemberRoute } from "@/lib/village/member-route";
+
+export const POST = createMemberRoute(
+  "admin-report-delete-content",
+  reportActionBodySchema,
+  async (context, body) => {
+    await deleteReportedContent(context, body);
+    logAdminAction("reported_content_deleted", context.member.id, body.reportId);
+    return Response.json({ message: "Deleted. A copy stays in the audit log." });
+  },
+  { adminOnly: true },
+);

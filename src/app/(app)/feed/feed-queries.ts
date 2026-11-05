@@ -1,5 +1,6 @@
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
+import type { FeedReportBody } from "@/lib/admin/admin-api";
 import {
   commentPageSchema,
   commentSchema,
@@ -86,6 +87,10 @@ export function createCommentRequest(body: CreateCommentBody) {
 
 export function editCommentRequest(body: EditCommentBody) {
   return postNetworkRequest(API_ROUTES.feedCommentEdit, body, commentSchema);
+}
+
+export function reportFeedContentRequest(body: FeedReportBody) {
+  return postNetworkRequest(API_ROUTES.feedReport, body, acknowledgedResponseSchema);
 }
 
 export function deleteCommentRequest(commentId: string) {

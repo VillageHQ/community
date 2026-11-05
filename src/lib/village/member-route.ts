@@ -2,14 +2,14 @@ import "server-only";
 
 import type { z } from "zod";
 
-import { getDatabase } from "../../database/client.ts";
+import { getDatabase, type Database } from "../../database/client.ts";
 import { readActiveSession } from "../active-session.ts";
 import { resolveTrustedOrigins } from "../app-url.ts";
 import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "../body-limit.ts";
 import { readJsonBody } from "../read-json-body.ts";
 import { withRouteLogging } from "../route-logging.ts";
-import { NETWORK_NOT_SYNCED_TYPE, VILLAGE_FAILURE_TYPES, VillageApiError } from "./client.ts";
-import { DAILY_CREDIT_CALL_LIMIT, DailyLimitReachedError } from "./daily-usage.ts";
+import { isVillageErrorStatus, NETWORK_NOT_SYNCED_TYPE, VILLAGE_FAILURE_TYPES, VillageApiError } from "./client.ts";
+import { DailyLimitReachedError } from "./daily-usage.ts";
 import {
   createNetworkContext,
   isAdminMember,
@@ -18,8 +18,10 @@ import {
   type SessionMember,
 } from "./member-network.ts";
 import { NETWORK_ERROR_CODES } from "./network-api.ts";
+import { recordVillageOutOfCredits } from "./settings.ts";
 
 const UNAUTHORIZED_STATUS = 401;
+const PAYMENT_REQUIRED_STATUS = 402;
 const FORBIDDEN_STATUS = 403;
 const CONFLICT_STATUS = 409;
 const UNPROCESSABLE_STATUS = 422;
@@ -41,10 +43,10 @@ const FRIENDLY_VILLAGE_ERRORS: Record<number, FriendlyError> = {
     code: NETWORK_ERROR_CODES.keysRejected,
     message: "Village rejected this community's keys. Ask an admin to check them.",
   },
-  402: {
+  [PAYMENT_REQUIRED_STATUS]: {
     status: BAD_GATEWAY_STATUS,
     code: NETWORK_ERROR_CODES.outOfCredits,
-    message: "This community is out of Village credits. Ask an admin to top up.",
+    message: "This community has run out of Village credits for now. Your admin can see this and add more. You don't need to do anything.",
   },
   403: {
     status: CONFLICT_STATUS,
@@ -86,16 +88,17 @@ function toFriendlyVillageError(error: VillageApiError) {
   return FRIENDLY_VILLAGE_ERRORS[error.status] ?? UNAVAILABLE_ERROR;
 }
 
-function respondToKnownError(error: unknown) {
+async function respondToKnownError(database: Database, error: unknown) {
   if (error instanceof NetworkRequestError) {
     return respondWithError({ status: error.status, code: error.code, message: error.message });
   }
+  if (isVillageErrorStatus(error, PAYMENT_REQUIRED_STATUS)) await recordVillageOutOfCredits(database);
   if (error instanceof VillageApiError) return respondWithError(toFriendlyVillageError(error));
   if (error instanceof DailyLimitReachedError) {
     return respondWithError({
       status: TOO_MANY_REQUESTS_STATUS,
       code: NETWORK_ERROR_CODES.dailyLimitReached,
-      message: `You reached today's limit of ${DAILY_CREDIT_CALL_LIMIT} Village lookups. Try again tomorrow.`,
+      message: `You reached today's limit of ${error.limit} Village lookups. Try again tomorrow.`,
     });
   }
   throw error;
@@ -165,7 +168,7 @@ export function createMemberRoute<Schema extends z.ZodType>(
       try {
         return await respond(context, body.data);
       } catch (error) {
-        return respondToKnownError(error);
+        return await respondToKnownError(context.database, error);
       }
     }),
   );

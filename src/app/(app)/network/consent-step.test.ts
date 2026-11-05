@@ -45,8 +45,9 @@ describe("the consent screen", () => {
     expect(renderConsent()).toContain("can't unsee them");
   });
 
-  it("says an admin's removal doesn't yet remove the member from the Village group", () => {
-    expect(renderConsent()).toContain("doesn't yet remove you from the Village group");
+  it("says an admin's removal also tries to take the member out of the Village group", () => {
+    expect(renderConsent()).toContain("we also ask Village to take you out of the group");
+    expect(renderConsent()).toContain("you stay shared until you leave inside Village");
   });
 
   it("says members can find contacts and ask for introductions", () => {

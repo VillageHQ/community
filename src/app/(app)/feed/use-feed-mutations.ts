@@ -26,6 +26,7 @@ import {
   FEED_MUTATION_KEYS,
   feedQuery,
   pinPostRequest,
+  reportFeedContentRequest,
   setReactionRequest,
 } from "./feed-queries";
 
@@ -140,6 +141,10 @@ export function useDeleteComment(postId: string, beforeRemoval: () => void) {
       await refreshThread(queryClient, postId);
     },
   });
+}
+
+export function useReportFeedContent() {
+  return useMutation({ mutationFn: reportFeedContentRequest });
 }
 
 export function useShowNewPosts() {

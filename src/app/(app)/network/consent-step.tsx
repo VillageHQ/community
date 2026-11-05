@@ -38,7 +38,7 @@ const DEAL_NOTES = [
   },
   {
     icon: CircleAlert,
-    text: "An admin removing you from this site doesn't yet remove you from the Village group. Leave the group first if you plan to go.",
+    text: "If an admin removes you from this site, we also ask Village to take you out of the group. If Village can't, you stay shared until you leave inside Village.",
   },
 ];
 

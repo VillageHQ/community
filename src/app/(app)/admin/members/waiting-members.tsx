@@ -1,33 +1,35 @@
 "use client";
 
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
-import { FormError } from "@/components/form-error";
 import { QueryBoundary } from "@/components/query-boundary";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import type { IssuedInvite, WaitingMember } from "@/lib/invites/invite-api";
+import type { WaitingMember } from "@/lib/invites/invite-api";
+
+import { ConfirmDialog } from "../confirm-dialog";
 
 import { confirmMemberRequest, INVITE_QUERY_KEYS, waitingMembersQuery } from "./invite-queries";
+import { ADMIN_MEMBER_QUERY_KEYS } from "./member-queries";
 import { ReclaimAction } from "./reclaim-action";
 
 const WAITING_AVATAR_SIZE_PX = 52;
+const WAITING_TITLE_ID = "waiting-title";
 const EMAIL_CONFIGURED_NOTE = "We also emailed each of them a link. If it reached them, they'll leave this list by themselves.";
 
-type WaitingRowProps = { member: WaitingMember; onReclaimed: (issued: IssuedInvite) => void };
-
-function WaitingRow({ member, onReclaimed }: WaitingRowProps) {
+function useRefreshAfterConfirming() {
   const queryClient = useQueryClient();
   const router = useRouter();
+  return () => {
+    void Promise.all([INVITE_QUERY_KEYS.waiting, ADMIN_MEMBER_QUERY_KEYS.list].map((queryKey) => queryClient.invalidateQueries({ queryKey: [queryKey] })));
+    router.refresh();
+  };
+}
+
+function WaitingRow({ member }: { member: WaitingMember }) {
+  const refresh = useRefreshAfterConfirming();
   const { id, name, email, avatarUrl, inviteId } = member;
-  const confirmMutation = useMutation({
-    mutationFn: confirmMemberRequest,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: [INVITE_QUERY_KEYS.waiting] });
-      router.refresh();
-    },
-  });
 
   return (
     <li className="grid gap-3 rounded-card-phone bg-card p-4 shadow-[inset_0_0_0_2.5px_var(--brand-emphasis),var(--elevation-panel)] sm:rounded-card sm:px-5 sm:py-4">
@@ -38,33 +40,41 @@ function WaitingRow({ member, onReclaimed }: WaitingRowProps) {
           <div className="type-small wrap-anywhere text-muted-foreground">{email}</div>
         </div>
         <div className="flex flex-wrap items-center gap-2 max-sm:w-full">
-          <Button
-            type="button"
-            size="sm"
-            disabled={confirmMutation.isPending}
-            onClick={() => confirmMutation.mutate(id)}
+          <ConfirmDialog
+            trigger={
+              <Button type="button" size="sm">
+                Yes, this is them
+                <span className="sr-only">: {name} owns {email}</span>
+              </Button>
+            }
+            title={`Does ${name} really own this email?`}
+            confirmLabel="Yes, this is them"
+            pendingLabel="Confirming…"
+            fallbackFocusId={WAITING_TITLE_ID}
+            action={() => confirmMemberRequest(id)}
+            onDone={refresh}
           >
-            {confirmMutation.isPending ? "Confirming…" : "Yes, this is them"}
-            <span className="sr-only">: {name} owns {email}</span>
-          </Button>
-          {inviteId ? <ReclaimAction inviteId={inviteId} email={email} onReclaimed={onReclaimed} /> : null}
+            <p className="wrap-anywhere">
+              Anyone holding an invite link could have used it. Confirm only if you recognize this person and {email} is theirs. This turns on network search for them.
+            </p>
+          </ConfirmDialog>
+          {inviteId ? <ReclaimAction inviteId={inviteId} email={email} fallbackFocusId={WAITING_TITLE_ID} onReclaimed={refresh} /> : null}
         </div>
       </div>
-      <FormError message={confirmMutation.error?.message ?? null} />
     </li>
   );
 }
 
-type WaitingMembersProps = { isEmailConfigured: boolean; onReclaimed: (issued: IssuedInvite) => void };
+type WaitingMembersProps = { isEmailConfigured: boolean };
 
-function WaitingList({ isEmailConfigured, onReclaimed }: WaitingMembersProps) {
+function WaitingList({ isEmailConfigured }: WaitingMembersProps) {
   const { data } = useSuspenseQuery(waitingMembersQuery);
   if (data.members.length === 0) return null;
   const hiddenCount = data.waitingCount - data.members.length;
   return (
-    <section aria-labelledby="waiting-title" className="grid gap-3.5">
+    <section aria-labelledby={WAITING_TITLE_ID} className="grid gap-3.5">
       <div className="grid gap-1.5">
-        <h2 id="waiting-title" className="type-h2">
+        <h2 id={WAITING_TITLE_ID} tabIndex={-1} className="type-h2 outline-none">
           Waiting for approval ({data.waitingCount})
         </h2>
         <p className="text-foreground-soft">
@@ -75,7 +85,7 @@ function WaitingList({ isEmailConfigured, onReclaimed }: WaitingMembersProps) {
       </div>
       <ul className="grid gap-2.5">
         {data.members.map((member) => (
-          <WaitingRow key={member.id} member={member} onReclaimed={onReclaimed} />
+          <WaitingRow key={member.id} member={member} />
         ))}
       </ul>
       {hiddenCount > 0 ? (

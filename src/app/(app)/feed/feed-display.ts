@@ -41,3 +41,6 @@ export function toPostElementId(postId: string) {
 export function toReplyInputId(postId: string) {
   return `reply-${postId}`;
 }
+
+export const REPORT_NOTE =
+  "It's saved for this community's admins. They'll see a copy, who wrote it and that you reported it. The author isn't told.";

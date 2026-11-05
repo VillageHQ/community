@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 
 import { user } from "../../database/auth-schema.ts";
@@ -11,6 +11,10 @@ export function isActiveMember(now = new Date(), members: MemberTable = user) {
     eq(members.banned, false),
     and(isNotNull(members.banExpires), lte(members.banExpires, now)),
   );
+}
+
+export function isBanInEffect(now = new Date()) {
+  return sql<boolean>`coalesce(${user.banned}, false) and (${or(isNull(user.banExpires), gt(user.banExpires, now))})`;
 }
 
 type BanFields = { banned?: boolean | null; banExpires?: Date | null };

@@ -181,6 +181,12 @@ describe("createAuth", () => {
       ["/admin/list-user-sessions", () => ({ userId: MEMBER_ID })],
       ["/admin/revoke-user-session", () => ({ sessionToken: "any-token" })],
       ["/admin/create-user", () => ({ email: "new@example.com", password: ADMINS_PASSWORD_FOR_MEMBER, name: "New" })],
+      ["/admin/ban-user", () => ({ userId: MEMBER_ID })],
+      ["/admin/unban-user", () => ({ userId: MEMBER_ID })],
+      ["/admin/remove-user", () => ({ userId: MEMBER_ID })],
+      ["/admin/set-role", () => ({ userId: MEMBER_ID, role: "admin" })],
+      ["/admin/revoke-user-sessions", () => ({ userId: MEMBER_ID })],
+      ["/admin/update-user", () => ({ userId: MEMBER_ID, data: { name: "Renamed" } })],
     ])("%s", (path, createBody) => {
       it("answers an admin as if it doesn't exist", async () => {
         const headers = await signInAsAdmin();
@@ -242,35 +248,6 @@ describe("createAuth", () => {
       expect(await response.text()).not.toContain(memberSession?.token ?? "no-token");
     });
 
-    it.each([
-      ["email", { email: "admin-controlled@example.com" }],
-      ["emailVerified", { emailVerified: false }],
-      ["id", { id: "another-id" }],
-      ["image", { image: "https://evil.test/a.png" }],
-    ])("refuses an admin changing a member's %s", async (_field, data) => {
-      const headers = await signInAsAdmin();
-
-      const response = await post("/admin/update-user", { userId: MEMBER_ID, data }, headers);
-
-      expect(response.status).toBe(403);
-      const [row] = await database.select({ email: user.email, emailVerified: user.emailVerified }).from(user).where(eq(user.id, MEMBER_ID));
-      expect(row).toEqual({ email: MEMBER_EMAIL, emailVerified: true });
-    });
-
-    it("still lets an admin rename a member", async () => {
-      const headers = await signInAsAdmin();
-
-      const response = await post("/admin/update-user", { userId: MEMBER_ID, data: { name: "Renamed" } }, headers);
-
-      expect(response.status).toBe(200);
-    });
-
-    it("still lets an admin ban a member", async () => {
-      const headers = await signInAsAdmin();
-
-      expect((await post("/admin/ban-user", { userId: MEMBER_ID }, headers)).status).toBe(200);
-    });
-
     it("issues no password reset token", async () => {
       await post("/request-password-reset", { email: MEMBER_EMAIL });
 
@@ -288,19 +265,19 @@ describe("createAuth", () => {
     });
 
     it.each([
-      ["/admin/set-role", (userId: string) => ({ userId, role: "user" })],
-      ["/admin/update-user", (userId: string) => ({ userId, data: { role: "user" } })],
-      ["/admin/update-user", (userId: string) => ({ userId, data: { banned: true } })],
-      ["/admin/ban-user", (userId: string) => ({ userId })],
-      ["/admin/remove-user", (userId: string) => ({ userId })],
-    ])("blocks %s for the only admin", async (path, createBody) => {
+      ["/admin/set-role", 404, (userId: string) => ({ userId, role: "user" })],
+      ["/admin/ban-user", 404, (userId: string) => ({ userId })],
+      ["/admin/remove-user", 404, (userId: string) => ({ userId })],
+      ["/admin/update-user", 404, (userId: string) => ({ userId, data: { role: "user" } })],
+      ["/admin/update-user", 404, (userId: string) => ({ userId, data: { banned: true } })],
+    ])("refuses %s for the only admin", async (path, status, createBody) => {
       const headers = await signInAsAdmin();
       const adminId = await readAdminId();
 
       const response = await post(path, createBody(adminId), headers);
       const [admin] = await database.select().from(user).where(eq(user.id, adminId));
 
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(status);
       expect(admin?.role).toBe("admin");
       expect(admin?.banned).toBe(false);
     });
@@ -333,6 +310,7 @@ describe("createAuth", () => {
           "a role of the wrong type",
           (id: string) => ({ userId: id, data: { role: 1 } }),
         ],
+        ["/admin/update-user", "no data at all", (id: string) => ({ userId: id })],
       ])("rejects %s with %s", async (path, _input, createBody) => {
         const headers = await signInAsAdmin();
         const adminId = await readAdminId();
@@ -346,34 +324,30 @@ describe("createAuth", () => {
       });
     });
 
-    it("allows unrelated profile updates", async () => {
-      const headers = await signInAsAdmin();
-
-      const response = await post(
-        "/admin/update-user",
-        { userId: await readAdminId(), data: { name: "Ada Lovelace" } },
-        headers,
-      );
-
-      expect(response.status).toBe(200);
-    });
-
-    it("allows demoting an admin while another remains", async () => {
-      await database.insert(user).values({
-        id: "second-admin",
-        name: "Grace",
-        email: "grace@example.com",
-        role: "admin",
+    it("keeps both admins when they try each other at once through Better Auth", async () => {
+      await database.insert(user).values({ id: "second-admin", name: "Grace", email: "grace@example.com", role: "admin" });
+      await database.insert(account).values({
+        id: "second-admin-account",
+        userId: "second-admin",
+        accountId: "second-admin",
+        providerId: "credential",
+        password: await hashPassword(ADMIN.password),
       });
-      const headers = await signInAsAdmin();
+      const firstHeaders = await signInAsAdmin();
+      const signedIn = await post("/sign-in/email", { email: "grace@example.com", password: ADMIN.password });
+      const secondHeaders = { cookie: signedIn.headers.get("set-cookie") ?? "" };
+      const adminId = await readAdminId();
 
-      const response = await post(
-        "/admin/set-role",
-        { userId: "second-admin", role: "user" },
-        headers,
-      );
+      const responses = await Promise.all([
+        post("/admin/set-role", { userId: "second-admin", role: "user" }, firstHeaders),
+        post("/admin/set-role", { userId: adminId, role: "user" }, secondHeaders),
+        post("/admin/ban-user", { userId: "second-admin" }, firstHeaders),
+        post("/admin/ban-user", { userId: adminId }, secondHeaders),
+      ]);
 
-      expect(response.status).toBe(200);
+      expect(responses.map(({ status }) => status)).toEqual([404, 404, 404, 404]);
+      const admins = await database.select().from(user).where(eq(user.role, "admin"));
+      expect(admins.filter(({ banned }) => !banned)).toHaveLength(2);
     });
   });
 

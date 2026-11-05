@@ -1,6 +1,8 @@
 # Community
 
-A self-hostable community portal for VC networks, built on Village. Members join by invite, fill in a card, post in a shared feed, find each other in a directory, message each other one to one, search their own Village network, including the relationships of everyone in the community, and ask a member for a warm intro.
+A private community portal for a VC fund's portfolio founders. You run it, and you never need to write code or touch a database to do it.
+
+Your founders join by invite, fill in a card, post in a shared feed, find each other in a directory and message each other one to one. Through [Village](https://village.ai), they can search everyone's networks together and ask another member for a warm intro.
 
 ## Deploy
 
@@ -13,48 +15,83 @@ A self-hostable community portal for VC networks, built on Village. Members join
 [![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/VillageHQ/community/tree/main)
 
 1. Click a button and follow the platform's steps.
-2. Set your setup token when asked. On Railway it's created for you: copy `SETUP_TOKEN` from the service's variables.
+2. Set your setup token when asked. On Railway it's created for you: copy `SETUP_TOKEN` from the service's variables. See [Setup token](#setup-token).
 3. Wait for the deploy to finish.
-4. Open `/setup` on your new site. Enter the token and your name, email and password.
-5. Sign in. Setup closes for good after this.
-6. Follow the checklist you land on: brand your community, register the domain, add your Village keys, create the group, and invite your first members. See [Connect Village](#connect-village) and [Invite members](#invite-members).
 
-### Connect Village
+## Your first 10 minutes
 
-You need a Village platform account and an active app. Billing is credits only, and your community spends your credits.
+1. **Create your admin account.** Open `/setup` on your new site. Enter the setup token and your name, email and password. Setup closes for good after this.
+2. **Follow the checklist.** You land on it after you sign in. Your progress saves as you go.
+   - **Brand your community:** your name, logo and color.
+   - **Register your domain:** the page shows the exact address to add in Village's Platform Settings.
+   - **Add your Village keys:** paste them in. We check them with Village before saving.
+   - **Create the group:** first open **Network**, add your LinkedIn and sync in Village's popup. Then create the group. **Your own Village network becomes shared with every current and future member.**
+   - **Invite your first members:** see below.
+3. **Say hello.** Post a welcome in the feed, so the first founder doesn't walk into an empty room.
 
-1. Open **Admin**. You land there after setup until the checklist is done. It shows the exact domain to enter in Village's Platform Settings.
-2. Paste your public and secret keys there. The app checks them with Village before saving.
-3. Open **Network**. Add your LinkedIn URL and sync your network in Village's popup.
-4. Back in **Admin**, create the group. **Your own Village network becomes shared with every current and future member.**
+You need a Village platform account and an active app. Your community spends your app's Village credits.
 
-Members then open **Network**, add their LinkedIn URL, agree to share, and sync. The app joins them to the group after that. A member can choose **Not now** and keep using the app, then opt in from **Network** later. Members can leave from the same page. Removing someone from this portal doesn't yet remove them from the Village group, so they should leave first. Village won't let the group's creator leave while other members remain.
+## How to invite people
 
-### Invite members
+Open **Admin**, then **Members**, then **Invite someone**. Enter their email and you get a personal link to send them. It works once, for that email, and lasts 14 days. You can invite people before Village is connected.
 
-Open **Admin**, then **Members**. Enter someone's email and you get a personal link to send them. It works once, for that email, and lasts 14 days. You can invite people before Village is connected.
+We store only a scrambled copy of each link, so you see it only when it's created. **New link** replaces it and restarts the 14 days. **Revoke** cancels a pending invite.
 
-The app stores only a hash of each link, so it can show a link only when it creates one. **New link** replaces the link and restarts the 14 days. The old link stops working. **Revoke** cancels a pending invite.
+The person opens the link, chooses a name and password, and lands in a short first-run flow: their card, then an optional step to share their network.
 
-The person opens the link, chooses a name and password, and lands in a short first-run flow: their card, then an optional step to share their network. They can skip either one and pick it up later.
+**Confirming who accepted:** Anyone holding a link can accept it. So network search stays off until the email is confirmed. With email set up, they confirm it themselves from a link we send. Without it, they show up under **Waiting for approval** in **Members**, and you confirm them. Everything else works while they wait.
 
-**Confirming who accepted:** Anyone holding a link can accept it, so holding one doesn't prove the person owns that inbox. Network search stays off until the email is confirmed. With email set up, the app sends a link to the invite's address, and the person can ask for another from **Network**. Opening the link changes nothing: they must be signed in to that same account and press **Confirm**, so a mail scanner following the link can't confirm anyone. Without it, **Admin**, **Members** shows them under **Waiting for approval**, with a badge, and one click confirms them. Everything else in the portal works while they wait.
+**If someone else used the link:** The real owner sees "already used" and is told to contact you. Open that person in **Members**, or the invite in the list, and click **Wrong person?**. It locks the account, signs it out, frees its email and LinkedIn, asks Village to take it out of the group if it joined, and makes a new invite for the same address.
 
-**If someone else used the link:** The real owner sees "already used" and is told to contact you. Click **Wrong person?** on that invite. It bans the account, signs it out, frees its email and LinkedIn, and makes a new invite for the same address. If that account already joined the Village group, it stays in the group: this portal can't remove it from Village. Full member management comes later.
+**A LinkedIn profile someone else holds:** Paste it under **Free up a LinkedIn profile** in **Members**, or use **Clear their LinkedIn** under **Manage**.
 
-**A LinkedIn profile someone else holds:** Paste it under **Free up a LinkedIn profile** in **Members**, or use **Clear their LinkedIn** on their profile.
+**Email is optional:** To send invites and intro notices by email, add `RESEND_API_KEY` and `RESEND_FROM_ADDRESS` in your host's settings, using a sender on a domain you verified in [Resend](https://resend.com). The deploy buttons don't ask for these. **Admin**, **Settings** shows whether email is on and what that changes.
 
-**Optional email:** To also send invites and intro notices by email, set `RESEND_API_KEY` and `RESEND_FROM_ADDRESS`, using a sender on a domain you verified in [Resend](https://resend.com). The deploy buttons don't ask for these. Without both, the copyable link is the whole invite flow and the Intros badge tells members about intros. If sending fails, the invite stays valid and the admin still gets the link.
+## Running your community
 
-### Setup token
+Everything lives in **Admin**.
 
-The setup token is a long password that proves you own the deployment. It needs at least 32 random characters. A password manager's generator works, or run `openssl rand -hex 32`. If it's missing or too weak, `/setup` explains how to fix it and creates nothing.
+- **Members:** Find anyone by name, email or LinkedIn. **Manage** holds every action for that person: make or remove an admin, confirm their email, **Wrong person?**, approve or reset their Village link, confirm or clear their LinkedIn, remove them, and unban them. Each one asks you to confirm first.
+- **Reports:** Members can report posts, replies, messages they received and intro notes they received. You see a copy of what was reported and who reported it. You can dismiss it, delete it if it's a post or reply, or remove the member. Messages and intro notes can't be deleted from here. You never see the rest of a conversation or an ask.
+- **Audit log:** Who did what, and when: role changes, removals, approvals, deletions, settings and more.
+- **Health:** Real counts of members, sharing, posts, active members, intros and invites.
+- **Credits:** Searches and intro path lookups per day and per member, an estimated cost, and the daily limit per member. Village doesn't tell this site your credit balance, so check it on [Village's platform](https://village.ai/platform/usage) and [buy more there](https://village.ai/platform/settings/billing). If you run out, members see a friendly note and you see a notice here.
+- **Settings:** Come back to any step of the checklist, check email, and see your version.
 
-### Before real use
+**Removing someone:** They're signed out, can't sign back in, and leave the directory. You choose whether their posts and replies stay, which is the default, or go for good. If they're in the Village group, we also ask Village to take them out, using their own account on their behalf, and tell you what happened:
+
+- **It worked:** Their network stops being shared from then on. Anyone who already saw results through them can't unsee those, and anything Village holds outside the group isn't touched.
+- **They created the group:** Village refuses while other members remain, so their network stays shared until everyone else leaves.
+- **Village failed or didn't answer:** They're still removed here, but their network stays shared through Village. Try again from their row in **Members**. Otherwise they have to leave inside Village.
+
+**There's always an admin:** The app refuses to remove the last admin, even if two admins try to remove each other at the same moment. Admins can't change their own role or remove themselves.
+
+## If someone forgets their password
+
+**With email on:** Anyone can use **Forgot your password?** on the sign-in page. The link works once and lasts one hour, and using it signs them out everywhere.
+
+**With email off, for an admin:** Use **I lost my admin password**, on that same page, with your setup token. It works for active admins only, signs you out everywhere and goes in the audit log. Lost the token too? Set a new `SETUP_TOKEN` in your host's settings and redeploy.
+
+**With email off, for a member:** Turn email on, or remove them and use **Invite them back as a new account**. That's a new account: their old private messages stay on the old one, and they don't get them back. There's no way for an admin to set or reset a member's password, on purpose. It would let that admin sign in as them and read their private messages.
+
+## How to get help
+
+- **Something's wrong on your site:** Start with [Troubleshooting](#troubleshooting) below.
+- **Someone can't sign in:** See [If someone forgets their password](#if-someone-forgets-their-password).
+- **Village keys, credits or billing:** Use [Village's platform](https://village.ai/platform/usage).
+- **A bug in this app, or a question:** [Open an issue](https://github.com/VillageHQ/community/issues) on GitHub. Don't paste keys or members' details there.
+
+## Setup token
+
+The setup token is a long password that proves you own the deployment. It needs at least 32 random characters. A password manager's generator works, or run `openssl rand -hex 32`. If it's missing or too weak, `/setup` explains how to fix it and creates nothing. Keep it safe after setup: with email off, it can also change an admin's password.
+
+## Before real use
 
 DigitalOcean's dev database has 512 MiB and no backups. Upgrade to a managed database for real use.
 
-### Getting updates
+## Getting updates
+
+You can see your version in **Admin**, **Settings**. Updates aren't automatic.
 
 - **Railway:** Railway notifies you when the template's repo changes, and you choose when to apply it.
 - **Vercel:** The button copies this repo to your account. Pull changes from this repo into your copy, and each push redeploys.
@@ -76,11 +113,19 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 
 **Invites:** Links are `/join/<token>`, with 256 random bits in the token and only its SHA-256 hash in the `invite` table. One transaction claims the invite and creates the account, so a token can't be used twice, even under concurrency. The account email is always the invite's email, and that's the email Village receives. Accounts start with `email_verified` false. Until the member confirms through the emailed link, or an admin confirms them, the app mints no Village token, records no consent, and refuses join, search and paths. Confirming takes a `POST` with an Origin check, from a signed-in session of the account the token was issued for. Tokens are single-use, last 7 days, and are stored only as hashes. The first admin from `/setup` starts verified, because they hold the deploy password. Migration `0005` marks accounts that predate invites as verified, so existing members keep working. Better Auth's `verify-email` route is refused, because it verifies on a `GET`, and its public `send-verification-email` route stays disabled. `POST /api/invites/accept` checks the Origin and the body size, and answers a used link and an email that already has an account the same way. Unknown links and failed accepts answer 429 after 10 in a minute, per client, but a valid link is never blocked, so one abuser can't lock out an invitee. Someone already signed in must sign out before accepting, so the Village browser session gets cleared.
 
-**Members:** `/members` lists everyone except banned members. Only signed-in members can see it, and emails stay private to admins. Search uses the query builder with `LIKE` wildcards escaped. Profile websites accept only `http` and `https`, checked on save and again on read. LinkedIn is the same `member_network.linkedin_slug` that network search matches on, so its uniqueness rule applies, and a member can change a saved one but not clear it. An admin can clear a claim.
+**Members:** `/members` lists everyone except banned members. Only signed-in members can see it, and emails stay private to admins. **Admin**, **Members** lists everyone, including removed members. Search uses the query builder with `LIKE` wildcards escaped. Profile websites accept only `http` and `https`, checked on save and again on read. LinkedIn is the same `member_network.linkedin_slug` that network search matches on, so its uniqueness rule applies, and a member can change a saved one but not clear it. An admin can clear a claim.
 
-**Feed:** `/` is the signed-in landing page. Posts are plain text with an optional Ask, Win or Offer type, up to 3,000 characters, and replies go one level deep, up to 1,000. Both limits hold on the server and in the database. Text renders through React as text, never as HTML. Only `http` and `https` links up to 2,048 characters become anchors, with `rel="noopener noreferrer"`, and a link with credentials in it stays text. Bidirectional control characters are stripped on save and again on render, so a link's label can't lie about where it goes. Long posts and replies collapse behind **Show more**. Authors can edit and delete their own posts and replies, and an edit shows an "edited" marker. A member editing a pinned post unpins it, so an admin's pin can't vouch for words they didn't see. Reactions come from a fixed set of four. A primary key on post, member and reaction means a double click or a concurrent request can't double count, and the UI updates first and rolls back on failure. Pagination uses a keyset on `created_at` and `id`, at millisecond precision so the cursor survives JavaScript dates. A "new posts" check polls every 30 seconds, every 2 minutes after a failure, and only while the tab is visible. Unverified accounts can read and post, because network verification is separate. Banned members' posts, replies and reactions leave the feed for members and return if a temporary ban ends. Admins still see those posts and replies, marked banned, so they can delete them.
+**Feed:** `/` is the signed-in landing page. Posts are plain text with an optional Ask, Win or Offer type, up to 3,000 characters, and replies go one level deep, up to 1,000. Both limits hold on the server and in the database. Text renders through React as text, never as HTML. Only `http` and `https` links up to 2,048 characters become anchors, with `rel="noopener noreferrer"`, and a link with credentials in it stays text. Bidirectional control characters are stripped on save and again on render, so a link's label can't lie about where it goes. Long posts and replies collapse behind **Show more**. Authors can edit and delete their own posts and replies, and an edit shows an "edited" marker. A member editing a pinned post unpins it, so an admin's pin can't vouch for words they didn't see. Reactions come from a fixed set of four. A primary key on post, member and reaction means a double click or a concurrent request can't double count, and the UI updates first and rolls back on failure. Pagination uses a keyset on `created_at` and `id`, at millisecond precision so the cursor survives JavaScript dates. A "new posts" check polls every 30 seconds, every 2 minutes after a failure, and only while the tab is visible. Unverified accounts can read and post, because network verification is separate. Banned members' posts, replies and reactions leave the feed for members and return if a temporary ban ends. Admins still see those posts and replies, marked banned, so they can delete them. The exception is a member an admin removed with **Keep**: their posts and replies stay for everyone, read-only, marked "No longer a member", with no profile link and no new replies or reactions. Their own reactions stop counting.
 
-**Moderation:** Admins can pin up to 3 posts, counting pins on banned members' posts, and delete any post or reply. They can't edit someone else's words. Every delete by an admin writes rows to `moderation_record`, in the same transaction, with who deleted it, whose it was, its text and when. Deleting a post writes one more row for each reply it removes, linked by `parent_post_id`. The rows outlive the accounts. A member deleting their own content leaves no record: it's gone. There's no screen for these records yet.
+**Moderation:** Admins can pin up to 3 posts, counting pins on banned members' posts, and delete any post or reply. They can't edit someone else's words. Every delete by an admin writes rows to `moderation_record`, in the same transaction, with who deleted it, whose it was, its text and when. Deleting a post writes one more row for each reply it removes, linked by `parent_post_id`. The rows outlive the accounts. A member deleting their own content leaves no record: it's gone.
+
+**Reports:** A member can report someone else's post or reply, and an introducer can report the note on an ask that reached them. Each saves a copy in `content_report`, one per reporter per target, with who wrote it, who reported it and when. Message reports stay in `message_report`. The copies survive later edits and deletes. **Admin**, **Reports** reads both tables and is the only place a reporter's name appears. Dismissing or deleting closes every open report on the same target. Removing a member closes every open report against them. Only posts and replies can be deleted from the queue.
+
+**Audit log:** `admin_audit_entry` records role changes, removals, group departures, unbans, approvals, LinkedIn and Village link changes, invites, report decisions, pins, the daily limit, keys, the group, branding, the logo, the domain and password resets, with who and when. It holds no message or note text. Every admin action writes it in the same transaction as the change, after re-reading the acting admin's role with a shared row lock, so a removal can't overtake an action in flight or the other way round. A password reset by email writes it right after Better Auth saves the new password, because Better Auth can't join our transaction. **Admin**, **Audit log** shows it merged with `moderation_record`, newest first. There's no route that edits or deletes either table.
+
+**Roles and removal:** `/api/admin/members/role`, `/remove` and `/unban`, and **Wrong person?**, run in one transaction that first takes a Postgres advisory lock, then re-reads the acting admin, then checks the target and the admin count, then writes. So two admins acting on each other can't both land, and the second gets a 403. Removing sets `banned`, drops the role to member, deletes the sessions and cached paths, and writes `member_removal` with the content choice. It doesn't delete the account, so **Unban** can bring them back as a member. Better Auth's `set-role`, `ban-user`, `unban-user`, `remove-user`, `revoke-user-sessions` and `update-user` answer 404, because they can't join that transaction and would skip the audit log. An account locked by **Wrong person?**, or replaced by **Invite them back as a new account**, has no email left, so it can't be unbanned.
+
+**Leaving the group on removal:** After the removal commits, the app mints the member's own Village token and calls `POST /v2/groups/leave`, the same call a member's Leave button makes, and stores the outcome in `member_removal`. It checks first that the linked Village account has the member's email or an approved one, so it never acts for someone else's account. Village has no admin route for this, so it works only for accounts this site can still mint a token for. A failure never undoes the removal. **Reset Village link** leaves the old account in the group, so the app keeps its old ID in `stale_group_external_id`, still shows the member as in the group, and tries that ID too on removal. Leaving stops sharing from then on. It doesn't undo what anyone already saw.
 
 **Messages:** `/messages` holds one-to-one conversations, text only, up to 4,000 characters on the server and in the database. Text gets the feed's treatment: bidirectional controls are stripped on save and on render, it renders as text, and only safe `http` and `https` links become anchors. A check and a unique constraint on a canonical pair of member IDs mean one conversation per pair, even under concurrent starts. A member starts one from a profile, a directory card, or **Say hi** in **New this week**. Sends carry a client-generated key, unique per conversation and sender, so a retry or a double click can't duplicate. Deleting your own message erases its text and leaves "Message deleted" for both of you. There is no editing. Older messages load by a keyset on a per-conversation sequence. The inbox loads 30 conversations at a time and searches by name on the server.
 
@@ -88,7 +133,7 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 
 **Unread:** Each member has a read cursor per conversation. Opening a conversation with the tab visible moves it. New messages reach screen readers through a polite status region, separate from the list, so loading older ones announces nothing. There are no read receipts: the other member's cursor never reaches the browser, because it would reveal a block.
 
-**Message privacy:** Only the two participants can read or send, on every route, page and cursor. Anyone else gets the same 404 as for an ID that doesn't exist. **Admins can't read DMs in this app**: no route, page or role reaches them. Better Auth's admin routes are an allowlist, so `impersonate-user`, `stop-impersonating`, `set-user-password`, `create-user`, `list-user-sessions` and `revoke-user-session` answer 404 for everyone, including server-side calls, and any route an upgrade adds stays closed until someone allows it. `update-user` changes only a name, a role or a ban, never a sign-in email. Password reset has no sender configured, so it issues no token. Moderation works through reports. **Report** on a message you received saves a copy of that message's text in `message_report`, with who sent it, who reported it and when, and nothing else from the conversation. The copy survives a later delete and both accounts. There's no screen for reports yet, so nobody reviews them until that ships. **Messages aren't end-to-end encrypted.** They sit in Postgres as plain text, so anyone with database access to your deployment can read them, including backups. The app says so, and you should tell your members who runs it.
+**Message privacy:** Only the two participants can read or send, on every route, page and cursor. Anyone else gets the same 404 as for an ID that doesn't exist. **Admins can't read DMs in this app**: no route, page or role reaches them, and the only message text they ever see is a reported copy. Better Auth's admin routes are an allowlist, so `impersonate-user`, `stop-impersonating`, `set-user-password`, `create-user`, `list-user-sessions` and `revoke-user-session` answer 404 for everyone, including server-side calls, and any route an upgrade adds stays closed until someone allows it. Moderation works through reports. **Report** on a message you received saves a copy of that message's text in `message_report`, with who sent it, who reported it and when, and nothing else from the conversation. The copy survives a later delete and both accounts. Admins review it in **Admin**, **Reports**, and can't delete the message itself. **Messages aren't end-to-end encrypted.** They sit in Postgres as plain text, so anyone with database access to your deployment can read them, including backups. The app says so, and you should tell your members who runs it.
 
 **Blocking:** A member can block another from the thread or their profile. The blocked member isn't told: they can still open the conversation and send, and each message looks delivered to them but never reaches the blocker, their inbox or their unread count. Those messages stay hidden after an unblock. A blocker can't send until they unblock. A banned member's sessions die as usual, so they can't read or send. The other member keeps the thread in their inbox, read-only, can still report it, and can't send while the ban lasts.
 
@@ -100,7 +145,7 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 
 **The target hears nothing from this app:** The portal has no email for the person being introduced and contacts nobody. On a yes, the introducer copies a ready-made note that includes what the requester wrote, sends it themselves, then marks it as introduced. The ask dialog says the note may be passed on. Consent says "You say yes or no to every intro anyone asks you for", and that covers intros only. Being findable in search and appearing on someone's path isn't controlled per intro.
 
-**Intro privacy:** Only the requester and the introducer can see an ask, on every route and page. The API answers anyone else, admins included, with the same 404 as for an ID that doesn't exist. The page shows them the same "isn't available" screen, with HTTP 200 because Next has already started streaming, and none of the ask. Admins see only counts by state, in **Admin**. A decline reason is optional and private to the introducer: the API never sends it to the requester, who sees a kind, neutral message. Notes and reasons sit in Postgres as plain text, like messages, so anyone with database access to your deployment can read them. Notes can't be reported yet: an introducer can decline and block.
+**Intro privacy:** Only the requester and the introducer can see an ask, on every route and page. The API answers anyone else, admins included, with the same 404 as for an ID that doesn't exist. The page shows them the same "isn't available" screen, with HTTP 200 because Next has already started streaming, and none of the ask. Admins see only counts by state, in **Admin**, **Health**, plus the copy of a note an introducer reported, with nothing else about that ask. A decline reason is optional and private to the introducer: the API never sends it to the requester, who sees a kind, neutral message. Notes and reasons sit in Postgres as plain text, like messages, so anyone with database access to your deployment can read them. An introducer can report a note, decline and block.
 
 **Intro email:** With Resend configured, the introducer gets an email on a new ask, and the requester on an accept or a decline. These carry names and a sign-in link, never the note, the relationship or a decline reason. A requester can trigger one new-ask email per introducer per 24 hours, so asking and withdrawing can't flood anyone. The badge still shows every ask. They send after the response, so a slow or failing send never breaks the action and timing can't reveal a block.
 
@@ -110,17 +155,17 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 
 **Village:** The server mints each member's token with `POST /v2/auth/tokens`, then calls the v2 API. The secret key and tokens never reach the browser, and the app never reads the SDK's `village.token` cookie. The browser only runs the App SDK for sync, and it's identified by an opaque UUID per member. Tokens need an email, so Village receives the member's email. Keys and the invite link live in `instance_settings` in plaintext, like the generated auth secret, so anyone with database read access can read them. Sign-out clears the SDK's `village.token` from this site only. Village's own session on its domain stays, so on a shared browser the next member's popup can reuse the first member's Village account. The email check below blocks that link until an admin approves it.
 
-**Village link check:** Village doesn't sign the member reference in its widget, so anyone can send someone else a link that ties that person's Village account to their member ID. The app compares the email on `/v2/user/me` with the member's email, case-insensitively, before every join, search and path lookup. A match counts only when the member's email is verified, because a forwarded invite could otherwise own an account with someone else's email. On a mismatch it blocks them and tells the member to ask an admin. **Admin** lists the mismatch, and an admin can approve that exact pair of emails. A later change to either email blocks again. An admin can also reset a member's link there, which gives the member a new ID and clears their consent, group status and cached paths on this site. Reset removes nothing on Village's side: the old Village account stays linked to the old ID and stays in the group until it leaves inside Village, and Village won't link that same account to this site again yet.
+**Village link check:** Village doesn't sign the member reference in its widget, so anyone can send someone else a link that ties that person's Village account to their member ID. The app compares the email on `/v2/user/me` with the member's email, case-insensitively, before every join, search and path lookup. A match counts only when the member's email is verified, because a forwarded invite could otherwise own an account with someone else's email. On a mismatch it blocks them and tells the member to ask an admin. **Admin**, **Members** shows them as *Blocked for approval*, and an admin can approve that exact pair of emails. A later change to either email blocks again. An admin can also reset a member's link there, which gives the member a new ID and clears their consent, group status and cached paths on this site. Reset removes nothing on Village's side: the old Village account stays linked to the old ID and stays in the group until it leaves inside Village, and Village won't link that same account to this site again yet.
 
-**Credit limits:** Each member gets `DAILY_CREDIT_CALL_LIMIT` searches and uncached path lookups per UTC day, 50 by default, in `src/lib/village/daily-usage.ts`. Path results stay cached per member for 24 hours. Village error responses (400 and up) don't count, because Village doesn't debit them. Timeouts, network errors and any response that isn't a Village JSON error do count, including a proxy's HTML 502, because Village may have debited them.
+**Credit limits:** Each member gets a daily number of searches and uncached path lookups per UTC day, 50 by default. An admin can set it from 1 to 500 in **Admin**, **Credits**, stored in `instance_settings`. Path results stay cached per member for 24 hours. Village error responses (400 and up) don't count, because Village doesn't debit them. Timeouts, network errors and any response that isn't a Village JSON error do count, including a proxy's HTML 502, because Village may have debited them.
+
+**Credit estimates:** The app records lookups, not credits, and `member_daily_usage.search_count` says how many were searches. **Credits** counts about 11 credits for a search, which is a full page of results, and 5 for `POST /v2/people/paths`, at $0.02 a credit. Searches with fewer results cost less, and Village's prices can change, so it's labeled an estimate. Usage from before this count existed reads as path lookups. `GET /v2/app` returns no balance and `/v2/credits` isn't open to an app's secret key, so the app shows no balance and links to Village's platform. Village answers 402 with a flat `{"error":"insufficient_credits"}`, not its usual error object, and the client reads both. Members get a plain note, the app stores the time in `instance_settings`, and **Admin** shows a badge and a notice until the next lookup succeeds.
+
+**Village status:** **Members** reads it from `member_network`, without calling Village. *Blocked for approval* means a mismatched Village email is waiting. *Ready* means they joined the group. *Syncing* means this site has seen their Village account but they haven't joined. *Sharing* means they agreed but this site hasn't seen their Village account. *Not shared* is everyone else. `village_linked_at` is set the next time the member's status loads, so accounts from before this version read as *Sharing* until then.
 
 **Query timeouts:** Queries time out after 10 seconds on the client. Direct connections also set `statement_timeout`. The app omits it when `DATABASE_URL_UNPOOLED` is set or the hostname contains `-pooler`, because PgBouncer can reject it as a startup parameter. Any other transaction pooler that rejects it needs one of those signals.
 
-**Lost admin:** The app refuses to demote, ban or remove the last admin through Better Auth's routes. Two admins demoting each other at the same instant can still race past this check. `/setup` never reopens. To recover, run this against your database:
-
-```sql
-UPDATE "user" SET role = 'admin', banned = false WHERE email = 'you@example.com';
-```
+**Password recovery:** With Resend set, `/forgot-password` calls Better Auth's `request-password-reset`, which answers the same for any email, and the email links to `/reset-password?token=`, where submitting a form spends the token. Better Auth's GET link stays closed, so a mail scanner can't use it. Requests are limited to 5 a minute per client and 3 emails a minute per account. Removed members get no email. Without Resend, `POST /api/recover-admin` needs the setup token, checked in constant time, with failures limited like `/api/setup`. It refuses weak tokens, other sites, anyone but an active admin, and every request once Resend is set. There are no admin-issued reset links, because they'd let an admin read a member's DMs.
 
 **Bans:** Every signed-in page and member route, plus the invite and email confirmation pages, checks the session's ban. A banned member's sessions are deleted on their next request, even if the ban was set directly in the database, and Better Auth refuses their next sign-in.
 
@@ -140,7 +185,7 @@ With no trusted header, all clients share one bucket per path. That can't be spo
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Postgres connection for the app. |
-| `SETUP_TOKEN` | For setup | Unlocks `/setup`. 32+ random characters. |
+| `SETUP_TOKEN` | For setup | Unlocks `/setup`, and admin password recovery when email is off. 32+ random characters. |
 | `APP_URL` | Self-hosting | Public origin. Takes priority over platform variables. |
 | `DATABASE_URL_UNPOOLED` | No | Direct connection, preferred for migrations. |
 | `VILLAGE_API_URL` | No | Village API origin. Defaults to production. |

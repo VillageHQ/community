@@ -56,3 +56,7 @@ export function transitionIntroRequest(body: IntroTransitionBody) {
 export function markIntrosSeenRequest(introId: string | null) {
   return postNetworkRequest(API_ROUTES.introSeen, { introId }, acknowledgedResponseSchema);
 }
+
+export function reportIntroNoteRequest(introId: string) {
+  return postNetworkRequest(API_ROUTES.introReport, { introId }, acknowledgedResponseSchema);
+}

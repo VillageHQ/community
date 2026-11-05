@@ -11,6 +11,8 @@ export const memberNetwork = pgTable("member_network", {
   linkedinConfirmedSlug: text("linkedin_confirmed_slug"),
   sharingConsentedAt: timestamp("sharing_consented_at", { withTimezone: true }),
   groupJoinedAt: timestamp("group_joined_at", { withTimezone: true }),
+  villageLinkedAt: timestamp("village_linked_at", { withTimezone: true }),
+  staleGroupExternalId: uuid("stale_group_external_id"),
   pendingVillageEmail: text("pending_village_email"),
   approvedMemberEmail: text("approved_member_email"),
   approvedVillageEmail: text("approved_village_email"),
@@ -37,6 +39,7 @@ export const memberDailyUsage = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     usageDate: date("usage_date", { mode: "string" }).notNull(),
     callCount: integer("call_count").notNull(),
+    searchCount: integer("search_count").notNull().default(0),
   },
   (table) => [primaryKey({ columns: [table.userId, table.usageDate] })],
 );

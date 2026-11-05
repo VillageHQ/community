@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Clock, RefreshCw, type LucideIcon } from "lucide-react";
+import { BatteryLow, Clock, RefreshCw, type LucideIcon } from "lucide-react";
 import { useEffect } from "react";
 import type { FallbackProps } from "react-error-boundary";
 
@@ -30,6 +30,12 @@ const WARM_STEPS: Record<string, WarmStep> = {
     title: "That's today's lookups",
     description: "You've used today's lookups. They come back tomorrow, and everything you already opened is still here.",
     action: null,
+  },
+  [NETWORK_ERROR_CODES.outOfCredits]: {
+    icon: BatteryLow,
+    title: "Lookups are paused for now",
+    description: "This community has run out of Village credits. Your admin can see this and add more, so you don't need to do anything. Everything you already opened is still here.",
+    action: "Check again",
   },
 };
 

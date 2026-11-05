@@ -151,13 +151,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
       {isOwnProfile ? null : <BlockMemberButton memberId={profile.id} memberName={profile.name} isBlocked={isBlockedByViewer} />}
 
       {isAdminMember(viewer) ? (
-        <AdminMemberPanel
-          memberId={profile.id}
-          email={profile.email}
-          isEmailConfirmed={profile.emailVerified}
-          linkedinUrl={profile.linkedinSlug ? toLinkedinUrl(profile.linkedinSlug) : null}
-          isLinkedinConfirmed={profile.isLinkedinConfirmed}
-        />
+        <AdminMemberPanel email={profile.email} isEmailConfirmed={profile.emailVerified} isLinkedinConfirmed={profile.isLinkedinConfirmed} />
       ) : null}
     </div>
   );

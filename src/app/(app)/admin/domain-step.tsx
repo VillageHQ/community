@@ -6,7 +6,7 @@ import { useActionState } from "react";
 import { CopyButton } from "@/components/copy-button";
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
-import { API_ROUTES, ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/lib/routes";
 import { acknowledgedResponseSchema } from "@/lib/village/network-api";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 
@@ -17,7 +17,7 @@ const INITIAL_STATE: DomainState = { errorMessage: null };
 async function confirmDomain(): Promise<DomainState> {
   try {
     await postNetworkRequest(API_ROUTES.setupDomain, { confirmed: true }, acknowledgedResponseSchema);
-    window.location.assign(ROUTES.admin);
+    window.location.assign(window.location.pathname);
     return INITIAL_STATE;
   } catch (error) {
     return { errorMessage: error instanceof Error ? error.message : "Saving failed. Try again." };

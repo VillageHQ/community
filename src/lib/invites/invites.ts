@@ -6,24 +6,29 @@ import { hashPassword } from "better-auth/crypto";
 import { and, asc, count, desc, eq, gt, isNotNull, isNull, lte } from "drizzle-orm";
 
 import { account, session, user, verification } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import type { Database, DatabaseOrTransaction, Transaction } from "../../database/client.ts";
+import { memberRemoval } from "../../database/admin-schema.ts";
 import { invite, memberProfile } from "../../database/members-schema.ts";
 import { memberNetwork, memberPathResult } from "../../database/village-schema.ts";
 import { resolveAppUrl } from "../app-url.ts";
 import { readBranding } from "../branding/branding.ts";
 import { ROUTES } from "../routes.ts";
-import { isActiveMember } from "../members/active-member.ts";
+import { AUDIT_ACTIONS, type AuditAction } from "../admin/admin-api.ts";
+import { withAdminTransaction } from "../admin/admin-transaction.ts";
+import { recordAdminAction } from "../admin/audit.ts";
+import { withAdminRosterLock } from "../admin/member-roster.ts";
+import { isActiveMember, isBanActive } from "../members/active-member.ts";
 import { secretsMatch } from "../secrets-match.ts";
-import { isAdminMember, NetworkRequestError, type NetworkContext } from "../village/member-network.ts";
+import { DEPARTURE_SENTENCES, leaveGroupOnBehalf } from "../village/group-departure.ts";
+import { isAdminMember, NetworkRequestError, staleGroupAfterLinkClears, type NetworkContext } from "../village/member-network.ts";
 import { INVITE_ERROR_CODES, INVITE_FILTERS, type InviteFilter, type InviteSummary } from "./invite-api.ts";
 import { toConfirmationIdentifier } from "./email-confirmation.ts";
 import { deliverInviteEmail } from "./invite-email.ts";
-import { INVITE_STATES, parseInviteEmailStatus, readInviteExpiry, readInviteState, type InviteState } from "./invite-state.ts";
+import { INVITE_STATES, isReclaimedEmail, parseInviteEmailStatus, RECLAIMED_EMAIL_DOMAIN, readInviteExpiry, readInviteState, type InviteState } from "./invite-state.ts";
 import { createInviteToken, hashInviteToken, isInviteTokenShape } from "./invite-token.ts";
 
 const CONFLICT_STATUS = 409;
 const INVITE_PAGE_SIZE = 10;
-const RECLAIMED_EMAIL_DOMAIN = "reclaimed.invalid";
 const RECLAIMED_BAN_REASON = "An admin reclaimed this invite for its real owner.";
 const MEMBER_ROLE = "user";
 const CREDENTIAL_PROVIDER_ID = "credential";
@@ -60,6 +65,10 @@ async function readInviter({ database, member }: NetworkContext) {
   return { id: member.id, name: inviter?.name ?? "" };
 }
 
+function recordInviteAction(transaction: Transaction, { member }: NetworkContext, action: AuditAction, email: string) {
+  return recordAdminAction(transaction, member.id, { action, targetName: email });
+}
+
 function toInviteLink(environment: NetworkContext["environment"], token: string) {
   return `${resolveAppUrl(environment)}${ROUTES.join}/${token}`;
 }
@@ -76,10 +85,10 @@ async function issueInvite(context: NetworkContext, row: InviteRow, token: strin
   return { invite: toInviteSummary({ ...row, emailStatus }), link, message };
 }
 
-async function rotateInvite(context: NetworkContext, inviteId: string) {
+async function rotateInvite(connection: DatabaseOrTransaction, context: NetworkContext, inviteId: string) {
   const inviter = await readInviter(context);
   const token = createInviteToken();
-  const [rotated] = await context.database
+  const [rotated] = await connection
     .update(invite)
     .set({
       tokenHash: hashInviteToken(token),
@@ -93,14 +102,18 @@ async function rotateInvite(context: NetworkContext, inviteId: string) {
   return { rotated, token };
 }
 
-async function requireNoMemberWithEmail(database: Database, email: string) {
-  const [existing] = await database.select({ id: user.id }).from(user).where(eq(user.email, email));
+async function requireNoMemberWithEmail(connection: DatabaseOrTransaction, email: string) {
+  const [existing] = await connection.select({ id: user.id }).from(user).where(eq(user.email, email));
   if (!existing) return;
-  throw new NetworkRequestError(CONFLICT_STATUS, INVITE_ERROR_CODES.alreadyMember, "This person already has an account.");
+  throw new NetworkRequestError(
+    CONFLICT_STATUS,
+    INVITE_ERROR_CODES.alreadyMember,
+    "This person already has an account. If they were removed, open them in the list above to unban them or invite them back as a new account.",
+  );
 }
 
-async function renewExpiredInvite(context: NetworkContext, email: string) {
-  const [open] = await context.database
+async function renewExpiredInvite(connection: DatabaseOrTransaction, context: NetworkContext, email: string) {
+  const [open] = await connection
     .select()
     .from(invite)
     .where(and(eq(invite.email, email), OPEN_INVITE));
@@ -112,44 +125,57 @@ async function renewExpiredInvite(context: NetworkContext, email: string) {
       "This person already has a pending invite. Use Resend in the list below.",
     );
   }
-  return rotateInvite(context, open.id);
+  return rotateInvite(connection, context, open.id);
 }
 
 export async function createInvite(context: NetworkContext, email: string) {
-  const { database } = context;
-  await requireNoMemberWithEmail(database, email);
-
+  const { database, member } = context;
   const inviter = await readInviter(context);
   const token = createInviteToken();
-  const [created] = await database
-    .insert(invite)
-    .values({
-      email,
-      tokenHash: hashInviteToken(token),
-      invitedByUserId: inviter.id,
-      invitedByName: inviter.name,
-      expiresAt: readInviteExpiry(),
-    })
-    .onConflictDoNothing({ target: invite.email, where: OPEN_INVITE })
-    .returning();
-  if (created) return issueInvite(context, created, token, "Invite created.");
-
-  const { rotated, token: renewedToken } = await renewExpiredInvite(context, email);
-  return issueInvite(context, rotated, renewedToken, "Invite renewed.");
+  const issued = await withAdminTransaction(database, member.id, async (transaction) => {
+    await requireNoMemberWithEmail(transaction, email);
+    const [created] = await transaction
+      .insert(invite)
+      .values({
+        email,
+        tokenHash: hashInviteToken(token),
+        invitedByUserId: inviter.id,
+        invitedByName: inviter.name,
+        expiresAt: readInviteExpiry(),
+      })
+      .onConflictDoNothing({ target: invite.email, where: OPEN_INVITE })
+      .returning();
+    if (created) {
+      await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteCreated, email);
+      return { row: created, token, message: "Invite created." };
+    }
+    const { rotated, token: renewedToken } = await renewExpiredInvite(transaction, context, email);
+    await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteResent, email);
+    return { row: rotated, token: renewedToken, message: "Invite renewed." };
+  });
+  return issueInvite(context, issued.row, issued.token, issued.message);
 }
 
 export async function resendInvite(context: NetworkContext, inviteId: string) {
-  const { rotated, token } = await rotateInvite(context, inviteId);
+  const { rotated, token } = await withAdminTransaction(context.database, context.member.id, async (transaction) => {
+    const result = await rotateInvite(transaction, context, inviteId);
+    await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteResent, result.rotated.email);
+    return result;
+  });
   return issueInvite(context, rotated, token, "New link ready. The old link no longer works.");
 }
 
-export async function revokeInvite({ database }: NetworkContext, inviteId: string) {
-  const [revoked] = await database
-    .update(invite)
-    .set({ revokedAt: new Date() })
-    .where(and(eq(invite.id, inviteId), OPEN_INVITE))
-    .returning();
-  if (!revoked) throw inviteChangedError();
+export async function revokeInvite(context: NetworkContext, inviteId: string) {
+  const revoked = await withAdminTransaction(context.database, context.member.id, async (transaction) => {
+    const [row] = await transaction
+      .update(invite)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(invite.id, inviteId), OPEN_INVITE))
+      .returning();
+    if (!row) throw inviteChangedError();
+    await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteRevoked, row.email);
+    return row;
+  });
   return toInviteSummary(revoked);
 }
 
@@ -169,7 +195,7 @@ async function countInvites(database: Database, filter: InviteFilter, now: Date)
   return row?.inviteCount ?? 0;
 }
 
-async function readInviteCounts(database: Database, now: Date) {
+export async function readInviteCounts(database: Database, now: Date) {
   const [all, pending, accepted, expired, revoked] = await Promise.all([
     countInvites(database, INVITE_FILTERS.all, now),
     countInvites(database, INVITE_FILTERS.pending, now),
@@ -262,12 +288,12 @@ export async function readInviterOfMember(database: Database, memberId: string) 
 }
 
 export async function reclaimInvite(context: NetworkContext, inviteId: string) {
-  const { database } = context;
+  const { database, member } = context;
   const inviter = await readInviter(context);
   const token = createInviteToken();
   const now = new Date();
 
-  const replacement = await database.transaction(async (transaction) => {
+  const replacement = await withAdminRosterLock(database, member.id, async (transaction) => {
     const [claimed] = await transaction
       .update(invite)
       .set({ revokedAt: now })
@@ -277,9 +303,10 @@ export async function reclaimInvite(context: NetworkContext, inviteId: string) {
     const { email, claimedUserId } = claimed;
 
     const [claimant] = await transaction
-      .select({ id: user.id, email: user.email, role: user.role })
+      .select({ id: user.id, name: user.name, email: user.email, role: user.role })
       .from(user)
-      .where(eq(user.id, claimedUserId));
+      .where(eq(user.id, claimedUserId))
+      .for("update");
     if (!claimant || isAdminMember(claimant)) throw inviteChangedError();
 
     await transaction
@@ -296,17 +323,20 @@ export async function reclaimInvite(context: NetworkContext, inviteId: string) {
     await transaction
       .update(memberNetwork)
       .set({
+        staleGroupExternalId: staleGroupAfterLinkClears(),
         linkedinSlug: null,
         linkedinConfirmedSlug: null,
         villageExternalId: randomUUID(),
         sharingConsentedAt: null,
         groupJoinedAt: null,
+        villageLinkedAt: null,
         pendingVillageEmail: null,
         approvedMemberEmail: null,
         approvedVillageEmail: null,
       })
       .where(eq(memberNetwork.userId, claimedUserId));
     await transaction.delete(memberPathResult).where(eq(memberPathResult.userId, claimedUserId));
+    await transaction.insert(memberRemoval).values({ userId: claimedUserId, keepsContent: false, removedByUserId: member.id }).onConflictDoNothing();
 
     const [created] = await transaction
       .insert(invite)
@@ -319,10 +349,63 @@ export async function reclaimInvite(context: NetworkContext, inviteId: string) {
       })
       .returning();
     if (!created) throw inviteChangedError();
-    return created;
+    await recordAdminAction(transaction, member.id, {
+      action: AUDIT_ACTIONS.inviteReclaimed,
+      targetMemberId: claimedUserId,
+      targetName: claimant.name,
+      detail: email,
+    });
+    return { created, claimant, email, claimedUserId };
   });
 
-  return issueInvite(context, replacement, token, "We locked that account and made a new invite.");
+  const outcome = await leaveGroupOnBehalf(context, {
+    memberId: replacement.claimedUserId,
+    memberName: replacement.claimant.name,
+    email: replacement.email,
+  });
+  const lockedMessage = "We locked that account and made a new invite.";
+  const message = outcome ? `${lockedMessage} ${DEPARTURE_SENTENCES[outcome](replacement.claimant.name)}` : lockedMessage;
+  return issueInvite(context, replacement.created, token, message);
+}
+
+export async function reinviteRemovedMember(context: NetworkContext, memberId: string) {
+  const { database, member } = context;
+  const inviter = await readInviter(context);
+  const token = createInviteToken();
+  const reinvited = await withAdminRosterLock(database, member.id, async (transaction) => {
+    const [target] = await transaction
+      .select({ id: user.id, name: user.name, email: user.email, banned: user.banned, banExpires: user.banExpires })
+      .from(user)
+      .where(eq(user.id, memberId))
+      .for("update");
+    if (!target || !isBanActive(target) || isReclaimedEmail(target.email)) {
+      throw new NetworkRequestError(CONFLICT_STATUS, INVITE_ERROR_CODES.changed, "This member changed. Reload the page and check again.");
+    }
+    await transaction
+      .update(user)
+      .set({ email: `reclaimed-${target.id}@${RECLAIMED_EMAIL_DOMAIN}`, emailVerified: false })
+      .where(eq(user.id, target.id));
+    await transaction.delete(verification).where(eq(verification.identifier, toConfirmationIdentifier(target.id)));
+    await transaction.update(memberNetwork).set({ linkedinSlug: null, linkedinConfirmedSlug: null }).where(eq(memberNetwork.userId, target.id));
+    await transaction.update(invite).set({ revokedAt: new Date() }).where(and(eq(invite.email, target.email), OPEN_INVITE));
+    const [created] = await transaction
+      .insert(invite)
+      .values({
+        email: target.email,
+        tokenHash: hashInviteToken(token),
+        invitedByUserId: inviter.id,
+        invitedByName: inviter.name,
+        expiresAt: readInviteExpiry(),
+      })
+      .returning();
+    if (!created) throw inviteChangedError();
+    await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.memberReinvited, targetMemberId: target.id, targetName: target.name, detail: target.email });
+    return { created, target };
+  });
+  const outcome = await leaveGroupOnBehalf(context, { memberId, memberName: reinvited.target.name, email: reinvited.target.email });
+  const madeMessage = "We made a new invite. It creates a new account, and the old one can't come back.";
+  const message = outcome ? `${madeMessage} ${DEPARTURE_SENTENCES[outcome](reinvited.target.name)}` : madeMessage;
+  return issueInvite(context, reinvited.created, token, message);
 }
 
 class InviteEmailTakenError extends Error {}

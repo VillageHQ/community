@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, type Ref } from "react";
 
 import { FormError } from "@/components/form-error";
@@ -71,6 +72,9 @@ export function SignInForm({ returnPath = ROUTES.landing }: { returnPath?: strin
       <SignInFields state={state} passwordRef={passwordRef} />
       <Button type="submit" size="lg" disabled={isPending}>
         {isPending ? "Signing in…" : "Sign in"}
+      </Button>
+      <Button asChild variant="link" size="sm" className="justify-self-center">
+        <Link href={ROUTES.forgotPassword}>Forgot your password?</Link>
       </Button>
     </form>
   );

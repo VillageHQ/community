@@ -71,10 +71,9 @@ type InviteRowProps = {
   isEmailConfigured: boolean;
   issued: IssuedInvite | null;
   onIssued: (issued: IssuedInvite) => void;
-  onReclaimed: (issued: IssuedInvite) => void;
 };
 
-function InviteRow({ invite, isEmailConfigured, issued, onIssued, onReclaimed }: InviteRowProps) {
+function InviteRow({ invite, isEmailConfigured, issued, onIssued }: InviteRowProps) {
   const queryClient = useQueryClient();
   const resendMutation = useMutation({
     mutationFn: resendInviteRequest,
@@ -144,7 +143,7 @@ function InviteRow({ invite, isEmailConfigured, issued, onIssued, onReclaimed }:
             </Button>
           ) : null}
           {state === INVITE_STATES.accepted ? (
-            <ReclaimAction inviteId={id} email={email} onReclaimed={onReclaimed} />
+            <ReclaimAction inviteId={id} email={email} fallbackFocusId={INVITES_TITLE_ID} />
           ) : null}
         </div>
       </div>
@@ -160,7 +159,6 @@ type InviteRowsProps = {
   isEmailConfigured: boolean;
   issued: IssuedInvite | null;
   onIssued: (issued: IssuedInvite) => void;
-  onReclaimed: (issued: IssuedInvite) => void;
   onPageChange: (page: number) => void;
   onFilterChange: (filter: InviteFilter) => void;
 };
@@ -177,7 +175,7 @@ function InviteFilters({ data, filter, onFilterChange }: { data: InviteListData;
   );
 }
 
-function InviteRows({ page: requestedPage, filter, isEmailConfigured, issued, onIssued, onReclaimed, onPageChange, onFilterChange }: InviteRowsProps) {
+function InviteRows({ page: requestedPage, filter, isEmailConfigured, issued, onIssued, onPageChange, onFilterChange }: InviteRowsProps) {
   const { data } = useSuspenseQuery(inviteListQuery(requestedPage, filter));
   if (data.counts.all === 0) {
     return (
@@ -204,7 +202,6 @@ function InviteRows({ page: requestedPage, filter, isEmailConfigured, issued, on
               isEmailConfigured={isEmailConfigured}
               issued={issued}
               onIssued={onIssued}
-              onReclaimed={onReclaimed}
             />
           ))}
         </ul>
@@ -218,10 +215,9 @@ type InviteListProps = {
   isEmailConfigured: boolean;
   issued: IssuedInvite | null;
   onIssued: (issued: IssuedInvite) => void;
-  onReclaimed: (issued: IssuedInvite) => void;
 };
 
-export function InviteList({ isEmailConfigured, issued, onIssued, onReclaimed }: InviteListProps) {
+export function InviteList({ isEmailConfigured, issued, onIssued }: InviteListProps) {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<InviteFilter>(INVITE_FILTERS.all);
   const deferredPage = useDeferredValue(page);
@@ -239,7 +235,6 @@ export function InviteList({ isEmailConfigured, issued, onIssued, onReclaimed }:
           isEmailConfigured={isEmailConfigured}
           issued={issued}
           onIssued={onIssued}
-          onReclaimed={onReclaimed}
           onFilterChange={(nextFilter) => {
             setFilter(nextFilter);
             setPage(1);

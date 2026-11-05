@@ -25,7 +25,7 @@ async function submitGroup(_previousState: GroupState, formData: FormData): Prom
       { name: formData.get("name"), acknowledged: formData.get(ACKNOWLEDGE_FIELD) === "on" },
       acknowledgedResponseSchema,
     );
-    window.location.assign(ROUTES.admin);
+    window.location.assign(window.location.pathname);
     return INITIAL_STATE;
   } catch (error) {
     return { errorMessage: error instanceof Error ? error.message : "That failed. Try again." };
