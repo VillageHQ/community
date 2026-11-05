@@ -304,7 +304,7 @@ These appear in the mockup but aren't built or promised yet:
 - **"You say yes or no to every intro."** The current consent copy says members can ask. It doesn't state this. The intro workflow must enforce it before this ships.
 - **"Jonas reads your note first. Clara hears nothing unless he says yes."** Same dependency.
 - **"Not now" on the consent screen.** The current flow reads "Share your network to join". The mockup lets a founder in without sharing and holds back network search only.
-- **Ask/Win/Offer post types, "Ask me about" and the "Coming up" event card** are design proposals, not specified features.
+- **"Ask me about" and the "Coming up" event card** are design proposals, not specified features.
 - Member counts and setup time estimates are placeholder content.
 
 Consent copy keeps every disclosure from `src/app/network/consent-step.tsx`, reworded.

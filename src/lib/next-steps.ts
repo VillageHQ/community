@@ -1,9 +1,23 @@
-import { ArrowRight, Clock, Link2, MailCheck, RefreshCw, Search, ShieldAlert, type LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Clock,
+  Link2,
+  MailCheck,
+  RefreshCw,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react";
 
 import { STEP_STATES, type StepState } from "../components/step-row.tsx";
+import { SETUP_STEP_NAMES, type SetupProgress } from "./admin-setup.ts";
+import type { EmailConfirmationCopy } from "./members/email-confirmation-copy.ts";
+import { ROUTES } from "./routes.ts";
 import { NETWORK_PROGRESS, type NetworkProgress } from "./village/network-progress-stages.ts";
 
-type HomeHero = {
+type NetworkStepCopy = {
   icon: LucideIcon;
   kicker: string;
   title: string;
@@ -11,7 +25,7 @@ type HomeHero = {
   action?: string;
 };
 
-export const HOME_HEROES: Record<NetworkProgress, HomeHero> = {
+export const NEXT_STEPS: Record<NetworkProgress, NetworkStepCopy> = {
   [NETWORK_PROGRESS.notConfigured]: {
     icon: Clock,
     kicker: "Almost there",
@@ -102,4 +116,76 @@ export function describeJoinSteps(progress: NetworkProgress) {
     number: position + 1,
     state: readJoinStepState(position, currentPosition),
   }));
+}
+
+export type NextStep = {
+  icon: LucideIcon;
+  kicker: string;
+  title: string;
+  description: string;
+  action: { label: string; href: string } | null;
+  progress: { doneCount: number; totalCount: number; label: string } | null;
+  isUrgent: boolean;
+};
+
+type NextStepFacts = {
+  setupProgress: SetupProgress | null;
+  networkProgress: NetworkProgress;
+  communityName: string;
+  isCardFilled: boolean;
+  confirmationCopy: EmailConfirmationCopy;
+};
+
+function describeAdminSetup({ doneCount, totalCount, currentStepId }: SetupProgress, communityName: string): NextStep {
+  const nextStepName = currentStepId ? SETUP_STEP_NAMES[currentStepId] : null;
+  return {
+    icon: ShieldCheck,
+    kicker: "Admin setup",
+    title: `Let's get ${communityName} ready`,
+    description: `${doneCount} of ${totalCount} done. Next: ${nextStepName}.`,
+    action: { label: "Continue setup", href: ROUTES.admin },
+    progress: { doneCount, totalCount, label: `${doneCount} of ${totalCount} setup steps done` },
+    isUrgent: true,
+  };
+}
+
+const FINISH_CARD_STEP: NextStep = {
+  icon: UserRound,
+  kicker: "Your next step",
+  title: "Finish your card",
+  description: "Add your photo and what you can help with, so members can find you.",
+  action: { label: "Finish my card", href: ROUTES.editCard },
+  progress: null,
+  isUrgent: true,
+};
+
+function readJoinProgress(progress: NetworkProgress) {
+  if (progress === NETWORK_PROGRESS.ready || CURRENT_STEP_POSITION[progress] === undefined) return null;
+  const steps = describeJoinSteps(progress);
+  const doneCount = steps.filter(({ state }) => state === STEP_STATES.done).length;
+  return { doneCount, totalCount: steps.length, label: `${doneCount} of ${steps.length} network steps done` };
+}
+
+function describeNetworkStep(progress: NetworkProgress, confirmationCopy: EmailConfirmationCopy): NextStep {
+  const step = NEXT_STEPS[progress];
+  const { title, description } = progress === NETWORK_PROGRESS.needsEmailConfirmation ? confirmationCopy : step;
+  return {
+    icon: step.icon,
+    kicker: step.kicker,
+    title,
+    description,
+    action: step.action ? { label: step.action, href: ROUTES.network } : null,
+    progress: readJoinProgress(progress),
+    isUrgent: progress !== NETWORK_PROGRESS.ready && step.action !== undefined,
+  };
+}
+
+export function selectNextSteps(facts: NextStepFacts): NextStep[] {
+  const { setupProgress, networkProgress, communityName, isCardFilled, confirmationCopy } = facts;
+  const leadStep =
+    setupProgress && !setupProgress.isComplete
+      ? describeAdminSetup(setupProgress, communityName)
+      : describeNetworkStep(networkProgress, confirmationCopy);
+  if (isCardFilled) return [leadStep];
+  return leadStep.isUrgent ? [leadStep, FINISH_CARD_STEP] : [FINISH_CARD_STEP, leadStep];
 }

@@ -5,7 +5,7 @@ const DEFAULT_DESCRIPTION = "A private community for your network, powered by Vi
 type MetadataBranding = { name: string; descriptor: string; logo: { url: string } | null };
 
 export const PAGE_TITLES = {
-  home: "Home",
+  feed: "Feed",
   network: "Network",
   members: "Members",
   editCard: "Your card",

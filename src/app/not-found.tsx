@@ -24,7 +24,7 @@ export default async function NotFound() {
         description="The link may be old, or the page may have moved."
       >
         <Button asChild size="lg">
-          <Link href={ROUTES.home}>Go home</Link>
+          <Link href={ROUTES.feed}>Go to the feed</Link>
         </Button>
       </EmptyState>
     </CenteredPage>

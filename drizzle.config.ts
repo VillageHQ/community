@@ -5,6 +5,7 @@ export default defineConfig({
   schema: [
     "./src/database/auth-schema.ts",
     "./src/database/branding-schema.ts",
+    "./src/database/feed-schema.ts",
     "./src/database/instance-settings.ts",
     "./src/database/members-schema.ts",
     "./src/database/village-schema.ts",

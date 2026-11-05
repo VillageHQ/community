@@ -213,7 +213,7 @@ describe("the member directory", () => {
     });
   });
 
-  describe("new members on Home", () => {
+  describe("new members on the feed", () => {
     it("counts this week's arrivals, not the viewer, older members or banned ones", async () => {
       await seedMember(database, { name: "New Noor", company: "Kindling" });
       await seedMember(database, { name: "Old Otto", createdAt: new Date(Date.now() - 8 * DAY_MS) });

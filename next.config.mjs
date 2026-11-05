@@ -35,7 +35,10 @@ export const nextConfig = {
     { source: "/join/:token", headers: SECRET_LINK_HEADERS },
     { source: "/confirm-email", headers: SECRET_LINK_HEADERS },
   ],
-  redirects: async () => [{ source: "/admin/village", destination: "/admin", permanent: false }],
+  redirects: async () => [
+    { source: "/admin/village", destination: "/admin", permanent: false },
+    { source: "/feed", destination: "/", permanent: false },
+  ],
 };
 
 export default nextConfig;

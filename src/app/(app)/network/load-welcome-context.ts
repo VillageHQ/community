@@ -23,7 +23,7 @@ export async function loadWelcomeContext(
     member: { id: member.id, name: member.name },
     neighbours,
     sharingMemberCount,
-    notNowHref: isAdminMember(member) ? ROUTES.admin : ROUTES.home,
+    notNowHref: isAdminMember(member) ? ROUTES.admin : ROUTES.feed,
     memberEmail: member.email,
     isEmailConfigured: readResendConfig(process.env) !== null,
   };

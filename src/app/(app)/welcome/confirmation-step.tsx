@@ -6,7 +6,7 @@ import { FinishOnboardingButton } from "../network/not-now-action";
 import { ONBOARDING_PILLS, OnboardingSteps } from "../network/onboarding-steps";
 import type { WelcomeContext } from "../network/welcome-context";
 
-const CONTINUE_LABEL = "Continue to Home";
+const CONTINUE_LABEL = "Continue to the feed";
 
 export function ConfirmationStep({ welcome }: { welcome: WelcomeContext }) {
   return (

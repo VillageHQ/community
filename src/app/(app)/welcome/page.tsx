@@ -24,7 +24,7 @@ export default async function WelcomePage() {
   const member = await requireMember();
   const database = getDatabase();
   const step = await resolveOnboardingStep(database, member);
-  if (step === ONBOARDING_STEPS.done) redirect(ROUTES.home);
+  if (step === ONBOARDING_STEPS.done) redirect(ROUTES.feed);
 
   const [context, inviter, profile, progress, memberNeighbours, memberCount] = await Promise.all([
     loadWelcomeContext(database, member),

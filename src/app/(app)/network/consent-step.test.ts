@@ -14,7 +14,7 @@ const WELCOME = {
   member: { id: "member-1", name: "Amara Osei" },
   neighbours: [{ id: "member-2", name: "Jonas Lindqvist" }],
   sharingMemberCount: 3,
-  notNowHref: ROUTES.home,
+  notNowHref: ROUTES.feed,
 };
 
 function renderMarkup(welcome: Parameters<typeof ConsentStep>[0]["welcome"] = WELCOME) {
@@ -61,7 +61,7 @@ describe("the consent screen", () => {
     const markup = renderMarkup();
 
     expect(markup).toContain("Not now");
-    expect(markup).toContain(`href="${ROUTES.home}"`);
+    expect(markup).toContain(`href="${ROUTES.feed}"`);
     expect(renderConsent()).toContain("you can come back here from Network any time");
   });
 

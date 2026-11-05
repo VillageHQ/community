@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
 import { getDatabase } from "@/database/client";
-import { getAuth } from "@/lib/auth";
+import { readActiveSession } from "@/lib/active-session";
 import { readBrandingForPage } from "@/lib/branding/branding";
 import { PAGE_TITLES } from "@/lib/branding/page-metadata";
 import { readConfirmationView } from "@/lib/invites/email-confirmation";
@@ -22,8 +22,7 @@ type ConfirmEmailPageProps = { searchParams: Promise<{ token?: string }> };
 
 export default async function ConfirmEmailPage({ searchParams }: ConfirmEmailPageProps) {
   const { token = "" } = await searchParams;
-  const auth = await getAuth();
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await readActiveSession(await headers());
   const view = await readConfirmationView(getDatabase(), token, session?.user ?? null);
   const path = `${ROUTES.confirmEmail}?token=${encodeURIComponent(token)}`;
   if (view === CONFIRMATION_VIEWS.signIn) redirect(toSignInPath(path));

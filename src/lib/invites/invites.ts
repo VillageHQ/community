@@ -210,10 +210,6 @@ export async function hasOpenOrAcceptedInvite(database: Database) {
   return (row?.inviteCount ?? 0) > 0;
 }
 
-export async function readPendingInviteCount(database: Database) {
-  return countInvites(database, INVITE_FILTERS.pending, new Date());
-}
-
 export type InviteLookup = {
   id: string;
   email: string;

@@ -4,14 +4,11 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
-import { getAuth } from "./auth.ts";
+import { readActiveSession } from "./active-session.ts";
 import { ROUTES } from "./routes.ts";
 import { isAdminMember } from "./village/member-network.ts";
 
-const readSession = cache(async () => {
-  const auth = await getAuth();
-  return auth.api.getSession({ headers: await headers() });
-});
+const readSession = cache(async () => readActiveSession(await headers()));
 
 export async function requireMember() {
   const session = await readSession();
@@ -21,6 +18,6 @@ export async function requireMember() {
 
 export async function requireAdmin() {
   const member = await requireMember();
-  if (!isAdminMember(member)) redirect(ROUTES.home);
+  if (!isAdminMember(member)) redirect(ROUTES.feed);
   return member;
 }

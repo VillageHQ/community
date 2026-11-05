@@ -20,10 +20,10 @@ describe("the navigation", () => {
     }
   });
 
-  it("shows members Home, Members and Network", () => {
+  it("shows members Feed, Members and Network", () => {
     const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false).map(({ label }) => label);
 
-    expect(labels).toEqual(["Home", "Members", "Network"]);
+    expect(labels).toEqual(["Feed", "Members", "Network"]);
   });
 
   it("hides Admin from members", () => {
@@ -37,9 +37,9 @@ describe("the navigation", () => {
   });
 
   describe("active state", () => {
-    it("matches Home only on the root path", () => {
-      expect(isNavigationItemActive(ROUTES.home, ROUTES.home)).toBe(true);
-      expect(isNavigationItemActive(ROUTES.home, ROUTES.network)).toBe(false);
+    it("matches Feed only on the root path", () => {
+      expect(isNavigationItemActive(ROUTES.feed, ROUTES.feed)).toBe(true);
+      expect(isNavigationItemActive(ROUTES.feed, ROUTES.network)).toBe(false);
     });
 
     it("matches a section on its nested paths", () => {

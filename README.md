@@ -1,6 +1,6 @@
 # Community
 
-A self-hostable community portal for VC networks, built on Village. Members join by invite, fill in a card, find each other in a directory, and search their own Village network, including the relationships of everyone in the community. Feed, DMs and intro workflow come later.
+A self-hostable community portal for VC networks, built on Village. Members join by invite, fill in a card, post in a shared feed, find each other in a directory, and search their own Village network, including the relationships of everyone in the community. DMs and intro workflow come later.
 
 ## Deploy
 
@@ -78,6 +78,10 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 
 **Members:** `/members` lists everyone except banned members. Only signed-in members can see it, and emails stay private to admins. Search uses the query builder with `LIKE` wildcards escaped. Profile websites accept only `http` and `https`, checked on save and again on read. LinkedIn is the same `member_network.linkedin_slug` that network search matches on, so its uniqueness rule applies, and a member can change a saved one but not clear it. An admin can clear a claim.
 
+**Feed:** `/` is the signed-in landing page. Posts are plain text with an optional Ask, Win or Offer type, up to 3,000 characters, and replies go one level deep, up to 1,000. Both limits hold on the server and in the database. Text renders through React as text, never as HTML. Only `http` and `https` links up to 2,048 characters become anchors, with `rel="noopener noreferrer"`, and a link with credentials in it stays text. Bidirectional control characters are stripped on save and again on render, so a link's label can't lie about where it goes. Long posts and replies collapse behind **Show more**. Authors can edit and delete their own posts and replies, and an edit shows an "edited" marker. A member editing a pinned post unpins it, so an admin's pin can't vouch for words they didn't see. Reactions come from a fixed set of four. A primary key on post, member and reaction means a double click or a concurrent request can't double count, and the UI updates first and rolls back on failure. Pagination uses a keyset on `created_at` and `id`, at millisecond precision so the cursor survives JavaScript dates. A "new posts" check polls every 30 seconds, every 2 minutes after a failure, and only while the tab is visible. Unverified accounts can read and post, because network verification is separate. Banned members' posts, replies and reactions leave the feed for members and return if a temporary ban ends. Admins still see those posts and replies, marked banned, so they can delete them.
+
+**Moderation:** Admins can pin up to 3 posts, counting pins on banned members' posts, and delete any post or reply. They can't edit someone else's words. Every delete by an admin writes rows to `moderation_record`, in the same transaction, with who deleted it, whose it was, its text and when. Deleting a post writes one more row for each reply it removes, linked by `parent_post_id`. The rows outlive the accounts. A member deleting their own content leaves no record: it's gone. There's no screen for these records yet.
+
 **Avatars:** Photos live in Postgres, like logos, so one-click deploys need no file storage. The browser crops each one to a 320 px JPEG, which also drops location metadata. The limit is 256 KB, and only PNG, JPEG and WebP pass, verified by magic bytes. SVG is refused. `GET /api/members/<id>/avatar` needs a signed-in member and serves the detected content type with `nosniff` and a sandboxing CSP. The app ignores Better Auth's `user.image`, because a member could point it at any URL.
 
 **Auth secret:** The app uses `BETTER_AUTH_SECRET` when set. Otherwise it generates a secret on first boot and stores it in the `instance_settings` table, so anyone with database read access can read it. Changing the secret later signs everyone out.
@@ -96,7 +100,9 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 UPDATE "user" SET role = 'admin', banned = false WHERE email = 'you@example.com';
 ```
 
-**Rate limits:** Better Auth's limits and the `/api/setup` and invite limits live in the `rate_limit` table, so they hold across instances. Normal requests prune expired rows in small batches. `POST /api/setup` answers 429 after 10 failed attempts in a minute, but it never blocks the correct token, so token length is what stops guessing. Each client is keyed by a header the platform overwrites, never by `X-Forwarded-For`:
+**Bans:** Every signed-in page and member route, plus the invite and email confirmation pages, checks the session's ban. A banned member's sessions are deleted on their next request, even if the ban was set directly in the database, and Better Auth refuses their next sign-in.
+
+**Rate limits:** Better Auth's limits and the `/api/setup`, invite and feed limits live in the `rate_limit` table, so they hold across instances. Normal requests prune expired rows in small batches. Each member can publish 10 posts and 30 replies a minute. `POST /api/setup` answers 429 after 10 failed attempts in a minute, but it never blocks the correct token, so token length is what stops guessing. Each client is keyed by a header the platform overwrites, never by `X-Forwarded-For`:
 
 | Platform | Header | What we know |
 | --- | --- | --- |

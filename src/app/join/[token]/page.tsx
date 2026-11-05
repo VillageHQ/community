@@ -7,7 +7,7 @@ import { InviterNote } from "@/components/inviter-note";
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
 import { Button } from "@/components/ui/button";
 import { getDatabase } from "@/database/client";
-import { getAuth } from "@/lib/auth";
+import { readActiveSession } from "@/lib/active-session";
 import { readBrandingForPage } from "@/lib/branding/branding";
 import { PAGE_TITLES } from "@/lib/branding/page-metadata";
 import { recordFailedInviteAttempt } from "@/lib/invites/invite-attempts";
@@ -84,8 +84,7 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
   }
 
   const { inviter } = invite;
-  const auth = await getAuth();
-  const session = await auth.api.getSession({ headers: requestHeaders });
+  const session = await readActiveSession(requestHeaders);
 
   return (
     <SplitLayout

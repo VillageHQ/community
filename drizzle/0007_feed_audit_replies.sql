@@ -1,0 +1,1 @@
+ALTER TABLE "moderation_record" ADD COLUMN "parent_post_id" uuid;

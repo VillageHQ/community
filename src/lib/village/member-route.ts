@@ -3,8 +3,8 @@ import "server-only";
 import type { z } from "zod";
 
 import { getDatabase } from "../../database/client.ts";
+import { readActiveSession } from "../active-session.ts";
 import { resolveTrustedOrigins } from "../app-url.ts";
-import { getAuth } from "../auth.ts";
 import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "../body-limit.ts";
 import { readJsonBody } from "../read-json-body.ts";
 import { withRouteLogging } from "../route-logging.ts";
@@ -102,8 +102,7 @@ function respondToKnownError(error: unknown) {
 }
 
 export async function readSessionMember(request: Request): Promise<SessionMember | null> {
-  const auth = await getAuth();
-  const session = await auth.api.getSession({ headers: request.headers });
+  const session = await readActiveSession(request.headers);
   return session?.user ?? null;
 }
 

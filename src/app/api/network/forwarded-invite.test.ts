@@ -199,7 +199,7 @@ describe("a forwarded invite", () => {
       expect(response.status).toBe(CONFLICT_STATUS);
     });
 
-    it("says the same on Home as the status route", async () => {
+    it("says the same on the feed as the status route", async () => {
       const holder = await holderWithAliceVillageAccount();
 
       expect(await readNetworkProgress(database, { id: holder.id, email: holder.email })).toBe(
@@ -438,7 +438,7 @@ describe("a forwarded invite", () => {
   });
 
   describe("during onboarding", () => {
-    it("shows the waiting step after the card, and lets the member carry on to Home", async () => {
+    it("shows the waiting step after the card, and lets the member carry on to the feed", async () => {
       const { link } = await inviteAlice();
       const member = await acceptAs("Alice", link);
       const sessionMember = { id: member.id, email: member.email };

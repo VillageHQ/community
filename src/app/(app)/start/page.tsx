@@ -12,8 +12,8 @@ export default async function LandingPage() {
   const member = await requireMember();
   const database = getDatabase();
   if ((await resolveOnboardingStep(database, member)) !== ONBOARDING_STEPS.done) redirect(ROUTES.welcome);
-  if (!isAdminMember(member)) redirect(ROUTES.home);
+  if (!isAdminMember(member)) redirect(ROUTES.feed);
 
   const { isComplete } = await readSetupProgress(database, process.env);
-  redirect(isComplete ? ROUTES.home : ROUTES.admin);
+  redirect(isComplete ? ROUTES.feed : ROUTES.admin);
 }

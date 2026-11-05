@@ -18,7 +18,7 @@ type NavigationItem = {
 };
 
 export const NAVIGATION = {
-  home: { label: "Home", href: ROUTES.home, icon: House, section: NAVIGATION_SECTIONS.primary },
+  feed: { label: "Feed", href: ROUTES.feed, icon: House, section: NAVIGATION_SECTIONS.primary },
   members: { label: "Members", href: ROUTES.members, icon: Users, section: NAVIGATION_SECTIONS.primary },
   network: { label: "Network", href: ROUTES.network, icon: Waypoints, section: NAVIGATION_SECTIONS.primary },
   admin: {
@@ -38,7 +38,7 @@ export function selectNavigationItems(section: NavigationItem["section"], isAdmi
 }
 
 export function isNavigationItemActive(href: string, pathname: string) {
-  if (href === ROUTES.home) return pathname === ROUTES.home;
+  if (href === ROUTES.feed) return pathname === ROUTES.feed;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
