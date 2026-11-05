@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatShortDate } from "@/platform/text/format-date";
-import { INTRO_ROLES, INTRO_STATES, type Intro, type IntroPerson, type IntroState } from "@/lib/intros/intro-api";
+import { INTRO_ROLES, INTRO_STATES, type Intro, type IntroPerson, type IntroState } from "@/modules/intros/contract";
 import { ROUTES } from "@/platform/http/routes";
 
 import { RichText } from "@/components/rich-text";

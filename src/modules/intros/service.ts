@@ -2,10 +2,10 @@ import "server-only";
 
 import { and, eq, gt, inArray } from "drizzle-orm";
 
-import { introRequest } from "../../database/intro-schema.ts";
-import { memberBlock } from "../../modules/members/schema.ts";
+import { introRequest } from "./schema.ts";
+import { memberBlock } from "../members/schema.ts";
 import { runAfterResponse } from "../../platform/observability/after-response.ts";
-import { readAskableConnectors } from "../../modules/network/service.ts";
+import { readAskableConnectors } from "../network/service.ts";
 import { NetworkRequestError } from "../../platform/http/request-error.ts";
 import { type NetworkContext } from "../../platform/http/request-context.ts";
 import {
@@ -18,10 +18,10 @@ import {
   type Intro,
   type IntroAction,
   type IntroTransitionBody,
-} from "./intro-api.ts";
-import { deliverIntroEmail, INTRO_EMAIL_EVENTS, type IntroEmailEvent } from "./intro-email.ts";
-import { enforceIntroLimit, INTRO_LIMIT_KINDS } from "./intro-limit.ts";
-import { expireDueIntros, hasBothParticipantsJoined, readIntroDeadline, readIntroForViewer } from "./intro-reads.ts";
+} from "./contract.ts";
+import { deliverIntroEmail, INTRO_EMAIL_EVENTS, type IntroEmailEvent } from "./email.ts";
+import { enforceIntroLimit, INTRO_LIMIT_KINDS } from "./limits.ts";
+import { expireDueIntros, hasBothParticipantsJoined, readIntroDeadline, readIntroForViewer } from "./reads.ts";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;

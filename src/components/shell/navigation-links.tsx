@@ -5,7 +5,7 @@ import { cn } from "cn";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { introCountsQuery } from "@/lib/intros/intro-queries";
+import { introCountsQuery } from "@/modules/intros/queries";
 import { unreadCountQuery } from "@/modules/messages/queries";
 import {
   describeBadge,

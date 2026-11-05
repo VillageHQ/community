@@ -1,4 +1,3 @@
-import { INTRO_LIMITS } from "../../lib/intros/intro-api.ts";
 import type { VillagePaths } from "../../platform/village/client.ts";
 import {
   cleanVillageText,
@@ -9,7 +8,7 @@ import {
 } from "./rules-connector-reason.ts";
 import { readLinkedinSlug } from "../members/contract-linkedin.ts";
 import { namesMatch } from "./rules-name-match.ts";
-import type { Connector, NetworkPath, NetworkPaths } from "./contract.ts";
+import { CONNECTOR_LIMITS, type Connector, type NetworkPath, type NetworkPaths } from "./contract.ts";
 import { COMMUNITY_MEMBER_LABEL } from "../../platform/text/labels.ts";
 
 const DIRECT_DEGREE = 1;
@@ -74,7 +73,7 @@ export function readTargetName(villagePaths: VillagePaths | null) {
   const person = villagePaths?.person;
   if (!person) return null;
   const name = person.full_name || readProfileName(person);
-  return cleanVillageText(name, INTRO_LIMITS.nameLength) || null;
+  return cleanVillageText(name, CONNECTOR_LIMITS.nameLength) || null;
 }
 
 export function readPathSlugs(villagePaths: VillagePaths | null) {
@@ -97,11 +96,11 @@ type ConnectorFacts = {
 
 function toConnector({ profile, reason, throughName, reachableMembers }: ConnectorFacts): ConnectorDraft | null {
   const member = readProfileMember(profile, reachableMembers);
-  const name = cleanVillageText(member?.name ?? readProfileName(profile), INTRO_LIMITS.nameLength);
+  const name = cleanVillageText(member?.name ?? readProfileName(profile), CONNECTOR_LIMITS.nameLength);
   if (!name) return null;
   return {
     name,
-    headline: member?.headline || cleanVillageText(profile.headline ?? "", INTRO_LIMITS.headlineLength) || null,
+    headline: member?.headline || cleanVillageText(profile.headline ?? "", CONNECTOR_LIMITS.headlineLength) || null,
     linkedinSlug: readLinkedinSlug(profile.linkedin_url),
     reason,
     throughName,
@@ -111,16 +110,16 @@ function toConnector({ profile, reason, throughName, reachableMembers }: Connect
 
 function readIntroducerReason(path: VillagePath, name: string, targetName: string | null) {
   return (
-    readScoreMetaReason(path.introducer?.score_meta, INTRO_LIMITS.reasonLength) ||
-    readSummaryReason(path.summary.description, INTRO_LIMITS.reasonLength) ||
+    readScoreMetaReason(path.introducer?.score_meta, CONNECTOR_LIMITS.reasonLength) ||
+    readSummaryReason(path.summary.description, CONNECTOR_LIMITS.reasonLength) ||
     readUnexplainedReason(name, targetName)
   );
 }
 
 function readStarterReason(starter: VillagePath["starters"][number], throughName: string, targetName: string | null) {
   const through = readThroughReason(readProfileName(starter.profile), throughName, targetName);
-  const relationship = readScoreMetaReason(starter.score_meta, INTRO_LIMITS.reasonLength);
-  return [through, relationship].filter(Boolean).join(" ").slice(0, INTRO_LIMITS.reasonLength);
+  const relationship = readScoreMetaReason(starter.score_meta, CONNECTOR_LIMITS.reasonLength);
+  return [through, relationship].filter(Boolean).join(" ").slice(0, CONNECTOR_LIMITS.reasonLength);
 }
 
 function readPathConnector(

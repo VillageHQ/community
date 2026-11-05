@@ -13,9 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { readFirstName } from "@/platform/design/avatar-identity";
-import { INTRO_LIMITS, type Intro } from "@/lib/intros/intro-api";
-import { composeStarterNote, readIntroPromise, readNoteSharingLine } from "@/lib/intros/intro-copy";
-import { createIntroRequest, INTRO_QUERY_KEYS } from "@/lib/intros/intro-queries";
+import { INTRO_LIMITS, type Intro } from "@/modules/intros/contract";
+import { composeStarterNote, readIntroPromise, readNoteSharingLine } from "@/modules/intros/copy";
+import { createIntroRequest, INTRO_QUERY_KEYS } from "@/modules/intros/queries";
 import { ROUTES } from "@/platform/http/routes";
 import type { Connector, NetworkPaths } from "@/modules/network/contract";
 

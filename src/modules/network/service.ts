@@ -12,8 +12,6 @@ import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
-import { INTRO_ERROR_CODES, INTRO_LIMITS } from "../../lib/intros/intro-api.ts";
-import { readOpenAsks } from "../../lib/intros/open-asks.ts";
 import {
   createVillageGroup,
   createVillageSession,
@@ -47,6 +45,8 @@ import {
   type MemberPathsFacts,
 } from "./rules-paths.ts";
 import {
+  CONNECTOR_ERROR_CODES,
+  CONNECTOR_LIMITS,
   NETWORK_ERROR_CODES,
   NETWORK_STAGES,
   type NetworkSearchResult,
@@ -426,12 +426,21 @@ async function readPathsFacts(
   return { targetSlug, viewerSlug: network.linkedinSlug, memberSlugs, reachableMembers, isCached, dailyLookupsLeft };
 }
 
+export type OpenAsksReader = (
+  database: Database,
+  requesterId: string,
+  targetSlug: string,
+) => Promise<ReadonlyMap<string, { id: string; state: string }>>;
+
+const NO_OPEN_ASKS: OpenAsksReader = async () => new Map();
+
 async function describePathsForViewer(
   context: NetworkContext,
   villagePaths: VillagePaths | null,
   network: MemberNetworkRow,
   targetSlug: string,
   isCached: boolean,
+  readOpenAsks: OpenAsksReader,
 ) {
   const facts = await readPathsFacts(context, villagePaths, network, targetSlug, isCached);
   const openAsks = await readOpenAsks(context.database, context.member.id, targetSlug);
@@ -442,7 +451,7 @@ async function describePathsForViewer(
   return describeMemberPaths(villagePaths, facts, connectors);
 }
 
-export async function readMemberPaths(context: NetworkContext, linkedinSlug: string) {
+export async function readMemberPaths(context: NetworkContext, linkedinSlug: string, readOpenAsks: OpenAsksReader = NO_OPEN_ASKS) {
   const { database, member } = context;
   const { keys, network } = await requireJoinedMember(context);
   const { session } = await connectMember(context, keys);
@@ -450,7 +459,7 @@ export async function readMemberPaths(context: NetworkContext, linkedinSlug: str
 
   const cachedPaths = await readCachedPaths(database, member.id, linkedinSlug);
   if (cachedPaths !== undefined) {
-    return describePathsForViewer(context, cachedPaths, network, linkedinSlug, true);
+    return describePathsForViewer(context, cachedPaths, network, linkedinSlug, true, readOpenAsks);
   }
 
   const villagePaths = await fetchVillagePathsOrNull(context, session, linkedinSlug);
@@ -466,7 +475,7 @@ export async function readMemberPaths(context: NetworkContext, linkedinSlug: str
       set: { paths, fetchedAt },
     });
 
-  return describePathsForViewer(context, villagePaths, network, linkedinSlug, false);
+  return describePathsForViewer(context, villagePaths, network, linkedinSlug, false, readOpenAsks);
 }
 
 export type AskableConnectors = {
@@ -481,7 +490,7 @@ export async function readAskableConnectors(context: NetworkContext, targetSlug:
   if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
   if (network.pendingVillageEmail) throw linkMismatchError(member);
   if (targetSlug === network.linkedinSlug) {
-    throw new NetworkRequestError(UNPROCESSABLE_STATUS, INTRO_ERROR_CODES.ownTarget, "That's you. No intro needed.");
+    throw new NetworkRequestError(UNPROCESSABLE_STATUS, CONNECTOR_ERROR_CODES.ownTarget, "That's you. No intro needed.");
   }
 
   const cachedPaths = await readCachedPaths(database, member.id, targetSlug);
@@ -490,7 +499,7 @@ export async function readAskableConnectors(context: NetworkContext, targetSlug:
   const facts = await readPathsFacts(context, cachedPaths, network, targetSlug, true);
   return {
     targetName: readTargetName(cachedPaths),
-    targetHeadline: cleanVillageText(cachedPaths.person?.headline ?? "", INTRO_LIMITS.headlineLength) || null,
+    targetHeadline: cleanVillageText(cachedPaths.person?.headline ?? "", CONNECTOR_LIMITS.headlineLength) || null,
     connectors: readConnectors(cachedPaths, facts),
   };
 }

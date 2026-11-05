@@ -5,11 +5,11 @@ import { PageHeader } from "@/components/page-header";
 import { QueryBoundary } from "@/components/query-boundary";
 import { getDatabase } from "@/platform/database/client";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
-import { introBoardQuery } from "@/lib/intros/intro-queries";
-import { readIntroBoard } from "@/lib/intros/intro-reads";
+import { introBoardQuery } from "@/modules/intros/queries";
+import { readIntroBoard } from "@/modules/intros/reads";
 import { requireMember } from "@/platform/auth/session";
 
-import { IntroBoardView } from "./intro-board";
+import { IntroBoardView } from "@/modules/intros/components/intro-board";
 
 export const metadata: Metadata = { title: PAGE_TITLES.intros };
 

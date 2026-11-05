@@ -4,7 +4,7 @@ import { readInboxPollMs, INBOX_POLL_MS } from "../../platform/http/polling.ts";
 import { API_ROUTES } from "../../platform/http/routes.ts";
 import { acknowledgedResponseSchema } from "../../platform/http/contract.ts";
 import { postNetworkRequest } from "../../platform/http/post-request.ts";
-import { introBoardSchema, introCountsSchema, introSchema, type CreateIntroBody, type IntroTransitionBody } from "./intro-api.ts";
+import { introBoardSchema, introCountsSchema, introSchema, type CreateIntroBody, type IntroTransitionBody } from "./contract.ts";
 
 export const INTRO_QUERY_KEYS = {
   board: "intros-board",

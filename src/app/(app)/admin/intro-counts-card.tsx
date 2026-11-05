@@ -1,5 +1,5 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { INTRO_STATES, type IntroState } from "@/lib/intros/intro-api";
+import { INTRO_STATES, type IntroState } from "@/modules/intros/contract";
 
 const STATE_LABELS: Record<IntroState, string> = {
   [INTRO_STATES.requested]: "Waiting for an answer",

@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRef, type ReactNode, type RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
-import { INTRO_STATES, type IntroState } from "@/lib/intros/intro-api";
-import { readIntroPromise } from "@/lib/intros/intro-copy";
+import { INTRO_STATES } from "@/modules/intros/contract";
+import { readIntroPromise } from "@/modules/intros/copy";
 import type { Connector } from "@/modules/network/contract";
 import { ConnectorSlotsContext, type ConnectorSlotProps } from "@/modules/network/slots";
 import { readFirstName } from "@/platform/design/avatar-identity";
@@ -14,7 +14,7 @@ import { ROUTES } from "@/platform/http/routes";
 
 import { AskIntroDialog } from "./ask-intro-dialog";
 
-const OPEN_ASK_LABELS: Partial<Record<IntroState, (firstName: string) => string>> = {
+const OPEN_ASK_LABELS: Record<string, (firstName: string) => string> = {
   [INTRO_STATES.requested]: (firstName) => `You asked. Waiting on ${firstName}.`,
   [INTRO_STATES.accepted]: (firstName) => `${firstName} said yes.`,
 };

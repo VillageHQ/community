@@ -3,8 +3,8 @@ import "server-only";
 import { and, eq, inArray } from "drizzle-orm";
 
 import type { Database } from "../../platform/database/client.ts";
-import { introRequest } from "../../database/intro-schema.ts";
-import { INTRO_STATES, OPEN_INTRO_STATES } from "./intro-api.ts";
+import { introRequest } from "./schema.ts";
+import { INTRO_STATES, OPEN_INTRO_STATES } from "./contract.ts";
 
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 

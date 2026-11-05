@@ -10,7 +10,7 @@ import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { readResendConfig } from "@/platform/email/resend";
 import { readFeedPage } from "@/modules/feed/reads";
-import { readWaitingIntros } from "@/lib/intros/intro-reads";
+import { readWaitingIntros } from "@/modules/intros/reads";
 import { readNewMembers } from "@/modules/members/reads-directory";
 import { describeEmailConfirmation } from "@/modules/members/contract-email-confirmation-copy";
 import { resolveOnboardingStep } from "@/shell/onboarding";
@@ -26,7 +26,7 @@ import { Feed } from "@/modules/feed/components/feed";
 import { feedQuery } from "@/modules/feed/queries";
 import { NewThisWeekCard } from "@/modules/members/components/new-this-week-card";
 import { NextStepCard } from "@/shell/next-step-card";
-import { WaitingOnYouCard } from "./intros/waiting-on-you-card";
+import { WaitingOnYouCard } from "@/modules/intros/components/waiting-on-you-card";
 
 export const metadata: Metadata = { title: PAGE_TITLES.feed };
 

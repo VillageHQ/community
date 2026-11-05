@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { CONNECTOR_ERROR_CODES, CONNECTOR_LIMITS } from "../network/contract.ts";
 import { feedTextSchema } from "../../platform/text/text-schema.ts";
 import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
 
@@ -8,9 +9,9 @@ export const INTRO_LIFETIME_DAYS = 14;
 export const INTRO_LIMITS = {
   noteLength: 1000,
   declineReasonLength: 500,
-  nameLength: 200,
-  headlineLength: 300,
-  reasonLength: 600,
+  nameLength: CONNECTOR_LIMITS.nameLength,
+  headlineLength: CONNECTOR_LIMITS.headlineLength,
+  reasonLength: CONNECTOR_LIMITS.reasonLength,
   slugLength: 200,
   shownPerList: 100,
   shownInRail: 2,
@@ -66,7 +67,7 @@ export const INTRO_ERROR_CODES = {
   notConnector: "intro_not_connector",
   pathsStale: "intro_paths_stale",
   targetUnknown: "intro_target_unknown",
-  ownTarget: "intro_own_target",
+  ownTarget: CONNECTOR_ERROR_CODES.ownTarget,
   blockedByYou: "intro_blocked_by_you",
   tooFast: "intro_too_fast",
 } as const;

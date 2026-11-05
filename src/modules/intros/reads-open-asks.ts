@@ -3,8 +3,8 @@ import "server-only";
 import { and, eq, gt, inArray } from "drizzle-orm";
 
 import type { Database } from "../../platform/database/client.ts";
-import { introRequest } from "../../database/intro-schema.ts";
-import { OPEN_INTRO_STATES, type IntroState } from "./intro-api.ts";
+import { introRequest } from "./schema.ts";
+import { OPEN_INTRO_STATES, type IntroState } from "./contract.ts";
 
 function toKnownState(state: string): IntroState {
   const known = OPEN_INTRO_STATES.find((openState) => openState === state);

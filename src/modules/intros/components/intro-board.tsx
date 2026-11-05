@@ -8,8 +8,8 @@ import { useState, type ReactNode } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import { isOpenIntroState, type Intro } from "@/lib/intros/intro-api";
-import { introBoardQuery } from "@/lib/intros/intro-queries";
+import { isOpenIntroState, type Intro } from "@/modules/intros/contract";
+import { introBoardQuery } from "@/modules/intros/queries";
 import { ROUTES } from "@/platform/http/routes";
 
 import { AskForYouCard } from "./ask-for-you-card";

@@ -2,12 +2,12 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { INTRO_ROLES } from "@/lib/intros/intro-api";
-import { introDetailQuery } from "@/lib/intros/intro-queries";
+import { INTRO_ROLES } from "@/modules/intros/contract";
+import { introDetailQuery } from "@/modules/intros/queries";
 
-import { AskForYouCard } from "@/app/(app)/intros/ask-for-you-card";
-import { useMarkIntrosSeen } from "@/app/(app)/intros/use-intro-actions";
-import { YourAskCard } from "@/app/(app)/intros/your-ask-card";
+import { AskForYouCard } from "@/modules/intros/components/ask-for-you-card";
+import { useMarkIntrosSeen } from "@/modules/intros/components/use-intro-actions";
+import { YourAskCard } from "@/modules/intros/components/your-ask-card";
 
 export function IntroDetailView({ introId }: { introId: string }) {
   const { data: intro } = useSuspenseQuery(introDetailQuery(introId));

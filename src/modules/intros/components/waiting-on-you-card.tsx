@@ -4,7 +4,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { readFirstName } from "@/platform/design/avatar-identity";
-import { INTRO_LIMITS, INTRO_STATES, type Intro } from "@/lib/intros/intro-api";
+import { INTRO_LIMITS, INTRO_STATES, type Intro } from "@/modules/intros/contract";
 import { ROUTES } from "@/platform/http/routes";
 
 const RAIL_AVATAR_SIZE_PX = 44;

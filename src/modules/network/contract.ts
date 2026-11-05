@@ -3,7 +3,10 @@ import { z } from "zod";
 import { MEMBER_ERROR_CODES } from "../members/contract-linkedin.ts";
 import { REQUEST_ERROR_CODES } from "../../platform/http/error-codes.ts";
 import { VILLAGE_ERROR_CODES } from "../../platform/village/error-codes.ts";
-import { INTRO_STATES } from "../../lib/intros/intro-api.ts";
+
+export const CONNECTOR_LIMITS = { nameLength: 200, headlineLength: 300, reasonLength: 600 } as const;
+
+export const CONNECTOR_ERROR_CODES = { ownTarget: "intro_own_target" } as const;
 
 export const NETWORK_STAGES = {
   notConfigured: "not_configured",
@@ -89,7 +92,7 @@ const connectorSchema = z.object({
   reason: z.string(),
   throughName: z.string().nullable(),
   member: z.object({ id: z.string(), avatarUrl: z.string().nullable() }).nullable(),
-  openAsk: z.object({ id: z.uuid(), state: z.enum(INTRO_STATES) }).nullable(),
+  openAsk: z.object({ id: z.uuid(), state: z.string() }).nullable(),
 });
 
 export type Connector = z.infer<typeof connectorSchema>;

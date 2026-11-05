@@ -7,8 +7,8 @@ import {
   OPEN_INTRO_STATES,
   isOpenIntroState,
   readStatesLeadingTo,
-} from "./intro-api";
-import { composeForwardableBlurb, composeStarterNote, readIntroPromise, readNoteSharingLine } from "./intro-copy";
+} from "./contract";
+import { composeForwardableBlurb, composeStarterNote, readIntroPromise, readNoteSharingLine } from "./copy";
 
 describe("the intro state machine", () => {
   it("lets every action start only from a state that allows it", () => {

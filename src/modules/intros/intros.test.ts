@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { user } from "@/platform/database/auth-schema";
-import { introRequest } from "@/database/intro-schema";
+import { introRequest } from "@/modules/intros/schema";
 import { memberBlock, memberNetwork } from "@/modules/members/schema";
 import { memberPathResult } from "@/modules/network/schema";
 import {
@@ -16,10 +16,10 @@ import {
   introCountsSchema,
   introSchema,
   type Intro,
-} from "@/lib/intros/intro-api";
-import { ASKED_EMAIL_COOLDOWN_MS } from "@/lib/intros/intro-email";
-import { INTRO_MAXIMUM_PER_MINUTE } from "@/lib/intros/intro-limit";
-import { readIntroStateCounts } from "@/lib/intros/intro-reads";
+} from "@/modules/intros/contract";
+import { ASKED_EMAIL_COOLDOWN_MS } from "@/modules/intros/email";
+import { INTRO_MAXIMUM_PER_MINUTE } from "@/modules/intros/limits";
+import { readIntroStateCounts } from "@/modules/intros/reads";
 import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
 import { NETWORK_ERROR_CODES, networkPathsSchema, networkSearchResultSchema } from "@/modules/network/contract";
 import { saveVillageGroup } from "@/modules/network/service-settings";
@@ -37,12 +37,12 @@ import { POST as postBlock } from "@/app/api/messages/block/route";
 import { POST as postLinkedin } from "@/app/api/network/linkedin/route";
 import { POST as postPaths } from "@/app/api/network/paths/route";
 import { POST as postSearch } from "@/app/api/network/search/route";
-import { POST as postCounts } from "./counts/route";
-import { POST as postCreate } from "./create/route";
-import { POST as postDetail } from "./detail/route";
-import { POST as postBoard } from "./route";
-import { POST as postSeen } from "./seen/route";
-import { POST as postTransition } from "./transition/route";
+import { POST as postCounts } from "@/app/api/intros/counts/route";
+import { POST as postCreate } from "@/app/api/intros/create/route";
+import { POST as postDetail } from "@/app/api/intros/detail/route";
+import { POST as postBoard } from "@/app/api/intros/route";
+import { POST as postSeen } from "@/app/api/intros/seen/route";
+import { POST as postTransition } from "@/app/api/intros/transition/route";
 
 const APP_URL = "http://localhost:3000";
 const OK_STATUS = 200;

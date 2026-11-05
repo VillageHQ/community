@@ -3,7 +3,7 @@ import { alias } from "drizzle-orm/pg-core";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { introRequest } from "../../database/intro-schema.ts";
+import { introRequest } from "./schema.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
 import { readBranding } from "../../platform/branding/branding.ts";
 import { pickOnAccent } from "../../platform/design/accent.ts";

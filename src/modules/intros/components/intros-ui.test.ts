@@ -4,8 +4,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { createElement, type ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { INTRO_ACTIONS, INTRO_ROLES, INTRO_STATES, type Intro, type IntroBoard } from "@/lib/intros/intro-api";
-import { introBoardQuery } from "@/lib/intros/intro-queries";
+import { INTRO_ACTIONS, INTRO_ROLES, INTRO_STATES, type Intro, type IntroBoard } from "@/modules/intros/contract";
+import { introBoardQuery } from "@/modules/intros/queries";
 import { API_ROUTES } from "@/platform/http/routes";
 
 import { MessagesSlotProvider } from "@/modules/messages/components/messages-slot-provider";

@@ -1,7 +1,7 @@
 import { readFirstName } from "../../platform/design/avatar-identity.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
-import { toLinkedinUrl } from "../../modules/members/contract-linkedin.ts";
-import type { Intro } from "./intro-api.ts";
+import { toLinkedinUrl } from "../members/contract-linkedin.ts";
+import type { Intro } from "./contract.ts";
 
 export function readIntroPromise(introducerName: string, targetName: string) {
   return `${readFirstName(introducerName)} reads your note first. ${readFirstName(targetName)} hears nothing unless they say yes.`;

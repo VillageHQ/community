@@ -1,5 +1,5 @@
-import { markIntrosSeenBodySchema } from "@/lib/intros/intro-api";
-import { markIntrosSeen } from "@/lib/intros/intro-reads";
+import { markIntrosSeenBodySchema } from "@/modules/intros/contract";
+import { markIntrosSeen } from "@/modules/intros/reads";
 import { createMemberRoute } from "@/platform/village/member-routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
 

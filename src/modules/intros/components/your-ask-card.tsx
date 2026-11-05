@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatShortDate } from "@/platform/text/format-date";
-import { INTRO_ACTIONS, INTRO_STATES, type Intro } from "@/lib/intros/intro-api";
-import { readIntroPromise } from "@/lib/intros/intro-copy";
+import { INTRO_ACTIONS, INTRO_STATES, type Intro } from "@/modules/intros/contract";
+import { readIntroPromise } from "@/modules/intros/copy";
 
 import { ConfirmAction } from "@/components/confirm-action";
 import {

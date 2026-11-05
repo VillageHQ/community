@@ -3,8 +3,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-import type { IntroTransitionBody } from "@/lib/intros/intro-api";
-import { INTRO_QUERY_KEYS, markIntrosSeenRequest, transitionIntroRequest } from "@/lib/intros/intro-queries";
+import type { IntroTransitionBody } from "@/modules/intros/contract";
+import { INTRO_QUERY_KEYS, markIntrosSeenRequest, transitionIntroRequest } from "@/modules/intros/queries";
 
 export function useIntroTransition() {
   const queryClient = useQueryClient();

@@ -1,5 +1,5 @@
-import { enforceIntroLimit, INTRO_LIMIT_KINDS } from "@/lib/intros/intro-limit";
-import { readIntroCounts } from "@/lib/intros/intro-reads";
+import { enforceIntroLimit, INTRO_LIMIT_KINDS } from "@/modules/intros/limits";
+import { readIntroCounts } from "@/modules/intros/reads";
 import { emptyBodySchema } from "@/platform/http/contract";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

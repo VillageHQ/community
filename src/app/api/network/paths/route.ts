@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { readOpenAsks } from "@/modules/intros/reads-open-asks";
 import { readMemberPaths } from "@/modules/network/service";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
@@ -16,6 +17,6 @@ const pathsBodySchema = z.object({
 export const POST = createMemberRoute(
   "network-paths",
   pathsBodySchema,
-  async (context, body) => Response.json(await readMemberPaths(context, body.linkedinSlug)),
+  async (context, body) => Response.json(await readMemberPaths(context, body.linkedinSlug, readOpenAsks)),
   { deadlineMs: DEADLINE_MS },
 );

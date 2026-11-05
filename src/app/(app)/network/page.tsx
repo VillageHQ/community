@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { IntrosConnectorProvider } from "@/app/(app)/intros/connector-ask";
+import { IntrosConnectorProvider } from "@/modules/intros/components/connector-ask";
 import { getDatabase } from "@/platform/database/client";
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { requireMember } from "@/platform/auth/session";

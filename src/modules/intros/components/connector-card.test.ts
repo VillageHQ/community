@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { createElement, type ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { INTRO_STATES } from "@/lib/intros/intro-api";
+import { INTRO_STATES } from "@/modules/intros/contract";
 import { API_ROUTES } from "@/platform/http/routes";
 import type { Connector } from "@/modules/network/contract";
 

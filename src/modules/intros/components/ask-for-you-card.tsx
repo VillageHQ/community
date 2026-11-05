@@ -11,9 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatShortDate } from "@/platform/text/format-date";
-import { INTRO_ACTIONS, INTRO_LIMITS, INTRO_STATES, type Intro } from "@/lib/intros/intro-api";
-import { composeForwardableBlurb } from "@/lib/intros/intro-copy";
-import { reportIntroNoteRequest } from "@/lib/intros/intro-queries";
+import { INTRO_ACTIONS, INTRO_LIMITS, INTRO_STATES, type Intro } from "@/modules/intros/contract";
+import { composeForwardableBlurb } from "@/modules/intros/copy";
+import { reportIntroNoteRequest } from "@/modules/intros/queries";
 import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
 
 import {

@@ -10,7 +10,7 @@ export default defineConfig({
     "./src/modules/feed/schema.ts",
     "./src/platform/settings/schema.ts",
     "./src/platform/village/schema.ts",
-    "./src/database/intro-schema.ts",
+    "./src/modules/intros/schema.ts",
     "./src/modules/members/schema.ts",
     "./src/modules/messages/schema.ts",
     "./src/modules/network/schema.ts",
