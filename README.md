@@ -89,7 +89,7 @@ Everything lives in **Admin**.
 
 **With email on:** Anyone can use **Forgot your password?** on the sign-in page. The link works once and lasts one hour, and using it signs them out everywhere.
 
-**With email off, for an admin:** Use **I lost my admin password**, on that same page, with your setup token. It works for active admins only, signs you out everywhere and goes in the audit log. Lost the token too? [Set a new `SETUP_TOKEN` on your host](#changing-a-setting-on-your-host).
+**With email off, for an admin:** Use **I lost my admin password**, on that same page, with your setup token. It works for active admins only, signs you out everywhere and goes in the audit log. Lost the token too? [Set a new `SETUP_TOKEN` on your host](#changing-a-setting-on-your-host), then paste your Village keys again, because the old token sealed them.
 
 **With email off, for a member:** Turn email on, or remove them and use **Invite them back as a new account**. That's a new account: their old private messages stay on the old one, and they don't get them back. There's no way for an admin to set or reset a member's password, on purpose. It would let that admin sign in as them and read their private messages.
 
@@ -103,7 +103,7 @@ Everything lives in **Admin**.
 
 ## Setup token
 
-The setup token is a long password that proves you own the deployment. You need it once, to create your admin account, and again if you lose your admin password while email is off, so keep it safe.
+The setup token is a long password that proves you own the deployment. You need it once, to create your admin account, and again if you lose your admin password while email is off, so keep it safe. It also seals your Village secret key in the database. If you change it, the app asks you to paste your Village keys again. Nothing else is lost.
 
 Use at least 32 random characters. A password manager's generator works, like [1Password's free one](https://1password.com/password-generator). If it's missing or too weak, your site explains how to fix it and creates nothing.
 
@@ -184,7 +184,7 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 
 **Auth secret:** The app uses `BETTER_AUTH_SECRET` when set. Otherwise it generates a secret on first boot and stores it in the `instance_settings` table, so anyone with database read access can read it. Changing the secret later signs everyone out.
 
-**Village:** The server mints each member's token with `POST /v2/auth/tokens`, then calls the v2 API. The secret key and tokens never reach the browser, and the app never reads the SDK's `village.token` cookie. The browser only runs the App SDK for sync, and it's identified by an opaque UUID per member. Tokens need an email, so Village receives the member's email. Keys and the invite link live in `instance_settings` in plaintext, like the generated auth secret, so anyone with database read access can read them. Sign-out clears the SDK's `village.token` from this site only. Village's own session on its domain stays, so on a shared browser the next member's popup can reuse the first member's Village account. The email check below blocks that link until an admin approves it.
+**Village:** The server mints each member's token with `POST /v2/auth/tokens`, then calls the v2 API. The secret key and tokens never reach the browser, and the app never reads the SDK's `village.token` cookie. The browser only runs the App SDK for sync, and it's identified by an opaque UUID per member. Tokens need an email, so Village receives the member's email. The secret key is sealed in `instance_settings` with AES-256-GCM, using a key derived from `SETUP_TOKEN` with scrypt, so a database leak alone doesn't hand over your Village account. See [what that does and doesn't protect](docs/architecture.md#the-sealed-village-secret). Without a usable `SETUP_TOKEN` it stays in plaintext, and **Settings** warns you. The public key and the invite link live in plaintext, like the generated auth secret, so anyone with database read access can read them. Sign-out clears the SDK's `village.token` from this site only. Village's own session on its domain stays, so on a shared browser the next member's popup can reuse the first member's Village account. The email check below blocks that link until an admin approves it.
 
 **Village link check:** Village doesn't sign the member reference in its widget, so anyone can send someone else a link that ties that person's Village account to their member ID. The app compares the email on `/v2/user/me` with the member's email, case-insensitively, before every join, search and path lookup. A match counts only when the member's email is verified, because a forwarded invite could otherwise own an account with someone else's email. On a mismatch it blocks them and tells the member to ask an admin. **Admin**, **Members** shows them as *Blocked for approval*, and an admin can approve that exact pair of emails. A later change to either email blocks again. An admin can also reset a member's link there, which gives the member a new ID and clears their consent, group status and cached paths on this site. Reset removes nothing on Village's side: the old Village account stays linked to the old ID and stays in the group until it leaves inside Village, and Village won't link that same account to this site again yet.
 
@@ -217,7 +217,7 @@ With no trusted header, all clients share one bucket per path. That can't be spo
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Postgres connection for the app. |
-| `SETUP_TOKEN` | For setup | Unlocks `/setup`, and admin password recovery when email is off. 32+ random characters. |
+| `SETUP_TOKEN` | For setup | Unlocks `/setup`, and admin password recovery when email is off. Also seals your Village secret key, so keep it set. 32+ random characters. |
 | `APP_URL` | Self-hosting | Public origin. Takes priority over platform variables. |
 | `DATABASE_URL_UNPOOLED` | No | Direct connection, preferred for migrations. |
 | `VILLAGE_API_URL` | No | Village API origin. Defaults to production. |

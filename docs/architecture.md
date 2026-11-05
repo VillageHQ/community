@@ -219,6 +219,37 @@ The screen handles dependencies in words:
 
 The domain and keys steps of setup also offer "Run without Village", so a new community can skip Village in one click. It confirms what happened.
 
+## The sealed Village secret
+
+`village_secret_key` is stored as `sealed.v1.<salt>.<iv>.<ciphertext+tag>`, in `platform/secrets/sealed.ts` and `platform/village/settings.ts`. Encryption is AES-256-GCM, with the setting key as additional data, so a ciphertext can't be copied to another setting. There's no new env var.
+
+The key comes from `SETUP_TOKEN` through scrypt, not HKDF. HKDF assumes its input is already high entropy, and this token is a password a person chose: `readSetupToken` accepts any 32 characters with 8 distinct ones and no repeated 8-character run. Scrypt makes a stolen backup slow to guess. It costs tens of milliseconds and about 32 MiB, once per instance per salt.
+
+| Stored value | Usable token | Result |
+|---|---|---|
+| Sealed | Matches | Keys work. |
+| Sealed | Different or missing | `readVillageKeys` returns `null`. Members see the "still setting things up" copy. The keys step asks admins to paste the keys again. One log line, no secret, no crash. |
+| Plain | Yes | Sealed on first read, with a compare-and-set update so two instances can't race. Keys work. |
+| Plain | No | Keys work. **Settings** shows a warning. |
+| Nothing | Any | The not-configured path. |
+
+While keys can't be opened, removing a member reports the Village departure as failed, and the admin can retry after pasting the keys.
+
+What this does and doesn't protect:
+
+| Attacker has | Helps? | Why |
+|---|---|---|
+| A database dump or read-only SQL access | **Yes, for the Village secret only** | They can't call Village as this community from elsewhere, unless they guess the token. |
+| The same access, for anything else | **No** | Messages, emails and password hashes are all there. So is `auth_secret`, unless `BETTER_AUTH_SECRET` is set. With it and the `session` table, they can forge a session cookie and act as any member or admin in the app. |
+| A forged admin session | **Partly** | They can spend credits through the app and replace the keys. They can't read the secret, because the UI only receives the public key. |
+| Database write access | **No** | They can overwrite the value with their own plaintext key, and the app will use it. |
+| The host's env settings, or code running on the server | **No** | They have the token and the database. |
+| A leaked `SETUP_TOKEN` alone | **Yes, for the Village secret** | The sealed value is in the database. The token can still reset an admin password while email is off. |
+
+So this limits one thing: a database leak no longer hands over the fund's Village account. It doesn't make the database safe to leak.
+
+`auth_secret` isn't sealed, because a changed token would sign everyone out, or lock them out if the token is gone. `BETTER_AUTH_SECRET` already exists for that separation. The group invite link isn't sealed yet, because `advanceNetwork` treats no group as "create one", so an unreadable link could produce a second group.
+
 ## Adding a module
 
 Asks, for example, needs this:

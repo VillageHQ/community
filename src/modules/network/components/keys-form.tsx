@@ -6,6 +6,7 @@ import { useActionState } from "react";
 import { ExternalTextLink } from "@/components/external-text-link";
 import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useFocusOnFailure } from "@/components/use-focus-on-failure";
 import { VILLAGE_PLATFORM_LINKS } from "@/platform/village/links";
@@ -31,14 +32,19 @@ async function submitKeys(_previousState: KeysState, formData: FormData): Promis
   }
 }
 
-type KeysFormProps = { savedPublicKey: string; hasSavedKeys: boolean };
+type KeysFormProps = { savedPublicKey: string; hasSavedKeys: boolean; needsReentry?: boolean };
 
-export function KeysForm({ savedPublicKey, hasSavedKeys }: KeysFormProps) {
+export function KeysForm({ savedPublicKey, hasSavedKeys, needsReentry = false }: KeysFormProps) {
   const [state, formAction, isPending] = useActionState(submitKeys, INITIAL_STATE);
   const publicKeyRef = useFocusOnFailure(state);
 
   return (
     <form action={formAction} className="grid gap-5">
+      {needsReentry ? (
+        <Alert>
+          Your setup token changed, so we can&apos;t read your Village keys. Paste them again. Nothing else was lost.
+        </Alert>
+      ) : null}
       <p className="text-foreground-soft">
         Open <ExternalTextLink href={VILLAGE_PLATFORM_LINKS.apiKeys}>API Keys in Village</ExternalTextLink> and copy both
         keys here. We check them with Village before saving.

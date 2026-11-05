@@ -1,29 +1,77 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import type { Database, DatabaseOrTransaction } from "../database/client.ts";
+import type { Environment } from "../environment.ts";
+import { logError } from "../observability/route-logging.ts";
+import { isSealedValue, openSealedSecret, sealSecret } from "../secrets/sealed.ts";
+import { readSetupToken } from "../secrets/setup-token.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../settings/schema.ts";
 import { DAILY_LOOKUP_LIMITS, dailyLimitBodySchema } from "./contract.ts";
 import { readSettings, saveSettings } from "../settings/store.ts";
 
 export type VillageKeys = { publicKey: string; secretKey: string };
 
-export async function readVillageKeys(database: Database): Promise<VillageKeys | null> {
-  const settings = await readSettings(database, [
-    INSTANCE_SETTING_KEYS.villagePublicKey,
-    INSTANCE_SETTING_KEYS.villageSecretKey,
-  ]);
-  const publicKey = settings.get(INSTANCE_SETTING_KEYS.villagePublicKey);
-  const secretKey = settings.get(INSTANCE_SETTING_KEYS.villageSecretKey);
-  if (!publicKey || !secretKey) return null;
-  return { publicKey, secretKey };
+export const VILLAGE_KEY_STATUSES = { missing: "missing", sealed: "sealed", plain: "plain", unreadable: "unreadable" } as const;
+
+export type VillageKeyStatus = (typeof VILLAGE_KEY_STATUSES)[keyof typeof VILLAGE_KEY_STATUSES];
+
+type VillageKeyState = { status: VillageKeyStatus; publicKey: string | null; keys: VillageKeys | null };
+
+const SECRET_KEY_LABEL = INSTANCE_SETTING_KEYS.villageSecretKey;
+
+const loggedUnreadableValues = new Set<string>();
+
+function logUnreadableOnce(sealedValue: string) {
+  if (loggedUnreadableValues.has(sealedValue)) return;
+  loggedUnreadableValues.add(sealedValue);
+  logError("village-keys", new Error("The Village secret key can't be opened with this SETUP_TOKEN. An admin needs to paste the keys again."));
 }
 
-export async function saveVillageKeys(database: DatabaseOrTransaction, keys: VillageKeys) {
+// Only replaces the exact value it read, so it can't overwrite keys another instance just saved.
+async function sealStoredPlaintext(database: Database, plaintext: string, token: string) {
+  try {
+    await database
+      .update(instanceSettings)
+      .set({ value: await sealSecret(plaintext, token, SECRET_KEY_LABEL) })
+      .where(and(eq(instanceSettings.key, SECRET_KEY_LABEL), eq(instanceSettings.value, plaintext)));
+  } catch (error) {
+    logError("village-keys", error);
+  }
+}
+
+export async function readVillageKeyState(database: Database, environment: Environment = process.env): Promise<VillageKeyState> {
+  const settings = await readSettings(database, [INSTANCE_SETTING_KEYS.villagePublicKey, SECRET_KEY_LABEL]);
+  const publicKey = settings.get(INSTANCE_SETTING_KEYS.villagePublicKey) ?? null;
+  const storedSecret = settings.get(SECRET_KEY_LABEL);
+  if (!publicKey || !storedSecret) return { status: VILLAGE_KEY_STATUSES.missing, publicKey, keys: null };
+
+  const token = readSetupToken(environment);
+  if (!isSealedValue(storedSecret)) {
+    const keys = { publicKey, secretKey: storedSecret };
+    if (!token) return { status: VILLAGE_KEY_STATUSES.plain, publicKey, keys };
+    await sealStoredPlaintext(database, storedSecret, token);
+    return { status: VILLAGE_KEY_STATUSES.sealed, publicKey, keys };
+  }
+
+  const secretKey = token ? await openSealedSecret(storedSecret, token, SECRET_KEY_LABEL) : null;
+  if (secretKey === null) {
+    logUnreadableOnce(storedSecret);
+    return { status: VILLAGE_KEY_STATUSES.unreadable, publicKey, keys: null };
+  }
+  return { status: VILLAGE_KEY_STATUSES.sealed, publicKey, keys: { publicKey, secretKey } };
+}
+
+export async function readVillageKeys(database: Database, environment: Environment = process.env): Promise<VillageKeys | null> {
+  return (await readVillageKeyState(database, environment)).keys;
+}
+
+export async function saveVillageKeys(database: DatabaseOrTransaction, keys: VillageKeys, environment: Environment = process.env) {
+  const token = readSetupToken(environment);
   await saveSettings(database, {
     [INSTANCE_SETTING_KEYS.villagePublicKey]: keys.publicKey,
-    [INSTANCE_SETTING_KEYS.villageSecretKey]: keys.secretKey,
+    [SECRET_KEY_LABEL]: token ? await sealSecret(keys.secretKey, token, SECRET_KEY_LABEL) : keys.secretKey,
   });
 }
 
