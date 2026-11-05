@@ -1,32 +1,37 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, posix, resolve } from "node:path";
 
 import ts from "typescript";
 
 export const REPOSITORY_ROOT = resolve(import.meta.dirname, "../../..");
 
-const SOURCE_FILE_PATTERN = /\.tsx?$/;
+const SOURCE_FILE_PATTERN = /\.(tsx?|jsx?)$/;
 const TEST_FILE_PATTERN = /\.test\.tsx?$/;
 const DECLARATION_FILE_PATTERN = /\.d\.ts$/;
-const CANDIDATE_SUFFIXES = ["", ".ts", ".tsx"];
+const COMPILED_EXTENSION_PATTERN = /\.jsx?$/;
+const LOCAL_SPECIFIER_PATTERN = /^(@\/|\.)/;
+const CANDIDATE_SUFFIXES = ["", ".ts", ".tsx", ".js", ".jsx", "/index.ts", "/index.tsx", "/index.js", "/index.jsx"];
 
 export type ImportEdge = { from: string; to: string };
 
 function isFileInRepository(path: string) {
-  return existsSync(resolve(REPOSITORY_ROOT, path)) && SOURCE_FILE_PATTERN.test(path);
+  const absolutePath = resolve(REPOSITORY_ROOT, path);
+  return existsSync(absolutePath) && statSync(absolutePath).isFile();
 }
 
 function toRepositoryPath(importer: string, specifier: string) {
-  if (specifier.startsWith("@/")) return `src/${specifier.slice(2)}`;
+  if (specifier.startsWith("@/")) return posix.normalize(`src/${specifier.slice(2)}`);
   if (specifier.startsWith(".")) return posix.join(dirname(importer), specifier);
   return null;
 }
 
-function resolveSpecifier(importer: string, specifier: string) {
+export function resolveSpecifier(importer: string, specifier: string) {
   const path = toRepositoryPath(importer, specifier);
   if (path === null) return null;
-  return CANDIDATE_SUFFIXES.map((suffix) => `${path}${suffix}`).find(isFileInRepository) ?? null;
+  const compiledPathSource = path.replace(COMPILED_EXTENSION_PATTERN, "");
+  const candidates = [...CANDIDATE_SUFFIXES.map((suffix) => `${path}${suffix}`), `${compiledPathSource}.ts`, `${compiledPathSource}.tsx`];
+  return candidates.find(isFileInRepository) ?? null;
 }
 
 export function readImportSpecifiers(file: string) {
@@ -54,9 +59,40 @@ export function readImportEdges(files: readonly string[]): ImportEdge[] {
   return files.flatMap((from) =>
     readImportSpecifiers(from).flatMap((specifier) => {
       const to = resolveSpecifier(from, specifier);
-      return to ? [{ from, to }] : [];
+      return to && SOURCE_FILE_PATTERN.test(to) ? [{ from, to }] : [];
     }),
   );
+}
+
+export function readUnresolvedImports(files: readonly string[]) {
+  return files.flatMap((file) =>
+    readImportSpecifiers(file)
+      .filter((specifier) => LOCAL_SPECIFIER_PATTERN.test(specifier) && resolveSpecifier(file, specifier) === null)
+      .map((specifier) => `${file} -> ${specifier}`),
+  );
+}
+
+export function findSelfImports(edges: readonly ImportEdge[]) {
+  return edges.filter(({ from, to }) => from === to).map(({ from }) => from);
+}
+
+export function findComputedImports(fileName: string, text: string) {
+  const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true);
+  const computed: string[] = [];
+
+  function visit(node: ts.Node) {
+    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && !node.arguments.every(ts.isStringLiteral)) {
+      computed.push(node.getText());
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(source);
+  return computed;
+}
+
+export function readComputedImports(files: readonly string[]) {
+  return files.flatMap((file) => findComputedImports(file, readFileSync(resolve(REPOSITORY_ROOT, file), "utf8")).map((call) => `${file}: ${call}`));
 }
 
 export function followImports(entryFiles: readonly string[]) {

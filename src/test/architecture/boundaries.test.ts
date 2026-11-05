@@ -1,24 +1,31 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import {
-  followImports,
   findCycles,
+  findSelfImports,
+  followImports,
   isTestFile,
+  readComputedImports,
   readImportEdges,
   readImportSpecifiers,
   readSourceFiles,
+  readUnresolvedImports,
   REPOSITORY_ROOT,
   type ImportEdge,
 } from "./import-graph";
 import { isEdgeAllowed, readModuleName } from "./layers";
+import { readLoadedSchemaFiles } from "./schema-files";
 
 const SERVER_ONLY_PACKAGE = "server-only";
 const PATH_ALIAS_PREFIX = "@/";
 const BOOT_ENTRY_FILE = "scripts/migrate.ts";
-const SCHEMA_FILE_PATTERN = /(^|\/|-)schema\.ts$/;
+const MODULE_NOT_FOUND_CODE = "ERR_MODULE_NOT_FOUND";
+const MIGRATION_SCRIPT_OUTPUT = "igrations";
+const RELATIVE_SPECIFIER_PREFIX = ".";
 
 const sourceFiles = readSourceFiles();
 const productionFiles = sourceFiles.filter((file) => !isTestFile(file));
@@ -39,6 +46,18 @@ describe("the import graph", () => {
     expect([...new Set(violations)].toSorted()).toEqual([]);
   });
 
+  it("resolves every local import", () => {
+    expect(readUnresolvedImports(productionFiles)).toEqual([]);
+  });
+
+  it("has no file that imports itself", () => {
+    expect(findSelfImports(productionEdges)).toEqual([]);
+  });
+
+  it("has no computed import, because the graph can't follow one", () => {
+    expect(readComputedImports(productionFiles)).toEqual([]);
+  });
+
   it("has no file cycles", () => {
     expect(findCycles(productionEdges)).toEqual([]);
   });
@@ -49,13 +68,31 @@ describe("the import graph", () => {
 });
 
 describe("the code that runs outside Next", () => {
-  const schemaFiles = productionFiles.filter((file) => SCHEMA_FILE_PATTERN.test(file));
-  const bootFiles = followImports([BOOT_ENTRY_FILE, ...schemaFiles]);
+  const bootFiles = followImports([BOOT_ENTRY_FILE, ...readLoadedSchemaFiles()]);
 
   it.each(bootFiles)("loads %s without server-only or the path alias", (file) => {
     const blocked = readImportSpecifiers(file).filter((specifier) => specifier === SERVER_ONLY_PACKAGE || specifier.startsWith(PATH_ALIAS_PREFIX));
 
     expect(blocked).toEqual([]);
+  });
+
+  it.each(bootFiles)("names the exact file in every relative import of %s, as Node requires", (file) => {
+    const inexact = readImportSpecifiers(file).filter(
+      (specifier) => specifier.startsWith(RELATIVE_SPECIFIER_PREFIX) && !existsSync(resolve(REPOSITORY_ROOT, dirname(file), specifier)),
+    );
+
+    expect(inexact).toEqual([]);
+  });
+
+  it("starts the migration script under plain Node", () => {
+    const { stdout, stderr } = spawnSync(process.execPath, [BOOT_ENTRY_FILE], {
+      cwd: REPOSITORY_ROOT,
+      encoding: "utf8",
+      env: { ...process.env, DATABASE_URL: "", DATABASE_URL_UNPOOLED: "" },
+    });
+
+    expect(stderr).not.toContain(MODULE_NOT_FOUND_CODE);
+    expect(`${stdout}${stderr}`).toContain(MIGRATION_SCRIPT_OUTPUT);
   });
 });
 

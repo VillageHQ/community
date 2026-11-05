@@ -220,6 +220,15 @@ describe("intro requests", () => {
   });
 
   describe("the paths a member sees", () => {
+    it("shows an ask the member already made, so they can't ask twice", async () => {
+      const intro = await createIntro();
+
+      const { connectors } = await lookUpPaths();
+      const jonas = connectors.find(({ linkedinSlug }) => linkedinSlug === JONAS_SLUG);
+
+      expect(jonas?.openAsk).toEqual({ id: intro.id, state: INTRO_STATES.requested });
+    });
+
     it("ranks community members first and explains each one with Village's reason", async () => {
       const { connectors } = await lookUpPaths();
 
