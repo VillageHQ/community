@@ -8,12 +8,16 @@ import { createSignedInMember } from "@/test/signed-in-member";
 
 import { clearDatabase, createTestDatabase } from "../../test/database.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../settings/schema.ts";
-import { readVillageKeyState, readVillageKeys, saveVillageKeys, VILLAGE_KEY_STATUSES } from "./settings.ts";
+import { VILLAGE_KEY_STATUSES } from "./contract.ts";
+import { readVillageKeyState, readVillageKeys, saveVillageKeys, sealStoredPlaintext, sealVillageSecretOnBoot } from "./settings.ts";
 
 const APP_URL = "http://localhost:3000";
 const TOKEN = "a-strong-setup-token-with-more-than-32-characters";
 const NEW_TOKEN = "another-strong-setup-token-with-more-than-32-characters";
 const WEAK_TOKEN = "change-me";
+const SETTINGS_LOADS = 5;
+const CONCURRENT_READERS = 20;
+const LATER_MS = 6 * 60 * 1000;
 const KEYS = { publicKey: "pk_test", secretKey: "sk_test_secret" };
 
 describe("the Village keys at rest", () => {
@@ -96,7 +100,7 @@ describe("the Village keys at rest", () => {
     it("asks for the keys again instead of crashing", async () => {
       const state = await readVillageKeyState(database);
 
-      expect(state.status).toBe(VILLAGE_KEY_STATUSES.unreadable);
+      expect(state.status).toBe(VILLAGE_KEY_STATUSES.tokenDifferent);
       expect(state.keys).toBeNull();
       expect(state.publicKey).toBe(KEYS.publicKey);
     });
@@ -159,7 +163,7 @@ describe("the Village keys at rest", () => {
       await saveVillageKeys(database, KEYS);
       vi.stubEnv("SETUP_TOKEN", token);
 
-      expect((await readVillageKeyState(database)).status).toBe(VILLAGE_KEY_STATUSES.unreadable);
+      expect((await readVillageKeyState(database)).status).toBe(VILLAGE_KEY_STATUSES.tokenMissing);
     });
 
     it("seals the secret once a usable token appears", async () => {
@@ -168,6 +172,169 @@ describe("the Village keys at rest", () => {
 
       expect(await readVillageKeys(database)).toEqual(KEYS);
       expect(await readStoredSecret()).not.toContain(KEYS.secretKey);
+    });
+  });
+
+  describe("when sealing can't write", () => {
+    function failingUpdates() {
+      const update = vi.fn(() => {
+        throw new Error("The database is read-only.");
+      });
+      const failing = new Proxy(database, { get: (target, property) => (property === "update" ? update : Reflect.get(target, property)) });
+      return { failing, update };
+    }
+
+    function uniquePlaintextKeys() {
+      return { ...KEYS, secretKey: `sk_${crypto.randomUUID()}` };
+    }
+
+    async function storeKeys(keys: typeof KEYS) {
+      await database.insert(instanceSettings).values([
+        { key: INSTANCE_SETTING_KEYS.villagePublicKey, value: keys.publicKey },
+        { key: INSTANCE_SETTING_KEYS.villageSecretKey, value: keys.secretKey },
+      ]);
+    }
+
+    it("says it's unsealed, because the row still is", async () => {
+      const keys = uniquePlaintextKeys();
+      await storeKeys(keys);
+      const { failing } = failingUpdates();
+
+      const state = await readVillageKeyState(failing);
+
+      expect(state.status).toBe(VILLAGE_KEY_STATUSES.sealFailed);
+      expect(state.keys).toEqual(keys);
+      expect(await readStoredSecret()).toBe(keys.secretKey);
+    });
+
+    it("tries once, however many times the page loads", async () => {
+      const keys = uniquePlaintextKeys();
+      await storeKeys(keys);
+      const { failing, update } = failingUpdates();
+
+      for (const _load of Array.from({ length: SETTINGS_LOADS })) await readVillageKeyState(failing);
+
+      expect(update).toHaveBeenCalledTimes(1);
+    });
+
+    it("makes one attempt for readers at the same moment", async () => {
+      const keys = uniquePlaintextKeys();
+      await storeKeys(keys);
+      const { failing, update } = failingUpdates();
+
+      await Promise.all(Array.from({ length: CONCURRENT_READERS }, () => readVillageKeys(failing)));
+
+      expect(update).toHaveBeenCalledTimes(1);
+    });
+
+    it("tries again later", async () => {
+      const keys = uniquePlaintextKeys();
+      await storeKeys(keys);
+      await readVillageKeyState(failingUpdates().failing);
+      vi.spyOn(Date, "now").mockReturnValue(Date.now() + LATER_MS);
+
+      expect((await readVillageKeyState(database)).status).toBe(VILLAGE_KEY_STATUSES.sealed);
+      expect(await readStoredSecret()).not.toContain(keys.secretKey);
+    });
+  });
+
+  it("makes one attempt for callers at the same moment", async () => {
+    let finishUpdate = () => {};
+    const updateFinished = new Promise<void>((resolve) => {
+      finishUpdate = resolve;
+    });
+    const update = vi.fn(() => ({
+      set: () => ({
+        where: () => ({
+          returning: async () => {
+            await updateFinished;
+            return [{ key: INSTANCE_SETTING_KEYS.villageSecretKey }];
+          },
+        }),
+      }),
+    }));
+    const gated = new Proxy(database, { get: (target, property) => (property === "update" ? update : Reflect.get(target, property)) });
+    const plaintext = `sk_${crypto.randomUUID()}`;
+
+    const attempts = Array.from({ length: CONCURRENT_READERS }, () => sealStoredPlaintext(gated, plaintext, TOKEN));
+    finishUpdate();
+
+    expect(await Promise.all(attempts)).toEqual(Array.from({ length: CONCURRENT_READERS }, () => true));
+    expect(update).toHaveBeenCalledTimes(1);
+  });
+
+  describe("a stored value that looks sealed but isn't readable", () => {
+    it.each(["sealed.v2.a.b.c", "sealed.key-from-somewhere"])("fails closed for %s, and leaves it alone", async (value) => {
+      await database.insert(instanceSettings).values([
+        { key: INSTANCE_SETTING_KEYS.villagePublicKey, value: KEYS.publicKey },
+        { key: INSTANCE_SETTING_KEYS.villageSecretKey, value },
+      ]);
+
+      const state = await readVillageKeyState(database);
+
+      expect(state.status).toBe(VILLAGE_KEY_STATUSES.damaged);
+      expect(state.keys).toBeNull();
+      expect(await readStoredSecret()).toBe(value);
+    });
+  });
+
+  describe("saving a key that looks sealed", () => {
+    const LOOKALIKE = { ...KEYS, secretKey: "sealed.key-from-somewhere" };
+
+    it("round-trips with a token", async () => {
+      await saveVillageKeys(database, LOOKALIKE);
+
+      expect(await readVillageKeys(database)).toEqual(LOOKALIKE);
+    });
+
+    it("is refused without one, because it would read as sealed", async () => {
+      vi.stubEnv("SETUP_TOKEN", "");
+
+      await expect(saveVillageKeys(database, LOOKALIKE)).rejects.toThrow("setup token");
+      expect(await readStoredSecret()).toBeNull();
+    });
+  });
+
+  describe("on a preview that may share production's database", () => {
+    it("leaves a plaintext secret alone, so its token can't lock production out", async () => {
+      await storePlaintextKeys();
+
+      const state = await readVillageKeyState(database, { SETUP_TOKEN: TOKEN, VERCEL_ENV: "preview" });
+
+      expect(state.keys).toEqual(KEYS);
+      expect(state.status).toBe(VILLAGE_KEY_STATUSES.sealFailed);
+      expect(await readStoredSecret()).toBe(KEYS.secretKey);
+    });
+  });
+
+  describe("at boot", () => {
+    it("seals a plaintext secret, whatever the toggles say", async () => {
+      await storePlaintextKeys();
+
+      await sealVillageSecretOnBoot(database);
+
+      expect(await readStoredSecret()).not.toContain(KEYS.secretKey);
+    });
+
+    it("changes nothing the second time", async () => {
+      await storePlaintextKeys();
+      await sealVillageSecretOnBoot(database);
+      const sealed = await readStoredSecret();
+
+      await sealVillageSecretOnBoot(database);
+
+      expect(await readStoredSecret()).toBe(sealed);
+    });
+
+    it("doesn't stop the server when the database fails", async () => {
+      const broken = new Proxy(database, {
+        get: (target, property) => {
+          if (property === "select") throw new Error("The database is down.");
+          return Reflect.get(target, property);
+        },
+      });
+
+      await expect(sealVillageSecretOnBoot(broken)).resolves.toBeUndefined();
     });
   });
 

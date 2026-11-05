@@ -1,44 +1,130 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
 import { and, eq } from "drizzle-orm";
 
 import type { Database, DatabaseOrTransaction } from "../database/client.ts";
 import type { Environment } from "../environment.ts";
 import { logError } from "../observability/route-logging.ts";
-import { isSealedValue, openSealedSecret, sealSecret } from "../secrets/sealed.ts";
+import { isPreviewSharingDatabase } from "../database/migration-plan.ts";
+import { RequestError } from "../http/request-error.ts";
+import { looksSealed, openSealedSecret, OPEN_OUTCOMES, sealSecret } from "../secrets/sealed.ts";
 import { readSetupToken } from "../secrets/setup-token.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../settings/schema.ts";
-import { DAILY_LOOKUP_LIMITS, dailyLimitBodySchema } from "./contract.ts";
+import { DAILY_LOOKUP_LIMITS, dailyLimitBodySchema, VILLAGE_KEY_STATUSES, type VillageKeyStatus } from "./contract.ts";
+import { VILLAGE_ERROR_CODES } from "./error-codes.ts";
 import { readSettings, saveSettings } from "../settings/store.ts";
 
 export type VillageKeys = { publicKey: string; secretKey: string };
 
-export const VILLAGE_KEY_STATUSES = { missing: "missing", sealed: "sealed", plain: "plain", unreadable: "unreadable" } as const;
-
-export type VillageKeyStatus = (typeof VILLAGE_KEY_STATUSES)[keyof typeof VILLAGE_KEY_STATUSES];
-
 type VillageKeyState = { status: VillageKeyStatus; publicKey: string | null; keys: VillageKeys | null };
 
+type SealingState = { attempts: Map<string, Promise<boolean>>; retryAfterMs: Map<string, number>; loggedProblems: Set<string> };
+
+declare global {
+  // Next can bundle this file more than once. A process makes one attempt at a time and logs each problem once.
+  var communityVillageKeySealing: SealingState | undefined;
+}
+
 const SECRET_KEY_LABEL = INSTANCE_SETTING_KEYS.villageSecretKey;
+const SEAL_RETRY_DELAY_MS = 5 * 60 * 1000;
+const UNPROCESSABLE_STATUS = 422;
 
-const loggedUnreadableValues = new Set<string>();
+const STATUS_BY_OUTCOME = {
+  [OPEN_OUTCOMES.wrongToken]: VILLAGE_KEY_STATUSES.tokenDifferent,
+  [OPEN_OUTCOMES.unsupported]: VILLAGE_KEY_STATUSES.damaged,
+  [OPEN_OUTCOMES.derivationFailed]: VILLAGE_KEY_STATUSES.unavailable,
+};
 
-function logUnreadableOnce(sealedValue: string) {
-  if (loggedUnreadableValues.has(sealedValue)) return;
-  loggedUnreadableValues.add(sealedValue);
-  logError("village-keys", new Error("The Village secret key can't be opened with this SETUP_TOKEN. An admin needs to paste the keys again."));
+const PROBLEM_MESSAGES: Partial<Record<VillageKeyStatus, string>> = {
+  [VILLAGE_KEY_STATUSES.tokenMissing]: "The Village secret key is sealed, and this site has no usable SETUP_TOKEN.",
+  [VILLAGE_KEY_STATUSES.tokenDifferent]: "The Village secret key can't be opened with this SETUP_TOKEN.",
+  [VILLAGE_KEY_STATUSES.damaged]: "The stored Village secret key isn't in a form this version can read.",
+  [VILLAGE_KEY_STATUSES.unavailable]: "The key for the Village secret couldn't be derived. It will be tried again.",
+};
+
+function readSealingState() {
+  globalThis.communityVillageKeySealing ??= { attempts: new Map(), retryAfterMs: new Map(), loggedProblems: new Set() };
+  return globalThis.communityVillageKeySealing;
+}
+
+function logProblemOnce(status: VillageKeyStatus, storedSecret: string) {
+  const { loggedProblems } = readSealingState();
+  const problemKey = `${status}:${toDigest(storedSecret)}`;
+  const message = PROBLEM_MESSAGES[status];
+  if (!message || loggedProblems.has(problemKey)) return;
+  loggedProblems.add(problemKey);
+  logError("village-keys", new Error(message));
+}
+
+function toDigest(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+async function readStoredSecret(database: Database) {
+  const settings = await readSettings(database, [SECRET_KEY_LABEL]);
+  return settings.get(SECRET_KEY_LABEL) ?? null;
 }
 
 // Only replaces the exact value it read, so it can't overwrite keys another instance just saved.
-async function sealStoredPlaintext(database: Database, plaintext: string, token: string) {
+async function replacePlaintext(database: Database, plaintext: string, token: string) {
+  const updated = await database
+    .update(instanceSettings)
+    .set({ value: await sealSecret(plaintext, token, SECRET_KEY_LABEL) })
+    .where(and(eq(instanceSettings.key, SECRET_KEY_LABEL), eq(instanceSettings.value, plaintext)))
+    .returning({ key: instanceSettings.key });
+  if (updated.length > 0) return true;
+
+  const stored = await readStoredSecret(database);
+  return stored !== null && looksSealed(stored);
+}
+
+async function attemptSealing(database: Database, plaintext: string, token: string, attemptKey: string) {
+  const { retryAfterMs } = readSealingState();
   try {
-    await database
-      .update(instanceSettings)
-      .set({ value: await sealSecret(plaintext, token, SECRET_KEY_LABEL) })
-      .where(and(eq(instanceSettings.key, SECRET_KEY_LABEL), eq(instanceSettings.value, plaintext)));
+    const isSealed = await replacePlaintext(database, plaintext, token);
+    if (isSealed) retryAfterMs.delete(attemptKey);
+    return isSealed;
   } catch (error) {
     logError("village-keys", error);
+    retryAfterMs.set(attemptKey, Date.now() + SEAL_RETRY_DELAY_MS);
+    return false;
   }
+}
+
+// Reports what's stored afterwards. Readers at the same moment share one attempt, and a failure waits before the next.
+export function sealStoredPlaintext(database: Database, plaintext: string, token: string) {
+  const { attempts, retryAfterMs } = readSealingState();
+  const attemptKey = toDigest(plaintext);
+  if (Date.now() < (retryAfterMs.get(attemptKey) ?? 0)) return Promise.resolve(false);
+
+  const running = attempts.get(attemptKey);
+  if (running) return running;
+
+  const attempt = attemptSealing(database, plaintext, token, attemptKey).finally(() => attempts.delete(attemptKey));
+  attempts.set(attemptKey, attempt);
+  return attempt;
+}
+
+async function readPlaintextState(database: Database, storedSecret: string, publicKey: string, environment: Environment): Promise<VillageKeyState> {
+  const keys = { publicKey, secretKey: storedSecret };
+  const token = readSetupToken(environment);
+  if (!token) return { status: VILLAGE_KEY_STATUSES.plain, publicKey, keys };
+
+  // A preview may share production's database and have its own token. Sealing from it would lock production out.
+  const isSealed = !isPreviewSharingDatabase(environment) && (await sealStoredPlaintext(database, storedSecret, token));
+  return { status: isSealed ? VILLAGE_KEY_STATUSES.sealed : VILLAGE_KEY_STATUSES.sealFailed, publicKey, keys };
+}
+
+async function readSealedState(storedSecret: string, publicKey: string, environment: Environment): Promise<VillageKeyState> {
+  const token = readSetupToken(environment);
+  const result = token ? await openSealedSecret(storedSecret, token, SECRET_KEY_LABEL) : null;
+  if (result?.outcome === OPEN_OUTCOMES.opened) return { status: VILLAGE_KEY_STATUSES.sealed, publicKey, keys: { publicKey, secretKey: result.secret } };
+
+  const status = result ? STATUS_BY_OUTCOME[result.outcome] : VILLAGE_KEY_STATUSES.tokenMissing;
+  logProblemOnce(status, storedSecret);
+  return { status, publicKey, keys: null };
 }
 
 export async function readVillageKeyState(database: Database, environment: Environment = process.env): Promise<VillageKeyState> {
@@ -47,28 +133,27 @@ export async function readVillageKeyState(database: Database, environment: Envir
   const storedSecret = settings.get(SECRET_KEY_LABEL);
   if (!publicKey || !storedSecret) return { status: VILLAGE_KEY_STATUSES.missing, publicKey, keys: null };
 
-  const token = readSetupToken(environment);
-  if (!isSealedValue(storedSecret)) {
-    const keys = { publicKey, secretKey: storedSecret };
-    if (!token) return { status: VILLAGE_KEY_STATUSES.plain, publicKey, keys };
-    await sealStoredPlaintext(database, storedSecret, token);
-    return { status: VILLAGE_KEY_STATUSES.sealed, publicKey, keys };
-  }
-
-  const secretKey = token ? await openSealedSecret(storedSecret, token, SECRET_KEY_LABEL) : null;
-  if (secretKey === null) {
-    logUnreadableOnce(storedSecret);
-    return { status: VILLAGE_KEY_STATUSES.unreadable, publicKey, keys: null };
-  }
-  return { status: VILLAGE_KEY_STATUSES.sealed, publicKey, keys: { publicKey, secretKey } };
+  return looksSealed(storedSecret) ? readSealedState(storedSecret, publicKey, environment) : readPlaintextState(database, storedSecret, publicKey, environment);
 }
 
 export async function readVillageKeys(database: Database, environment: Environment = process.env): Promise<VillageKeys | null> {
   return (await readVillageKeyState(database, environment)).keys;
 }
 
+// Runs after migrations, so a community with Network off still gets its secret sealed. It must never stop the server.
+export async function sealVillageSecretOnBoot(database: Database, environment: Environment = process.env) {
+  try {
+    await readVillageKeyState(database, environment);
+  } catch (error) {
+    logError("village-keys", error);
+  }
+}
+
 export async function saveVillageKeys(database: DatabaseOrTransaction, keys: VillageKeys, environment: Environment = process.env) {
   const token = readSetupToken(environment);
+  if (!token && looksSealed(keys.secretKey)) {
+    throw new RequestError(UNPROCESSABLE_STATUS, VILLAGE_ERROR_CODES.keysUnstorable, "This key can't be saved until this site has a setup token. Add SETUP_TOKEN on your host, then try again.");
+  }
   await saveSettings(database, {
     [INSTANCE_SETTING_KEYS.villagePublicKey]: keys.publicKey,
     [SECRET_KEY_LABEL]: token ? await sealSecret(keys.secretKey, token, SECRET_KEY_LABEL) : keys.secretKey,

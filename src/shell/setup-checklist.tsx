@@ -12,7 +12,8 @@ import { readResendConfig } from "@/platform/email/resend";
 import { createRequestContext, type SessionMember } from "@/platform/http/request-context";
 import { readVillageGroupReadiness } from "@/modules/network/service";
 import { readVillageGroup, type VillageGroup } from "@/modules/network/service-settings";
-import { readVillageKeyState, VILLAGE_KEY_STATUSES, type VillageKeys } from "@/platform/village/settings";
+import { VILLAGE_KEY_STATUSES, type VillageKeyStatus } from "@/platform/village/contract";
+import { readVillageKeyState, type VillageKeys } from "@/platform/village/settings";
 
 import { RunWithoutVillage } from "@/modules/admin/components/run-without-village";
 import { networkManifest } from "@/modules/network/manifest";
@@ -66,7 +67,7 @@ type StepBodyFacts = {
   branding: Branding;
   keys: VillageKeys | null;
   savedPublicKey: string;
-  needsKeyReentry: boolean;
+  keyStatus: VillageKeyStatus;
   group: VillageGroup | null;
   domain: string;
   isDone: boolean;
@@ -82,9 +83,9 @@ const STEP_BODIES: Partial<Record<SetupStepId, (facts: StepBodyFacts) => ReactNo
       {keys ? null : <RunWithoutVillage moduleId={networkManifest.id} />}
     </>
   ),
-  [SETUP_STEPS.keys]: ({ keys, savedPublicKey, needsKeyReentry }) => (
+  [SETUP_STEPS.keys]: ({ keys, savedPublicKey, keyStatus }) => (
     <>
-      <KeysForm savedPublicKey={savedPublicKey} hasSavedKeys={Boolean(keys)} needsReentry={needsKeyReentry} />
+      <KeysForm savedPublicKey={savedPublicKey} hasSavedKeys={Boolean(keys)} keyStatus={keyStatus} />
       {keys ? null : <RunWithoutVillage moduleId={networkManifest.id} />}
     </>
   ),
@@ -132,7 +133,7 @@ export async function SetupChecklist({ database, admin, progress, openStepId, ba
   ]);
   const keys = keyState?.keys ?? null;
   const savedPublicKey = keyState?.publicKey ?? "";
-  const needsKeyReentry = keyState?.status === VILLAGE_KEY_STATUSES.unreadable;
+  const keyStatus = keyState?.status ?? VILLAGE_KEY_STATUSES.missing;
   const context = createRequestContext(database, process.env, admin);
   const { villageUser, isVillageReachable } =
     isNetworkStepShown && openStepId === SETUP_STEPS.group ? await readAdminUserSafely(context) : { villageUser: null, isVillageReachable: true };
@@ -155,7 +156,7 @@ export async function SetupChecklist({ database, admin, progress, openStepId, ba
             action={<StepAction stepId={id} isDone={isDone} isOpen={isOpen} basePath={basePath} />}
           >
             {isOpen
-              ? (STEP_BODIES[id]?.({ branding, keys, savedPublicKey, needsKeyReentry, group, domain, isDone, isVillageReachable, isSynced: Boolean(villageUser?.isSyncComplete), isEmailConfigured }) ?? null)
+              ? (STEP_BODIES[id]?.({ branding, keys, savedPublicKey, keyStatus, group, domain, isDone, isVillageReachable, isSynced: Boolean(villageUser?.isSyncComplete), isEmailConfigured }) ?? null)
               : null}
           </StepRow>
         );

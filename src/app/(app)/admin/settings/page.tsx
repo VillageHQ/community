@@ -1,14 +1,15 @@
 import { ExternalLink, Mail, MailX, PackageCheck } from "lucide-react";
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 
 import { ExternalTextLink } from "@/components/external-text-link";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { CardDescription } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { getDatabase } from "@/platform/database/client";
-import { HOST_SETTINGS_GUIDE_URL, SETUP_TOKEN_GUIDE_URL, UPDATE_GUIDE_URL } from "@/modules/admin/copy";
-import { readVillageKeyState, VILLAGE_KEY_STATUSES, type VillageKeyStatus } from "@/platform/village/settings";
+import { SettingCard } from "@/modules/admin/components/setting-card";
+import { VillageSecretCard } from "@/modules/admin/components/village-secret-card";
+import { HOST_SETTINGS_GUIDE_URL, UPDATE_GUIDE_URL } from "@/modules/admin/copy";
+import { readVillageKeyState } from "@/platform/village/settings";
 import { parseSetupStep, readSetupProgress } from "@/shell/admin-setup";
 import { APP_VERSION } from "@/platform/app-version";
 import { readBranding } from "@/platform/branding/branding";
@@ -90,18 +91,6 @@ function EmailOff({ enabledIds }: { enabledIds: ReadonlySet<string> }) {
   );
 }
 
-function SettingCard({ title, tag, children }: { title: string; tag: ReactNode; children: ReactNode }) {
-  return (
-    <Card className="grid gap-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle>{title}</CardTitle>
-        {tag}
-      </div>
-      {children}
-    </Card>
-  );
-}
-
 function EmailCard({ config, enabledIds }: { config: ResendConfig | null; enabledIds: ReadonlySet<string> }) {
   const tag = config ? (
     <Tag tone="sage">
@@ -117,36 +106,6 @@ function EmailCard({ config, enabledIds }: { config: ResendConfig | null; enable
   return (
     <SettingCard title="Email" tag={tag}>
       {config ? <EmailOn fromAddress={config.fromAddress} enabledIds={enabledIds} /> : <EmailOff enabledIds={enabledIds} />}
-    </SettingCard>
-  );
-}
-
-const VILLAGE_SECRET_COPY: Record<VillageKeyStatus, { tag: ReactNode; description: ReactNode } | null> = {
-  [VILLAGE_KEY_STATUSES.missing]: null,
-  [VILLAGE_KEY_STATUSES.sealed]: {
-    tag: <Tag tone="sage">Sealed</Tag>,
-    description: "Your Village secret key is encrypted in the database with your setup token. If you change the token, you'll paste your Village keys again.",
-  },
-  [VILLAGE_KEY_STATUSES.plain]: {
-    tag: <Tag tone="gold">Not sealed</Tag>,
-    description: (
-      <>
-        Your Village secret key is stored unencrypted, because this site has no usable setup token. <ExternalTextLink href={SETUP_TOKEN_GUIDE_URL}>Add one on your host</ExternalTextLink> and we&apos;ll seal it.
-      </>
-    ),
-  },
-  [VILLAGE_KEY_STATUSES.unreadable]: {
-    tag: <Tag tone="gold">Needs your keys</Tag>,
-    description: "Your setup token changed, so we can't read your Village keys. Open Add your Village keys above and paste them again.",
-  },
-};
-
-function VillageSecretCard({ status }: { status: VillageKeyStatus }) {
-  const copy = VILLAGE_SECRET_COPY[status];
-  if (!copy) return null;
-  return (
-    <SettingCard title="Village secret key" tag={copy.tag}>
-      <CardDescription>{copy.description}</CardDescription>
     </SettingCard>
   );
 }
@@ -191,7 +150,7 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
   const { step } = await searchParams;
   const database = getDatabase();
   const [progress, branding, enabledIds] = await Promise.all([readSetupProgress(database, process.env), readBranding(database), readEnabledIds(database)]);
-  const keyState = enabledIds.has(networkManifest.id) ? await readVillageKeyState(database) : null;
+  const keyState = await readVillageKeyState(database);
 
   return (
     <AdminSection title="Settings" description="Come back to any part of setup, any time.">
@@ -199,7 +158,7 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
         <div className="grid gap-5">
           <SetupChecklist database={database} admin={admin} progress={progress} openStepId={parseSetupStep(step, progress.steps.map(({ id }) => id))} basePath={ROUTES.adminSettings} />
           <EmailCard config={readResendConfig(process.env)} enabledIds={enabledIds} />
-          {keyState ? <VillageSecretCard status={keyState.status} /> : null}
+          <VillageSecretCard status={keyState.status} isNetworkOn={enabledIds.has(networkManifest.id)} />
           <VersionCard />
         </div>
         <AdminBrandCard branding={branding} isCurrentStep={false} />

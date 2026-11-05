@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+export const VILLAGE_KEY_STATUSES = {
+  missing: "missing",
+  sealed: "sealed",
+  plain: "plain",
+  sealFailed: "seal_failed",
+  tokenMissing: "token_missing",
+  tokenDifferent: "token_different",
+  damaged: "damaged",
+  unavailable: "unavailable",
+} as const;
+
+export type VillageKeyStatus = (typeof VILLAGE_KEY_STATUSES)[keyof typeof VILLAGE_KEY_STATUSES];
+
 export const DAILY_LOOKUP_LIMITS = { default: 50, minimum: 1, maximum: 500 } as const;
 
 export const dailyLimitBodySchema = z.object({
