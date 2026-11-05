@@ -2,12 +2,12 @@
 
 This guide puts your community on a server you rent, with one command. You don't need to be an engineer. If you can copy and paste, you can do this. It takes about 20 minutes, and most of that is waiting.
 
-> **Status:** We've tested this on fresh virtual machines, but not yet on a rented server with a real security certificate. If a step doesn't match what you see, [tell us](https://github.com/VillageHQ/community/issues).
+> **Status:** We've run this on one rented Ubuntu 26.04 server with a real security certificate, and on fresh Ubuntu and Debian test machines. If a step doesn't match what you see, [tell us](https://github.com/VillageHQ/community/issues).
 
 You'll need:
 
 - A server, which hosting companies call a **VPS** (a virtual private server: a small computer you rent by the month).
-- A domain name, like `yourfund.com`. Your community can use a new name under it, like `community.yourfund.com`.
+- A domain name, like `yourfund.com`. Your community can use a new name under it, like `community.yourfund.com`. Only want to try it first? See [Try it without a domain](#try-it-without-a-domain).
 - A way to paste a command on your server. Your hosting company's page explains how, and the next steps show you.
 
 ## 1. Rent a server
@@ -81,6 +81,16 @@ Your community is ready.
   Address:      https://community.yourfund.com
   Setup token:  3f9a...
 ```
+
+### Try it without a domain
+
+To try this before you have a domain, use a free name from [sslip.io](https://sslip.io), which points at your server's IP address by itself. Put your own IP address in this command:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh | sudo COMMUNITY_DOMAIN=community.203.0.113.10.sslip.io bash
+```
+
+Use this for testing only. Many people share sslip.io, so a certificate can fail when too many of them ask at once. Your address also changes if your server's IP address does. Use a real domain for your real community.
 
 ## 4. Create your admin account
 
@@ -177,7 +187,7 @@ Keep a copy of this file in your password manager. It holds your secrets.
 
 **"already using the web ports":** Another program holds port 80 or 443. The message names it. Remove that program, or start with a fresh server. If it only uses a private address, like a Tailscale one, you can keep it. The message shows the command that puts your community on your public address instead, using the `COMMUNITY_BIND_ADDRESS` setting.
 
-**"We couldn't download the ready-made app":** Your server builds the app itself instead. That needs about 2.5 GB of memory and swap together, and the installer adds swap on small servers. It can take 10 minutes or more. If it fails, try again later, or use a server with more memory.
+**"We couldn't download the ready-made app":** Your server builds the app itself instead. That needs about 2.5 GB of memory and swap together, and the installer adds swap on small servers. It took about 3 minutes on a server with 6 processors and 11 GB of memory, and it can take 10 minutes or more on a small one. If it fails, try again later, or use a server with more memory.
 
 **"The build failed":** Your server probably ran out of memory. Use a server with at least 2 GB of memory, then run the same command again.
 
