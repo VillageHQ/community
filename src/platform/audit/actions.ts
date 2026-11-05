@@ -29,6 +29,8 @@ export const AUDIT_ACTIONS = {
   passwordReset: "password_reset",
   adminPasswordRecovered: "admin_password_recovered",
   domainConfirmed: "domain_confirmed",
+  moduleTurnedOn: "module_turned_on",
+  moduleTurnedOff: "module_turned_off",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

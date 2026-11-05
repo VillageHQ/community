@@ -21,6 +21,7 @@ export const PAGE_TITLES = {
   adminAuditLog: "Audit log",
   adminHealth: "Community health",
   adminCredits: "Credits",
+  adminFeatures: "Features",
   adminSettings: "Settings",
   admin: "Admin",
   setup: "Set up",

@@ -14,6 +14,8 @@ import { readVillageGroupReadiness } from "@/modules/network/service";
 import { readVillageGroup, type VillageGroup } from "@/modules/network/service-settings";
 import { readVillageKeys, type VillageKeys } from "@/platform/village/settings";
 
+import { RunWithoutVillage } from "@/modules/admin/components/run-without-village";
+import { networkManifest } from "@/modules/network/manifest";
 import { BrandCard } from "@/modules/admin/components/brand-card";
 import { BRAND_NAME_INPUT_ID } from "@/modules/admin/components/brand-fields";
 import { DomainStep } from "@/modules/network/components/domain-step";
@@ -73,7 +75,12 @@ type StepBodyFacts = {
 
 const STEP_BODIES: Partial<Record<SetupStepId, (facts: StepBodyFacts) => ReactNode>> = {
   [SETUP_STEPS.domain]: ({ domain, isDone }) => <DomainStep domain={domain} isDone={isDone} />,
-  [SETUP_STEPS.keys]: ({ keys }) => <KeysForm savedPublicKey={keys?.publicKey ?? ""} hasSavedKeys={Boolean(keys)} />,
+  [SETUP_STEPS.keys]: ({ keys }) => (
+    <>
+      <KeysForm savedPublicKey={keys?.publicKey ?? ""} hasSavedKeys={Boolean(keys)} />
+      {keys ? null : <RunWithoutVillage moduleId={networkManifest.id} />}
+    </>
+  ),
   [SETUP_STEPS.group]: ({ keys, group, isVillageReachable, isSynced, branding }) => (
     <GroupForm
       hasKeys={Boolean(keys)}

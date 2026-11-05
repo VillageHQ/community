@@ -20,6 +20,7 @@ type ManifestFields = {
   id: string;
   label: string;
   description: string;
+  turnOffNote?: string;
   icon: LucideIcon;
   navigation: readonly NavigationEntry[];
   adminTabs: readonly { label: string; href: string }[];

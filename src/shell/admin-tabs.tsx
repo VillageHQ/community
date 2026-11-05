@@ -38,6 +38,7 @@ const ADMIN_TABS: AdminTab[] = [
     readBadge: ({ creditsBadge }) => creditsBadge,
     badgeDescription: () => "Out of Village credits",
   },
+  { label: "Features", href: ROUTES.adminFeatures, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Settings", href: ROUTES.adminSettings, readBadge: () => 0, badgeDescription: () => "" },
 ];
 
