@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 
 import { adminAuditEntry, contentReport } from "../database/admin-schema.ts";
-import { rateLimit, user } from "../database/auth-schema.ts";
+import { rateLimit, user, verification } from "../database/auth-schema.ts";
 import { communityBranding } from "../database/branding-schema.ts";
 import { createDatabase, type Database } from "../database/client.ts";
 import { moderationRecord } from "../database/feed-schema.ts";
@@ -23,6 +23,7 @@ export function createTestDatabase() {
 
 export async function clearDatabase(database: Database) {
   await database.delete(rateLimit);
+  await database.delete(verification);
   await database.delete(moderationRecord);
   await database.delete(messageReport);
   await database.delete(contentReport);

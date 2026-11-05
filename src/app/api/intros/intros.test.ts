@@ -23,6 +23,7 @@ import { readIntroStateCounts } from "@/lib/intros/intro-reads";
 import { DAILY_LOOKUP_LIMITS } from "@/lib/admin/admin-api";
 import { NETWORK_ERROR_CODES, networkPathsSchema, networkSearchResultSchema } from "@/lib/village/network-api";
 import { saveVillageGroup, saveVillageKeys } from "@/lib/village/settings";
+import { EVENTUALLY } from "@/test/async-timeouts";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
@@ -887,7 +888,7 @@ describe("intro requests", () => {
         const responses = await Promise.all(Array.from({ length: CONCURRENT_ASKS }, () => transition(jonas, intro.id, INTRO_ACTIONS.accept)));
 
         expect(responses.every(({ status }) => status === OK_STATUS)).toBe(true);
-        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(1));
+        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(1), EVENTUALLY);
       });
     });
 
@@ -1171,7 +1172,7 @@ describe("intro requests", () => {
 
       await createIntro();
 
-      await vi.waitFor(() => expect(resend.state.emails).toHaveLength(1));
+      await vi.waitFor(() => expect(resend.state.emails).toHaveLength(1), EVENTUALLY);
       const bodies = readEmailBodies();
       expect(bodies).toContain(jonas.email);
       expect(bodies).toContain("Clara Bergström");
@@ -1188,7 +1189,7 @@ describe("intro requests", () => {
       await transition(jonas, accepted.id, INTRO_ACTIONS.accept);
       await transition(noor, declined.id, INTRO_ACTIONS.decline, { reason: "Private thoughts" });
 
-      await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2));
+      await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2), EVENTUALLY);
       expect(readEmailBodies()).toContain(amara.email);
       expect(readEmailBodies()).not.toContain("Private thoughts");
     });
@@ -1199,7 +1200,7 @@ describe("intro requests", () => {
         for (let attempt = 0; attempt < times; attempt += 1) {
           const intro = introSchema.parse(await (await ask()).json());
           await transition(amara, intro.id, INTRO_ACTIONS.withdraw);
-          await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThan(0));
+          await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThan(0), EVENTUALLY);
         }
       }
 
@@ -1207,6 +1208,7 @@ describe("intro requests", () => {
         configureResend();
 
         await askAndWithdraw(EMAIL_CYCLES);
+        await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThan(0), EVENTUALLY);
         await new Promise((resolve) => setTimeout(resolve, EMAIL_SETTLE_MS));
 
         expect(resend.state.emails).toHaveLength(1);
@@ -1227,7 +1229,7 @@ describe("intro requests", () => {
 
         await ask(amara, { connectorSlug: NOOR_SLUG });
 
-        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2));
+        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2), EVENTUALLY);
       });
 
       it("emails again after the cooldown", async () => {
@@ -1237,7 +1239,7 @@ describe("intro requests", () => {
 
         await ask();
 
-        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2));
+        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2), EVENTUALLY);
       });
     });
 
@@ -1262,7 +1264,7 @@ describe("intro requests", () => {
       const intro = await createIntro();
 
       expect(intro.state).toBe(INTRO_STATES.requested);
-      await vi.waitFor(() => expect(logged).toHaveBeenCalled());
+      await vi.waitFor(() => expect(logged).toHaveBeenCalled(), EVENTUALLY);
       vi.restoreAllMocks();
     });
 

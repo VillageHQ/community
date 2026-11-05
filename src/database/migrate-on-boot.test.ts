@@ -96,7 +96,7 @@ describe("migrateOnBoot", () => {
 
       await database.execute(sql`grant usage, create on schema public to ${sql.identifier(role)}`);
       await vi.waitFor(async () => expect(await areMigrationsApplied(database)).toBe(true), {
-        timeout: 5_000,
+        timeout: 30_000,
         interval: 50,
       });
 

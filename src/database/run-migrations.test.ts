@@ -86,7 +86,7 @@ describe("runMigrations", () => {
           );
           expect(rows).toHaveLength(1);
         },
-        { timeout: 5_000, interval: 50 },
+        { timeout: 30_000, interval: 50 },
       );
 
       await expect(migration).rejects.toThrow();

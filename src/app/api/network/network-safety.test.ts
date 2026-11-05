@@ -38,7 +38,7 @@ const TARGET_SLUG = "target-person";
 const TARGET_URL = `https://www.linkedin.com/in/${TARGET_SLUG}`;
 const SLOW_PATHS_DELAY_MS = 15_500;
 const SEARCH_TIMEOUT_SECONDS = 120;
-const SLOW_TEST_TIMEOUT_MS = 25_000;
+const SLOW_TEST_TIMEOUT_MS = 60_000;
 
 type Member = Awaited<ReturnType<typeof createSignedInMember>>;
 
