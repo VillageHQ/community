@@ -1,4 +1,6 @@
 import { z } from "zod";
+
+import { FEED_REPORT_TARGETS } from "../../modules/feed/contract.ts";
 import { MEMBER_ROLES } from "../../platform/auth/roles.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 
@@ -14,11 +16,9 @@ export const VILLAGE_STATUSES = {
 
 export const REPORT_TARGETS = {
   directMessage: "direct_message",
-  post: "post",
-  comment: "comment",
+  ...FEED_REPORT_TARGETS,
   introNote: "intro_note",
 } as const;
-export const FEED_REPORT_TARGETS = { post: REPORT_TARGETS.post, comment: REPORT_TARGETS.comment } as const;
 export const REPORT_RESOLUTIONS = {
   dismissed: "dismissed",
   contentDeleted: "content_deleted",
@@ -63,7 +63,6 @@ export const adminMemberIdBodySchema = z.object({ memberId: z.string().min(1) })
 
 export const reportListBodySchema = z.object({ filter: z.enum(REPORT_FILTERS).default(REPORT_FILTERS.open), page: pageSchema });
 export const reportActionBodySchema = z.object({ reportId: z.uuid(), targetType: z.enum(REPORT_TARGETS) });
-export const feedReportBodySchema = z.object({ targetType: z.enum(FEED_REPORT_TARGETS), targetId: z.uuid() });
 export const introReportBodySchema = z.object({ introId: z.uuid() });
 
 export const auditLogBodySchema = z.object({ page: pageSchema });
@@ -172,4 +171,3 @@ export type MemberListBody = z.infer<typeof memberListBodySchema>;
 export type SetMemberRoleBody = z.infer<typeof setMemberRoleBodySchema>;
 export type RemoveMemberBody = z.infer<typeof removeMemberBodySchema>;
 export type ReportActionBody = z.infer<typeof reportActionBodySchema>;
-export type FeedReportBody = z.infer<typeof feedReportBodySchema>;

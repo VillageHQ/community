@@ -105,3 +105,9 @@ export type CreateCommentBody = z.infer<typeof createCommentBodySchema>;
 export type EditCommentBody = z.infer<typeof editCommentBodySchema>;
 export type SetReactionBody = z.infer<typeof setReactionBodySchema>;
 export type PinPostBody = z.infer<typeof pinPostBodySchema>;
+
+export const FEED_REPORT_TARGETS = { post: "post", comment: "comment" } as const;
+
+export const feedReportBodySchema = z.object({ targetType: z.enum(FEED_REPORT_TARGETS), targetId: z.uuid() });
+
+export type FeedReportBody = z.infer<typeof feedReportBodySchema>;

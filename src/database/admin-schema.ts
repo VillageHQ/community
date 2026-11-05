@@ -2,7 +2,7 @@ import { desc, sql } from "drizzle-orm";
 import { boolean, check, index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { REPORT_TARGETS } from "../lib/admin/admin-api.ts";
-import { FEED_LIMITS } from "../lib/feed/feed-api.ts";
+import { FEED_LIMITS } from "../modules/feed/contract.ts";
 import { user } from "../platform/database/auth-schema.ts";
 
 const MILLISECOND_PRECISION = 3;

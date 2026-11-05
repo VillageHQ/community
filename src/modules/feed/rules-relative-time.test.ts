@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatRelativeTime } from "./relative-time";
+import { formatRelativeTime } from "./rules-relative-time";
 
 const NOW = Date.parse("2026-03-15T12:00:00.000Z");
 const MINUTE_MS = 60_000;

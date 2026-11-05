@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { describeNewPosts, NEW_POST_POLL_AFTER_FAILURE_MS, NEW_POST_POLL_MS, readNewPostPollMs } from "./new-post-polling";
+import { describeNewPosts, NEW_POST_POLL_AFTER_FAILURE_MS, NEW_POST_POLL_MS, readNewPostPollMs } from "./rules-polling";
 
 describe("the new post check", () => {
   it("polls at the regular interval", () => {

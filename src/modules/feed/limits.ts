@@ -4,7 +4,7 @@ import type { Database } from "../../platform/database/client.ts";
 import { recordFailedAttempt } from "../../platform/rate-limit/attempt-rate-limit.ts";
 import { pruneExpiredRateLimits } from "../../platform/rate-limit/rate-limit-pruning.ts";
 import { NetworkRequestError } from "../../platform/http/request-error.ts";
-import { FEED_ERROR_CODES } from "./feed-api.ts";
+import { FEED_ERROR_CODES } from "./contract.ts";
 
 const TOO_MANY_REQUESTS_STATUS = 429;
 const SLOW_DOWN_MESSAGE = "You're posting fast. Give it a minute and try again.";

@@ -4,12 +4,12 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { POST_TYPES, REACTIONS, type FeedPage, type Post } from "@/lib/feed/feed-api";
+import { POST_TYPES, REACTIONS, type FeedPage, type Post } from "@/modules/feed/contract";
 import { API_ROUTES } from "@/platform/http/routes";
 
 import { Feed } from "./feed";
 import type { FeedViewer } from "./feed-context";
-import { feedQuery } from "./feed-queries";
+import { feedQuery } from "@/modules/feed/queries";
 
 const TIMESTAMP = new Date().toISOString();
 const SERVER_ERROR_STATUS = 500;

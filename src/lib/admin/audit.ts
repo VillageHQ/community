@@ -5,8 +5,8 @@ import { unionAll } from "drizzle-orm/pg-core";
 
 import { adminAuditEntry } from "../../platform/audit/schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { moderationRecord } from "../../database/feed-schema.ts";
-import { MODERATION_TARGETS } from "../feed/feed-api.ts";
+import { moderationRecord } from "../../modules/feed/schema.ts";
+import { MODERATION_TARGETS } from "../../modules/feed/contract.ts";
 import { ADMIN_PAGE_SIZES, AUDIT_KINDS, auditPageSchema, type AuditPage } from "./admin-api.ts";
 
 function selectAdminActions(database: Database) {

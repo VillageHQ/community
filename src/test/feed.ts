@@ -1,6 +1,6 @@
 import type { Database } from "../platform/database/client.ts";
-import { comment, post } from "../database/feed-schema.ts";
-import { POST_TYPES } from "../lib/feed/feed-api.ts";
+import { comment, post } from "../modules/feed/schema.ts";
+import { POST_TYPES } from "../modules/feed/contract.ts";
 
 type PostSeed = { authorId: string; body?: string; createdAt?: Date; pinnedAt?: Date; pinnedByUserId?: string };
 

@@ -1,6 +1,6 @@
 import { CircleQuestionMark, HandHelping, Heart, Lightbulb, Rocket, ThumbsUp, Trophy, type LucideIcon } from "lucide-react";
 
-import { POST_TYPES, REACTIONS, type Reaction } from "@/lib/feed/feed-api";
+import { POST_TYPES, REACTIONS, type Reaction } from "@/modules/feed/contract";
 
 export const POST_TYPE_DISPLAY = {
   [POST_TYPES.ask]: { label: "Ask", icon: CircleQuestionMark, tone: "accent" },

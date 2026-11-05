@@ -7,7 +7,7 @@ export default defineConfig({
     "./src/platform/database/auth-schema.ts",
     "./src/platform/audit/schema.ts",
     "./src/platform/branding/schema.ts",
-    "./src/database/feed-schema.ts",
+    "./src/modules/feed/schema.ts",
     "./src/platform/settings/schema.ts",
     "./src/platform/village/schema.ts",
     "./src/database/intro-schema.ts",

@@ -1,6 +1,6 @@
-import { createPost } from "@/lib/feed/feed-actions";
-import { createPostBodySchema } from "@/lib/feed/feed-api";
-import { enforcePostingLimit, POSTING_KINDS } from "@/lib/feed/posting-limit";
+import { createPost } from "@/modules/feed/service";
+import { createPostBodySchema } from "@/modules/feed/contract";
+import { enforcePostingLimit, POSTING_KINDS } from "@/modules/feed/limits";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("feed-post-create", createPostBodySchema, async (context, body) => {

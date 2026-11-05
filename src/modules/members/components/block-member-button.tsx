@@ -8,8 +8,8 @@ import { FormError } from "@/components/form-error";
 
 import { ConfirmAction } from "@/components/confirm-action";
 
-import { describeBlock } from "../contract-blocks";
-import { setBlockRequest } from "../queries-blocks";
+import { describeBlock } from "@/modules/members/contract-blocks";
+import { setBlockRequest } from "@/modules/members/queries-blocks";
 
 type BlockMemberButtonProps = { memberId: string; memberName: string; isBlocked: boolean; refreshesAfterChange: QueryFilters };
 

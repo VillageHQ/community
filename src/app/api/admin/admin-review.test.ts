@@ -6,7 +6,7 @@ import { contentReport, memberRemoval } from "@/database/admin-schema";
 import { session, user } from "@/platform/database/auth-schema";
 import { communityBranding } from "@/platform/branding/schema";
 import { getDatabase } from "@/platform/database/client";
-import { post } from "@/database/feed-schema";
+import { post } from "@/modules/feed/schema";
 import { instanceSettings, INSTANCE_SETTING_KEYS } from "@/platform/settings/schema";
 import { invite, memberNetwork } from "@/modules/members/schema";
 import { conversation, directMessage, messageReport } from "@/modules/messages/schema";

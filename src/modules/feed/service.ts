@@ -4,7 +4,7 @@ import { and, count, eq, inArray, isNotNull, notInArray, sql } from "drizzle-orm
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
-import { comment, moderationRecord, post, reaction } from "../../database/feed-schema.ts";
+import { comment, moderationRecord, post, reaction } from "./schema.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { requireCurrentAdmin, withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
@@ -23,8 +23,8 @@ import {
   type EditPostBody,
   type PinPostBody,
   type SetReactionBody,
-} from "./feed-api.ts";
-import { isAuthorVisibleTo, readComment, readPost, readReactionCounts } from "./feed-reads.ts";
+} from "./contract.ts";
+import { isAuthorVisibleTo, readComment, readPost, readReactionCounts } from "./reads.ts";
 
 const FORBIDDEN_STATUS = 403;
 const NOT_FOUND_STATUS = 404;

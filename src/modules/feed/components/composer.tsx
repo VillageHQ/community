@@ -10,7 +10,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Textarea } from "@/components/ui/textarea";
-import { FEED_LIMITS, POST_TYPES, type PostType } from "@/lib/feed/feed-api";
+import { FEED_LIMITS, POST_TYPES, type PostType } from "@/modules/feed/contract";
 
 import { CHOOSABLE_POST_TYPES, FEED_AVATAR_SIZES, POST_TYPE_DISPLAY } from "./feed-display";
 import { useFeedContext } from "./feed-context";

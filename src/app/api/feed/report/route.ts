@@ -1,4 +1,4 @@
-import { feedReportBodySchema } from "@/lib/admin/admin-api";
+import { feedReportBodySchema } from "@/modules/feed/contract";
 import { reportFeedContent } from "@/lib/admin/reports";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

@@ -1,8 +1,8 @@
 import { desc, sql } from "drizzle-orm";
 import { check, index, integer, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import { FEED_LIMITS, MODERATION_TARGETS, POST_TYPES, REACTIONS } from "../lib/feed/feed-api.ts";
-import { user } from "../platform/database/auth-schema.ts";
+import { FEED_LIMITS, MODERATION_TARGETS, POST_TYPES, REACTIONS } from "./contract.ts";
+import { user } from "../../platform/database/auth-schema.ts";
 
 const MILLISECOND_PRECISION = 3;
 

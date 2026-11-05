@@ -6,7 +6,7 @@ import { memberRemoval } from "../../database/admin-schema.ts";
 import { session, user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
 import { memberPathResult } from "../../database/village-schema.ts";
-import { deleteMemberContent } from "../feed/feed-actions.ts";
+import { deleteMemberContent } from "../../modules/feed/service.ts";
 import { isReclaimedEmail } from "../../platform/auth/reclaimed-email.ts";
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { DEPARTURE_SENTENCES, leaveGroupOnBehalf } from "../village/group-departure.ts";

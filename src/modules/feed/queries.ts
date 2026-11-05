@@ -1,7 +1,7 @@
 import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
-import type { FeedReportBody } from "@/lib/admin/admin-api";
 import {
+  type FeedReportBody,
   commentPageSchema,
   commentSchema,
   feedPageSchema,
@@ -15,8 +15,8 @@ import {
   type FeedCursor,
   type PinPostBody,
   type SetReactionBody,
-} from "@/lib/feed/feed-api";
-import { readNewPostPollMs } from "@/lib/feed/new-post-polling";
+} from "@/modules/feed/contract";
+import { readNewPostPollMs } from "@/modules/feed/rules-polling";
 import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { postNetworkRequest } from "@/platform/http/post-request";

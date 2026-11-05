@@ -6,13 +6,12 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 import { flushSync } from "react-dom";
 
 import { FormError } from "@/components/form-error";
-import { FEED_REPORT_TARGETS } from "@/lib/admin/admin-api";
+import { FEED_REPORT_TARGETS, FEED_LIMITS, POST_TYPES, type Post, type PostType } from "@/modules/feed/contract";
 import { Alert } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
 import { Textarea } from "@/components/ui/textarea";
-import { FEED_LIMITS, POST_TYPES, type Post, type PostType } from "@/lib/feed/feed-api";
 import { splitAnnouncement } from "@/platform/text/post-text";
 
 import { AuthorName, BannedTag } from "./author-name";

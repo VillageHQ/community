@@ -7,7 +7,7 @@ import { contentReport } from "../database/admin-schema.ts";
 import { rateLimit, user, verification } from "../platform/database/auth-schema.ts";
 import { communityBranding } from "../platform/branding/schema.ts";
 import { createDatabase, type Database } from "../platform/database/client.ts";
-import { moderationRecord } from "../database/feed-schema.ts";
+import { moderationRecord } from "../modules/feed/schema.ts";
 import { instanceSettings } from "../platform/settings/schema.ts";
 import { invite } from "../modules/members/schema.ts";
 import { messageReport } from "../modules/messages/schema.ts";

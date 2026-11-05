@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { POST_TYPES, REACTIONS, type Comment, type FeedPage, type Post } from "./feed-api";
+import { POST_TYPES, REACTIONS, type Comment, type FeedPage, type Post } from "./contract";
 import {
   addComment,
   changeReaction,
@@ -13,7 +13,7 @@ import {
   removePost,
   replaceComment,
   updatePost,
-} from "./feed-cache";
+} from "./rules-cache";
 
 const TIMESTAMP = "2026-01-01T00:00:00.000Z";
 const AUTHOR = { id: "author", name: "Noor", title: null, company: null, avatarUrl: null, isBanned: false };

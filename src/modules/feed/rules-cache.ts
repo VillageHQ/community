@@ -1,4 +1,4 @@
-import type { Comment, FeedPage, Post, Reaction, ReactionCount } from "./feed-api.ts";
+import type { Comment, FeedPage, Post, Reaction, ReactionCount } from "./contract.ts";
 
 export type FeedTimeline = { pages: FeedPage[]; pageParams: unknown[] };
 

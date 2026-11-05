@@ -1,5 +1,5 @@
-import { commentPageBodySchema } from "@/lib/feed/feed-api";
-import { readCommentPage } from "@/lib/feed/feed-reads";
+import { commentPageBodySchema } from "@/modules/feed/contract";
+import { readCommentPage } from "@/modules/feed/reads";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("feed-comment-page", commentPageBodySchema, async ({ database, member }, body) =>

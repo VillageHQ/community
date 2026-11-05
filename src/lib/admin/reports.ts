@@ -6,12 +6,12 @@ import { alias, unionAll } from "drizzle-orm/pg-core";
 import { contentReport } from "../../database/admin-schema.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
-import { comment, post } from "../../database/feed-schema.ts";
+import { comment, post } from "../../modules/feed/schema.ts";
 import { messageReport } from "../../modules/messages/schema.ts";
 import { memberNetwork } from "../../modules/members/schema.ts";
-import { deleteCommentWithin, deletePostWithin } from "../feed/feed-actions.ts";
-import { FEED_ERROR_CODES } from "../feed/feed-api.ts";
-import { isAuthorVisibleTo, isPostVisible } from "../feed/feed-reads.ts";
+import { deleteCommentWithin, deletePostWithin } from "../../modules/feed/service.ts";
+import { FEED_ERROR_CODES, FEED_REPORT_TARGETS, type FeedReportBody } from "../../modules/feed/contract.ts";
+import { isAuthorVisibleTo, isPostVisible } from "../../modules/feed/reads.ts";
 import { introGoneError } from "../intros/intro-actions.ts";
 import { INTRO_ROLES } from "../intros/intro-api.ts";
 import { readIntroForViewer } from "../intros/intro-reads.ts";
@@ -22,12 +22,10 @@ import { type NetworkContext } from "../../platform/http/request-context.ts";
 import {
   ADMIN_ERROR_CODES,
   ADMIN_PAGE_SIZES,
-  FEED_REPORT_TARGETS,
   REPORT_FILTERS,
   REPORT_RESOLUTIONS,
   REPORT_TARGETS,
   reportPageSchema,
-  type FeedReportBody,
   type ReportActionBody,
   type ReportFilter,
   type ReportPage,

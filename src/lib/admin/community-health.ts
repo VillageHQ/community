@@ -5,7 +5,7 @@ import { unionAll } from "drizzle-orm/pg-core";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { comment, post, reaction } from "../../database/feed-schema.ts";
+import { comment, post, reaction } from "../../modules/feed/schema.ts";
 import { introRequest } from "../../database/intro-schema.ts";
 import { directMessage } from "../../modules/messages/schema.ts";
 import { memberNetwork } from "../../modules/members/schema.ts";

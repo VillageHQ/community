@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 
-import type { Post, SetReactionBody } from "@/lib/feed/feed-api";
+import type { Post, SetReactionBody } from "@/modules/feed/contract";
 import {
   addComment,
   changeReaction,
@@ -13,7 +13,7 @@ import {
   replaceComment,
   updatePost,
   type FeedTimeline,
-} from "@/lib/feed/feed-cache";
+} from "@/modules/feed/rules-cache";
 
 import {
   commentsQuery,
@@ -28,7 +28,7 @@ import {
   pinPostRequest,
   reportFeedContentRequest,
   setReactionRequest,
-} from "./feed-queries";
+} from "@/modules/feed/queries";
 
 async function patchTimeline(queryClient: QueryClient, patch: (timeline: FeedTimeline) => FeedTimeline) {
   await queryClient.cancelQueries(feedQuery());

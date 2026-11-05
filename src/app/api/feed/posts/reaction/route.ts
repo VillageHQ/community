@@ -1,5 +1,5 @@
-import { setReaction } from "@/lib/feed/feed-actions";
-import { setReactionBodySchema } from "@/lib/feed/feed-api";
+import { setReaction } from "@/modules/feed/service";
+import { setReactionBodySchema } from "@/modules/feed/contract";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 export const POST = createMemberRoute("feed-post-reaction", setReactionBodySchema, async (context, body) =>

@@ -7,14 +7,13 @@ import { useRef, useState } from "react";
 
 import { FormError } from "@/components/form-error";
 import { QueryBoundary } from "@/components/query-boundary";
-import { FEED_REPORT_TARGETS } from "@/lib/admin/admin-api";
+import { FEED_REPORT_TARGETS, FEED_LIMITS, type Comment, type Post } from "@/modules/feed/contract";
 import { Alert } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { readFirstName } from "@/platform/design/avatar-identity";
-import { FEED_LIMITS, type Comment, type Post } from "@/lib/feed/feed-api";
-import { hasWholeThread } from "@/lib/feed/feed-cache";
+import { hasWholeThread } from "@/modules/feed/rules-cache";
 
 import { ConfirmAction } from "@/components/confirm-action";
 import { AuthorName, readRemovedAuthorLabel } from "./author-name";
@@ -31,7 +30,7 @@ import {
   toReplyInputId,
   type SurfaceTone,
 } from "./feed-display";
-import { commentsQuery } from "./feed-queries";
+import { commentsQuery } from "@/modules/feed/queries";
 import { RelativeTime } from "./relative-time";
 import { RichText } from "@/components/rich-text";
 import { useCreateComment, useDeleteComment, useEditComment, useReportFeedContent } from "./use-feed-mutations";

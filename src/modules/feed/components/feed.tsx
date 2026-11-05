@@ -9,13 +9,13 @@ import { FormError } from "@/components/form-error";
 import { QueryBoundary } from "@/components/query-boundary";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { readPinnedPosts, readTimelinePosts } from "@/lib/feed/feed-cache";
-import { describeNewPosts } from "@/lib/feed/new-post-polling";
+import { readPinnedPosts, readTimelinePosts } from "@/modules/feed/rules-cache";
+import { describeNewPosts } from "@/modules/feed/rules-polling";
 
 import { Composer, ComposerSheet, INLINE_COMPOSER_INPUT_ID } from "./composer";
 import { FeedProvider, useFeedContext, type FeedViewer } from "./feed-context";
 import { POSTS_REGION_ID } from "./feed-display";
-import { feedQuery, newPostCountQuery } from "./feed-queries";
+import { feedQuery, newPostCountQuery } from "@/modules/feed/queries";
 import { PostCard } from "./post-card";
 import { useShowNewPosts } from "./use-feed-mutations";
 

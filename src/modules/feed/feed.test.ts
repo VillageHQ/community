@@ -2,7 +2,7 @@ import { eq, isNotNull, like } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { rateLimit, session, user } from "@/platform/database/auth-schema";
-import { comment, moderationRecord, post, reaction } from "@/database/feed-schema";
+import { comment, moderationRecord, post, reaction } from "@/modules/feed/schema";
 import {
   commentPageSchema,
   commentSchema,
@@ -15,24 +15,24 @@ import {
   postSchema,
   REACTIONS,
   reactionsResponseSchema,
-} from "@/lib/feed/feed-api";
-import { MAXIMUM_PER_MINUTE, POSTING_KINDS } from "@/lib/feed/posting-limit";
+} from "@/modules/feed/contract";
+import { MAXIMUM_PER_MINUTE, POSTING_KINDS } from "@/modules/feed/limits";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { seedComment, seedPost } from "@/test/feed";
 import { seedMember } from "@/test/members";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postCommentDelete } from "./comments/delete/route";
-import { POST as postCommentEdit } from "./comments/edit/route";
-import { POST as postCommentList } from "./comments/list/route";
-import { POST as postCommentCreate } from "./comments/route";
-import { POST as postNewCount } from "./new-count/route";
-import { POST as postPostDelete } from "./posts/delete/route";
-import { POST as postPostEdit } from "./posts/edit/route";
-import { POST as postPostPin } from "./posts/pin/route";
-import { POST as postPostReaction } from "./posts/reaction/route";
-import { POST as postPostCreate } from "./posts/route";
-import { POST as postFeedPage } from "./route";
+import { POST as postCommentDelete } from "@/app/api/feed/comments/delete/route";
+import { POST as postCommentEdit } from "@/app/api/feed/comments/edit/route";
+import { POST as postCommentList } from "@/app/api/feed/comments/list/route";
+import { POST as postCommentCreate } from "@/app/api/feed/comments/route";
+import { POST as postNewCount } from "@/app/api/feed/new-count/route";
+import { POST as postPostDelete } from "@/app/api/feed/posts/delete/route";
+import { POST as postPostEdit } from "@/app/api/feed/posts/edit/route";
+import { POST as postPostPin } from "@/app/api/feed/posts/pin/route";
+import { POST as postPostReaction } from "@/app/api/feed/posts/reaction/route";
+import { POST as postPostCreate } from "@/app/api/feed/posts/route";
+import { POST as postFeedPage } from "@/app/api/feed/route";
 
 const APP_URL = "http://localhost:3000";
 const OK_STATUS = 200;

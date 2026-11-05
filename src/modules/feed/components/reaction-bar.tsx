@@ -7,7 +7,7 @@ import { useState, type ReactNode } from "react";
 
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
-import type { Post, Reaction, ReactionCount } from "@/lib/feed/feed-api";
+import type { Post, Reaction, ReactionCount } from "@/modules/feed/contract";
 
 import { REACTION_DISPLAY, REACTION_ORDER, SURFACE_TONE_CLASSES, type SurfaceTone } from "./feed-display";
 import { useSetReaction } from "./use-feed-mutations";

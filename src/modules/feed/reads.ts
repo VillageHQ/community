@@ -6,10 +6,10 @@ import { alias, QueryBuilder } from "drizzle-orm/pg-core";
 import { memberRemoval } from "../../database/admin-schema.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { comment, post, reaction } from "../../database/feed-schema.ts";
-import { memberAvatar, memberProfile } from "../../modules/members/schema.ts";
+import { comment, post, reaction } from "./schema.ts";
+import { memberAvatar, memberProfile } from "../members/schema.ts";
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
-import { toAvatarUrl } from "../../modules/members/service-profile.ts";
+import { toAvatarUrl } from "../members/service-profile.ts";
 import { isAdminMember } from "../../platform/auth/roles.ts";
 import { NetworkRequestError } from "../../platform/http/request-error.ts";
 import { type SessionMember } from "../../platform/http/request-context.ts";
@@ -25,7 +25,7 @@ import {
   type FeedPage,
   type Post,
   type ReactionCount,
-} from "./feed-api.ts";
+} from "./contract.ts";
 
 const NOT_FOUND_STATUS = 404;
 const pinner = alias(user, "pinner");

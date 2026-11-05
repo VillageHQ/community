@@ -9,7 +9,7 @@ import { readBrandingForPage } from "@/platform/branding/branding";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { readResendConfig } from "@/platform/email/resend";
-import { readFeedPage } from "@/lib/feed/feed-reads";
+import { readFeedPage } from "@/modules/feed/reads";
 import { readWaitingIntros } from "@/lib/intros/intro-reads";
 import { readNewMembers } from "@/modules/members/reads-directory";
 import { describeEmailConfirmation } from "@/modules/members/contract-email-confirmation-copy";
@@ -22,9 +22,11 @@ import { requireMember } from "@/platform/auth/session";
 import { isAdminMember } from "@/platform/auth/roles";
 import { readNetworkProgress } from "@/lib/village/network-progress";
 
-import { Feed } from "./feed/feed";
-import { feedQuery } from "./feed/feed-queries";
-import { NewThisWeekCard, NextStepCard, WaitingOnYouCard } from "./feed/feed-rail";
+import { Feed } from "@/modules/feed/components/feed";
+import { feedQuery } from "@/modules/feed/queries";
+import { NewThisWeekCard } from "@/modules/members/components/new-this-week-card";
+import { NextStepCard } from "@/shell/next-step-card";
+import { WaitingOnYouCard } from "./intros/waiting-on-you-card";
 
 export const metadata: Metadata = { title: PAGE_TITLES.feed };
 
