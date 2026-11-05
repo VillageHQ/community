@@ -3,16 +3,10 @@ import { z } from "zod";
 import { FEED_REPORT_TARGETS } from "../../modules/feed/contract.ts";
 import { MEMBER_ROLES } from "../../platform/auth/roles.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
+import { VILLAGE_STATUSES, GROUP_DEPARTURE_OUTCOMES } from "../../modules/network/contract.ts";
 
 export const CONTENT_CHOICES = { keep: "keep", delete: "delete" } as const;
 export const MEMBER_FILTERS = { all: "all", admins: "admins", attention: "attention", removed: "removed" } as const;
-export const VILLAGE_STATUSES = {
-  notShared: "not_shared",
-  sharing: "sharing",
-  syncing: "syncing",
-  ready: "ready",
-  blocked: "blocked",
-} as const;
 
 export const REPORT_TARGETS = {
   directMessage: "direct_message",
@@ -25,7 +19,6 @@ export const REPORT_RESOLUTIONS = {
   memberRemoved: "member_removed",
 } as const;
 export const REPORT_FILTERS = { open: "open", resolved: "resolved" } as const;
-export const GROUP_DEPARTURE_OUTCOMES = { left: "left", creatorRefused: "creator_refused", failed: "failed" } as const;
 export const AUDIT_KINDS = { action: "action", postDeleted: "post_deleted", commentDeleted: "comment_deleted" } as const;
 
 export const ADMIN_ERROR_CODES = {
@@ -40,9 +33,6 @@ export const ADMIN_ERROR_CODES = {
 } as const;
 
 export const ADMIN_PAGE_SIZES = { members: 12, reports: 10, auditEntries: 20 } as const;
-export const USD_PER_CREDIT = 0.02;
-export const CREDITS_PER_PATH_LOOKUP = 5;
-export const CREDITS_PER_FULL_SEARCH = 11;
 export const MAXIMUM_SEARCH_LENGTH = 200;
 
 const timestampSchema = z.iso.datetime();
@@ -148,16 +138,8 @@ export const auditPageSchema = z.object({
   entryCount: z.number(),
 });
 
-export const departureResponseSchema = z.object({ message: z.string(), isGroupLeaveIncomplete: z.boolean() });
-
-export function isDepartureIncomplete(outcome: GroupDepartureOutcome | null) {
-  return outcome === GROUP_DEPARTURE_OUTCOMES.failed || outcome === GROUP_DEPARTURE_OUTCOMES.creatorRefused;
-}
-
 export type MemberFilter = (typeof MEMBER_FILTERS)[keyof typeof MEMBER_FILTERS];
-export type GroupDepartureOutcome = (typeof GROUP_DEPARTURE_OUTCOMES)[keyof typeof GROUP_DEPARTURE_OUTCOMES];
 export type ContentChoice = (typeof CONTENT_CHOICES)[keyof typeof CONTENT_CHOICES];
-export type VillageStatus = (typeof VILLAGE_STATUSES)[keyof typeof VILLAGE_STATUSES];
 export type ReportTarget = (typeof REPORT_TARGETS)[keyof typeof REPORT_TARGETS];
 export type ReportFilter = (typeof REPORT_FILTERS)[keyof typeof REPORT_FILTERS];
 export type ReportResolution = (typeof REPORT_RESOLUTIONS)[keyof typeof REPORT_RESOLUTIONS];

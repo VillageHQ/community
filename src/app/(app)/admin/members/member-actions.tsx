@@ -4,12 +4,8 @@ import { Check, ExternalLink, Link2, LogOut, MailCheck, MailPlus, RotateCcw, Shi
 import type { ReactNode, RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  GROUP_DEPARTURE_OUTCOMES,
-  VILLAGE_STATUSES,
-  type AdminMember,
-  type VillageStatus,
-} from "@/lib/admin/admin-api";
+import { GROUP_DEPARTURE_OUTCOMES, VILLAGE_STATUSES, type VillageStatus } from "@/modules/network/contract";
+import { type AdminMember } from "@/lib/admin/admin-api";
 import { MEMBER_ROLES } from "@/platform/auth/roles";
 import { readFirstName } from "@/platform/design/avatar-identity";
 

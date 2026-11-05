@@ -7,7 +7,7 @@ import { invite } from "@/modules/members/schema";
 import { readSetupProgress, SETUP_STEPS } from "@/lib/admin-setup";
 import { inviteListSchema, issuedInviteSchema } from "@/modules/members/contract-invites";
 import { INVITE_EMAIL_STATUSES, INVITE_STATES } from "@/modules/members/contract-invite-state";
-import { hashInviteToken } from "@/modules/members/rules-invite-token";
+import { hashInviteToken } from "@/modules/members/service-invite-token";
 import { readInviteByToken } from "@/modules/members/service-invites";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";

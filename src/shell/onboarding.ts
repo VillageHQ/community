@@ -5,8 +5,8 @@ import { eq } from "drizzle-orm";
 import type { Database } from "../platform/database/client.ts";
 import { memberProfile } from "../modules/members/schema.ts";
 import type { SessionMember } from "../platform/http/request-context.ts";
-import { NETWORK_PROGRESS, readNetworkProgress } from "../lib/village/network-progress.ts";
-import type { NetworkProgress } from "../lib/village/network-progress-stages.ts";
+import { NETWORK_PROGRESS, readNetworkProgress } from "../modules/network/reads-progress.ts";
+import type { NetworkProgress } from "../modules/network/contract-progress.ts";
 import { ONBOARDING_STEPS, type OnboardingStep } from "../modules/members/contract-profile.ts";
 import { completeOnboarding } from "../modules/members/service-onboarding.ts";
 

@@ -10,10 +10,10 @@ import { readMemberProfile } from "@/modules/members/service-profile";
 import { ONBOARDING_STEPS } from "@/modules/members/contract-profile";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
-import { NETWORK_PROGRESS, readNetworkProgress } from "@/lib/village/network-progress";
+import { NETWORK_PROGRESS, readNetworkProgress } from "@/modules/network/reads-progress";
 
-import { ConsentStep } from "@/app/(app)/network/consent-step";
-import { LinkedinWelcome } from "@/app/(app)/network/linkedin-step";
+import { ConsentStep } from "@/modules/network/components/consent-step";
+import { LinkedinWelcome } from "@/modules/network/components/linkedin-step";
 import { loadWelcomeContext } from "@/shell/load-welcome-context";
 import { CardStep } from "@/modules/members/components/card-step";
 import { ConfirmationStep } from "@/modules/members/components/confirmation-step";

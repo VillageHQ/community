@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { deliverInviteEmail, renderConfirmationEmail, renderInviteEmail } from "./email-invites";
 import { INVITE_EMAIL_STATUSES, INVITE_STATES, readInviteExpiry, readInviteState } from "./contract-invite-state";
-import { createInviteToken, hashInviteToken, isInviteTokenShape } from "./rules-invite-token";
+import { createInviteToken, hashInviteToken, isInviteTokenShape } from "./service-invite-token";
 
 const NOW = new Date("2026-11-04T12:00:00Z");
 const LATER = new Date("2026-11-05T12:00:00Z");

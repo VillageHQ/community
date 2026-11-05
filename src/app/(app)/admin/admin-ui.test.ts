@@ -8,16 +8,15 @@ import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import {
   AUDIT_KINDS,
   CONTENT_CHOICES,
-  GROUP_DEPARTURE_OUTCOMES,
   MEMBER_FILTERS,
   REPORT_FILTERS,
   REPORT_TARGETS,
-  VILLAGE_STATUSES,
   type AdminMember,
   type AuditEntry,
   type MemberPage,
   type Report,
 } from "@/lib/admin/admin-api";
+import { GROUP_DEPARTURE_OUTCOMES, VILLAGE_STATUSES } from "@/modules/network/contract";
 import { API_ROUTES } from "@/platform/http/routes";
 
 import { AuditLog } from "./audit-log/audit-log";

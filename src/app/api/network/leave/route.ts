@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { leaveCommunityGroup } from "@/lib/village/member-network";
+import { leaveCommunityGroup } from "@/modules/network/service";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 const leaveBodySchema = z.object({

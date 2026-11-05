@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { resetVillageLink } from "@/lib/village/member-network";
+import { resetVillageLink } from "@/modules/network/service";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 const resetBodySchema = z.object({

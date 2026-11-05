@@ -6,7 +6,7 @@ import { readSetupProgress } from "./admin-setup.ts";
 import type { Environment } from "../platform/environment.ts";
 import { readConfirmationBadgeCount } from "../modules/members/service-admin.ts";
 import type { NavigationBadgeCounts } from "./navigation.ts";
-import { readPendingLinkCount } from "./village/network-progress.ts";
+import { readPendingLinkCount } from "../modules/network/reads-progress.ts";
 import { readVillageOutOfCreditsAt } from "../platform/village/settings.ts";
 
 export async function readNavigationBadges(database: Database, environment: Environment): Promise<NavigationBadgeCounts> {

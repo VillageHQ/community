@@ -8,10 +8,10 @@ import { ROUTES } from "@/platform/http/routes";
 import { isAdminMember } from "@/platform/auth/roles";
 import { readIsLinkedinConfirmed } from "@/modules/members/service-linkedin";
 import { type SessionMember } from "@/platform/http/request-context";
-import { hasFirstAndLastName } from "@/lib/village/name-match";
-import { readSharingMemberCount, readWelcomeNeighbours } from "@/lib/village/network-progress";
+import { hasFirstAndLastName } from "@/modules/network/rules-name-match";
+import { readSharingMemberCount, readWelcomeNeighbours } from "@/modules/network/reads-progress";
 
-import type { WelcomeContext } from "@/modules/members/components/welcome-context";
+import type { WelcomeContext } from "@/modules/members/components/shared/welcome-context";
 
 export async function loadWelcomeContext(
   database: Database,

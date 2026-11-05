@@ -1,5 +1,5 @@
 const MODULE_PATH_PATTERN = /^src\/modules\/([^/]+)\/(.+)$/;
-const PUBLIC_ROLE_PATTERN = /^(contract|queries|reads|schema|service|slots|limits)(-[a-z-]+)?\.tsx?$/;
+const PUBLIC_ROLE_PATTERN = /^((contract|queries|reads|schema|service|slots|limits)(-[a-z-]+)?\.tsx?|components\/shared\/.+)$/;
 
 export const LAYERS = {
   app: "app",

@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
-import { departureResponseSchema, memberPageSchema, type MemberFilter, type SetMemberRoleBody } from "@/lib/admin/admin-api";
+import { departureResponseSchema } from "@/modules/network/contract";
+import { memberPageSchema, type MemberFilter, type SetMemberRoleBody } from "@/lib/admin/admin-api";
 import { issuedInviteSchema } from "@/modules/members/contract-invites";
 import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";

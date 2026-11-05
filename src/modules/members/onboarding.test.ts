@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { memberProfile, memberNetwork } from "@/modules/members/schema";
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { ONBOARDING_STEPS } from "@/modules/members/contract-profile";
-import { saveVillageGroup } from "@/lib/village/settings";
+import { saveVillageGroup } from "@/modules/network/service-settings";
 import { saveVillageKeys } from "@/platform/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS } from "@/test/fake-village-server";

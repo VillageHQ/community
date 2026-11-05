@@ -21,22 +21,21 @@ import {
   REPORT_RESOLUTIONS,
   REPORT_TARGETS,
   reportPageSchema,
-  VILLAGE_STATUSES,
 } from "@/lib/admin/admin-api";
+import { VILLAGE_STATUSES, NETWORK_ERROR_CODES, networkStatusSchema } from "@/modules/network/contract";
 import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
 import { MEMBER_ROLES } from "@/platform/auth/roles";
 import { readCommunityHealth } from "@/lib/admin/community-health";
-import { describeCreditEstimate, estimateCreditCost, readCreditUsage } from "@/lib/admin/credit-usage";
+import { describeCreditEstimate, estimateCreditCost, readCreditUsage } from "@/modules/network/reads-credits";
 import { readOpenReportCount } from "@/lib/admin/reports";
 import { feedPageSchema } from "@/modules/feed/contract";
 import { INTRO_STATES } from "@/lib/intros/intro-api";
 import { issuedInviteSchema } from "@/modules/members/contract-invites";
 import { readMemberProfile } from "@/modules/members/service-profile";
 import { readNavigationBadges } from "@/lib/navigation-badges";
-import { readVillageStatus } from "@/lib/village/member-village-status";
+import { readVillageStatus } from "@/modules/network/contract-village-status";
 import { readDailyLookupLimit, saveVillageKeys, readVillageOutOfCreditsAt } from "@/platform/village/settings";
-import { saveVillageGroup } from "@/lib/village/settings";
-import { NETWORK_ERROR_CODES, networkStatusSchema } from "@/lib/village/network-api";
+import { saveVillageGroup } from "@/modules/network/service-settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { seedComment, seedPost } from "@/test/feed";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";

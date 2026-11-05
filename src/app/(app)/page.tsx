@@ -20,7 +20,7 @@ import { selectNextSteps } from "@/lib/next-steps";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 import { isAdminMember } from "@/platform/auth/roles";
-import { readNetworkProgress } from "@/lib/village/network-progress";
+import { readNetworkProgress } from "@/modules/network/reads-progress";
 
 import { Feed } from "@/modules/feed/components/feed";
 import { feedQuery } from "@/modules/feed/queries";

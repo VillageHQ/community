@@ -1,5 +1,5 @@
 import { dailyLimitBodySchema } from "@/platform/village/contract";
-import { setDailyLookupLimit } from "@/lib/admin/settings-actions";
+import { setDailyLookupLimit } from "@/modules/network/service-settings";
 import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

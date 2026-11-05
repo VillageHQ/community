@@ -15,14 +15,8 @@ import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tag } from "@/components/ui/tag";
-import {
-  GROUP_DEPARTURE_OUTCOMES,
-  MAXIMUM_SEARCH_LENGTH,
-  MEMBER_FILTERS,
-  type AdminMember,
-  type GroupDepartureOutcome,
-  type MemberFilter,
-} from "@/lib/admin/admin-api";
+import { GROUP_DEPARTURE_OUTCOMES, type GroupDepartureOutcome } from "@/modules/network/contract";
+import { MAXIMUM_SEARCH_LENGTH, MEMBER_FILTERS, type AdminMember, type MemberFilter } from "@/lib/admin/admin-api";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatLongDate } from "@/platform/text/format-date";
 

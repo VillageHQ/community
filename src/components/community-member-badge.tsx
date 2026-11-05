@@ -1,7 +1,7 @@
 import { UsersRound } from "lucide-react";
 
 import { Tag } from "@/components/ui/tag";
-import { COMMUNITY_MEMBER_LABEL } from "@/lib/village/member-paths";
+import { COMMUNITY_MEMBER_LABEL } from "@/platform/text/labels";
 
 export function CommunityMemberBadge() {
   return (

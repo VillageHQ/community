@@ -10,15 +10,15 @@ import { resolveAppUrl } from "@/platform/http/app-url";
 import { readBranding, type Branding } from "@/platform/branding/branding";
 import { readResendConfig } from "@/platform/email/resend";
 import { createNetworkContext, type SessionMember } from "@/platform/http/request-context";
-import { readVillageGroupReadiness } from "@/lib/village/member-network";
-import { readVillageGroup, type VillageGroup } from "@/lib/village/settings";
+import { readVillageGroupReadiness } from "@/modules/network/service";
+import { readVillageGroup, type VillageGroup } from "@/modules/network/service-settings";
 import { readVillageKeys, type VillageKeys } from "@/platform/village/settings";
 
 import { BrandCard } from "./brand-card";
 import { BRAND_NAME_INPUT_ID } from "./brand-fields";
-import { DomainStep } from "./domain-step";
-import { GroupForm } from "./group-form";
-import { KeysForm } from "./keys-form";
+import { DomainStep } from "@/modules/network/components/domain-step";
+import { GroupForm } from "@/modules/network/components/group-form";
+import { KeysForm } from "@/modules/network/components/keys-form";
 import { InviteStep } from "@/modules/members/components/invite-step";
 
 function readStepState(isDone: boolean, isOpen: boolean): StepState {

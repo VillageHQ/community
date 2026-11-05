@@ -13,7 +13,7 @@ export default defineConfig({
     "./src/database/intro-schema.ts",
     "./src/modules/members/schema.ts",
     "./src/modules/messages/schema.ts",
-    "./src/database/village-schema.ts",
+    "./src/modules/network/schema.ts",
   ],
   out: "./drizzle",
 });

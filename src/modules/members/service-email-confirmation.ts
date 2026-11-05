@@ -18,7 +18,7 @@ import { type NetworkContext } from "../../platform/http/request-context.ts";
 import { INVITE_ERROR_CODES } from "./contract-invites.ts";
 import { CONFIRMATION_VIEWS, type ConfirmationView } from "./contract-email-confirmation.ts";
 import { renderConfirmationEmail } from "./email-invites.ts";
-import { createInviteToken, hashInviteToken, isInviteTokenShape } from "./rules-invite-token.ts";
+import { createInviteToken, hashInviteToken, isInviteTokenShape } from "./service-invite-token.ts";
 
 const CONFIRMATION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 const CONFIRMATION_IDENTIFIER_PREFIX = "email-confirmation";

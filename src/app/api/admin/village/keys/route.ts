@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { verifyAndSaveVillageKeys } from "@/lib/village/member-network";
+import { verifyAndSaveVillageKeys } from "@/modules/network/service";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 const keysBodySchema = z.object({

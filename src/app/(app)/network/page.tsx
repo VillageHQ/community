@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
+
+import { IntrosConnectorProvider } from "@/app/(app)/intros/connector-ask";
 import { getDatabase } from "@/platform/database/client";
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { requireMember } from "@/platform/auth/session";
-import { NETWORK_PROGRESS, readNetworkProgress } from "@/lib/village/network-progress";
+import { NETWORK_PROGRESS, readNetworkProgress } from "@/modules/network/reads-progress";
 
-import { ConsentStep } from "./consent-step";
-import { LinkedinWelcome } from "./linkedin-step";
+import { ConsentStep } from "@/modules/network/components/consent-step";
+import { LinkedinWelcome } from "@/modules/network/components/linkedin-step";
 import { loadWelcomeContext } from "@/shell/load-welcome-context";
-import { NetworkFlowLoader } from "./network-flow-loader";
+import { NetworkFlowLoader } from "@/modules/network/components/network-flow-loader";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 
 export const metadata: Metadata = { title: PAGE_TITLES.network };
@@ -23,5 +25,9 @@ export default async function NetworkPage() {
 
   if (progress === NETWORK_PROGRESS.needsLinkedin) return <LinkedinWelcome welcome={welcome} />;
   if (progress === NETWORK_PROGRESS.needsConsent) return <ConsentStep welcome={welcome} />;
-  return <NetworkFlowLoader welcome={welcome} />;
+  return (
+    <IntrosConnectorProvider>
+      <NetworkFlowLoader welcome={welcome} />
+    </IntrosConnectorProvider>
+  );
 }

@@ -2,25 +2,9 @@ import "server-only";
 
 import { saveBranding, saveLogo, deleteLogo, type BrandingFields, type LogoFile } from "../../platform/branding/branding.ts";
 import type { NetworkContext } from "../../platform/http/request-context.ts";
-import { saveConfirmedVillageDomain } from "../village/settings.ts";
-import { saveDailyLookupLimit } from "../../platform/village/settings.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
-
-export function setDailyLookupLimit({ database, member }: NetworkContext, limit: number) {
-  return withAdminTransaction(database, member.id, async (transaction) => {
-    await saveDailyLookupLimit(transaction, limit);
-    await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.dailyLimitChanged, detail: String(limit) });
-  });
-}
-
-export function confirmVillageDomain({ database, member }: NetworkContext, domain: string) {
-  return withAdminTransaction(database, member.id, async (transaction) => {
-    await saveConfirmedVillageDomain(transaction, domain);
-    await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.domainConfirmed, detail: domain });
-  });
-}
 
 export function saveBrandingAsAdmin({ database, member }: NetworkContext, fields: BrandingFields) {
   return withAdminTransaction(database, member.id, async (transaction) => {

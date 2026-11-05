@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { confirmVillageDomain } from "@/lib/admin/settings-actions";
+import { confirmVillageDomain } from "@/modules/network/service-settings";
 import { resolveAppUrl } from "@/platform/http/app-url";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

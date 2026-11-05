@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { searchMemberNetwork } from "@/lib/village/member-network";
+import { searchMemberNetwork } from "@/modules/network/service";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 const MAXIMUM_PROMPT_LENGTH = 500;

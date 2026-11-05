@@ -1,5 +1,5 @@
 import { inviteIdBodySchema } from "@/modules/members/contract-invites";
-import { reclaimInvite } from "@/modules/members/service-invites";
+import { reclaimInvite } from "@/lib/admin/member-roster";
 import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/platform/village/member-routes";
 

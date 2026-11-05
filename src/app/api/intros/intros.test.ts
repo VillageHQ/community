@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { user } from "@/platform/database/auth-schema";
 import { introRequest } from "@/database/intro-schema";
 import { memberBlock, memberNetwork } from "@/modules/members/schema";
-import { memberPathResult } from "@/database/village-schema";
+import { memberPathResult } from "@/modules/network/schema";
 import {
   INTRO_ACTIONS,
   INTRO_ERROR_CODES,
@@ -21,8 +21,8 @@ import { ASKED_EMAIL_COOLDOWN_MS } from "@/lib/intros/intro-email";
 import { INTRO_MAXIMUM_PER_MINUTE } from "@/lib/intros/intro-limit";
 import { readIntroStateCounts } from "@/lib/intros/intro-reads";
 import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
-import { NETWORK_ERROR_CODES, networkPathsSchema, networkSearchResultSchema } from "@/lib/village/network-api";
-import { saveVillageGroup } from "@/lib/village/settings";
+import { NETWORK_ERROR_CODES, networkPathsSchema, networkSearchResultSchema } from "@/modules/network/contract";
+import { saveVillageGroup } from "@/modules/network/service-settings";
 import { saveVillageKeys } from "@/platform/village/settings";
 import { EVENTUALLY } from "@/test/async-timeouts";
 import { clearDatabase, createTestDatabase } from "@/test/database";

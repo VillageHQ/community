@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { activeSearchQuery, networkSearchQuery } from "@/app/(app)/network/network-queries";
+import { activeSearchQuery, networkSearchQuery } from "@/modules/network/queries";
 import { ROUTES } from "@/platform/http/routes";
 
 const NOTICE_COPY = {

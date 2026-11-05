@@ -13,7 +13,7 @@ import { readIntroStateCounts } from "../intros/intro-reads.ts";
 import { readInviteCounts } from "../../modules/members/service-invites.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { readActiveMemberCount } from "../../modules/members/reads-directory.ts";
-import { readSharingMemberCount } from "../village/network-progress.ts";
+import { readSharingMemberCount } from "../../modules/network/reads-progress.ts";
 
 const MILLISECONDS_PER_DAY = 86_400_000;
 const WHOLE_PERCENT = 100;

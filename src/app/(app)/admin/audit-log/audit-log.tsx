@@ -9,7 +9,8 @@ import { Pagination } from "@/components/pagination";
 import { QueryBoundary } from "@/components/query-boundary";
 import { Avatar } from "@/components/ui/avatar";
 import { AUDIT_ACTIONS, type AuditAction } from "@/platform/audit/actions";
-import { AUDIT_KINDS, GROUP_DEPARTURE_OUTCOMES, REPORT_TARGETS, type AuditEntry } from "@/lib/admin/admin-api";
+import { AUDIT_KINDS, REPORT_TARGETS, type AuditEntry } from "@/lib/admin/admin-api";
+import { GROUP_DEPARTURE_OUTCOMES } from "@/modules/network/contract";
 import { formatDateAndTimeUtc } from "@/platform/text/format-date";
 
 import { auditPageQuery } from "./audit-queries";

@@ -11,28 +11,26 @@ import { instanceSettings, INSTANCE_SETTING_KEYS } from "@/platform/settings/sch
 import { invite, memberNetwork } from "@/modules/members/schema";
 import { conversation, directMessage, messageReport } from "@/modules/messages/schema";
 import { memberDailyUsage } from "@/platform/village/schema";
-import { memberPathResult } from "@/database/village-schema";
+import { memberPathResult } from "@/modules/network/schema";
 import { AUDIT_ACTIONS } from "@/platform/audit/actions";
+import { CONTENT_CHOICES, memberPageSchema, REPORT_TARGETS, reportPageSchema } from "@/lib/admin/admin-api";
 import {
-  CONTENT_CHOICES,
   departureResponseSchema,
   GROUP_DEPARTURE_OUTCOMES,
-  memberPageSchema,
-  REPORT_TARGETS,
-  reportPageSchema,
-} from "@/lib/admin/admin-api";
+  NETWORK_ERROR_CODES,
+  networkPathsSchema,
+} from "@/modules/network/contract";
 import { MEMBER_ROLES } from "@/platform/auth/roles";
-import { describeCreditEstimate, estimateCreditCost, readCreditUsage } from "@/lib/admin/credit-usage";
+import { describeCreditEstimate, estimateCreditCost, readCreditUsage } from "@/modules/network/reads-credits";
 import { REPORT_SAVED_MESSAGES } from "@/lib/admin/reports";
-import { setDailyLookupLimit } from "@/lib/admin/settings-actions";
+import { setDailyLookupLimit, saveVillageGroup, readVillageGroup } from "@/modules/network/service-settings";
 import { issuedInviteSchema } from "@/modules/members/contract-invites";
-import { createInvite, reinviteRemovedMember, revokeInvite } from "@/modules/members/service-invites";
+import { createInvite, revokeInvite } from "@/modules/members/service-invites";
+import { reinviteRemovedMember } from "@/lib/admin/member-roster";
 import { confirmMemberEmail } from "@/modules/members/service-admin";
 import { createNetworkContext } from "@/platform/http/request-context";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
-import { NETWORK_ERROR_CODES, networkPathsSchema } from "@/lib/village/network-api";
 import { readDailyLookupLimit, saveVillageKeys, readVillageOutOfCreditsAt } from "@/platform/village/settings";
-import { saveVillageGroup, readVillageGroup } from "@/lib/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { seedPost } from "@/test/feed";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";

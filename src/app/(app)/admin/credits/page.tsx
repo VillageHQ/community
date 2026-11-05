@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { getDatabase } from "@/platform/database/client";
-import { CREDITS_PER_FULL_SEARCH, CREDITS_PER_PATH_LOOKUP, USD_PER_CREDIT } from "@/lib/admin/admin-api";
-import { describeCreditEstimate, estimateCreditCost, formatDollars, readCreditUsage } from "@/lib/admin/credit-usage";
-import { VILLAGE_PLATFORM_LINKS } from "@/lib/admin/settings-copy";
+import { CREDITS_PER_FULL_SEARCH, CREDITS_PER_PATH_LOOKUP, USD_PER_CREDIT } from "@/modules/network/contract";
+import { describeCreditEstimate, estimateCreditCost, formatDollars, readCreditUsage } from "@/modules/network/reads-credits";
+import { VILLAGE_PLATFORM_LINKS } from "@/platform/village/links";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { formatDateAndTimeUtc, formatLongDate } from "@/platform/text/format-date";
 import { requireAdmin } from "@/platform/auth/session";
@@ -16,7 +16,7 @@ import { readDailyLookupLimit, readVillageOutOfCreditsAt } from "@/platform/vill
 
 import { AdminSection } from "@/app/(app)/admin/admin-section";
 import { StatRows } from "@/app/(app)/admin/stat-rows";
-import { DailyLimitForm } from "./daily-limit-form";
+import { DailyLimitForm } from "@/modules/network/components/daily-limit-form";
 
 function ExternalButton({ href, children, isPrimary = false }: { href: string; children: ReactNode; isPrimary?: boolean }) {
   return (

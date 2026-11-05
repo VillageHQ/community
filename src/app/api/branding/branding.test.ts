@@ -6,7 +6,7 @@ import { INSTANCE_SETTING_KEYS, instanceSettings } from "@/platform/settings/sch
 import { readSetupProgress, SETUP_STEPS } from "@/lib/admin-setup";
 import { DEFAULT_BRANDING, readBranding } from "@/platform/branding/branding";
 import { MAXIMUM_LOGO_BYTES } from "@/platform/branding/logo-rules";
-import { readConfirmedVillageDomain } from "@/lib/village/settings";
+import { readConfirmedVillageDomain } from "@/modules/network/service-settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";
 

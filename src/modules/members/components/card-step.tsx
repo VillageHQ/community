@@ -2,9 +2,9 @@ import type { MemberProfile } from "@/modules/members/service-profile";
 import { readFirstName } from "@/platform/design/avatar-identity";
 
 import { CardForm } from "@/modules/members/components/card-form";
-import { JoinLayout } from "@/modules/members/components/join-layout";
-import { ONBOARDING_PILLS, OnboardingSteps } from "@/modules/members/components/onboarding-steps";
-import { readSharingSentence, type WelcomeContext } from "@/modules/members/components/welcome-context";
+import { JoinLayout } from "@/modules/members/components/shared/join-layout";
+import { ONBOARDING_PILLS, OnboardingSteps } from "@/modules/members/components/shared/onboarding-steps";
+import { readSharingSentence, type WelcomeContext } from "@/modules/members/components/shared/welcome-context";
 
 function readMembersHereSentence(welcome: WelcomeContext, memberCount: number) {
   const otherMemberCount = memberCount - 1;

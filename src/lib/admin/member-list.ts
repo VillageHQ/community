@@ -11,7 +11,7 @@ import { isActiveMember, isBanActive, isBanInEffect } from "../../platform/auth/
 import { toContainsPattern } from "../../modules/members/reads-directory.ts";
 import { toAvatarUrl } from "../../modules/members/service-profile.ts";
 import { toLinkedinUrl } from "../../modules/members/contract-linkedin.ts";
-import { readVillageStatus } from "../village/member-village-status.ts";
+import { readVillageStatus } from "../../modules/network/contract-village-status.ts";
 import {
   ADMIN_PAGE_SIZES,
   CONTENT_CHOICES,

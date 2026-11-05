@@ -3,7 +3,8 @@
 import { ShieldAlert, Trash2 } from "lucide-react";
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 
-import { CONTENT_CHOICES, departureResponseSchema, type ContentChoice } from "@/lib/admin/admin-api";
+import { CONTENT_CHOICES, type ContentChoice } from "@/lib/admin/admin-api";
+import { departureResponseSchema } from "@/modules/network/contract";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { API_ROUTES } from "@/platform/http/routes";
 import { postNetworkRequest } from "@/platform/http/post-request";

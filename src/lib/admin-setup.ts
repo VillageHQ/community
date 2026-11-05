@@ -4,7 +4,7 @@ import { readBranding } from "../platform/branding/branding.ts";
 import { hasOpenOrAcceptedInvite } from "../modules/members/service-invites.ts";
 import type { Environment } from "../platform/environment.ts";
 import { SETUP_STEPS, type SetupStepId } from "./admin-setup-steps.ts";
-import { readConfirmedVillageDomain, readVillageGroup } from "./village/settings.ts";
+import { readConfirmedVillageDomain, readVillageGroup } from "../modules/network/service-settings.ts";
 import { readVillageKeys } from "../platform/village/settings.ts";
 
 export { SETUP_STEPS, type SetupStepId };

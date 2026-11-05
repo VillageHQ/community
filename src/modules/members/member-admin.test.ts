@@ -9,7 +9,7 @@ import { readDirectory } from "@/modules/members/reads-directory";
 import { readConfirmationBadgeCount, readWaitingMemberCount } from "@/modules/members/service-admin";
 import { readMemberProfile } from "@/modules/members/service-profile";
 import { readNavigationBadges } from "@/lib/navigation-badges";
-import { readWelcomeNeighbours, readSharingMemberCount } from "@/lib/village/network-progress";
+import { readWelcomeNeighbours, readSharingMemberCount } from "@/modules/network/reads-progress";
 import { readInviteByToken, readInviterOfMember } from "@/modules/members/service-invites";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";

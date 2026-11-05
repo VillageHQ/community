@@ -23,7 +23,7 @@ const SCHEMA_FILE_PATTERN = /(^|\/|-)schema\.ts$/;
 // Every entry is a debt. New violations fail, and so do entries that no longer exist, so this list only shrinks.
 const KNOWN_VIOLATIONS: readonly string[] = [
   "src/components/shell/navigation-links.tsx -> src/modules/messages/queries.ts",
-  "src/components/shell/search-ready-notice.tsx -> src/app/(app)/network/network-queries.ts",
+  "src/components/shell/search-ready-notice.tsx -> src/modules/network/queries.ts",
 ];
 
 const sourceFiles = readSourceFiles();

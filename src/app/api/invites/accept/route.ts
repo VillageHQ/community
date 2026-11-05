@@ -10,7 +10,7 @@ import { acceptInvite, readInviteByToken } from "@/modules/members/service-invit
 import { readJsonBody } from "@/platform/http/read-json-body";
 import { logError, withRouteLogging } from "@/platform/observability/route-logging";
 import { hasTrustedOrigin, readSessionMember } from "@/platform/http/member-route";
-import { NETWORK_ERROR_CODES } from "@/lib/village/network-api";
+import { NETWORK_ERROR_CODES } from "@/modules/network/contract";
 
 const CREATED_STATUS = 201;
 const FORBIDDEN_STATUS = 403;

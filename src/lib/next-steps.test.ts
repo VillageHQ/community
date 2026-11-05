@@ -4,7 +4,7 @@ import { SETUP_STEPS } from "./admin-setup-steps";
 import { describeJoinSteps, NEXT_STEPS, selectNextSteps } from "./next-steps";
 import { describeEmailConfirmation } from "@/modules/members/contract-email-confirmation-copy";
 import { ROUTES } from "@/platform/http/routes";
-import { NETWORK_PROGRESS } from "./village/network-progress-stages";
+import { NETWORK_PROGRESS } from "@/modules/network/contract-progress";
 
 const FORBIDDEN_CLAIMS = /yes or no to every intro|feed|messages|directory|\b\d{2,}\b/i;
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { recordSharingConsent } from "@/lib/village/member-network";
+import { recordSharingConsent } from "@/modules/network/service";
 import { createMemberRoute } from "@/platform/village/member-routes";
 
 const consentBodySchema = z.object({
