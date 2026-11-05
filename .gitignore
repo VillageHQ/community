@@ -8,4 +8,5 @@ coverage/
 !.env.example
 .DS_Store
 .vercel/
-AGENTS.md
+/AGENTS.md
+.playwright-cli/
