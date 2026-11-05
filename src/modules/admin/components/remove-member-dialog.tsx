@@ -4,14 +4,18 @@ import { ShieldAlert, Trash2 } from "lucide-react";
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 
 import { CONTENT_CHOICES, type ContentChoice } from "@/modules/admin/contract";
+import { asksManifest } from "@/modules/asks/manifest";
 import { departureResponseSchema } from "@/modules/network/contract";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { API_ROUTES } from "@/platform/http/routes";
+import { useIsModuleEnabled } from "@/platform/modules/enabled-modules";
 import { postRequest } from "@/platform/http/post-request";
 
 import { ConfirmDialog } from "./confirm-dialog";
 
 const CONTENT_FIELD_NAME = "removal-content-choice";
+
+const ASKS_NOTE = "Their asks leave the board either way. Keeping brings them back if you unban them. Deleting removes them and their offers for good.";
 
 const CONTENT_OPTIONS: { value: ContentChoice; label: string; hint: string }[] = [
   {
@@ -56,6 +60,7 @@ type RemoveMemberDialogProps = {
 export function RemoveMemberDialog({ member, trigger, returnFocusRef, fallbackFocusId, onDone }: RemoveMemberDialogProps) {
   const [contentChoice, setContentChoice] = useState<ContentChoice>(CONTENT_CHOICES.keep);
   const keepRadioRef = useRef<HTMLInputElement>(null);
+  const areAsksOn = useIsModuleEnabled(asksManifest.id);
   const { id, name, isAdmin, isInVillageGroup } = member;
 
   return (
@@ -101,6 +106,7 @@ export function RemoveMemberDialog({ member, trigger, returnFocusRef, fallbackFo
           </label>
         ))}
       </fieldset>
+      {areAsksOn ? <p className="type-small">{ASKS_NOTE}</p> : null}
       <VillageConsequence name={name} isInVillageGroup={isInVillageGroup} />
     </ConfirmDialog>
   );

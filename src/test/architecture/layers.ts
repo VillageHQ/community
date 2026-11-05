@@ -20,7 +20,8 @@ const ALLOWED_MODULE_IMPORTS: Readonly<Record<string, readonly string[]>> = {
   feed: ["members"],
   network: ["members"],
   intros: ["members", "network"],
-  admin: ["members", "messages", "feed", "network", "intros"],
+  asks: ["members"],
+  admin: ["members", "messages", "feed", "network", "intros", "asks"],
 };
 
 const LAYER_PREFIXES: readonly (readonly [string, Layer])[] = [

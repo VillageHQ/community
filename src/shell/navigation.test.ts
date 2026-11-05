@@ -23,10 +23,10 @@ describe("the navigation", () => {
     }
   });
 
-  it("shows members Feed, Messages, Members, Network and Intros", () => {
+  it("lists every primary module in registry order", () => {
     const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false).map(({ label }) => label);
 
-    expect(labels).toEqual(["Feed", "Messages", "Members", "Network", "Intros"]);
+    expect(labels).toEqual(["Feed", "Messages", "Members", "Network", "Intros", "Asks"]);
   });
 
   it("hides Admin from members", () => {
@@ -62,6 +62,11 @@ describe("the navigation", () => {
   it("describes the intros badge in plain words", () => {
     expect(describeNavigationBadge(NAVIGATION_BADGES.intros, 1)).toBe("1 intro needs a look");
     expect(describeNavigationBadge(NAVIGATION_BADGES.intros, 2)).toBe("2 intros need a look");
+  });
+
+  it("describes the asks badge as new offers", () => {
+    expect(describeNavigationBadge(NAVIGATION_BADGES.asks, 1)).toBe("1 new offer of help");
+    expect(describeNavigationBadge(NAVIGATION_BADGES.asks, 3)).toBe("3 new offers of help");
   });
 
   it("describes the messages badge as unread messages", () => {

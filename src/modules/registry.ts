@@ -3,6 +3,7 @@ import "server-only";
 import type { ModuleIntegration } from "@/platform/modules/integration";
 
 import { adminManifest } from "./admin/manifest";
+import { asksModule } from "./asks/integration";
 import { feedModule } from "./feed/integration";
 import { introsModule } from "./intros/integration";
 import { membersManifest } from "./members/manifest";
@@ -16,5 +17,6 @@ export const MODULES: readonly ModuleIntegration[] = [
   { manifest: membersManifest },
   { manifest: networkManifest },
   introsModule,
+  asksModule,
   { manifest: adminManifest },
 ];
