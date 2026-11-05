@@ -10,8 +10,8 @@ import { EmptyState } from "@/components/empty-state";
 import { QueryBoundary } from "@/components/query-boundary";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { readFirstName } from "@/lib/design/avatar-identity";
-import { ROUTES } from "@/lib/routes";
+import { readFirstName } from "@/platform/design/avatar-identity";
+import { ROUTES } from "@/platform/http/routes";
 import { LOW_LOOKUPS_LEFT, type NetworkPerson } from "@/lib/village/network-api";
 
 import { LeaveGroup } from "./leave-group";

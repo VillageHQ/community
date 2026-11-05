@@ -1,7 +1,7 @@
 import "server-only";
 
-import type { Database } from "../../database/client.ts";
-import type { Environment } from "../environment.ts";
+import type { Database } from "../../platform/database/client.ts";
+import type { Environment } from "../../platform/environment.ts";
 import { readSetupProgress } from "../admin-setup.ts";
 import { readConfirmationBadgeCount } from "../members/member-admin.ts";
 import { readPendingLinkCount } from "../village/network-progress.ts";

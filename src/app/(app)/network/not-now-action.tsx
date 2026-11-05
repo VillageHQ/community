@@ -6,7 +6,7 @@ import Link from "next/link";
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { ONBOARDING_STEPS } from "@/lib/members/profile-api";
-import { API_ROUTES, ROUTES } from "@/lib/routes";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/lib/village/network-api";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 

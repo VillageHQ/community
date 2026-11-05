@@ -1,6 +1,6 @@
-import { ACCEPTED_IMAGE_TYPES, IMAGE_CONTENT_TYPES } from "../image-rules.ts";
-import { readResponseMessage } from "../read-response-message.ts";
-import { API_ROUTES } from "../routes.ts";
+import { ACCEPTED_IMAGE_TYPES, IMAGE_CONTENT_TYPES } from "../../platform/image-rules.ts";
+import { readResponseMessage } from "../../platform/http/read-response-message.ts";
+import { API_ROUTES } from "../../platform/http/routes.ts";
 import {
   AVATAR_EDGE_PX,
   AVATAR_TOO_LARGE_MESSAGE,

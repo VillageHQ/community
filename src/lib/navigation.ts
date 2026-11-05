@@ -1,6 +1,6 @@
 import { Handshake, House, MessageCircle, ShieldCheck, Users, Waypoints, type LucideIcon } from "lucide-react";
 
-import { ROUTES } from "./routes.ts";
+import { ROUTES } from "../platform/http/routes.ts";
 
 export const NAVIGATION_SECTIONS = { primary: "primary", admin: "admin" } as const;
 export const NAVIGATION_BADGES = { admin: "admin", messages: "messages", intros: "intros" } as const;

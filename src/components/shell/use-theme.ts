@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-import { DARK_CLASS, THEME_COOKIE, THEME_COOKIE_MAX_AGE_SECONDS, THEMES } from "@/lib/design/theme";
+import { DARK_CLASS, THEME_COOKIE, THEME_COOKIE_MAX_AGE_SECONDS, THEMES } from "@/platform/design/theme";
 
 function subscribeToThemeChanges(onChange: () => void) {
   const observer = new MutationObserver(onChange);

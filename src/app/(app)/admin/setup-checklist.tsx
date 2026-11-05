@@ -3,12 +3,12 @@ import Link from "next/link";
 
 import { StepRow, type StepState, STEP_STATES } from "@/components/step-row";
 import { Button } from "@/components/ui/button";
-import type { Database } from "@/database/client";
+import type { Database } from "@/platform/database/client";
 import { SETUP_STEPS, type SetupProgress, type SetupStepId } from "@/lib/admin-setup";
 import { SETUP_STEP_COPY } from "@/lib/admin-setup-copy";
-import { resolveAppUrl } from "@/lib/app-url";
-import { readBranding, type Branding } from "@/lib/branding/branding";
-import { readResendConfig } from "@/lib/email/resend";
+import { resolveAppUrl } from "@/platform/http/app-url";
+import { readBranding, type Branding } from "@/platform/branding/branding";
+import { readResendConfig } from "@/platform/email/resend";
 import { createNetworkContext, readVillageGroupReadiness, type SessionMember } from "@/lib/village/member-network";
 import { readVillageGroup, readVillageKeys, type VillageGroup, type VillageKeys } from "@/lib/village/settings";
 

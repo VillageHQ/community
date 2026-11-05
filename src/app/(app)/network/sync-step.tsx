@@ -8,7 +8,7 @@ import type { ConstellationPerson } from "@/components/constellation";
 import { FormError } from "@/components/form-error";
 import { LoadingThread } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
-import { claimVillageBrowserSession } from "@/lib/village/browser-session";
+import { claimVillageBrowserSession } from "@/platform/auth/browser-session";
 import {
   NETWORK_STAGES,
   type NetworkStatus,

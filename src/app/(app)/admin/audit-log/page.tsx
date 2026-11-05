@@ -1,12 +1,12 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 import type { Metadata } from "next";
 
-import { getDatabase } from "@/database/client";
+import { getDatabase } from "@/platform/database/client";
 import { readAuditLog } from "@/lib/admin/audit";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { requireAdmin } from "@/lib/session";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { requireAdmin } from "@/platform/auth/session";
 
-import { AdminSection } from "../admin-section";
+import { AdminSection } from "@/app/(app)/admin/admin-section";
 import { AuditLog } from "./audit-log";
 import { auditPageQuery } from "./audit-queries";
 

@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { NetworkByVillage } from "@/components/village-mark";
 import { describeBadge } from "@/lib/navigation";
-import { ROUTES } from "@/lib/routes";
-import { signOut } from "@/lib/sign-out";
+import { ROUTES } from "@/platform/http/routes";
+import { signOut } from "@/platform/auth/sign-out";
 
 import { NavigationBadge } from "./navigation-links";
 import { applyTheme, useIsDarkTheme } from "./use-theme";

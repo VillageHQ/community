@@ -4,8 +4,8 @@ import { ShieldAlert, Trash2 } from "lucide-react";
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 
 import { CONTENT_CHOICES, departureResponseSchema, type ContentChoice } from "@/lib/admin/admin-api";
-import { readFirstName } from "@/lib/design/avatar-identity";
-import { API_ROUTES } from "@/lib/routes";
+import { readFirstName } from "@/platform/design/avatar-identity";
+import { API_ROUTES } from "@/platform/http/routes";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 
 import { ConfirmDialog } from "./confirm-dialog";

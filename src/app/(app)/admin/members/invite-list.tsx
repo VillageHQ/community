@@ -13,10 +13,10 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
-import { formatShortDate } from "@/lib/format-date";
+import { formatShortDate } from "@/platform/text/format-date";
 import { INVITE_FILTERS, type InviteFilter, type InviteList as InviteListData, type InviteSummary, type IssuedInvite } from "@/lib/invites/invite-api";
 import { INVITE_EMAIL_STATUSES, INVITE_STATES, type InviteState } from "@/lib/invites/invite-state";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 import {
   INVITE_QUERY_KEYS,

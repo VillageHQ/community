@@ -5,7 +5,7 @@ import { useState, type KeyboardEvent, type Ref } from "react";
 
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 import { MESSAGE_LIMITS, messageBodySchema } from "@/lib/messages/message-api";
 
 const COUNTER_APPEARS_WITHIN = 200;

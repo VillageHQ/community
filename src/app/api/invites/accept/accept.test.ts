@@ -2,10 +2,10 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { account, rateLimit, user } from "@/database/auth-schema";
+import { account, rateLimit, user } from "@/platform/database/auth-schema";
 import { invite, memberProfile } from "@/database/members-schema";
 import { memberNetwork } from "@/database/village-schema";
-import { getAuth } from "@/lib/auth";
+import { getAuth } from "@/platform/auth/auth";
 import { issuedInviteSchema } from "@/lib/invites/invite-api";
 import { INVITE_STATES } from "@/lib/invites/invite-state";
 import { readInviteByToken } from "@/lib/invites/invites";
@@ -15,9 +15,9 @@ import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postCreate } from "../../admin/invites/route";
-import { POST as postRevoke } from "../../admin/invites/revoke/route";
-import { POST as postAuth } from "../../auth/[...all]/route";
+import { POST as postCreate } from "@/app/api/admin/invites/route";
+import { POST as postRevoke } from "@/app/api/admin/invites/revoke/route";
+import { POST as postAuth } from "@/app/api/auth/[...all]/route";
 import { POST as postAccept } from "./route";
 
 const APP_URL = "http://localhost:3000";

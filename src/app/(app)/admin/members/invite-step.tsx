@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { IssuedInvite } from "@/lib/invites/invite-api";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 import { InviteForm } from "./invite-form";
 

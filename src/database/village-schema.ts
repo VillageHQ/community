@@ -1,6 +1,6 @@
 import { date, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
-import { user } from "./auth-schema.ts";
+import { user } from "../platform/database/auth-schema.ts";
 
 export const memberNetwork = pgTable("member_network", {
   userId: text("user_id")

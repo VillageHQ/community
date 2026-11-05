@@ -2,9 +2,9 @@ import { createHmac, randomUUID } from "node:crypto";
 
 import { hashPassword } from "better-auth/crypto";
 
-import { account, user } from "../database/auth-schema.ts";
-import type { Database } from "../database/client.ts";
-import { getAuth } from "../lib/auth.ts";
+import { account, user } from "../platform/database/auth-schema.ts";
+import type { Database } from "../platform/database/client.ts";
+import { getAuth } from "../platform/auth/auth.ts";
 
 const MEMBER_PASSWORD = "a-long-test-password";
 const CREDENTIAL_PROVIDER_ID = "credential";

@@ -1,5 +1,5 @@
 import type { ConstellationPerson } from "@/components/constellation";
-import type { CommunityLogo } from "@/lib/branding/branding";
+import type { CommunityLogo } from "@/platform/branding/branding";
 
 const MINIMUM_MEMBERS_TO_COUNT = 2;
 

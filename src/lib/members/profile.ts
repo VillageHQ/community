@@ -2,12 +2,12 @@ import "server-only";
 
 import { and, eq } from "drizzle-orm";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { memberAvatar, memberProfile, memberTag } from "../../database/members-schema.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
-import type { ImageContentType } from "../image-rules.ts";
-import { API_ROUTES } from "../routes.ts";
+import type { ImageContentType } from "../../platform/image-rules.ts";
+import { API_ROUTES } from "../../platform/http/routes.ts";
 import { saveMemberLinkedinUrl, NetworkRequestError, type NetworkContext } from "../village/member-network.ts";
 import { NETWORK_ERROR_CODES } from "../village/network-api.ts";
 import { isActiveMember } from "./active-member.ts";

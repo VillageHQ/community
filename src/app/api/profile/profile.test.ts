@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { user } from "@/database/auth-schema";
+import { user } from "@/platform/database/auth-schema";
 import { memberProfile, memberTag } from "@/database/members-schema";
 import { memberNetwork } from "@/database/village-schema";
 import { MAXIMUM_AVATAR_BYTES } from "@/lib/members/avatar-rules";
@@ -9,8 +9,8 @@ import { readAvatarUrl, readMemberProfile } from "@/lib/members/profile";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { GET as getAvatar } from "../members/[memberId]/avatar/route";
-import { POST as postLinkedin } from "../network/linkedin/route";
+import { GET as getAvatar } from "@/app/api/members/[memberId]/avatar/route";
+import { POST as postLinkedin } from "@/app/api/network/linkedin/route";
 import { DELETE as deleteAvatarRoute, POST as postAvatar } from "./avatar/route";
 import { POST as postProfile } from "./route";
 

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MESSAGE_LIMITS, type DirectMessage, type ThreadChanges, type ThreadPage } from "@/lib/messages/message-api";
 import { pendingMessagesQuery, threadQuery } from "@/lib/messages/message-queries";
-import { API_ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/platform/http/routes";
 
 import { Thread } from "./thread";
 

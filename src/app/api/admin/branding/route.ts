@@ -1,5 +1,5 @@
 import { saveBrandingAsAdmin } from "@/lib/admin/settings-actions";
-import { brandingBodySchema } from "@/lib/branding/branding-api";
+import { brandingBodySchema } from "@/platform/branding/branding-api";
 import { createMemberRoute } from "@/lib/village/member-route";
 
 export const POST = createMemberRoute(

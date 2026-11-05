@@ -17,7 +17,7 @@ import {
   type SetReactionBody,
 } from "@/lib/feed/feed-api";
 import { readNewPostPollMs } from "@/lib/feed/new-post-polling";
-import { API_ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/lib/village/network-api";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 

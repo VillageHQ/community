@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { removeBidiControls, removeNullBytes } from "../safe-text.ts";
+import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
 
 export const FEED_LIMITS = {
   postLength: 3000,

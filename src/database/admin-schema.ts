@@ -3,7 +3,7 @@ import { boolean, check, index, pgTable, text, timestamp, unique, uuid } from "d
 
 import { REPORT_TARGETS } from "../lib/admin/admin-api.ts";
 import { FEED_LIMITS } from "../lib/feed/feed-api.ts";
-import { user } from "./auth-schema.ts";
+import { user } from "../platform/database/auth-schema.ts";
 
 const MILLISECOND_PRECISION = 3;
 

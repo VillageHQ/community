@@ -9,7 +9,7 @@ import { FormField } from "@/components/form-field";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { CheckboxCard } from "@/components/ui/checkbox-card";
-import { API_ROUTES, ROUTES } from "@/lib/routes";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/lib/village/network-api";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 

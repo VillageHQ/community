@@ -2,8 +2,8 @@ import "server-only";
 
 import { and, eq, isNull, max, or, sql } from "drizzle-orm";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import {
   conversation,
   conversationReadCursor,

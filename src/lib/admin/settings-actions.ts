@@ -1,6 +1,6 @@
 import "server-only";
 
-import { saveBranding, saveLogo, deleteLogo, type BrandingFields, type LogoFile } from "../branding/branding.ts";
+import { saveBranding, saveLogo, deleteLogo, type BrandingFields, type LogoFile } from "../../platform/branding/branding.ts";
 import type { NetworkContext } from "../village/member-network.ts";
 import { saveConfirmedVillageDomain, saveDailyLookupLimit } from "../village/settings.ts";
 import { AUDIT_ACTIONS } from "./admin-api.ts";

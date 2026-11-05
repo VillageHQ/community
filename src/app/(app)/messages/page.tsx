@@ -1,4 +1,4 @@
-import { requireMember } from "@/lib/session";
+import { requireMember } from "@/platform/auth/session";
 
 import { NoConversationSelected } from "./no-conversation-selected";
 

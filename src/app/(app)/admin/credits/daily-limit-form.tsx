@@ -9,7 +9,7 @@ import { FormField } from "@/components/form-field";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { DAILY_LOOKUP_LIMITS } from "@/lib/admin/admin-api";
-import { API_ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/lib/village/network-api";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 

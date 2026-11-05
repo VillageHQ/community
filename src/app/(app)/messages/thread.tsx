@@ -12,15 +12,15 @@ import { Avatar } from "@/components/ui/avatar";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { usePageVisible } from "@/components/use-page-visible";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 import type { ConversationPeer, ThreadPage } from "@/lib/messages/message-api";
 import { pendingMessagesQuery, threadChangesQuery, threadQuery } from "@/lib/messages/message-queries";
 import { readThreadMessages } from "@/lib/messages/thread-cache";
 import { buildThreadEntries, describeNewMessages, readNewestPeerSequence } from "@/lib/messages/thread-entries";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 import { RequestFailure } from "@/lib/village/post-network-request";
 
-import { ContentMenu } from "../feed/content-menu";
+import { ContentMenu } from "@/app/(app)/feed/content-menu";
 import { ConfirmAction } from "./confirm-action";
 import { describeBlock, describeThreadPrivacy } from "./message-copy";
 import { MessageComposer } from "./message-composer";

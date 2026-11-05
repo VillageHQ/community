@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { session, user } from "@/database/auth-schema";
-import { ROUTES } from "@/lib/routes";
+import { session, user } from "@/platform/database/auth-schema";
+import { ROUTES } from "@/platform/http/routes";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";
 

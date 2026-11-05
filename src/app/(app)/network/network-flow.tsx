@@ -5,7 +5,7 @@ import { Clock, KeyRound, ShieldAlert, UsersRound } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { QueryBoundary } from "@/components/query-boundary";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 import { NETWORK_STAGES, type NetworkStatus } from "@/lib/village/network-api";
 
 import { ConsentStep } from "./consent-step";

@@ -1,10 +1,10 @@
 import type { MemberProfile } from "@/lib/members/profile";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 
-import { CardForm } from "../members/card/card-form";
-import { JoinLayout } from "../network/join-layout";
-import { ONBOARDING_PILLS, OnboardingSteps } from "../network/onboarding-steps";
-import { readSharingSentence, type WelcomeContext } from "../network/welcome-context";
+import { CardForm } from "@/app/(app)/members/card/card-form";
+import { JoinLayout } from "@/app/(app)/network/join-layout";
+import { ONBOARDING_PILLS, OnboardingSteps } from "@/app/(app)/network/onboarding-steps";
+import { readSharingSentence, type WelcomeContext } from "@/app/(app)/network/welcome-context";
 
 function readMembersHereSentence(welcome: WelcomeContext, memberCount: number) {
   const otherMemberCount = memberCount - 1;

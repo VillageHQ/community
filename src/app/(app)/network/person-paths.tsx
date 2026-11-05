@@ -8,13 +8,13 @@ import { Fragment } from "react";
 import type { ConstellationPerson } from "@/components/constellation";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 import { readIntroPromise } from "@/lib/intros/intro-copy";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
 import { LOW_LOOKUPS_LEFT, type Connector } from "@/lib/village/network-api";
 
-import { StartConversationButton } from "../messages/start-conversation-button";
+import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
 import { ConnectorCard } from "./connector-card";
 import { networkPathsQuery } from "./network-queries";
 

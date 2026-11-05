@@ -11,21 +11,21 @@ import { LogoTile } from "@/components/logo-tile";
 import { useIsDarkTheme } from "@/components/shell/use-theme";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MAXIMUM_COMMUNITY_NAME_LENGTH, MAXIMUM_DESCRIPTOR_LENGTH } from "@/lib/branding/branding-api";
-import { ACCEPTED_LOGO_TYPES } from "@/lib/branding/logo-rules";
+import { MAXIMUM_COMMUNITY_NAME_LENGTH, MAXIMUM_DESCRIPTOR_LENGTH } from "@/platform/branding/branding-api";
+import { ACCEPTED_LOGO_TYPES } from "@/platform/branding/logo-rules";
 import { removeLogo, uploadLogo } from "@/lib/branding/logo-upload";
 import {
   ACCENT_PRESETS,
   describeButtonContrast,
   parseAccentColor,
   toAccentVariables,
-} from "@/lib/design/accent";
-import { API_ROUTES } from "@/lib/routes";
+} from "@/platform/design/accent";
+import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/lib/village/network-api";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 
 import { BRAND_NAME_INPUT_ID } from "./brand-fields";
-import type { CommunityLogo } from "@/lib/branding/branding";
+import type { CommunityLogo } from "@/platform/branding/branding";
 
 type BrandState = { errorMessage: string | null };
 

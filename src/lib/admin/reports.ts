@@ -4,8 +4,8 @@ import { and, count, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizz
 import { alias, unionAll } from "drizzle-orm/pg-core";
 
 import { contentReport } from "../../database/admin-schema.ts";
-import { user } from "../../database/auth-schema.ts";
-import type { Database, Transaction } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database, Transaction } from "../../platform/database/client.ts";
 import { comment, post } from "../../database/feed-schema.ts";
 import { messageReport } from "../../database/messages-schema.ts";
 import { memberNetwork } from "../../database/village-schema.ts";

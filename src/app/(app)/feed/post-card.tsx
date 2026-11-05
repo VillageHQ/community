@@ -36,7 +36,7 @@ import { ReactionBar } from "./reaction-bar";
 import { RelativeTime } from "./relative-time";
 import { RichText } from "./rich-text";
 import { useDeletePost, useEditPost, usePinPost, useReportFeedContent } from "./use-feed-mutations";
-import { ConfirmAction } from "../messages/confirm-action";
+import { ConfirmAction } from "@/app/(app)/messages/confirm-action";
 
 const POST_MODES = { reading: "reading", editing: "editing", confirmingDelete: "confirmingDelete", confirmingReport: "confirmingReport" } as const;
 

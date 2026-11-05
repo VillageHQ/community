@@ -1,5 +1,5 @@
-import { readFirstName } from "../design/avatar-identity.ts";
-import { removeBidiControls } from "../safe-text.ts";
+import { readFirstName } from "../../platform/design/avatar-identity.ts";
+import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import { toLinkedinUrl } from "../village/linkedin-slug.ts";
 import type { Intro } from "./intro-api.ts";
 

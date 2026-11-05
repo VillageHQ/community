@@ -1,7 +1,7 @@
 import { UserRound } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 
 export type ConstellationPerson = { id: string; name: string; imageUrl?: string | null };
 

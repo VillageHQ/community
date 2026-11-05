@@ -2,8 +2,8 @@ import "server-only";
 
 import { and, count, eq, isNotNull } from "drizzle-orm";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
 import { isActiveMember } from "../members/active-member.ts";
 import { isAdminMember, isMemberEmailTrusted, type SessionMember } from "./member-network.ts";

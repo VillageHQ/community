@@ -17,7 +17,7 @@ import { inboxQuery } from "@/lib/messages/message-queries";
 import { formatConversationTime } from "@/lib/messages/message-time";
 import { readInboxConversations } from "@/lib/messages/thread-cache";
 import { describeUnreadMessages } from "@/lib/navigation";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 import { ADMIN_PRIVACY_NOTE } from "./message-copy";
 import { requestThreadFocus, takeInboxFocusRequest, THREAD_FOCUS_TARGETS, toConversationLinkId } from "./thread-focus";

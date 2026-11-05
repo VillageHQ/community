@@ -1,10 +1,10 @@
 import "server-only";
 
-import type { Database } from "@/database/client";
-import { readBrandingForPage } from "@/lib/branding/branding";
-import { readResendConfig } from "@/lib/email/resend";
+import type { Database } from "@/platform/database/client";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { readResendConfig } from "@/platform/email/resend";
 import { readAvatarUrl } from "@/lib/members/profile";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 import { isAdminMember, readIsLinkedinConfirmed, type SessionMember } from "@/lib/village/member-network";
 import { hasFirstAndLastName } from "@/lib/village/name-match";
 import { readSharingMemberCount, readWelcomeNeighbours } from "@/lib/village/network-progress";

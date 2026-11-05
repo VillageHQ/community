@@ -12,11 +12,11 @@ import { Alert } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 import { FEED_LIMITS, type Comment, type Post } from "@/lib/feed/feed-api";
 import { hasWholeThread } from "@/lib/feed/feed-cache";
 
-import { ConfirmAction } from "../messages/confirm-action";
+import { ConfirmAction } from "@/app/(app)/messages/confirm-action";
 import { AuthorName, readRemovedAuthorLabel } from "./author-name";
 import { LengthCounter, submitOnCommandEnter, submitWithoutReload } from "./composer";
 import { ConfirmDelete } from "./confirm-delete";

@@ -6,8 +6,8 @@ import { ArrowRight, Check, CircleAlert, DoorOpen, Mail, Search, UsersRound, Way
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { CheckboxCard } from "@/components/ui/checkbox-card";
-import { readFirstName } from "@/lib/design/avatar-identity";
-import { API_ROUTES, ROUTES } from "@/lib/routes";
+import { readFirstName } from "@/platform/design/avatar-identity";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/lib/village/network-api";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 

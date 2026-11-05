@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
-import { user } from "../database/auth-schema.ts";
-import type { Database } from "../database/client.ts";
+import { user } from "../platform/database/auth-schema.ts";
+import type { Database } from "../platform/database/client.ts";
 import { introRequest } from "../database/intro-schema.ts";
 import { memberNetwork } from "../database/village-schema.ts";
 

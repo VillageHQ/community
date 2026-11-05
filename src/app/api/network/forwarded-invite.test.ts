@@ -7,10 +7,10 @@ import { z } from "zod";
 
 import { createEmailVerificationToken } from "better-auth/api";
 
-import { user, verification } from "@/database/auth-schema";
+import { user, verification } from "@/platform/database/auth-schema";
 import { invite } from "@/database/members-schema";
 import { memberNetwork } from "@/database/village-schema";
-import { getAuth } from "@/lib/auth";
+import { getAuth } from "@/platform/auth/auth";
 import { readConfirmationView, toConfirmationIdentifier } from "@/lib/invites/email-confirmation";
 import { CONFIRMATION_VIEWS } from "@/lib/invites/email-confirmation-views";
 import { issuedInviteSchema } from "@/lib/invites/invite-api";
@@ -24,12 +24,12 @@ import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-s
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postConfirmMember } from "../admin/members/confirm/route";
-import { POST as postInvite } from "../admin/invites/route";
-import { POST as postReclaim } from "../admin/invites/reclaim/route";
-import { GET as getAuthRoute, POST as postAuthRoute } from "../auth/[...all]/route";
-import { POST as postAccept } from "../invites/accept/route";
-import { POST as postOnboarding } from "../onboarding/route";
+import { POST as postConfirmMember } from "@/app/api/admin/members/confirm/route";
+import { POST as postInvite } from "@/app/api/admin/invites/route";
+import { POST as postReclaim } from "@/app/api/admin/invites/reclaim/route";
+import { GET as getAuthRoute, POST as postAuthRoute } from "@/app/api/auth/[...all]/route";
+import { POST as postAccept } from "@/app/api/invites/accept/route";
+import { POST as postOnboarding } from "@/app/api/onboarding/route";
 import { POST as postConfirm } from "./confirmation/confirm/route";
 import { POST as postConfirmation } from "./confirmation/route";
 import { POST as postConsent } from "./consent/route";
@@ -506,7 +506,7 @@ describe("a forwarded invite", () => {
   it("treats the first admin from setup as verified", async () => {
     await clearDatabase(database);
     await saveVillageKeys(database, FAKE_VILLAGE_KEYS);
-    const { claimFirstAdmin } = await import("@/lib/first-admin");
+    const { claimFirstAdmin } = await import("@/platform/auth/first-admin");
 
     await claimFirstAdmin(database, { name: "Ada", email: "ada@example.test", password: "correct-horse-battery" });
     const [firstAdmin] = await database.select().from(user).where(eq(user.email, "ada@example.test"));

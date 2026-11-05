@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Tag } from "@/components/ui/tag";
 import type { Post } from "@/lib/feed/feed-api";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 type Author = Post["author"];
 

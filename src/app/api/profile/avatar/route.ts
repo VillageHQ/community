@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { detectImageContentType } from "@/lib/image-rules";
+import { detectImageContentType } from "@/platform/image-rules";
 import { AVATAR_TOO_LARGE_MESSAGE, AVATAR_WRONG_TYPE_MESSAGE, MAXIMUM_AVATAR_BYTES } from "@/lib/members/avatar-rules";
 import { deleteAvatar, saveAvatar } from "@/lib/members/profile";
 import { createMemberBinaryRoute, createMemberRoute } from "@/lib/village/member-route";

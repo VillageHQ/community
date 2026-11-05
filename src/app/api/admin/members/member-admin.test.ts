@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { session, user } from "@/database/auth-schema";
+import { session, user } from "@/platform/database/auth-schema";
 import { invite } from "@/database/members-schema";
 import { memberNetwork } from "@/database/village-schema";
 import { inviteListSchema, issuedInviteSchema, waitingMembersSchema } from "@/lib/invites/invite-api";
@@ -15,11 +15,11 @@ import { readInviteByToken, readInviterOfMember } from "@/lib/invites/invites";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postInvite } from "../invites/route";
-import { POST as postList } from "../invites/list/route";
-import { POST as postReclaim } from "../invites/reclaim/route";
-import { POST as postAccept } from "../../invites/accept/route";
-import { POST as postLinkedin } from "../../network/linkedin/route";
+import { POST as postInvite } from "@/app/api/admin/invites/route";
+import { POST as postList } from "@/app/api/admin/invites/list/route";
+import { POST as postReclaim } from "@/app/api/admin/invites/reclaim/route";
+import { POST as postAccept } from "@/app/api/invites/accept/route";
+import { POST as postLinkedin } from "@/app/api/network/linkedin/route";
 import { POST as postClearLinkedin } from "./clear-linkedin/route";
 import { POST as postConfirm } from "./confirm/route";
 import { POST as postWaiting } from "./waiting/route";

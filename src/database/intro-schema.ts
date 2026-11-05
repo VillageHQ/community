@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { boolean, check, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 import { INTRO_LIMITS, INTRO_STATES, OPEN_INTRO_STATES } from "../lib/intros/intro-api.ts";
-import { user } from "./auth-schema.ts";
+import { user } from "../platform/database/auth-schema.ts";
 
 const MILLISECOND_PRECISION = 3;
 

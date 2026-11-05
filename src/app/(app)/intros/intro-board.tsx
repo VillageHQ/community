@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { isOpenIntroState, type Intro } from "@/lib/intros/intro-api";
 import { introBoardQuery } from "@/lib/intros/intro-queries";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 import { AskForYouCard } from "./ask-for-you-card";
 import { ClosedIntroRow } from "./intro-parts";

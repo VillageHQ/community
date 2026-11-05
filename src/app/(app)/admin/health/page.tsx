@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { getDatabase } from "@/database/client";
+import { getDatabase } from "@/platform/database/client";
 import { readCommunityHealth } from "@/lib/admin/community-health";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { requireAdmin } from "@/lib/session";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { requireAdmin } from "@/platform/auth/session";
 
-import { AdminSection } from "../admin-section";
-import { IntroCountsCard } from "../intro-counts-card";
-import { StatRows } from "../stat-rows";
+import { AdminSection } from "@/app/(app)/admin/admin-section";
+import { IntroCountsCard } from "@/app/(app)/admin/intro-counts-card";
+import { StatRows } from "@/app/(app)/admin/stat-rows";
 
 const ACTIVE_MEMBER_MEANING = "An active member posted, replied, reacted, sent a message or asked for an intro. Reading doesn't count, because this site doesn't track it.";
 

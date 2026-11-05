@@ -2,8 +2,8 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database, Transaction } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database, Transaction } from "../../platform/database/client.ts";
 import { isBanActive } from "../members/active-member.ts";
 import { NetworkRequestError } from "../village/member-network.ts";
 import { NETWORK_ERROR_CODES } from "../village/network-api.ts";

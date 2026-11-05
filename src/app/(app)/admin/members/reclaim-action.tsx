@@ -6,7 +6,7 @@ import type { RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import type { IssuedInvite } from "@/lib/invites/invite-api";
 
-import { ConfirmDialog } from "../confirm-dialog";
+import { ConfirmDialog } from "@/app/(app)/admin/confirm-dialog";
 import { INVITE_QUERY_KEYS, reclaimInviteRequest } from "./invite-queries";
 import { IssuedLink } from "./issued-link";
 import { ADMIN_MEMBER_QUERY_KEYS } from "./member-queries";

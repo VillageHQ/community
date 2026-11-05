@@ -2,8 +2,8 @@ import "server-only";
 
 import { eq, inArray, or, sql } from "drizzle-orm";
 
-import type { Database, DatabaseOrTransaction } from "../../database/client.ts";
-import { INSTANCE_SETTING_KEYS, instanceSettings } from "../../database/instance-settings.ts";
+import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
+import { INSTANCE_SETTING_KEYS, instanceSettings } from "../../platform/settings/schema.ts";
 import { DAILY_LOOKUP_LIMITS, dailyLimitBodySchema } from "../admin/admin-api.ts";
 
 export type VillageKeys = { publicKey: string; secretKey: string };

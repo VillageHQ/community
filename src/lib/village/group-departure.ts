@@ -6,7 +6,7 @@ import { memberRemoval } from "../../database/admin-schema.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
 import { AUDIT_ACTIONS, GROUP_DEPARTURE_OUTCOMES, type GroupDepartureOutcome } from "../admin/admin-api.ts";
 import { recordAdminAction } from "../admin/audit.ts";
-import { logError } from "../route-logging.ts";
+import { logError } from "../../platform/observability/route-logging.ts";
 import { createVillageSession, leaveVillageGroup, readVillageUser, VILLAGE_LEAVE_OUTCOMES } from "./client.ts";
 import { clearMemberFromGroup, type NetworkContext } from "./member-network.ts";
 import { readVillageGroup, readVillageKeys, type VillageGroup, type VillageKeys } from "./settings.ts";

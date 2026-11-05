@@ -4,7 +4,7 @@ import { Constellation, type ConstellationPerson } from "@/components/constellat
 import { LogoTile } from "@/components/logo-tile";
 import { MAIN_CONTENT_ID } from "@/components/skip-link";
 import { NetworkByVillage, VillageMark } from "@/components/village-mark";
-import type { CommunityLogo } from "@/lib/branding/branding";
+import type { CommunityLogo } from "@/platform/branding/branding";
 
 type Community = { name: string; descriptor: string; logo: CommunityLogo | null };
 

@@ -14,7 +14,7 @@ import {
 import { STEP_STATES, type StepState } from "../components/step-row.tsx";
 import { SETUP_STEP_NAMES, type SetupProgress } from "./admin-setup.ts";
 import type { EmailConfirmationCopy } from "./members/email-confirmation-copy.ts";
-import { ROUTES } from "./routes.ts";
+import { ROUTES } from "../platform/http/routes.ts";
 import { NETWORK_PROGRESS, type NetworkProgress } from "./village/network-progress-stages.ts";
 
 type NetworkStepCopy = {

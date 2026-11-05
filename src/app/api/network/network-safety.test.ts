@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { user } from "@/database/auth-schema";
+import { user } from "@/platform/database/auth-schema";
 import { memberDailyUsage, memberNetwork, memberPathResult } from "@/database/village-schema";
 import { NETWORK_ERROR_CODES, NETWORK_STAGES, networkPathsSchema, networkStatusSchema } from "@/lib/village/network-api";
 import {
@@ -14,9 +14,9 @@ import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postGroup } from "../admin/village/group/route";
-import { POST as postKeys } from "../admin/village/keys/route";
-import { POST as postLinks } from "../admin/village/links/route";
+import { POST as postGroup } from "@/app/api/admin/village/group/route";
+import { POST as postKeys } from "@/app/api/admin/village/keys/route";
+import { POST as postLinks } from "@/app/api/admin/village/links/route";
 import { POST as postConsent } from "./consent/route";
 import { POST as postLeave } from "./leave/route";
 import { POST as postLinkedin } from "./linkedin/route";

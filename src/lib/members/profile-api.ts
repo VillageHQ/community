@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { nameSchema } from "../invites/invite-api.ts";
-import { removeNullBytes } from "../safe-text.ts";
+import { nameSchema } from "../../platform/auth/member-name.ts";
+import { removeNullBytes } from "../../platform/text/safe-text.ts";
 import { parseExternalUrl } from "./external-url.ts";
 
 export const PROFILE_LIMITS = {

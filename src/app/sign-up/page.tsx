@@ -5,11 +5,11 @@ import Link from "next/link";
 import { EmptyState } from "@/components/empty-state";
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
 import { Button } from "@/components/ui/button";
-import { getDatabase } from "@/database/client";
-import { readBrandingForPage } from "@/lib/branding/branding";
-import { isFirstAdminClaimed } from "@/lib/first-admin";
-import { ROUTES } from "@/lib/routes";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
+import { getDatabase } from "@/platform/database/client";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { isFirstAdminClaimed } from "@/platform/auth/first-admin";
+import { ROUTES } from "@/platform/http/routes";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 
 export const dynamic = "force-dynamic";
 

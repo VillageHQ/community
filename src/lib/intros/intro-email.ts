@@ -1,18 +1,18 @@
 import { and, eq, gt, notExists } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { introRequest } from "../../database/intro-schema.ts";
-import { resolveAppUrl } from "../app-url.ts";
-import { readBranding } from "../branding/branding.ts";
-import { pickOnAccent } from "../design/accent.ts";
-import { readFirstName } from "../design/avatar-identity.ts";
-import { escapeHtml, toSingleLine } from "../email/email-text.ts";
-import { readResendConfig, sendResendEmail } from "../email/resend.ts";
-import type { Environment } from "../environment.ts";
-import { logError } from "../route-logging.ts";
-import { ROUTES } from "../routes.ts";
+import { resolveAppUrl } from "../../platform/http/app-url.ts";
+import { readBranding } from "../../platform/branding/branding.ts";
+import { pickOnAccent } from "../../platform/design/accent.ts";
+import { readFirstName } from "../../platform/design/avatar-identity.ts";
+import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
+import { readResendConfig, sendResendEmail } from "../../platform/email/resend.ts";
+import type { Environment } from "../../platform/environment.ts";
+import { logError } from "../../platform/observability/route-logging.ts";
+import { ROUTES } from "../../platform/http/routes.ts";
 
 export const ASKED_EMAIL_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 

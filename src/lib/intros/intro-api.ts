@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { feedTextSchema } from "../feed/feed-api.ts";
-import { removeBidiControls, removeNullBytes } from "../safe-text.ts";
+import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
 
 export const INTRO_LIFETIME_DAYS = 14;
 

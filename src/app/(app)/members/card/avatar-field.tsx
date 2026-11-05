@@ -8,7 +8,7 @@ import type { ChangeEvent } from "react";
 import { FormError } from "@/components/form-error";
 import { Avatar } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { ACCEPTED_IMAGE_TYPES } from "@/lib/image-rules";
+import { ACCEPTED_IMAGE_TYPES } from "@/platform/image-rules";
 import { removeAvatar, uploadAvatar } from "@/lib/members/avatar-upload";
 
 const AVATAR_INPUT_ID = "avatar-file";

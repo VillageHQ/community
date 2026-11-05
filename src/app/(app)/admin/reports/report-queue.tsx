@@ -21,11 +21,11 @@ import {
   type ReportResolution,
   type ReportTarget,
 } from "@/lib/admin/admin-api";
-import { readFirstName } from "@/lib/design/avatar-identity";
-import { formatDateAndTimeUtc, formatLongDate } from "@/lib/format-date";
+import { readFirstName } from "@/platform/design/avatar-identity";
+import { formatDateAndTimeUtc, formatLongDate } from "@/platform/text/format-date";
 
-import { ConfirmDialog } from "../confirm-dialog";
-import { RemoveMemberDialog } from "../remove-member-dialog";
+import { ConfirmDialog } from "@/app/(app)/admin/confirm-dialog";
+import { RemoveMemberDialog } from "@/app/(app)/admin/remove-member-dialog";
 import { deleteReportedContentRequest, dismissReportRequest, REPORT_QUERY_KEYS, reportPageQuery } from "./report-queries";
 
 const QUEUE_TITLE_ID = "report-queue-title";

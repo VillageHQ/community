@@ -1,8 +1,8 @@
-import { pickOnAccent } from "../design/accent.ts";
-import { escapeHtml, toSingleLine } from "../email/email-text.ts";
-import { readResendConfig, sendResendEmail } from "../email/resend.ts";
-import type { Environment } from "../environment.ts";
-import { logError } from "../route-logging.ts";
+import { pickOnAccent } from "../../platform/design/accent.ts";
+import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
+import { readResendConfig, sendResendEmail } from "../../platform/email/resend.ts";
+import type { Environment } from "../../platform/environment.ts";
+import { logError } from "../../platform/observability/route-logging.ts";
 import { INVITE_EMAIL_STATUSES, INVITE_LIFETIME_DAYS } from "./invite-state.ts";
 
 const IDEMPOTENCY_TOKEN_PREFIX_LENGTH = 16;

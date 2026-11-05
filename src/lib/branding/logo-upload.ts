@@ -1,5 +1,5 @@
-import { readResponseMessage } from "../read-response-message.ts";
-import { API_ROUTES } from "../routes.ts";
+import { readResponseMessage } from "../../platform/http/read-response-message.ts";
+import { API_ROUTES } from "../../platform/http/routes.ts";
 import {
   ACCEPTED_LOGO_TYPES,
   LOGO_BACKDROP_PARAM,
@@ -10,7 +10,7 @@ import {
   MAXIMUM_LOGO_BYTES,
   MAXIMUM_LOGO_EDGE_PX,
   pickLogoBackdrop,
-} from "./logo-rules.ts";
+} from "../../platform/branding/logo-rules.ts";
 
 const RESIZED_LOGO_QUALITY = 0.9;
 const BACKDROP_SAMPLE_EDGE_PX = 32;

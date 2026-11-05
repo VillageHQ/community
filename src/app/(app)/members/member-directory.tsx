@@ -17,9 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
 import { parseDirectoryFilters, toDirectoryQueryString } from "@/lib/members/directory-url";
 import { PROFILE_LIMITS, type DirectoryFilters, type DirectoryMember } from "@/lib/members/profile-api";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
-import { StartConversationButton } from "../messages/start-conversation-button";
+import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
 import { directoryQuery } from "./member-queries";
 
 const SEARCH_DEBOUNCE_MS = 250;

@@ -5,9 +5,9 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { INTRO_ROLES } from "@/lib/intros/intro-api";
 import { introDetailQuery } from "@/lib/intros/intro-queries";
 
-import { AskForYouCard } from "../ask-for-you-card";
-import { useMarkIntrosSeen } from "../use-intro-actions";
-import { YourAskCard } from "../your-ask-card";
+import { AskForYouCard } from "@/app/(app)/intros/ask-for-you-card";
+import { useMarkIntrosSeen } from "@/app/(app)/intros/use-intro-actions";
+import { YourAskCard } from "@/app/(app)/intros/your-ask-card";
 
 export function IntroDetailView({ introId }: { introId: string }) {
   const { data: intro } = useSuspenseQuery(introDetailQuery(introId));

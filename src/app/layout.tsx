@@ -5,10 +5,10 @@ import { connection } from "next/server";
 import type { ReactNode } from "react";
 
 import { SkipLink } from "@/components/skip-link";
-import { readBrandingForPage } from "@/lib/branding/branding";
-import { toRootMetadata } from "@/lib/branding/page-metadata";
-import { renderAccentCss } from "@/lib/design/accent";
-import { DARK_CLASS, parseTheme, SYSTEM_THEME_SCRIPT, THEME_COOKIE, THEMES } from "@/lib/design/theme";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { toRootMetadata } from "@/platform/branding/page-metadata";
+import { renderAccentCss } from "@/platform/design/accent";
+import { DARK_CLASS, parseTheme, SYSTEM_THEME_SCRIPT, THEME_COOKIE, THEMES } from "@/platform/design/theme";
 
 import { figtree, figtreeExtended } from "./fonts";
 import "./globals.css";

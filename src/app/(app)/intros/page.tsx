@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 
 import { PageHeader } from "@/components/page-header";
 import { QueryBoundary } from "@/components/query-boundary";
-import { getDatabase } from "@/database/client";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
+import { getDatabase } from "@/platform/database/client";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { introBoardQuery } from "@/lib/intros/intro-queries";
 import { readIntroBoard } from "@/lib/intros/intro-reads";
-import { requireMember } from "@/lib/session";
+import { requireMember } from "@/platform/auth/session";
 
 import { IntroBoardView } from "./intro-board";
 

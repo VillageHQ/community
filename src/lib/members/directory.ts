@@ -2,11 +2,10 @@ import "server-only";
 
 import { and, asc, count, desc, eq, exists, gte, ilike, inArray, min, ne, or } from "drizzle-orm";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { memberAvatar, memberProfile, memberTag } from "../../database/members-schema.ts";
-import type { Directory, DirectoryFilters } from "./profile-api.ts";
-import { normalizeTag } from "./profile-api.ts";
+import { type Directory, type DirectoryFilters, normalizeTag } from "./profile-api.ts";
 import { isActiveMember } from "./active-member.ts";
 import { toAvatarUrl } from "./profile.ts";
 

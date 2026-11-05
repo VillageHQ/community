@@ -6,9 +6,10 @@ import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { useFocusOnFailure } from "@/components/use-focus-on-failure";
-import { acceptedInviteSchema, MAXIMUM_NAME_LENGTH } from "@/lib/invites/invite-api";
-import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/lib/password-policy";
-import { API_ROUTES, ROUTES } from "@/lib/routes";
+import { acceptedInviteSchema } from "@/lib/invites/invite-api";
+import { MAXIMUM_NAME_LENGTH } from "@/platform/auth/member-name";
+import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/platform/auth/password-policy";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 
 type AcceptState = { errorMessage: string | null; name: string };

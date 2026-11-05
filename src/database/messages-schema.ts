@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { boolean, check, index, integer, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { MESSAGE_LIMITS } from "../lib/messages/message-api.ts";
-import { user } from "./auth-schema.ts";
+import { user } from "../platform/database/auth-schema.ts";
 
 const MILLISECOND_PRECISION = 3;
 const MAXIMUM_BODY_LENGTH = sql.raw(String(MESSAGE_LIMITS.bodyLength));

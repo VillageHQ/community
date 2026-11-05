@@ -1,6 +1,6 @@
 import { adminMemberIdBodySchema } from "@/lib/admin/admin-api";
 import { retryGroupDeparture } from "@/lib/admin/member-roster";
-import { logAdminAction } from "@/lib/route-logging";
+import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/lib/village/member-route";
 
 export const POST = createMemberRoute(

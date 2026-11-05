@@ -1,17 +1,17 @@
 import { z } from "zod";
 
-import { getDatabase } from "@/database/client";
-import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/lib/body-limit";
-import { readRateLimitClientKey } from "@/lib/client-ip";
-import { readResendConfig } from "@/lib/email/resend";
-import { recordFailedAttempt } from "@/lib/attempt-rate-limit";
-import { recoverAdminPassword } from "@/lib/password-recovery";
-import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/lib/password-policy";
-import { pruneExpiredRateLimits } from "@/lib/rate-limit-pruning";
-import { readJsonBody } from "@/lib/read-json-body";
-import { withRouteLogging } from "@/lib/route-logging";
-import { secretsMatch } from "@/lib/secrets-match";
-import { readSetupToken } from "@/lib/setup-token";
+import { getDatabase } from "@/platform/database/client";
+import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/platform/http/body-limit";
+import { readRateLimitClientKey } from "@/platform/http/client-ip";
+import { readResendConfig } from "@/platform/email/resend";
+import { recordFailedAttempt } from "@/platform/rate-limit/attempt-rate-limit";
+import { recoverAdminPassword } from "@/platform/auth/password-recovery";
+import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/platform/auth/password-policy";
+import { pruneExpiredRateLimits } from "@/platform/rate-limit/rate-limit-pruning";
+import { readJsonBody } from "@/platform/http/read-json-body";
+import { withRouteLogging } from "@/platform/observability/route-logging";
+import { secretsMatch } from "@/platform/secrets/secrets-match";
+import { readSetupToken } from "@/platform/secrets/setup-token";
 import { hasTrustedOrigin } from "@/lib/village/member-route";
 
 const UNAUTHORIZED_STATUS = 401;

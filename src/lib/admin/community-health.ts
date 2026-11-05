@@ -3,8 +3,8 @@ import "server-only";
 import { and, count, countDistinct, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { unionAll } from "drizzle-orm/pg-core";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { comment, post, reaction } from "../../database/feed-schema.ts";
 import { introRequest } from "../../database/intro-schema.ts";
 import { directMessage } from "../../database/messages-schema.ts";

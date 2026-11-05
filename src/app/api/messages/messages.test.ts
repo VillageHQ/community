@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { eq, like } from "drizzle-orm";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { rateLimit, session, user } from "@/database/auth-schema";
+import { rateLimit, session, user } from "@/platform/database/auth-schema";
 import { conversation, conversationReadCursor, directMessage, memberBlock, messageReport } from "@/database/messages-schema";
 import { toConversationPair } from "@/lib/messages/conversation-pair";
 import {

@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { user } from "@/database/auth-schema";
-import { recordFailedAttempt } from "@/lib/attempt-rate-limit";
+import { user } from "@/platform/database/auth-schema";
+import { recordFailedAttempt } from "@/platform/rate-limit/attempt-rate-limit";
 import { sendEmailConfirmation } from "@/lib/invites/email-confirmation";
 import { createMemberRoute } from "@/lib/village/member-route";
 

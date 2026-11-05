@@ -7,9 +7,9 @@ import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
-import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/lib/password-policy";
-import { ROUTES } from "@/lib/routes";
+import { authClient } from "@/platform/auth/auth-client";
+import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "@/platform/auth/password-policy";
+import { ROUTES } from "@/platform/http/routes";
 
 const FAILED_MESSAGE = "This link expired or was already used. Ask for a new one.";
 

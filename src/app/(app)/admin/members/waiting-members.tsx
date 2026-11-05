@@ -8,7 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { WaitingMember } from "@/lib/invites/invite-api";
 
-import { ConfirmDialog } from "../confirm-dialog";
+import { ConfirmDialog } from "@/app/(app)/admin/confirm-dialog";
 
 import { confirmMemberRequest, INVITE_QUERY_KEYS, waitingMembersQuery } from "./invite-queries";
 import { ADMIN_MEMBER_QUERY_KEYS } from "./member-queries";

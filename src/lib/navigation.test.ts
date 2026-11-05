@@ -12,7 +12,7 @@ import {
   NAVIGATION_SECTIONS,
   selectNavigationItems,
 } from "./navigation";
-import { ROUTES } from "./routes";
+import { ROUTES } from "@/platform/http/routes";
 
 const APP_GROUP = resolve(import.meta.dirname, "../app/(app)");
 

@@ -4,13 +4,13 @@ import { ProgressTrack } from "@/components/progress-track";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 import { INTRO_LIMITS, INTRO_STATES, type Intro } from "@/lib/intros/intro-api";
 import type { readNewMembers } from "@/lib/members/directory";
 import type { NextStep } from "@/lib/next-steps";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
-import { StartConversationButton } from "../messages/start-conversation-button";
+import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
 import { FEED_AVATAR_SIZES } from "./feed-display";
 
 type NewMember = Awaited<ReturnType<typeof readNewMembers>>["newMembers"][number];

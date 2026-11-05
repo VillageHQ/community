@@ -2,14 +2,14 @@ import "server-only";
 
 import { and, count, eq, inArray, isNotNull, notInArray, sql } from "drizzle-orm";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database, Transaction } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database, Transaction } from "../../platform/database/client.ts";
 import { comment, moderationRecord, post, reaction } from "../../database/feed-schema.ts";
 import { AUDIT_ACTIONS } from "../admin/admin-api.ts";
 import { requireCurrentAdmin, withAdminTransaction } from "../admin/admin-transaction.ts";
 import { recordAdminAction } from "../admin/audit.ts";
 import { isActiveMember, isBanActive } from "../members/active-member.ts";
-import { logAdminAction } from "../route-logging.ts";
+import { logAdminAction } from "../../platform/observability/route-logging.ts";
 import { isAdminMember, NetworkRequestError, type NetworkContext, type SessionMember } from "../village/member-network.ts";
 import {
   FEED_ERROR_CODES,

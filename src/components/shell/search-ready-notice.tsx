@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { activeSearchQuery, networkSearchQuery } from "@/app/(app)/network/network-queries";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 const NOTICE_COPY = {
   success: { title: "Your search is ready", action: "See who you found" },

@@ -6,12 +6,12 @@ import { useState } from "react";
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
-import { readFirstName } from "@/lib/design/avatar-identity";
-import { formatShortDate } from "@/lib/format-date";
+import { readFirstName } from "@/platform/design/avatar-identity";
+import { formatShortDate } from "@/platform/text/format-date";
 import { INTRO_ACTIONS, INTRO_STATES, type Intro } from "@/lib/intros/intro-api";
 import { readIntroPromise } from "@/lib/intros/intro-copy";
 
-import { ConfirmAction } from "../messages/confirm-action";
+import { ConfirmAction } from "@/app/(app)/messages/confirm-action";
 import {
   IntroCardFrame,
   IntroMessageButton,

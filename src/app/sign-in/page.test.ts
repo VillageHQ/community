@@ -2,8 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { claimFirstAdmin } from "@/lib/first-admin";
-import { ADMIN_CREATED_PARAM, ROUTES } from "@/lib/routes";
+import { claimFirstAdmin } from "@/platform/auth/first-admin";
+import { ADMIN_CREATED_PARAM, ROUTES } from "@/platform/http/routes";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 
 import SignInPage from "./page";

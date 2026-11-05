@@ -1,4 +1,4 @@
-import { removeBidiControls } from "../safe-text.ts";
+import { removeBidiControls } from "../../platform/text/safe-text.ts";
 
 export const TEXT_SEGMENTS = { text: "text", link: "link" } as const;
 

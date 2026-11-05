@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { API_ROUTES, ROUTES } from "@/lib/routes";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 
 import { NetworkSearch } from "./network-search";
 

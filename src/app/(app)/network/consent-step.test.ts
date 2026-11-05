@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 import { NETWORK_STAGES } from "@/lib/village/network-api";
 
 import { ConsentStep } from "./consent-step";

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 type AdminMemberPanelProps = { email: string; isEmailConfirmed: boolean; isLinkedinConfirmed: boolean };
 

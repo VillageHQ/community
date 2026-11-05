@@ -7,8 +7,8 @@ import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postLinkedin } from "../../network/linkedin/route";
-import { POST as postStatus } from "../../network/status/route";
+import { POST as postLinkedin } from "@/app/api/network/linkedin/route";
+import { POST as postStatus } from "@/app/api/network/status/route";
 import { POST as postGroup } from "./group/route";
 import { POST as postKeys } from "./keys/route";
 

@@ -3,8 +3,8 @@ import "server-only";
 import { and, asc, count, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
 
 import { memberRemoval } from "../../database/admin-schema.ts";
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { invite, memberAvatar } from "../../database/members-schema.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
 import { isReclaimedEmail } from "../invites/invite-state.ts";

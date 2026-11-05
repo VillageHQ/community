@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 
-import { createDatabase } from "../database/client.ts";
-import { runMigrations } from "../database/run-migrations.ts";
+import { createDatabase } from "../platform/database/client.ts";
+import { runMigrations } from "../platform/database/run-migrations.ts";
 
 export async function setup() {
   const connectionString = process.env.TEST_DATABASE_URL;

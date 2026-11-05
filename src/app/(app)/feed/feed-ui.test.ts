@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST_TYPES, REACTIONS, type FeedPage, type Post } from "@/lib/feed/feed-api";
-import { API_ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/platform/http/routes";
 
 import { Feed } from "./feed";
 import type { FeedViewer } from "./feed-context";

@@ -1,6 +1,6 @@
 import { MEMBER_ROLES, setMemberRoleBodySchema } from "@/lib/admin/admin-api";
 import { setMemberRole } from "@/lib/admin/member-roster";
-import { logAdminAction } from "@/lib/route-logging";
+import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/lib/village/member-route";
 
 const ROLE_MESSAGES = {

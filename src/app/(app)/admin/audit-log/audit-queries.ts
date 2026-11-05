@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { auditPageSchema } from "@/lib/admin/admin-api";
-import { API_ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/platform/http/routes";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 
 export const AUDIT_QUERY_KEYS = { log: "admin-audit-log" } as const;

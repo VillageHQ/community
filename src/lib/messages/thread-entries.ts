@@ -1,4 +1,4 @@
-import { removeBidiControls } from "../safe-text.ts";
+import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import type { DirectMessage } from "./message-api.ts";
 import { formatMessageDay, readMessageDayKey } from "./message-time.ts";
 import { keepUnconfirmedPending, PENDING_STATUSES, type PendingMessage } from "./thread-cache.ts";

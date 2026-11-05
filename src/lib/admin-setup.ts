@@ -1,8 +1,8 @@
-import type { Database } from "../database/client.ts";
-import { resolveAppUrl } from "./app-url.ts";
-import { readBranding } from "./branding/branding.ts";
+import type { Database } from "../platform/database/client.ts";
+import { resolveAppUrl } from "../platform/http/app-url.ts";
+import { readBranding } from "../platform/branding/branding.ts";
 import { hasOpenOrAcceptedInvite } from "./invites/invites.ts";
-import type { Environment } from "./environment.ts";
+import type { Environment } from "../platform/environment.ts";
 import { SETUP_STEPS, type SetupStepId } from "./admin-setup-steps.ts";
 import { readConfirmedVillageDomain, readVillageGroup, readVillageKeys } from "./village/settings.ts";
 

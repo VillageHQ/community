@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { NavigationBadge } from "@/components/shell/navigation-links";
 import { CHIP_CLASSES } from "@/components/ui/chip";
 import type { AdminTabFacts } from "@/lib/admin/admin-badges";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 type AdminTab = { label: string; href: string; readBadge: (facts: AdminTabFacts) => number; badgeDescription: (count: number) => string };
 

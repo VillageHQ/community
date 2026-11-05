@@ -1,4 +1,4 @@
-import type { Database } from "../database/client.ts";
+import type { Database } from "../platform/database/client.ts";
 import { comment, post } from "../database/feed-schema.ts";
 import { POST_TYPES } from "../lib/feed/feed-api.ts";
 

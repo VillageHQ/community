@@ -1,4 +1,4 @@
-import type { Environment } from "../environment.ts";
+import type { Environment } from "../../platform/environment.ts";
 
 const DEFAULT_VILLAGE_API_URL = "https://api.village.do";
 const DEFAULT_VILLAGE_SDK_URL = "https://js.village.do";

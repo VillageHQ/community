@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
 
-import type { Database } from "../../database/client.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { introRequest } from "../../database/intro-schema.ts";
 import { INTRO_STATES, OPEN_INTRO_STATES } from "./intro-api.ts";
 

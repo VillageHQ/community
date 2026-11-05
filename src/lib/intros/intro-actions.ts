@@ -4,7 +4,7 @@ import { and, eq, gt, inArray } from "drizzle-orm";
 
 import { introRequest } from "../../database/intro-schema.ts";
 import { memberBlock } from "../../database/messages-schema.ts";
-import { runAfterResponse } from "../after-response.ts";
+import { runAfterResponse } from "../../platform/observability/after-response.ts";
 import { readAskableConnectors, NetworkRequestError, type NetworkContext } from "../village/member-network.ts";
 import {
   INTRO_ACTION_RULES,

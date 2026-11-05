@@ -1,17 +1,17 @@
 import { eq } from "drizzle-orm";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { communityBranding } from "@/database/branding-schema";
-import { INSTANCE_SETTING_KEYS, instanceSettings } from "@/database/instance-settings";
+import { communityBranding } from "@/platform/branding/schema";
+import { INSTANCE_SETTING_KEYS, instanceSettings } from "@/platform/settings/schema";
 import { readSetupProgress, SETUP_STEPS } from "@/lib/admin-setup";
-import { DEFAULT_BRANDING, readBranding } from "@/lib/branding/branding";
-import { MAXIMUM_LOGO_BYTES } from "@/lib/branding/logo-rules";
+import { DEFAULT_BRANDING, readBranding } from "@/platform/branding/branding";
+import { MAXIMUM_LOGO_BYTES } from "@/platform/branding/logo-rules";
 import { readConfirmedVillageDomain } from "@/lib/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postBranding } from "../admin/branding/route";
-import { POST as postDomain } from "../admin/setup/domain/route";
+import { POST as postBranding } from "@/app/api/admin/branding/route";
+import { POST as postDomain } from "@/app/api/admin/setup/domain/route";
 import { DELETE as deleteLogoRoute, GET as getLogo, POST as postLogo } from "./logo/route";
 
 const APP_URL = "http://localhost:3000";

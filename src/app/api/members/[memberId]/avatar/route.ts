@@ -1,6 +1,6 @@
-import { getDatabase } from "@/database/client";
+import { getDatabase } from "@/platform/database/client";
 import { readAvatar } from "@/lib/members/profile";
-import { withRouteLogging } from "@/lib/route-logging";
+import { withRouteLogging } from "@/platform/observability/route-logging";
 import { readSessionMember } from "@/lib/village/member-route";
 
 const NOT_MODIFIED_STATUS = 304;

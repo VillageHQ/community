@@ -1,6 +1,6 @@
 import { reportActionBodySchema } from "@/lib/admin/admin-api";
 import { dismissReport } from "@/lib/admin/reports";
-import { logAdminAction } from "@/lib/route-logging";
+import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/lib/village/member-route";
 
 export const POST = createMemberRoute(

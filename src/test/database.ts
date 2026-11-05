@@ -3,11 +3,11 @@ import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 
 import { adminAuditEntry, contentReport } from "../database/admin-schema.ts";
-import { rateLimit, user, verification } from "../database/auth-schema.ts";
-import { communityBranding } from "../database/branding-schema.ts";
-import { createDatabase, type Database } from "../database/client.ts";
+import { rateLimit, user, verification } from "../platform/database/auth-schema.ts";
+import { communityBranding } from "../platform/branding/schema.ts";
+import { createDatabase, type Database } from "../platform/database/client.ts";
 import { moderationRecord } from "../database/feed-schema.ts";
-import { instanceSettings } from "../database/instance-settings.ts";
+import { instanceSettings } from "../platform/settings/schema.ts";
 import { invite } from "../database/members-schema.ts";
 import { messageReport } from "../database/messages-schema.ts";
 

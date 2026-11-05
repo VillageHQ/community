@@ -3,8 +3,8 @@ import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
 
 import { contentReport } from "../../database/admin-schema.ts";
-import { user } from "../../database/auth-schema.ts";
-import type { Transaction } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Transaction } from "../../platform/database/client.ts";
 import { messageReport } from "../../database/messages-schema.ts";
 import type { ReportResolution } from "./admin-api.ts";
 

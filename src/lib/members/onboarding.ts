@@ -2,7 +2,7 @@ import "server-only";
 
 import { and, eq, isNull } from "drizzle-orm";
 
-import type { Database } from "../../database/client.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { memberProfile } from "../../database/members-schema.ts";
 import type { SessionMember } from "../village/member-network.ts";
 import { NETWORK_PROGRESS, readNetworkProgress } from "../village/network-progress.ts";

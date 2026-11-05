@@ -2,8 +2,8 @@ import "server-only";
 
 import { and, desc, eq, gte, sql, sum } from "drizzle-orm";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { memberDailyUsage } from "../../database/village-schema.ts";
 import { isBanActive } from "../members/active-member.ts";
 import { CREDITS_PER_FULL_SEARCH, CREDITS_PER_PATH_LOOKUP, USD_PER_CREDIT } from "./admin-api.ts";

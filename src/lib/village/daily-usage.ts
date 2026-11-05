@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 
-import type { Database } from "../../database/client.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { memberDailyUsage } from "../../database/village-schema.ts";
 import { VillageApiError } from "./client.ts";
 import { clearVillageOutOfCredits, readDailyLookupLimit } from "./settings.ts";

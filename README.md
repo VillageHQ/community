@@ -279,7 +279,7 @@ docker compose exec postgres createdb -U community community_test
 TEST_DATABASE_URL=postgres://community:community@localhost:5432/community_test pnpm test
 ```
 
-`pnpm db:auth-schema` regenerates `src/database/auth-schema.ts` from the Better Auth config. `pnpm db:generate` writes a new SQL migration to `drizzle/`.
+`pnpm db:auth-schema` regenerates `src/platform/database/auth-schema.ts` from the Better Auth config. `pnpm db:generate` writes a new SQL migration to `drizzle/`.
 
 ## Contributing and security
 

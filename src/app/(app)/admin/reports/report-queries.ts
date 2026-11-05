@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { reportPageSchema, type ReportActionBody, type ReportFilter } from "@/lib/admin/admin-api";
-import { API_ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/lib/village/network-api";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
 

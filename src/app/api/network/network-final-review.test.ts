@@ -9,7 +9,7 @@ import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postLinkReset } from "../admin/village/links/reset/route";
+import { POST as postLinkReset } from "@/app/api/admin/village/links/reset/route";
 import { POST as postConsent } from "./consent/route";
 import { POST as postLeave } from "./leave/route";
 import { POST as postLinkedin } from "./linkedin/route";

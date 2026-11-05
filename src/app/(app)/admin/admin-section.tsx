@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { PageHeader } from "@/components/page-header";
-import { getDatabase } from "@/database/client";
+import { getDatabase } from "@/platform/database/client";
 import { readAdminTabFacts } from "@/lib/admin/admin-badges";
 
 import { AdminTabs } from "./admin-tabs";

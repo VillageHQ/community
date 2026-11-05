@@ -5,14 +5,14 @@ import { randomUUID } from "node:crypto";
 import { and, eq, isNotNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { memberNetwork, memberPathResult } from "../../database/village-schema.ts";
 import { AUDIT_ACTIONS } from "../admin/admin-api.ts";
 import { withAdminTransaction } from "../admin/admin-transaction.ts";
 import { recordAdminAction } from "../admin/audit.ts";
 import { isActiveMember } from "../members/active-member.ts";
-import type { Environment } from "../environment.ts";
+import type { Environment } from "../../platform/environment.ts";
 import { INTRO_ERROR_CODES, INTRO_LIMITS } from "../intros/intro-api.ts";
 import { readOpenAsks } from "../intros/open-asks.ts";
 import {

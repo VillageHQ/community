@@ -5,7 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { FormError } from "@/components/form-error";
 import { QueryProvider } from "@/components/query-provider";
 import { Button } from "@/components/ui/button";
-import { signOutAndGoTo } from "@/lib/sign-out";
+import { signOutAndGoTo } from "@/platform/auth/sign-out";
 
 type SignOutToAcceptProps = { signedInName: string; path: string };
 

@@ -3,8 +3,8 @@ import { check, index, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid }
 
 import { INVITE_EMAIL_STATUSES } from "../lib/invites/invite-state.ts";
 import { MAXIMUM_AVATAR_BYTES } from "../lib/members/avatar-rules.ts";
-import { user } from "./auth-schema.ts";
-import { bytea } from "./branding-schema.ts";
+import { user } from "../platform/database/auth-schema.ts";
+import { bytea } from "../platform/database/bytea.ts";
 
 export const invite = pgTable(
   "invite",

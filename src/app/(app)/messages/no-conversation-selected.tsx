@@ -9,7 +9,7 @@ import { QueryBoundary } from "@/components/query-boundary";
 import { Button } from "@/components/ui/button";
 import { inboxQuery } from "@/lib/messages/message-queries";
 import { readInboxConversations } from "@/lib/messages/thread-cache";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 import { ADMIN_PRIVACY_NOTE } from "./message-copy";
 

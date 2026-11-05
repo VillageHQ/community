@@ -12,11 +12,11 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 import { INTRO_LIMITS, type Intro } from "@/lib/intros/intro-api";
 import { composeStarterNote, readIntroPromise, readNoteSharingLine } from "@/lib/intros/intro-copy";
 import { createIntroRequest, INTRO_QUERY_KEYS } from "@/lib/intros/intro-queries";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 import type { Connector, NetworkPaths } from "@/lib/village/network-api";
 
 import { networkPathsQuery } from "./network-queries";

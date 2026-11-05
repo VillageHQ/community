@@ -6,14 +6,14 @@ import { useRef, useState, type ReactNode, type RefObject } from "react";
 
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 import type { ConversationPeer, DirectMessage } from "@/lib/messages/message-api";
 import { formatMessageTime } from "@/lib/messages/message-time";
 import { isFailed, isSending, type ThreadEntry } from "@/lib/messages/thread-entries";
 
-import { ConfirmDelete } from "../feed/confirm-delete";
-import { ContentMenu, type ContentAction } from "../feed/content-menu";
-import { RICH_TEXT_TONES, RichText } from "../feed/rich-text";
+import { ConfirmDelete } from "@/app/(app)/feed/confirm-delete";
+import { ContentMenu, type ContentAction } from "@/app/(app)/feed/content-menu";
+import { RICH_TEXT_TONES, RichText } from "@/app/(app)/feed/rich-text";
 import { ConfirmAction } from "./confirm-action";
 import { useDeleteMessage, useReportMessage } from "./use-message-mutations";
 

@@ -8,20 +8,20 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
-import { getDatabase } from "@/database/client";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { readFirstName } from "@/lib/design/avatar-identity";
-import { formatMonthAndYear } from "@/lib/format-date";
+import { getDatabase } from "@/platform/database/client";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { readFirstName } from "@/platform/design/avatar-identity";
+import { formatMonthAndYear } from "@/platform/text/format-date";
 import { readExternalHost } from "@/lib/members/external-url";
 import { isBlockedBy } from "@/lib/messages/message-reads";
 import { isCardFilledIn, readMemberProfile } from "@/lib/members/profile";
-import { ROUTES } from "@/lib/routes";
-import { requireMember } from "@/lib/session";
+import { ROUTES } from "@/platform/http/routes";
+import { requireMember } from "@/platform/auth/session";
 import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
 import { isAdminMember } from "@/lib/village/member-network";
 
-import { BlockMemberButton } from "../../messages/block-member-button";
-import { StartConversationButton } from "../../messages/start-conversation-button";
+import { BlockMemberButton } from "@/app/(app)/messages/block-member-button";
+import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
 import { AdminMemberPanel } from "./admin-member-panel";
 
 export const metadata: Metadata = { title: PAGE_TITLES.profile };

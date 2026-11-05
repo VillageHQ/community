@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { rateLimit, user } from "@/database/auth-schema";
+import { rateLimit, user } from "@/platform/database/auth-schema";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 
 import { POST } from "./route";

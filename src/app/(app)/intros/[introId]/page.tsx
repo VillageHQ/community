@@ -7,12 +7,12 @@ import { z } from "zod";
 
 import { QueryBoundary } from "@/components/query-boundary";
 import { Button } from "@/components/ui/button";
-import { getDatabase } from "@/database/client";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
+import { getDatabase } from "@/platform/database/client";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { introDetailQuery } from "@/lib/intros/intro-queries";
 import { readIntroForViewer } from "@/lib/intros/intro-reads";
-import { ROUTES } from "@/lib/routes";
-import { requireMember } from "@/lib/session";
+import { ROUTES } from "@/platform/http/routes";
+import { requireMember } from "@/platform/auth/session";
 
 import { IntroDetailView } from "./intro-detail";
 

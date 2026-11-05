@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import type { ConstellationPerson } from "@/components/constellation";
 import { LoadingThread } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 const SECOND_MS = 1000;
 const SECONDS_PER_MINUTE = 60;

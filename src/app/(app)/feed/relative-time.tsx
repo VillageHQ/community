@@ -1,4 +1,4 @@
-import { formatShortDate } from "@/lib/format-date";
+import { formatShortDate } from "@/platform/text/format-date";
 import { formatRelativeTime } from "@/lib/feed/relative-time";
 
 export function RelativeTime({ timestamp }: { timestamp: string }) {

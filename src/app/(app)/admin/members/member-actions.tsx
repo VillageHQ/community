@@ -5,10 +5,10 @@ import type { ReactNode, RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
 import { GROUP_DEPARTURE_OUTCOMES, MEMBER_ROLES, VILLAGE_STATUSES, type AdminMember, type VillageStatus } from "@/lib/admin/admin-api";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 
-import { ConfirmDialog } from "../confirm-dialog";
-import { RemoveMemberDialog } from "../remove-member-dialog";
+import { ConfirmDialog } from "@/app/(app)/admin/confirm-dialog";
+import { RemoveMemberDialog } from "@/app/(app)/admin/remove-member-dialog";
 import { clearLinkedinRequest, confirmLinkedinRequest, confirmMemberRequest } from "./invite-queries";
 import { IssuedLink } from "./issued-link";
 import {

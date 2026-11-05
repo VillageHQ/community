@@ -2,15 +2,15 @@ import "server-only";
 
 import { and, count, eq, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database, Transaction } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database, Transaction } from "../../platform/database/client.ts";
 import { invite, memberAvatar } from "../../database/members-schema.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
 import { AUDIT_ACTIONS } from "../admin/admin-api.ts";
 import { withAdminTransaction } from "../admin/admin-transaction.ts";
 import { recordAdminAction } from "../admin/audit.ts";
-import { readResendConfig } from "../email/resend.ts";
-import type { Environment } from "../environment.ts";
+import { readResendConfig } from "../../platform/email/resend.ts";
+import type { Environment } from "../../platform/environment.ts";
 import { INVITE_ERROR_CODES } from "../invites/invite-api.ts";
 import { readLinkedinSlug } from "../village/linkedin-slug.ts";
 import { NetworkRequestError, type NetworkContext } from "../village/member-network.ts";

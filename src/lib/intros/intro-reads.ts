@@ -3,15 +3,15 @@ import "server-only";
 import { and, count, desc, eq, inArray, isNotNull, lte, notExists, notInArray, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { introRequest } from "../../database/intro-schema.ts";
 import { memberAvatar, memberProfile } from "../../database/members-schema.ts";
 import { memberBlock } from "../../database/messages-schema.ts";
 import { memberNetwork } from "../../database/village-schema.ts";
 import { isActiveMember, isBanActive } from "../members/active-member.ts";
 import { toAvatarUrl } from "../members/profile.ts";
-import { removeBidiControls } from "../safe-text.ts";
+import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import {
   INTRO_LIFETIME_DAYS,
   INTRO_LIMITS,

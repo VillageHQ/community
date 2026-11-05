@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { INTRO_ACTIONS, INTRO_ROLES, INTRO_STATES, type Intro, type IntroBoard } from "@/lib/intros/intro-api";
 import { introBoardQuery } from "@/lib/intros/intro-queries";
-import { API_ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/platform/http/routes";
 
 import { AskForYouCard } from "./ask-for-you-card";
 import { IntroBoardView } from "./intro-board";

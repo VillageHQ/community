@@ -1,5 +1,5 @@
-import { readFirstName } from "../design/avatar-identity.ts";
-import { removeBidiControls, removeNullBytes } from "../safe-text.ts";
+import { readFirstName } from "../../platform/design/avatar-identity.ts";
+import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
 
 type ScoreMeta = { title?: string | null; description?: string | null };
 

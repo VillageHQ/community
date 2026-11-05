@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 export default function IntroNotFound() {
   return (

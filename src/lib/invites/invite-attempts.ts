@@ -1,10 +1,10 @@
 import "server-only";
 
-import type { Database } from "../../database/client.ts";
-import { recordFailedAttempt } from "../attempt-rate-limit.ts";
-import { readRateLimitClientKey } from "../client-ip.ts";
-import type { Environment } from "../environment.ts";
-import { pruneExpiredRateLimits } from "../rate-limit-pruning.ts";
+import type { Database } from "../../platform/database/client.ts";
+import { recordFailedAttempt } from "../../platform/rate-limit/attempt-rate-limit.ts";
+import { readRateLimitClientKey } from "../../platform/http/client-ip.ts";
+import type { Environment } from "../../platform/environment.ts";
+import { pruneExpiredRateLimits } from "../../platform/rate-limit/rate-limit-pruning.ts";
 
 const INVITE_KEY_PREFIX = "invite";
 

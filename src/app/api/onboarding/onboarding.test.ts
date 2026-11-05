@@ -10,7 +10,7 @@ import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_VILLAGE_KEYS } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postProfile } from "../profile/route";
+import { POST as postProfile } from "@/app/api/profile/route";
 import { POST as postOnboarding } from "./route";
 
 const APP_URL = "http://localhost:3000";

@@ -6,7 +6,7 @@ import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/platform/auth/auth-client";
 
 const SENT_MESSAGE = "If that email has an account here, we sent a link to it. It works once and lasts one hour.";
 const FAILED_MESSAGE = "We couldn't send that right now. Wait a minute and try again.";

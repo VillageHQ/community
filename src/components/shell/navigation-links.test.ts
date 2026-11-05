@@ -4,7 +4,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { API_ROUTES, ROUTES } from "@/lib/routes";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 
 import { SidebarNavigation, TabBar } from "./navigation-links";
 

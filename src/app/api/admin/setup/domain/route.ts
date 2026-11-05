@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { confirmVillageDomain } from "@/lib/admin/settings-actions";
-import { resolveAppUrl } from "@/lib/app-url";
+import { resolveAppUrl } from "@/platform/http/app-url";
 import { createMemberRoute } from "@/lib/village/member-route";
 
 const domainBodySchema = z.object({

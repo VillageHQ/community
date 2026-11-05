@@ -1,7 +1,7 @@
 import { and, eq, gt, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 
-import { user } from "../../database/auth-schema.ts";
+import { user } from "../../platform/database/auth-schema.ts";
 
 type MemberTable = { banned: AnyPgColumn; banExpires: AnyPgColumn };
 

@@ -3,7 +3,7 @@
 import { cn } from "cn";
 import { Avatar as AvatarPrimitive } from "radix-ui";
 
-import { pickAvatarTint, readInitials } from "@/lib/design/avatar-identity";
+import { pickAvatarTint, readInitials } from "@/platform/design/avatar-identity";
 
 const DEFAULT_AVATAR_SIZE_PX = 48;
 const MINIMUM_INITIALS_SIZE_PX = 12;

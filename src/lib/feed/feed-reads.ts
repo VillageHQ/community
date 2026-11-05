@@ -4,8 +4,8 @@ import { and, asc, count, desc, eq, exists, gt, inArray, isNotNull, isNull, lt, 
 import { alias, QueryBuilder } from "drizzle-orm/pg-core";
 
 import { memberRemoval } from "../../database/admin-schema.ts";
-import { user } from "../../database/auth-schema.ts";
-import type { Database } from "../../database/client.ts";
+import { user } from "../../platform/database/auth-schema.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { comment, post, reaction } from "../../database/feed-schema.ts";
 import { memberAvatar, memberProfile } from "../../database/members-schema.ts";
 import { isActiveMember, isBanActive } from "../members/active-member.ts";

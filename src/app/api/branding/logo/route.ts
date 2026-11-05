@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { getDatabase } from "@/database/client";
+import { getDatabase } from "@/platform/database/client";
 import { deleteLogoAsAdmin, saveLogoAsAdmin } from "@/lib/admin/settings-actions";
-import { readLogo } from "@/lib/branding/branding";
+import { readLogo } from "@/platform/branding/branding";
 import {
   detectLogoContentType,
   LOGO_BACKDROP_PARAM,
@@ -10,8 +10,8 @@ import {
   LOGO_WRONG_TYPE_MESSAGE,
   MAXIMUM_LOGO_BYTES,
   parseLogoBackdrop,
-} from "@/lib/branding/logo-rules";
-import { withRouteLogging } from "@/lib/route-logging";
+} from "@/platform/branding/logo-rules";
+import { withRouteLogging } from "@/platform/observability/route-logging";
 import { createAdminBinaryRoute, createMemberRoute } from "@/lib/village/member-route";
 
 const NOT_MODIFIED_STATUS = 304;

@@ -2,12 +2,12 @@ import "server-only";
 
 import type { z } from "zod";
 
-import { getDatabase, type Database } from "../../database/client.ts";
-import { readActiveSession } from "../active-session.ts";
-import { resolveTrustedOrigins } from "../app-url.ts";
-import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "../body-limit.ts";
-import { readJsonBody } from "../read-json-body.ts";
-import { withRouteLogging } from "../route-logging.ts";
+import { getDatabase, type Database } from "../../platform/database/client.ts";
+import { readActiveSession } from "../../platform/auth/active-session.ts";
+import { resolveTrustedOrigins } from "../../platform/http/app-url.ts";
+import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "../../platform/http/body-limit.ts";
+import { readJsonBody } from "../../platform/http/read-json-body.ts";
+import { withRouteLogging } from "../../platform/observability/route-logging.ts";
 import { isVillageErrorStatus, NETWORK_NOT_SYNCED_TYPE, VILLAGE_FAILURE_TYPES, VillageApiError } from "./client.ts";
 import { DailyLimitReachedError } from "./daily-usage.ts";
 import {

@@ -6,10 +6,10 @@ import { EmptyState } from "@/components/empty-state";
 import { InviterNote } from "@/components/inviter-note";
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
 import { Button } from "@/components/ui/button";
-import { getDatabase } from "@/database/client";
-import { readActiveSession } from "@/lib/active-session";
-import { readBrandingForPage } from "@/lib/branding/branding";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
+import { getDatabase } from "@/platform/database/client";
+import { readActiveSession } from "@/platform/auth/active-session";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { recordFailedInviteAttempt } from "@/lib/invites/invite-attempts";
 import {
   INVITE_INVALID_COPY,
@@ -19,7 +19,7 @@ import {
 } from "@/lib/invites/invite-copy";
 import { INVITE_LIFETIME_DAYS, INVITE_STATES } from "@/lib/invites/invite-state";
 import { readInviteByToken } from "@/lib/invites/invites";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 
 import { AcceptForm } from "./accept-form";
 import { SignOutToAccept } from "./sign-out-to-accept";

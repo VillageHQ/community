@@ -8,7 +8,7 @@ import type { NavigationBadgeCounts } from "@/lib/navigation";
 import { SidebarNavigation, TabBar } from "./navigation-links";
 import { SearchReadyNotice } from "./search-ready-notice";
 import { PhoneUserMenu, SidebarUserMenu, type ShellMember } from "./user-menu";
-import type { CommunityLogo } from "@/lib/branding/branding";
+import type { CommunityLogo } from "@/platform/branding/branding";
 
 type ShellCommunity = { name: string; descriptor: string; logo: CommunityLogo | null };
 

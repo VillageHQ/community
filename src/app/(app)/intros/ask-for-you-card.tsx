@@ -9,8 +9,8 @@ import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { readFirstName } from "@/lib/design/avatar-identity";
-import { formatShortDate } from "@/lib/format-date";
+import { readFirstName } from "@/platform/design/avatar-identity";
+import { formatShortDate } from "@/platform/text/format-date";
 import { INTRO_ACTIONS, INTRO_LIMITS, INTRO_STATES, type Intro } from "@/lib/intros/intro-api";
 import { composeForwardableBlurb } from "@/lib/intros/intro-copy";
 import { reportIntroNoteRequest } from "@/lib/intros/intro-queries";
@@ -26,7 +26,7 @@ import {
   readIntroLinkLabel,
   type HeadingLevel,
 } from "./intro-parts";
-import { ConfirmAction } from "../messages/confirm-action";
+import { ConfirmAction } from "@/app/(app)/messages/confirm-action";
 import { useIntroTransition } from "./use-intro-actions";
 
 function TargetLink({ intro }: { intro: Intro }) {

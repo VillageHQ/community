@@ -1,6 +1,6 @@
 import { queryOptions, skipToken } from "@tanstack/react-query";
 
-import { API_ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/platform/http/routes";
 import {
   NETWORK_STAGES,
   networkPathsSchema,

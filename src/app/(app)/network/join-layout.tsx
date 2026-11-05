@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { InviterNote } from "@/components/inviter-note";
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 
 import type { WelcomeContext } from "./welcome-context";
 

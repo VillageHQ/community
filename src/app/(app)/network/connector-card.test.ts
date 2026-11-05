@@ -5,7 +5,7 @@ import { createElement, type ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { INTRO_STATES } from "@/lib/intros/intro-api";
-import { API_ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/platform/http/routes";
 import type { Connector } from "@/lib/village/network-api";
 
 import { ConnectorCard, OUTSIDE_COMMUNITY_LABEL } from "./connector-card";

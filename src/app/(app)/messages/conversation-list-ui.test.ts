@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ConversationSummary, InboxCursor } from "@/lib/messages/message-api";
 import { inboxQuery } from "@/lib/messages/message-queries";
-import { API_ROUTES, ROUTES } from "@/lib/routes";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 
 import { ConversationList } from "./conversation-list";
 import { NoConversationSelected } from "./no-conversation-selected";

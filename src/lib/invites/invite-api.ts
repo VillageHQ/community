@@ -1,10 +1,9 @@
 import { z } from "zod";
 
-import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "../password-policy.ts";
-import { removeBidiControls, removeNullBytes } from "../safe-text.ts";
+import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "../../platform/auth/password-policy.ts";
+import { removeNullBytes } from "../../platform/text/safe-text.ts";
 import { INVITE_EMAIL_STATUSES, INVITE_STATES } from "./invite-state.ts";
-
-export const MAXIMUM_NAME_LENGTH = 80;
+import { nameSchema } from "../../platform/auth/member-name.ts";
 const MAXIMUM_EMAIL_LENGTH = 254;
 
 export const INVITE_ERROR_CODES = {
@@ -16,14 +15,6 @@ export const INVITE_ERROR_CODES = {
   signedIn: "invite_signed_in",
   rateLimited: "invite_rate_limited",
 } as const;
-
-export const nameSchema = z
-  .string()
-  .overwrite(removeNullBytes)
-  .overwrite(removeBidiControls)
-  .trim()
-  .min(1, "Enter your name.")
-  .max(MAXIMUM_NAME_LENGTH, `Keep your name under ${MAXIMUM_NAME_LENGTH} characters.`);
 
 export const createInviteBodySchema = z.object({
   email: z

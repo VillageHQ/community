@@ -1,4 +1,4 @@
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 
 const ENCRYPTION_NOTE =
   "Messages aren't end-to-end encrypted, so whoever runs this community's database could read them.";

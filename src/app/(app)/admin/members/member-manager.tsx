@@ -23,10 +23,10 @@ import {
   type GroupDepartureOutcome,
   type MemberFilter,
 } from "@/lib/admin/admin-api";
-import { readFirstName } from "@/lib/design/avatar-identity";
-import { formatLongDate } from "@/lib/format-date";
+import { readFirstName } from "@/platform/design/avatar-identity";
+import { formatLongDate } from "@/platform/text/format-date";
 
-import { useDebouncedValue } from "../../messages/use-debounced-value";
+import { useDebouncedValue } from "@/app/(app)/messages/use-debounced-value";
 import { INVITE_QUERY_KEYS } from "./invite-queries";
 import { MemberActions, VILLAGE_STATUS_DETAILS } from "./member-actions";
 import { ADMIN_MEMBER_QUERY_KEYS, memberPageQuery } from "./member-queries";

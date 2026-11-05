@@ -1,6 +1,6 @@
 import { memberIdBodySchema } from "@/lib/invites/invite-api";
 import { confirmMemberEmail } from "@/lib/members/member-admin";
-import { logAdminAction } from "@/lib/route-logging";
+import { logAdminAction } from "@/platform/observability/route-logging";
 import { createMemberRoute } from "@/lib/village/member-route";
 
 export const POST = createMemberRoute(

@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
-import { getDatabase } from "@/database/client";
-import { readBrandingForPage } from "@/lib/branding/branding";
-import { isFirstAdminClaimed } from "@/lib/first-admin";
-import { parseReturnPath, RETURN_PATH_PARAM } from "@/lib/return-path";
-import { ADMIN_CREATED_PARAM, ROUTES } from "@/lib/routes";
+import { getDatabase } from "@/platform/database/client";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { isFirstAdminClaimed } from "@/platform/auth/first-admin";
+import { parseReturnPath, RETURN_PATH_PARAM } from "@/platform/http/return-path";
+import { ADMIN_CREATED_PARAM, ROUTES } from "@/platform/http/routes";
 
 import { SignInForm } from "./sign-in-form";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 
 export const dynamic = "force-dynamic";
 

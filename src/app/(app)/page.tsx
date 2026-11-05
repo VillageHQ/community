@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { PageHeader } from "@/components/page-header";
-import { getDatabase } from "@/database/client";
+import { getDatabase } from "@/platform/database/client";
 import { readSetupProgress } from "@/lib/admin-setup";
-import { readBrandingForPage } from "@/lib/branding/branding";
-import { PAGE_TITLES } from "@/lib/branding/page-metadata";
-import { readFirstName } from "@/lib/design/avatar-identity";
-import { readResendConfig } from "@/lib/email/resend";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { readFirstName } from "@/platform/design/avatar-identity";
+import { readResendConfig } from "@/platform/email/resend";
 import { readFeedPage } from "@/lib/feed/feed-reads";
 import { readWaitingIntros } from "@/lib/intros/intro-reads";
 import { readNewMembers } from "@/lib/members/directory";
@@ -17,8 +17,8 @@ import { resolveOnboardingStep } from "@/lib/members/onboarding";
 import { isCardFilledIn, readAvatarUrl, readMemberProfile } from "@/lib/members/profile";
 import { ONBOARDING_STEPS } from "@/lib/members/profile-api";
 import { selectNextSteps } from "@/lib/next-steps";
-import { ROUTES } from "@/lib/routes";
-import { requireMember } from "@/lib/session";
+import { ROUTES } from "@/platform/http/routes";
+import { requireMember } from "@/platform/auth/session";
 import { isAdminMember } from "@/lib/village/member-network";
 import { readNetworkProgress } from "@/lib/village/network-progress";
 

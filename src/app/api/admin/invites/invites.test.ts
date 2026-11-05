@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import { user } from "@/database/auth-schema";
+import { user } from "@/platform/database/auth-schema";
 import { invite } from "@/database/members-schema";
 import { readSetupProgress, SETUP_STEPS } from "@/lib/admin-setup";
 import { inviteListSchema, issuedInviteSchema } from "@/lib/invites/invite-api";

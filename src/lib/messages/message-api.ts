@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { feedTextSchema } from "../feed/feed-api.ts";
-import { removeNullBytes } from "../safe-text.ts";
+import { removeNullBytes } from "../../platform/text/safe-text.ts";
 
 export const MESSAGE_LIMITS = {
   bodyLength: 4000,

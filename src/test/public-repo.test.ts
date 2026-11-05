@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { readSetupToken } from "../lib/setup-token.ts";
+import { readSetupToken } from "../platform/secrets/setup-token.ts";
 
 const REPOSITORY_ROOT = resolve(import.meta.dirname, "../..");
 const THIS_FILE = "src/test/public-repo.test.ts";

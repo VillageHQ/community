@@ -9,13 +9,13 @@ import type { ConstellationPerson } from "@/components/constellation";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
-import { readFirstName } from "@/lib/design/avatar-identity";
+import { readFirstName } from "@/platform/design/avatar-identity";
 import { INTRO_STATES, type IntroState } from "@/lib/intros/intro-api";
-import { ROUTES } from "@/lib/routes";
+import { ROUTES } from "@/platform/http/routes";
 import { toLinkedinUrl } from "@/lib/village/linkedin-slug";
 import type { Connector } from "@/lib/village/network-api";
 
-import { StartConversationButton } from "../messages/start-conversation-button";
+import { StartConversationButton } from "@/app/(app)/messages/start-conversation-button";
 import { AskIntroDialog } from "./ask-intro-dialog";
 
 const CONNECTOR_AVATAR_SIZE_PX = 52;

@@ -18,7 +18,7 @@ import {
   type MemberPage,
   type Report,
 } from "@/lib/admin/admin-api";
-import { API_ROUTES } from "@/lib/routes";
+import { API_ROUTES } from "@/platform/http/routes";
 
 import { AuditLog } from "./audit-log/audit-log";
 import { auditPageQuery } from "./audit-log/audit-queries";

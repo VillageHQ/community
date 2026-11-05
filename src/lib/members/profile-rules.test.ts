@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { detectImageContentType } from "../image-rules";
-import { parseReturnPath, toSignInPath } from "../return-path";
+import { detectImageContentType } from "@/platform/image-rules";
+import { parseReturnPath, toSignInPath } from "@/platform/http/return-path";
 import { parseDirectoryFilters, toDirectoryQueryString } from "./directory-url";
 import { parseExternalUrl, readExternalHost } from "./external-url";
 import { parseTagsText, toProfileBody } from "./profile-form";

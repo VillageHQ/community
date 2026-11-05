@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { user } from "@/database/auth-schema";
+import { user } from "@/platform/database/auth-schema";
 import { introRequest } from "@/database/intro-schema";
 import { memberBlock } from "@/database/messages-schema";
 import { memberNetwork, memberPathResult } from "@/database/village-schema";
@@ -30,12 +30,12 @@ import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-s
 import { joinMemberToGroup, makeIntroOverdue, nameMember } from "@/test/intros";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postClearLinkedin } from "../admin/members/clear-linkedin/route";
-import { POST as postConfirmLinkedin } from "../admin/members/confirm-linkedin/route";
-import { POST as postBlock } from "../messages/block/route";
-import { POST as postLinkedin } from "../network/linkedin/route";
-import { POST as postPaths } from "../network/paths/route";
-import { POST as postSearch } from "../network/search/route";
+import { POST as postClearLinkedin } from "@/app/api/admin/members/clear-linkedin/route";
+import { POST as postConfirmLinkedin } from "@/app/api/admin/members/confirm-linkedin/route";
+import { POST as postBlock } from "@/app/api/messages/block/route";
+import { POST as postLinkedin } from "@/app/api/network/linkedin/route";
+import { POST as postPaths } from "@/app/api/network/paths/route";
+import { POST as postSearch } from "@/app/api/network/search/route";
 import { POST as postCounts } from "./counts/route";
 import { POST as postCreate } from "./create/route";
 import { POST as postDetail } from "./detail/route";

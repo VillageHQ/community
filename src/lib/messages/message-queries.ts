@@ -1,6 +1,6 @@
 import { infiniteQueryOptions, queryOptions, skipToken } from "@tanstack/react-query";
 
-import { API_ROUTES } from "../routes.ts";
+import { API_ROUTES } from "../../platform/http/routes.ts";
 import { acknowledgedResponseSchema } from "../village/network-api.ts";
 import { postNetworkRequest } from "../village/post-network-request.ts";
 import {
