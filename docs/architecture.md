@@ -16,6 +16,7 @@ src/
     messages/   Toggle. Direct messages.
     network/    Toggle. Village search, sync, group, paths, credits.
     intros/     Toggle. Warm intros. Needs network.
+    asks/       Toggle, off by default. Members post what they need, others offer help.
     admin/      Core. Roster, reports, audit view, health, the features screen.
   platform/     Infrastructure with no product opinion: auth, audit, branding, database,
                 design, email, http, observability, rate-limit, secrets, settings, text, village.
@@ -39,7 +40,7 @@ app -> shell -> modules -> components -> platform
 Inside `modules`:
 
 ```text
-members <- messages, feed, network
+members <- messages, feed, network, asks
 network <- intros
 all     <- admin
 ```
@@ -98,6 +99,7 @@ Some effects have to cross a boundary without an import. The route, which may im
 - **Blocks.** `setMemberBlocked(context, body, onBlocked)` runs the effect in its own transaction. The block route passes `runMemberBlockedEffects`, which runs every module's `onMemberBlocked` hook.
 - **Removals.** `removeMember(context, body, onRemoved)` works the same way through `onMemberRemoved`.
 - **Open asks.** `readMemberPaths(context, slug, readOpenAsks)` takes the reader as an argument. The paths route passes the one from intros.
+- **Offers as messages.** `offerHelp(context, body, deliver)` saves the note on the ask, then calls `deliver`. The offer route passes `sendOfferAsMessage` from `shell/ask-offer-delivery.ts`, which checks that messages is on and sends the note as a DM.
 
 ## Where things live
 
@@ -221,12 +223,12 @@ The domain and keys steps of setup also offer "Run without Village", so a new co
 
 ## Adding a module
 
-Asks, for example, needs this:
+Asks was the first module built on this structure. It has these files:
 
 ```text
 src/modules/asks/
-  manifest.ts  routes.ts  integration.ts  contract.ts  schema.ts
-  service.ts   reads.ts   queries.ts      components/  asks.test.ts  AGENTS.md
+  manifest.ts  routes.ts  integration.ts  contract.ts  schema.ts  limits.ts
+  service.ts   reads.ts   queries.ts      rules-*.ts  components/  asks.test.ts  AGENTS.md
 ```
 
 ```ts
@@ -240,30 +242,32 @@ export const asksManifest = {
   isOnByDefault: false,
   needsVillage: false,
   requires: [],
-  navigation: [{ label: "Asks", href: ASK_PAGE, icon: HandHelping, section: NAVIGATION_SECTIONS.primary, badge: "asks" }],
+  navigation: [{ label: "Asks", href: ASKS_PAGE, icon: HandHelping, section: NAVIGATION_SECTIONS.primary, badge: "asks" }],
   adminTabs: [],
-  paths: { pages: [ASK_PAGE], api: ["/api/asks"] },
+  paths: { pages: [ASKS_PAGE], api: [ASK_API_ROUTES.board] },
 } satisfies ToggleableManifest;
 
 // integration.ts
 export const asksModule: ModuleIntegration = {
   manifest: asksManifest,
-  readNavigationBadge: readWaitingAskCount,
-  onMemberRemoved: async (transaction, { memberId, keepsContent }) => {
-    if (!keepsContent) await deleteMemberAsks(transaction, memberId);
+  readNavigationBadge: readNewOfferCount,
+  onMemberBlocked: withdrawOffersBetween,
+  onMemberRemoved: async (transaction, removal) => {
+    if (!removal.keepsContent) await deleteMemberAsks(transaction, removal);
   },
 };
 
 // src/app/api/asks/create/route.ts
-export const POST = asksRoutes.member("asks-create", createAskBodySchema, async (context, body) =>
-  Response.json(await createAsk(context, body)),
-);
+export const POST = asksRoutes.member("asks-create", createAskBodySchema, async (context, body) => {
+  await enforceAskPostingLimit(context.database, context.member.id, ASK_POSTING_KINDS.ask);
+  return Response.json(await createAsk(context, body));
+});
 
 // src/app/(app)/asks/page.tsx
-export default modulePage(asksManifest, async function AsksPage() { /* ... */ });
+export default modulePage(asksManifest, async function AsksPage({ searchParams }: AsksPageProps) { /* ... */ });
 ```
 
-Then one line in `registry.ts`, and a generated migration. `drizzle.config.ts` finds the schema by glob. The tests for wrapping, ownership and 404-when-off cover the new module without any change.
+A module with no extras needs one line in `registry.ts`, a line in `ALLOWED_MODULE_IMPORTS` in `src/test/architecture/layers.ts`, and a generated migration. `drizzle.config.ts` finds the schema by glob. The tests for wrapping, ownership and 404-when-off cover the new module without any other change. `src/shell/navigation.test.ts` lists every primary nav label, so a module with a nav entry also adds its label there.
 
 Some extras cost more than a line:
 
@@ -271,10 +275,14 @@ Some extras cost more than a line:
 |---|---|---|
 | A badge that updates without a page load | A query in `useLiveBadges` | Client code can't import the server registry. |
 | Its own badge wording | A line in `BADGE_DESCRIPTIONS` | Otherwise it says "needs your attention". |
-| Reportable content | A migration, plus entries in `admin/service-reports.ts` and `report-queue.tsx` | `content_report_target_known` is a check constraint. |
+| Reportable content | A migration, a `REPORT_TARGETS` entry, a report function in `admin/service-reports.ts`, lines in `TARGET_DISPLAY`, `TARGET_FEATURES` and `DELETION_NOTES` in `report-queue.tsx`, and `REPORT_TARGET_NAMES` in `audit-log.tsx`. To be deletable from the queue, an entry in `CONTENT_DELETERS` too | `content_report_target_known` is a check constraint, and admin imports the module. |
 | Audit log entries | Lines in `AUDIT_ACTIONS` and `ACTION_SENTENCES` | The list is a strict `z.enum`. |
+| Content a removed member leaves behind | An `onMemberRemoved` hook, and a look at the copy in `remove-member-dialog.tsx` | The dialog says what happens to a member's content. |
+| An action in another toggleable module | A function argument filled from `src/shell/`, or a slot | A module can't import a module it doesn't require. |
 | An admin tab | A line in `ADMIN_TABS`, plus `adminTabs` in the manifest | The tab's badge reads facts from the shell. |
 | A setup step | A line in `SETUP_STEP_OWNERS` and the checklist | No module has needed this yet. |
+
+The phone tab bar holds five items. With more, the fifth becomes "More", a sheet with the rest, and its badge adds up theirs. Registry order decides what stays on the bar.
 
 There's no scheduler in this deployment. Do work at read time, with `after()` if it shouldn't block the response, as intro expiry does.
 

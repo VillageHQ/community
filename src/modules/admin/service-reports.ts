@@ -4,6 +4,10 @@ import { and, count, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizz
 import { alias, unionAll } from "drizzle-orm/pg-core";
 
 import { contentReport } from "./schema.ts";
+import { composeAskReportBody } from "../asks/contract.ts";
+import { readReportableAsk } from "../asks/reads.ts";
+import { ask } from "../asks/schema.ts";
+import { removeAskWithin } from "../asks/service.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
 import { comment, post } from "../feed/schema.ts";
@@ -129,6 +133,18 @@ export async function reportIntroNote(context: RequestContext, introId: string) 
   });
 }
 
+export async function reportAsk(context: RequestContext, askId: string) {
+  const target = await readReportableAsk(context.database, context.member.id, askId);
+  if (!target) throw contentGoneError();
+  return saveReport(context, {
+    targetType: REPORT_TARGETS.ask,
+    targetId: askId,
+    reportedMemberId: target.authorId,
+    body: composeAskReportBody(target.title, target.detail),
+    contentCreatedAt: target.createdAt,
+  });
+}
+
 function selectMessageReports(database: Database) {
   return database
     .select({
@@ -205,24 +221,32 @@ export function readOpenReportCount(database: Database) {
 
 type ReportRow = Awaited<ReturnType<ReturnType<typeof selectContentReports>["execute"]>>[number];
 
-async function readExistingFeedTargets(database: Database, rows: ReportRow[]) {
+async function readExistingTargets(database: Database, rows: ReportRow[]) {
   const idsOfType = (targetType: ReportTarget) =>
     rows.flatMap((row) => (row.targetType === targetType && row.targetId ? [row.targetId] : []));
   const postIds = idsOfType(REPORT_TARGETS.post);
   const commentIds = idsOfType(REPORT_TARGETS.comment);
-  const [posts, comments] = await Promise.all([
+  const askIds = idsOfType(REPORT_TARGETS.ask);
+  const [posts, comments, asks] = await Promise.all([
     postIds.length === 0 ? [] : database.select({ id: post.id }).from(post).where(inArray(post.id, postIds)),
     commentIds.length === 0 ? [] : database.select({ id: comment.id }).from(comment).where(inArray(comment.id, commentIds)),
+    askIds.length === 0 ? [] : database.select({ id: ask.id }).from(ask).where(inArray(ask.id, askIds)),
   ]);
-  return new Set([...posts, ...comments].map(({ id }) => id));
+  return new Set([...posts, ...comments, ...asks].map(({ id }) => id));
 }
 
 function toIsoOrNull(timestamp: string | null) {
   return timestamp ? new Date(timestamp).toISOString() : null;
 }
 
-function isDeletableTarget(targetType: string): targetType is typeof REPORT_TARGETS.post | typeof REPORT_TARGETS.comment {
-  return targetType === REPORT_TARGETS.post || targetType === REPORT_TARGETS.comment;
+const CONTENT_DELETERS = {
+  [REPORT_TARGETS.post]: deletePostWithin,
+  [REPORT_TARGETS.comment]: deleteCommentWithin,
+  [REPORT_TARGETS.ask]: removeAskWithin,
+};
+
+function isDeletableTarget(targetType: string): targetType is keyof typeof CONTENT_DELETERS {
+  return targetType in CONTENT_DELETERS;
 }
 
 function toReportedMember(row: ReportRow) {
@@ -266,7 +290,7 @@ export async function readReports(database: Database, filter: ReportFilter, requ
     .orderBy(desc(sql`created_at`), desc(sql`id`))
     .limit(ADMIN_PAGE_SIZES.reports)
     .offset((page - 1) * ADMIN_PAGE_SIZES.reports);
-  const existingTargets = await readExistingFeedTargets(database, rows);
+  const existingTargets = await readExistingTargets(database, rows);
   return reportPageSchema.parse({ reports: rows.map((row) => toReport(row, existingTargets)), page, pageCount, counts });
 }
 
@@ -348,12 +372,10 @@ export async function dismissReport({ database, member }: RequestContext, report
   });
 }
 
-const CONTENT_DELETERS = { [REPORT_TARGETS.post]: deletePostWithin, [REPORT_TARGETS.comment]: deleteCommentWithin };
-
 export async function deleteReportedContent({ database, member }: RequestContext, report: ReportActionBody) {
   const { targetType } = report;
   if (!isDeletableTarget(targetType)) {
-    throw new RequestError(UNPROCESSABLE_STATUS, ADMIN_ERROR_CODES.notDeletable, "Only posts and replies can be deleted from here.");
+    throw new RequestError(UNPROCESSABLE_STATUS, ADMIN_ERROR_CODES.notDeletable, "Only posts, replies and asks can be deleted from here.");
   }
   await withAdminTransaction(database, member.id, async (transaction) => {
     const locked = await lockOpenReport(transaction, report);

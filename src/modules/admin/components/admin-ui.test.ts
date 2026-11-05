@@ -17,7 +17,9 @@ import {
   type Report,
 } from "@/modules/admin/contract";
 import { GROUP_DEPARTURE_OUTCOMES, VILLAGE_STATUSES } from "@/modules/network/contract";
+import { asksManifest } from "@/modules/asks/manifest";
 import { API_ROUTES } from "@/platform/http/routes";
+import { EnabledModulesProvider } from "@/platform/modules/enabled-modules";
 
 import { AuditLog } from "./audit-log";
 import { auditPageQuery } from "@/modules/admin/queries-audit";
@@ -128,6 +130,33 @@ describe("the admin screens", () => {
       expect(dialog.getByText("We'll also take them out of the Village group")).toBeTruthy();
       expect(dialog.getByText(/can't\s+unsee those/)).toBeTruthy();
       expect(dialog.getByText(/they're still removed here, their network stays shared/)).toBeTruthy();
+    });
+
+    it("explains what happens to their asks only while asks is on", () => {
+      const renderWithModules = (ids: string[]) =>
+        render(
+          wrap(
+            createQueryClient(),
+            createElement(
+              EnabledModulesProvider,
+              { ids },
+              createElement(RemoveMemberDialog, {
+                member: { id: "mo", name: "Mo Member", isAdmin: false, isInVillageGroup: false },
+                trigger: createElement("button", { type: "button" }, "Open"),
+                onDone: vi.fn(),
+              }),
+            ),
+          ),
+        );
+
+      renderWithModules([]);
+      fireEvent.click(screen.getByRole("button", { name: "Open" }));
+      expect(screen.queryByText(/Their asks leave the board/)).toBeNull();
+      cleanup();
+
+      renderWithModules([asksManifest.id]);
+      fireEvent.click(screen.getByRole("button", { name: "Open" }));
+      expect(screen.getByText(/Their asks leave the board/)).toBeTruthy();
     });
 
     it("hedges for someone this site doesn't think joined", () => {
@@ -373,6 +402,35 @@ describe("the admin screens", () => {
 
       expect(screen.queryByRole("button", { name: /Delete/ })).toBeNull();
       expect(screen.getByText("Already deleted")).toBeTruthy();
+    });
+
+    describe("on an ask", () => {
+      function renderAskReport(enabledIds: string[]) {
+        const queryClient = createQueryClient();
+        queryClient.setQueryData(reportPageQuery(REPORT_FILTERS.open, 1).queryKey, {
+          reports: [makeReport({ targetType: REPORT_TARGETS.ask })],
+          page: 1,
+          pageCount: 1,
+          counts: { open: 1, resolved: 0 },
+        });
+        render(wrap(queryClient, createElement(EnabledModulesProvider, { ids: enabledIds }, createElement(ReportQueue, { viewerId: VIEWER_ID }))));
+      }
+
+      it("offers removing the ask, and says its offers go too", () => {
+        renderAskReport([asksManifest.id]);
+
+        fireEvent.click(screen.getByRole("button", { name: "Remove this ask" }));
+
+        expect(within(screen.getByRole("dialog")).getByText(/along with its offers/)).toBeTruthy();
+      });
+
+      it("stays resolvable and says Asks is off when an admin turned it off", () => {
+        renderAskReport([]);
+
+        expect(screen.getByText("Asks is off")).toBeTruthy();
+        expect(screen.getByRole("button", { name: "Remove this ask" })).toBeTruthy();
+        expect(screen.getByRole("button", { name: "Dismiss" })).toBeTruthy();
+      });
     });
 
     it("hides Remove when the reported member is you", () => {

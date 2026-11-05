@@ -24,6 +24,7 @@ const REPORT_TARGET_NAMES: Record<string, string> = {
   [REPORT_TARGETS.comment]: "reply",
   [REPORT_TARGETS.directMessage]: "direct message",
   [REPORT_TARGETS.introNote]: "intro note",
+  [REPORT_TARGETS.ask]: "ask",
 };
 
 const GROUP_DEPARTURE_SENTENCES: Record<string, (target: string) => string> = {
@@ -68,6 +69,7 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.adminPasswordRecovered]: () => "recovered their admin password with the setup token",
   [AUDIT_ACTIONS.moduleTurnedOn]: ({ detail }) => `turned on ${detail}`,
   [AUDIT_ACTIONS.moduleTurnedOff]: ({ detail }) => `turned off ${detail}`,
+  [AUDIT_ACTIONS.askRemoved]: ({ target, detail }) => `removed an ask by ${target}: "${detail}"`,
   [AUDIT_ACTIONS.domainConfirmed]: ({ detail }) => `confirmed the domain ${detail} in Village`,
 };
 

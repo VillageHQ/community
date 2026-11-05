@@ -24,6 +24,7 @@ import {
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatDateAndTimeUtc, formatLongDate } from "@/platform/text/format-date";
 
+import { asksManifest } from "@/modules/asks/manifest";
 import { feedManifest } from "@/modules/feed/manifest";
 import { introsManifest } from "@/modules/intros/manifest";
 import { messagesManifest } from "@/modules/messages/manifest";
@@ -48,6 +49,17 @@ const TARGET_DISPLAY: Record<ReportTarget, { label: string; scope: string; delet
     scope: "You're seeing a copy of this note, and nothing else about the ask. You can't delete notes from here.",
     deleteLabel: null,
   },
+  [REPORT_TARGETS.ask]: {
+    label: "Ask",
+    scope: "This is the ask as it was when reported. Offers stay private to the asker.",
+    deleteLabel: "Remove this ask",
+  },
+};
+
+const DELETION_NOTES: Partial<Record<ReportTarget, string>> = {
+  [REPORT_TARGETS.post]: "It's gone for everyone, along with its replies. A copy stays in the audit log. The author isn't told.",
+  [REPORT_TARGETS.comment]: "It's gone for everyone. A copy stays in the audit log. Its author isn't told.",
+  [REPORT_TARGETS.ask]: "It's gone for everyone, along with its offers. A copy stays in the audit log. Its author isn't told.",
 };
 
 const TARGET_FEATURES: Record<ReportTarget, { id: string; label: string }> = {
@@ -55,6 +67,7 @@ const TARGET_FEATURES: Record<ReportTarget, { id: string; label: string }> = {
   [REPORT_TARGETS.comment]: feedManifest,
   [REPORT_TARGETS.directMessage]: messagesManifest,
   [REPORT_TARGETS.introNote]: introsManifest,
+  [REPORT_TARGETS.ask]: asksManifest,
 };
 
 const RESOLUTION_LABELS: Record<ReportResolution, string> = {
@@ -83,7 +96,7 @@ type ReportActionsProps = { report: Report; viewerId: string; onDone: ReportDone
 
 function ReportActions({ report, viewerId, onDone }: ReportActionsProps) {
   const { id, targetType, isContentGone, reportedMember } = report;
-  const { deleteLabel, label } = TARGET_DISPLAY[targetType];
+  const { deleteLabel } = TARGET_DISPLAY[targetType];
   const body = { reportId: id, targetType };
   const canRemove = reportedMember && !reportedMember.isRemoved && reportedMember.id !== viewerId;
 
@@ -121,9 +134,7 @@ function ReportActions({ report, viewerId, onDone }: ReportActionsProps) {
           action={() => deleteReportedContentRequest(body)}
           onDone={({ message }) => onDone(message)}
         >
-          <p>
-            It&apos;s gone for everyone{targetType === REPORT_TARGETS.post ? ", along with its replies" : ""}. A copy stays in the audit log. {label === "Post" ? "The author" : "Its author"} isn&apos;t told.
-          </p>
+          <p>{DELETION_NOTES[targetType]}</p>
         </ConfirmDialog>
       ) : null}
       {canRemove ? (
