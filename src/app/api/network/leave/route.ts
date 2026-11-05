@@ -10,4 +10,4 @@ const leaveBodySchema = z.object({
 export const POST = networkRoutes.member("network-leave", leaveBodySchema, async (context) => {
   await leaveCommunityGroup(context);
   return Response.json({ message: "You left the group." });
-});
+}, { staysOpenWhenOff: true });

@@ -6,17 +6,33 @@ import { createMemberRoutes, type BinaryResponder, type BinaryRouteOptions, type
 import type { RequestContext } from "../http/request-context.ts";
 import { withRouteLogging } from "../observability/route-logging.ts";
 import { respondToVillageError } from "../village/route-errors.ts";
-import type { ModuleManifest } from "./manifest.ts";
+import { getDatabase } from "../database/client.ts";
+import { isModuleEnabled } from "./enablement.ts";
+import { MODULE_KINDS, type ModuleManifest } from "./manifest.ts";
 import { recordRouteFacts, ROUTE_ACCESS, type RouteAccess } from "./route-facts.ts";
 
 type ModuleRouteOptions = { staysOpenWhenOff?: boolean };
 
 const { createMemberRoute, createAdminBinaryRoute, createMemberBinaryRoute } = createMemberRoutes([respondToVillageError]);
 
+const NOT_FOUND_STATUS = 404;
+
 export function createModuleRoutes(owner: ModuleManifest) {
-  function declare<Handler extends object>(handler: Handler, scope: string, access: RouteAccess, { staysOpenWhenOff = false }: ModuleRouteOptions) {
-    recordRouteFacts(handler, { ownerId: owner.id, scope, access, staysOpenWhenOff });
-    return handler;
+  function declare<Arguments extends unknown[]>(
+    handler: (...handlerArguments: Arguments) => Promise<Response>,
+    scope: string,
+    access: RouteAccess,
+    { staysOpenWhenOff = false }: ModuleRouteOptions,
+  ) {
+    const isGuarded = owner.kind !== MODULE_KINDS.core && !staysOpenWhenOff;
+    const route = !isGuarded
+      ? handler
+      : withRouteLogging(scope, async (...handlerArguments: Arguments) => {
+          if (!(await isModuleEnabled(getDatabase(), owner))) return Response.json({ message: "Not found." }, { status: NOT_FOUND_STATUS });
+          return handler(...handlerArguments);
+        });
+    recordRouteFacts(route, { ownerId: owner.id, scope, access, staysOpenWhenOff });
+    return route;
   }
 
   return {
