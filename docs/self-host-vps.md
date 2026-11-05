@@ -18,7 +18,7 @@ Choose:
 
 | Setting | Choose |
 | --- | --- |
-| System | **Ubuntu 24.04**. Ubuntu 22.04 and Debian 12 work too. |
+| System | **Ubuntu 24.04**. Ubuntu 22.04, Ubuntu 26.04 and Debian 12 work too. |
 | Memory | **2 GB** is comfortable. 1 GB is the minimum. |
 | Disk | 20 GB or more |
 | Processor | Either kind works: x86 (also called amd64) or Arm (also called arm64) |
@@ -63,14 +63,15 @@ It asks for your domain. Then it works through these steps and tells you what it
 1. Checks your server.
 2. Asks for your community's address.
 3. Checks that your domain points at this server. If it doesn't, it shows the exact record to create and offers to wait.
-4. Installs Docker, the tool that runs your community.
-5. Adds spare memory, if your server is small.
-6. Allows web traffic, if your server has a firewall switched on.
-7. Creates your private secrets and settings.
-8. Downloads the app.
-9. Starts everything.
-10. Waits until your community answers on its secure address.
-11. Shows your address and setup token.
+4. Checks that no other program is using the web ports.
+5. Installs Docker, the tool that runs your community.
+6. Adds spare memory, if your server is small.
+7. Allows web traffic, if your server has a firewall switched on.
+8. Creates your private secrets and settings.
+9. Downloads the app.
+10. Starts everything.
+11. Waits until your community answers on its secure address.
+12. Shows your address and setup token.
 
 At the end you'll see this:
 
@@ -174,7 +175,7 @@ Keep a copy of this file in your password manager. It holds your secrets.
 
 **"couldn't get a security certificate":** The app is fine, but it can't get the certificate that makes `https://` work. Check three things: your domain points at this server, your hosting company's firewall allows ports 80 and 443, and Cloudflare is on **DNS only**. It keeps trying by itself. Run `sudo community logs caddy` to see what's happening. Caddy is the program that handles certificates.
 
-**"already using the web ports":** Another program, often `nginx` or `apache2`, holds port 80 or 443. Remove it, or start with a fresh server.
+**"already using the web ports":** Another program holds port 80 or 443. The message names it. Remove that program, or start with a fresh server. If it only uses a private address, like a Tailscale one, you can keep it. The message shows the command that puts your community on your public address instead, using the `COMMUNITY_BIND_ADDRESS` setting.
 
 **"We couldn't download the ready-made app":** Your server builds the app itself instead. That needs about 2.5 GB of memory and swap together, and the installer adds swap on small servers. It can take 10 minutes or more. If it fails, try again later, or use a server with more memory.
 
@@ -190,7 +191,7 @@ Keep a copy of this file in your password manager. It holds your secrets.
 
 **The disk is full:** Run `sudo community status` to see the free space. Old versions of the app get removed when you upgrade. You can delete old files in `/opt/community/backups`, once you've copied them somewhere safe.
 
-**Still stuck?** [Open an issue](https://github.com/VillageHQ/community/issues). Include what `sudo community status` shows, and the end of `/var/log/community-install.log`. Never paste your `.env` file or your setup token.
+**Still stuck?** [Open an issue](https://github.com/VillageHQ/community/issues). Include what `sudo community status` shows, and the end of `/opt/community/install.log`. Run `sudo tail -n 50 /opt/community/install.log` to see it. Never paste your `.env` file or your setup token.
 
 ## What it installs
 

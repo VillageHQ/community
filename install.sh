@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sets up Community on a fresh Ubuntu 22.04, Ubuntu 24.04 or Debian 12 server.
+# Sets up Community on a Ubuntu 22.04, 24.04 or 26.04, or Debian 12 server.
 #
 #   curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh | sudo bash
 #
@@ -12,6 +12,7 @@
 #   COMMUNITY_NONINTERACTIVE   set to 1 to never ask anything
 #   COMMUNITY_REF              the branch or tag to install files from (default: main)
 #   COMMUNITY_IMAGE            the app image (default: ghcr.io/villagehq/community:latest)
+#   COMMUNITY_BIND_ADDRESS     use only this one of the server's addresses, if another program holds ports 80 or 443 on another
 #   COMMUNITY_SERVER_IP        this server's public address, if we can't detect it (for example behind NAT)
 #   COMMUNITY_HEALTH_TIMEOUT_SECONDS   how long to wait for the app and for HTTPS (default: 180)
 #
@@ -25,7 +26,7 @@ readonly INSTALL_DIRECTORY="/opt/community"
 readonly ENV_FILE="$INSTALL_DIRECTORY/.env"
 readonly HELPER_PATH="/usr/local/bin/community"
 readonly SYSTEMD_DIRECTORY="/etc/systemd/system"
-readonly LOG_FILE="/var/log/community-install.log"
+readonly INSTALL_LOG="$INSTALL_DIRECTORY/install.log"
 readonly DEFAULT_IMAGE="ghcr.io/villagehq/community:latest"
 readonly SOURCE_ARCHIVE_URL="https://codeload.github.com/VillageHQ/community/tar.gz"
 readonly INSTALL_COMMAND="curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh | sudo bash"
@@ -37,8 +38,9 @@ readonly SMALL_MACHINE_MEMORY_MB=2048
 readonly DNS_RESOLVERS=("https://dns.google/resolve" "https://cloudflare-dns.com/dns-query")
 readonly DNS_WAIT_INTERVAL_SECONDS=30
 readonly DNS_WAIT_ATTEMPTS=60
-readonly TOTAL_STEPS=11
+readonly TOTAL_STEPS=12
 
+log_file="/dev/null"
 current_step=0
 current_step_title="starting up"
 friendly_exit=""
@@ -70,11 +72,12 @@ step() {
 on_exit() {
   local exit_code=$?
   [ -z "$temporary_directory" ] || rm -rf "$temporary_directory"
+  [ "$log_file" = "$INSTALL_LOG" ] || [ -s "$log_file" ] || rm -f "$log_file"
   [ "$exit_code" -ne 0 ] || return 0
   [ -z "$friendly_exit" ] || return 0
   printf '\nThe installer stopped unexpectedly during this step: %s.\n' "$current_step_title" >&2
   printf 'Your data is safe. Run the same command again to pick up where it stopped.\n' >&2
-  printf 'If it stops again, send us the end of %s: %s\n' "$LOG_FILE" "$ISSUES_URL" >&2
+  printf 'If it stops again, send us the end of %s: %s\n' "$log_file" "$ISSUES_URL" >&2
 }
 
 has_terminal() {
@@ -102,7 +105,7 @@ read_setting() {
 }
 
 apt_get() {
-  DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 -y "$@" >>"$LOG_FILE" 2>&1 </dev/null
+  DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 -y "$@" >>"$log_file" 2>&1 </dev/null
 }
 
 install_missing_tools() {
@@ -113,8 +116,8 @@ install_missing_tools() {
   dpkg -s ca-certificates >/dev/null 2>&1 || missing+=(ca-certificates)
   [ "${#missing[@]}" -gt 0 ] || return 0
   say "Installing a few small tools: ${missing[*]}"
-  apt_get update || die "We couldn't reach the software catalog. Check this server's internet connection. Details are in $LOG_FILE."
-  apt_get install "${missing[@]}" || die "We couldn't install ${missing[*]}. Details are in $LOG_FILE."
+  apt_get update || die "We couldn't reach the software catalog. Check this server's internet connection. Details are in $log_file."
+  apt_get install "${missing[@]}" || die "We couldn't install ${missing[*]}. Details are in $log_file."
 }
 
 check_server() {
@@ -129,9 +132,9 @@ check_server() {
     os_version="$(sed -n 's/^VERSION_ID=//p' /etc/os-release | tr -d '"')"
   fi
   case "$os_id:$os_version" in
-    ubuntu:22.04 | ubuntu:24.04 | debian:12) ;;
+    ubuntu:22.04 | ubuntu:24.04 | ubuntu:26.04 | debian:12) ;;
     *)
-      die "This server runs ${os_id:-an unknown system} ${os_version}, and we only support Ubuntu 22.04, Ubuntu 24.04 and Debian 12.
+      die "This server runs ${os_id:-an unknown system} ${os_version}, and we only support Ubuntu 22.04, 24.04 and 26.04, and Debian 12.
 Most hosting companies let you reinstall a server with one of those. Do that, then run this command again."
       ;;
   esac
@@ -184,6 +187,9 @@ choose_domain() {
     if [ -n "${COMMUNITY_DOMAIN:-}" ] && [ "$(normalize_domain "$COMMUNITY_DOMAIN")" != "$domain" ]; then
       warn "You passed ${COMMUNITY_DOMAIN}, but we never change existing settings. docs/self-host-vps.md shows how to change the address."
     fi
+    if [ -n "${COMMUNITY_BIND_ADDRESS:-}" ] && [ "$COMMUNITY_BIND_ADDRESS" != "$(read_setting COMMUNITY_BIND_ADDRESS)" ]; then
+      warn "You passed COMMUNITY_BIND_ADDRESS=${COMMUNITY_BIND_ADDRESS}, but we never change existing settings."
+    fi
     return 0
   fi
 
@@ -194,12 +200,18 @@ choose_domain() {
   domain="$(normalize_domain "$COMMUNITY_DOMAIN")"
   is_valid_domain "$domain" || die "\"$COMMUNITY_DOMAIN\" doesn't look like a domain name. It should look like community.yourfund.com.
 Secure addresses can't use a bare server number. Run the command again with a domain name."
+  check_bind_address
 
   app_url="https://$domain"
   if is_test_mode && [ -n "${COMMUNITY_HTTPS_PORT:-}" ]; then
     app_url="https://$domain:$COMMUNITY_HTTPS_PORT"
   fi
   say "Your address will be $app_url"
+}
+
+plain_address() {
+  local address="${1#[}"
+  printf '%s' "${address%]}"
 }
 
 is_ipv4() { [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; }
@@ -210,6 +222,10 @@ detect_server_addresses() {
   server_addresses=()
   if [ -n "${COMMUNITY_SERVER_IP:-}" ]; then
     server_addresses=("$COMMUNITY_SERVER_IP")
+    return 0
+  fi
+  if [ -n "${COMMUNITY_BIND_ADDRESS:-}" ]; then
+    server_addresses=("$(plain_address "$COMMUNITY_BIND_ADDRESS")")
     return 0
   fi
   local ipv4 ipv6
@@ -331,6 +347,89 @@ If it sits behind a network that hides its address, pass it: sudo COMMUNITY_SERV
   say "$domain points at this server."
 }
 
+http_port() {
+  if is_test_mode; then printf '%s' "${COMMUNITY_HTTP_PORT:-80}"; else printf '80'; fi
+}
+
+https_port() {
+  if is_test_mode; then printf '%s' "${COMMUNITY_HTTPS_PORT:-443}"; else printf '443'; fi
+}
+
+is_wildcard_address() { [[ "$1" == "0.0.0.0" || "$1" == "[::]" || "$1" == "*" ]]; }
+
+is_valid_bind_address() { [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ || "$1" =~ ^\[[0-9a-fA-F:]+\]$ ]]; }
+
+has_local_address() {
+  command -v ip >/dev/null 2>&1 || return 0
+  ip -o addr show 2>/dev/null | awk '{ sub(/\/.*/, "", $4); print $4 }' | grep -qxF "$(plain_address "$1")"
+}
+
+check_bind_address() {
+  [ -n "${COMMUNITY_BIND_ADDRESS:-}" ] || return 0
+  is_valid_bind_address "$COMMUNITY_BIND_ADDRESS" || die "\"$COMMUNITY_BIND_ADDRESS\" doesn't look like a server address. It should look like 203.0.113.10, or [2001:db8::1] for IPv6."
+  has_local_address "$COMMUNITY_BIND_ADDRESS" || die "This server doesn't have the address $COMMUNITY_BIND_ADDRESS, so your community can't use it.
+Check the address on your hosting company's page, then run the command again."
+}
+
+program_name() {
+  printf '%s' "$1" | sed -nE 's/.*users:\(\("([^"]+)".*/\1/p'
+}
+
+conflicting_listeners() {
+  command -v ss >/dev/null 2>&1 || return 0
+  local bind_address="${COMMUNITY_BIND_ADDRESS:-}" _state _received _sent local_address _peer process address
+  while read -r _state _received _sent local_address _peer process; do
+    address="${local_address%:*}"
+    address="${address%%\%*}"
+    if [ -z "$bind_address" ] || [ "$address" = "$bind_address" ] || is_wildcard_address "$address"; then
+      printf '%s %s\n' "$local_address" "$(program_name "$process")"
+    fi
+  done < <(ss -ltnpH "( sport = :$(http_port) or sport = :$(https_port) )" 2>/dev/null || true)
+}
+
+can_share_ports_by_address() {
+  local listeners="$1" local_address _program
+  [ -z "${COMMUNITY_BIND_ADDRESS:-}" ] || return 1
+  while read -r local_address _program; do
+    if is_wildcard_address "${local_address%:*}"; then return 1; fi
+  done <<<"$listeners"
+}
+
+explain_port_conflict() {
+  local listeners="$1" suggestion="stop or remove that program, then run the same command again."
+  if can_share_ports_by_address "$listeners"; then
+    suggestion="either stop that program, or keep it and let your community use only this server's public address:
+
+  curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh | sudo COMMUNITY_DOMAIN=$domain COMMUNITY_BIND_ADDRESS=${server_addresses[0]:-<public address>} bash"
+  fi
+  die "Another program on this server is already using the web ports, and your community needs them.
+Nothing has been set up yet.
+
+$(printf '%s\n' "$listeners" | sed 's/^/  /')
+
+To fix this, $suggestion"
+}
+
+check_web_ports() {
+  step "Checking that the web ports are free"
+  if [ -n "$is_upgrade" ]; then
+    say "Your community already uses them, so we skip this check."
+    return 0
+  fi
+  local listeners
+  listeners="$(conflicting_listeners)"
+  [ -z "$listeners" ] || explain_port_conflict "$listeners"
+  say "Ports $(http_port) and $(https_port) are free."
+}
+
+move_log_to_install_directory() {
+  install -d -m 700 "$INSTALL_DIRECTORY"
+  cat "$log_file" >>"$INSTALL_LOG"
+  chmod 600 "$INSTALL_LOG"
+  [ "$log_file" = "/dev/null" ] || rm -f "$log_file"
+  log_file="$INSTALL_LOG"
+}
+
 install_docker() {
   local os_id codename architecture
   os_id="$(sed -n 's/^ID=//p' /etc/os-release | tr -d '"')"
@@ -343,13 +442,18 @@ install_docker() {
   chmod a+r /etc/apt/keyrings/docker.asc
   printf 'deb [arch=%s signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/%s %s stable\n' \
     "$architecture" "$os_id" "$codename" >/etc/apt/sources.list.d/docker.list
-  apt_get update || die "We couldn't reach Docker's software catalog. Details are in $LOG_FILE."
+  apt_get update || die "We couldn't reach Docker's software catalog. Details are in $log_file."
   apt_get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin ||
-    die "We couldn't install Docker. Details are in $LOG_FILE."
+    die "We couldn't install Docker. Details are in $log_file."
+}
+
+docker_service_is_up() {
+  systemctl is-enabled --quiet docker 2>/dev/null && systemctl is-active --quiet docker 2>/dev/null
 }
 
 ensure_docker() {
   step "Making sure Docker is installed"
+  move_log_to_install_directory
   say "Docker runs your community in sealed boxes, so it stays separate from the rest of this server."
   if command -v docker >/dev/null 2>&1; then
     say "Docker is already here."
@@ -360,11 +464,11 @@ ensure_docker() {
   docker compose version >/dev/null 2>&1 || die "This server has an old Docker without its Compose tool.
 Install Docker from its official guide, then run this command again: https://docs.docker.com/engine/install/"
 
-  if command -v systemctl >/dev/null 2>&1; then
-    systemctl enable --now docker >>"$LOG_FILE" 2>&1 || true
+  if command -v systemctl >/dev/null 2>&1 && ! docker_service_is_up; then
+    systemctl enable --now docker >>"$log_file" 2>&1 || true
   fi
   docker info >/dev/null 2>&1 || die "Docker is installed, but it isn't running.
-Restart the server, then run the same command again. Details are in $LOG_FILE."
+Restart the server, then run the same command again. Details are in $log_file."
   say "Docker is running."
 }
 
@@ -374,11 +478,11 @@ total_memory_mb() {
 
 create_swap_file() {
   if [ ! -e "$SWAP_FILE" ]; then
-    fallocate -l "$SWAP_SIZE" "$SWAP_FILE" 2>>"$LOG_FILE" || dd if=/dev/zero of="$SWAP_FILE" bs=1M count=2048 2>>"$LOG_FILE" || return 1
+    fallocate -l "$SWAP_SIZE" "$SWAP_FILE" 2>>"$log_file" || dd if=/dev/zero of="$SWAP_FILE" bs=1M count=2048 2>>"$log_file" || return 1
     chmod 600 "$SWAP_FILE" || return 1
-    mkswap "$SWAP_FILE" >>"$LOG_FILE" 2>&1 || return 1
+    mkswap "$SWAP_FILE" >>"$log_file" 2>&1 || return 1
   fi
-  swapon "$SWAP_FILE" >>"$LOG_FILE" 2>&1 || return 1
+  swapon "$SWAP_FILE" >>"$log_file" 2>&1 || return 1
   grep -q "^$SWAP_FILE " /etc/fstab || printf '%s none swap sw 0 0\n' "$SWAP_FILE" >>/etc/fstab
 }
 
@@ -410,8 +514,8 @@ open_firewall() {
     say "Some hosting companies have their own firewall in their dashboard. If yours does, allow ports 80 and 443."
     return 0
   fi
-  ufw allow 80/tcp >>"$LOG_FILE" 2>&1
-  ufw allow 443/tcp >>"$LOG_FILE" 2>&1
+  ufw allow 80/tcp >>"$log_file" 2>&1
+  ufw allow 443/tcp >>"$log_file" 2>&1
   say "Your firewall now allows ports 80 and 443. We didn't touch your other rules, so SSH works as before."
 }
 
@@ -458,6 +562,7 @@ We stopped so we don't damage your data. Put the file back from your own copy, t
     say "# Your community's private settings. Keep them secret. Re-running the installer never changes this file."
     say "COMMUNITY_DOMAIN=$domain"
     say "APP_URL=$app_url"
+    if [ -n "${COMMUNITY_BIND_ADDRESS:-}" ]; then say "COMMUNITY_BIND_ADDRESS=$COMMUNITY_BIND_ADDRESS"; fi
     say "POSTGRES_PASSWORD=$(new_secret)"
     say "SETUP_TOKEN=$(new_secret)"
     say "BETTER_AUTH_SECRET=$(new_secret)"
@@ -482,7 +587,7 @@ install_files() {
 }
 
 schedule_backups() {
-  if systemctl daemon-reload >>"$LOG_FILE" 2>&1 && systemctl enable --now community-backup.timer >>"$LOG_FILE" 2>&1; then
+  if systemctl daemon-reload >>"$log_file" 2>&1 && systemctl enable --now community-backup.timer >>"$log_file" 2>&1; then
     say "Daily backups are on. We keep the last 7 in $INSTALL_DIRECTORY/backups."
     return 0
   fi
@@ -490,7 +595,7 @@ schedule_backups() {
 }
 
 use_only_saved_settings() {
-  unset COMMUNITY_DOMAIN COMMUNITY_IMAGE COMMUNITY_HTTP_PORT COMMUNITY_HTTPS_PORT
+  unset COMMUNITY_DOMAIN COMMUNITY_IMAGE COMMUNITY_BIND_ADDRESS COMMUNITY_HTTP_PORT COMMUNITY_HTTPS_PORT
 }
 
 write_configuration() {
@@ -546,43 +651,34 @@ fetch_images() {
   image="$(app_image)"
   previous_image_id="$(image_id "$image")"
 
-  if compose pull --quiet app >>"$LOG_FILE" 2>&1; then
+  if compose pull --quiet app >>"$log_file" 2>&1; then
     say "Downloaded the app."
   else
     build_from_source "$image" "$previous_image_id"
   fi
 
-  compose pull --quiet postgres caddy >>"$LOG_FILE" 2>&1 ||
-    die "We couldn't download the database and web server. Check this server's internet connection. Details are in $LOG_FILE."
+  compose pull --quiet postgres caddy >>"$log_file" 2>&1 ||
+    die "We couldn't download the database and web server. Check this server's internet connection. Details are in $log_file."
   say "Downloaded the database and the web server."
-}
-
-check_ports_are_free() {
-  [ -z "$is_upgrade" ] || return 0
-  command -v ss >/dev/null 2>&1 || return 0
-  local http_port https_port listeners
-  http_port="$(read_setting COMMUNITY_HTTP_PORT)"
-  https_port="$(read_setting COMMUNITY_HTTPS_PORT)"
-  listeners="$(ss -ltnpH "( sport = :${http_port:-80} or sport = :${https_port:-443} )" 2>/dev/null || true)"
-  [ -n "$listeners" ] || return 0
-  die "Another program on this server is already using the web ports, and your community needs them:
-
-$listeners
-
-Remove or stop that program, then run the same command again."
 }
 
 start_services() {
   step "Starting your community"
-  check_ports_are_free
-  compose up -d --remove-orphans >>"$LOG_FILE" 2>&1 || die "Your community didn't start. Details are in $LOG_FILE."
+  if ! compose up -d --remove-orphans >>"$log_file" 2>&1; then
+    if tail -n 20 "$log_file" | grep -q 'address already in use'; then
+      die "Another program on this server is using the web ports, so your community couldn't start.
+Your data is safe. See what's using them with: sudo ss -ltnp
+Then stop that program and run the same command again."
+    fi
+    die "Your community didn't start. Details are in $log_file."
+  fi
   say "Started."
 }
 
 remove_replaced_image() {
   [ -n "$previous_image_id" ] || return 0
   [ "$previous_image_id" != "$(image_id "$(app_image)")" ] || return 0
-  docker image rm "$previous_image_id" >>"$LOG_FILE" 2>&1 || true
+  docker image rm "$previous_image_id" >>"$log_file" 2>&1 || true
 }
 
 app_health_status() {
@@ -593,11 +689,11 @@ app_health_status() {
 }
 
 https_responds() {
-  local https_port curl_options=(-fsS --max-time 10)
-  https_port="$(read_setting COMMUNITY_HTTPS_PORT)"
-  https_port="${https_port:-443}"
+  local saved_https_port bind_address curl_options=(-fsS --max-time 10)
+  saved_https_port="$(read_setting COMMUNITY_HTTPS_PORT)"
+  bind_address="$(read_setting COMMUNITY_BIND_ADDRESS)"
   if is_test_mode; then curl_options+=(-k); fi
-  curl "${curl_options[@]}" --resolve "$domain:$https_port:127.0.0.1" "$app_url/api/health" >/dev/null 2>&1
+  curl "${curl_options[@]}" --resolve "$domain:${saved_https_port:-443}:${bind_address:-127.0.0.1}" "$app_url/api/health" >/dev/null 2>&1
 }
 
 wait_until_healthy() {
@@ -674,9 +770,11 @@ print_summary() {
 
 main() {
   trap on_exit EXIT
+  log_file="$(mktemp)"
   check_server
   choose_domain
   check_dns
+  check_web_ports
   ensure_docker
   ensure_swap
   open_firewall

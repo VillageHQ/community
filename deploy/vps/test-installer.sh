@@ -7,7 +7,7 @@
 # shellcheck disable=SC2016
 set -euo pipefail
 
-readonly DEFAULT_TEST_IMAGES=(ubuntu:24.04 ubuntu:22.04 debian:12)
+readonly DEFAULT_TEST_IMAGES=(ubuntu:26.04 ubuntu:24.04 ubuntu:22.04 debian:12)
 readonly INSTALLER="/source/install.sh"
 readonly STUBS="/stubs"
 readonly CALLS="/tmp/stub-calls"
@@ -90,6 +90,7 @@ case "$args" in
   build*) [ -z "${STUB_BUILD_FAILS:-}" ] ;;
   "inspect "*) printf "%s\n" "${STUB_APP_HEALTH:-healthy}" ;;
   *" pull --quiet app") [ -z "${STUB_PULL_FAILS:-}" ] ;;
+  *" up -d"*) if [ -n "${STUB_UP_FAILS:-}" ]; then printf "Error: listen tcp 0.0.0.0:80: bind: address already in use\n"; exit 1; fi ;;
   *" ps --status running -q postgres") printf "postgres-id\n" ;;
   *" ps -q app") printf "app-id\n" ;;
   *" exec -T postgres pg_dump "*) printf "dump" ;;
@@ -119,7 +120,8 @@ STUB
   chmod +x "$STUBS/curl"
   write_stub systemctl ':'
   write_stub ufw '[ "$1" != "status" ] || [ -z "${STUB_UFW_ACTIVE:-}" ] || printf "Status: active\n"'
-  write_stub ss '[ -z "${STUB_PORT_BUSY:-}" ] || printf "LISTEN 0 511 0.0.0.0:80 users:((\"nginx\",pid=1,fd=6))\n"'
+  write_stub ss '[ -z "${STUB_LISTENER:-}" ] || printf "LISTEN 0 511 %s 0.0.0.0:* users:((\"%s\",pid=1,fd=6))\n" "$STUB_LISTENER" "${STUB_LISTENER_PROGRAM:-nginx}"'
+  write_stub ip 'printf "2: ens3    inet %s/32 scope global ens3\n" "${STUB_LOCAL_ADDRESS:-'"$SERVER_IP"'}"'
   write_stub fallocate 'touch "$3"'
   write_stub mkswap ':'
   write_stub swapon '[ "${1:-}" != "--show" ] || [ -z "${STUB_SWAP_ACTIVE:-}" ] || printf "/existing\n"'
@@ -198,8 +200,18 @@ test_server_checks() {
   rm -f /etc/os-release
   printf '%s\n' "$original" >/etc/os-release
   assert_exit 1
-  assert_says "we only support Ubuntu 22.04, Ubuntu 24.04 and Debian 12"
+  assert_says "we only support Ubuntu 22.04, 24.04 and 26.04, and Debian 12"
   assert_nothing_set_up
+
+  it "accepts Ubuntu 26.04"
+  rm -f /etc/os-release
+  printf 'ID=ubuntu\nVERSION_ID="26.04"\n' >/etc/os-release
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN"
+  rm -f /etc/os-release
+  printf '%s\n' "$original" >/etc/os-release
+  assert_exit 0
+  assert_says "ubuntu 26.04"
 }
 
 test_missing_domain() {
@@ -316,8 +328,8 @@ test_fresh_install() {
   point_domain_at "$SERVER_IP"
   run_installer COMMUNITY_DOMAIN="$DOMAIN"
   assert_exit 0
-  assert_says "Step 1 of 11"
-  assert_says "Step 11 of 11"
+  assert_says "Step 1 of 12"
+  assert_says "Step 12 of 12"
   assert_says "Address:      https://$DOMAIN"
   assert_says "Setup token:  $(read_secret SETUP_TOKEN)"
   assert_says "https://$DOMAIN/setup"
@@ -336,6 +348,10 @@ test_fresh_install() {
   assert_called "pull --quiet app"
   assert_called "up -d --remove-orphans"
   assert_never_says "/etc/apt"
+  assert_true "keeps its log in the install folder" test -f /opt/community/install.log
+  assert_true "keeps its log private" is_mode 600 /opt/community/install.log
+  assert_true "writes no log elsewhere" test ! -e /var/log/community-install.log
+  assert_not_called "systemctl enable --now docker"
 
   it "refuses to replace a database whose settings file is gone"
   point_domain_at "$SERVER_IP"
@@ -343,14 +359,6 @@ test_fresh_install() {
   assert_exit 1
   assert_says "settings file ($ENV_FILE) is gone"
   assert_true "writes no new .env" test ! -e "$ENV_FILE"
-
-  it "explains when another program holds the web ports"
-  point_domain_at "$SERVER_IP"
-  run_installer COMMUNITY_DOMAIN="$DOMAIN" STUB_PORT_BUSY=1
-  assert_exit 1
-  assert_says "already using the web ports"
-  assert_says "nginx"
-  assert_not_called "up -d"
 
   it "points at the logs when the app never gets healthy"
   point_domain_at "$SERVER_IP"
@@ -373,6 +381,87 @@ test_fresh_install() {
   assert_says "Test mode"
   assert_true "turns on the private certificate" has_setting "CADDY_GLOBAL_OPTIONS=local_certs"
   assert_true "keeps the port in APP_URL" has_setting "APP_URL=https://localhost:18443"
+}
+
+test_port_conflicts() {
+  describe "Sharing the server with another program"
+
+  it "stops before changing anything and suggests the public address"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" STUB_LISTENER="100.64.0.1:80" STUB_LISTENER_PROGRAM="tailscaled"
+  assert_exit 1
+  assert_says "already using the web ports"
+  assert_says "100.64.0.1:80 tailscaled"
+  assert_says "COMMUNITY_BIND_ADDRESS=$SERVER_IP bash"
+  assert_never_says "stopped unexpectedly"
+  assert_nothing_set_up
+
+  it "doesn't suggest sharing when the other program holds every address"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" STUB_LISTENER="0.0.0.0:80"
+  assert_exit 1
+  assert_says "0.0.0.0:80 nginx"
+  assert_says "stop or remove that program"
+  assert_never_says "COMMUNITY_BIND_ADDRESS="
+  assert_nothing_set_up
+
+  it "installs beside a program on another address"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_BIND_ADDRESS="$SERVER_IP" STUB_LISTENER="100.64.0.1:80" STUB_LISTENER_PROGRAM="python3"
+  assert_exit 0
+  assert_says "Ports 80 and 443 are free"
+  assert_true "saves the address" has_setting "COMMUNITY_BIND_ADDRESS=$SERVER_IP"
+  assert_called "--resolve $DOMAIN:443:$SERVER_IP"
+
+  it "refuses when something already holds the chosen address"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_BIND_ADDRESS="$SERVER_IP" STUB_LISTENER="$SERVER_IP:443"
+  assert_exit 1
+  assert_says "stop or remove that program"
+  assert_nothing_set_up
+
+  it "refuses when something holds every address, even with a chosen one"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_BIND_ADDRESS="$SERVER_IP" STUB_LISTENER="[::]:80"
+  assert_exit 1
+  assert_says "[::]:80 nginx"
+  assert_nothing_set_up
+
+  it "checks DNS against the chosen address"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_BIND_ADDRESS="$SERVER_IP" STUB_PUBLIC_IP="$OTHER_IP"
+  assert_exit 0
+  assert_says "$DOMAIN points at this server"
+
+  it "refuses an address this server doesn't have"
+  point_domain_at "$OTHER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_BIND_ADDRESS="$OTHER_IP"
+  assert_exit 1
+  assert_says "doesn't have the address $OTHER_IP"
+  assert_nothing_set_up
+
+  it "refuses an address that could inject settings"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_BIND_ADDRESS="1.2.3.4:80:80
+ADMIN=1"
+  assert_exit 1
+  assert_says "doesn't look like a server address"
+  assert_nothing_set_up
+
+  it "explains a port taken after the check, instead of showing a Docker error"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" STUB_UP_FAILS=1
+  assert_exit 1
+  assert_says "using the web ports, so your community couldn't start"
+  assert_never_says "bind:"
+
+  it "keeps the saved address on a re-run, even with another one passed"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_BIND_ADDRESS="$SERVER_IP"
+  run_installer COMMUNITY_BIND_ADDRESS="$OTHER_IP" STUB_LISTENER="$SERVER_IP:80"
+  assert_exit 0
+  assert_says "You passed COMMUNITY_BIND_ADDRESS=$OTHER_IP"
+  assert_true "keeps the saved address" has_setting "COMMUNITY_BIND_ADDRESS=$SERVER_IP"
 }
 
 test_image_fallback() {
@@ -605,6 +694,7 @@ run_inside() {
     test_missing_domain
     test_dns_failure
     test_fresh_install
+    test_port_conflicts
     test_image_fallback
     test_rerun
     test_firewall
