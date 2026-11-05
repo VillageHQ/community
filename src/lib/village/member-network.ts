@@ -161,11 +161,13 @@ async function connectMember(
   return { session, network };
 }
 
-function linkMismatchError() {
+function linkMismatchError(member: SessionMember) {
   return new NetworkRequestError(
     CONFLICT_STATUS,
     NETWORK_ERROR_CODES.linkMismatch,
-    "The Village account linked to you uses a different email. An admin needs to approve it first.",
+    isAdminMember(member)
+      ? "The Village account linked to you uses a different email. Approve it under Admin, Members, then try again."
+      : "The Village account linked to you uses a different email. An admin needs to approve it first.",
   );
 }
 
@@ -210,7 +212,7 @@ async function requireTrustedVillageUser(
 ) {
   const villageUser = await readVillageUser(session);
   if (!villageUser) throw notLinkedError();
-  if (!(await confirmVillageLink(context, network, villageUser.email))) throw linkMismatchError();
+  if (!(await confirmVillageLink(context, network, villageUser.email))) throw linkMismatchError(context.member);
   return villageUser;
 }
 
@@ -347,7 +349,7 @@ async function readAppPublicKeyOrExplain(session: VillageSession) {
     throw new NetworkRequestError(
       UNPROCESSABLE_STATUS,
       NETWORK_ERROR_CODES.keysRejected,
-      "Village rejected this secret key. Copy it again from Platform Settings, and check that the app is active.",
+      "Village rejected this secret key. Copy it again from API Keys in Village, and check that your Village app is active.",
     );
   }
 }
@@ -384,7 +386,7 @@ export async function createCommunityGroup(context: NetworkContext, name: string
   const { session, network } = await connectMember(context, keys);
   const villageUser = await readVillageUser(session);
   if (villageUser && !(await confirmVillageLink(context, network, villageUser.email))) {
-    throw linkMismatchError();
+    throw linkMismatchError(member);
   }
   if (!villageUser?.isSyncComplete) {
     throw new NetworkRequestError(
@@ -593,7 +595,7 @@ export async function readAskableConnectors(context: NetworkContext, targetSlug:
   const { database, member } = context;
   const { network } = await requireJoinedMember(context);
   if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
-  if (network.pendingVillageEmail) throw linkMismatchError();
+  if (network.pendingVillageEmail) throw linkMismatchError(member);
   if (targetSlug === network.linkedinSlug) {
     throw new NetworkRequestError(UNPROCESSABLE_STATUS, INTRO_ERROR_CODES.ownTarget, "That's you. No intro needed.");
   }
@@ -708,7 +710,7 @@ export async function leaveCommunityGroup(context: NetworkContext) {
   const { session, network } = await connectMember(context, keys);
   const villageUser = await readVillageUser(session);
   if (!villageUser) throw leaveNotConfirmedError();
-  if (!(await confirmVillageLink(context, network, villageUser.email))) throw linkMismatchError();
+  if (!(await confirmVillageLink(context, network, villageUser.email))) throw linkMismatchError(context.member);
 
   const outcome = await leaveVillageGroup(session, group.id);
   if (outcome === VILLAGE_LEAVE_OUTCOMES.adminBlocked) {

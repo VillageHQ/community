@@ -1,35 +1,44 @@
 # Community
 
-A private community portal for a VC fund's portfolio founders. You run it, and you never need to write code or touch a database to do it.
+A private home for a VC fund's founders, ready to deploy without writing code. They join by invite, post in a shared feed, find each other in a directory and message one to one. Through [Village](https://village.ai), they can also search everyone's networks together and ask another member for a warm intro.
 
-Your founders join by invite, fill in a card, post in a shared feed, find each other in a directory and message each other one to one. Through [Village](https://village.ai), they can search everyone's networks together and ask another member for a warm intro.
+![The community feed, showing fictional founders asking for help and sharing wins](docs/screenshots/feed.png)
+
+**You need:**
+
+- An account on a host: [Vercel](https://vercel.com/signup) or [DigitalOcean](https://www.digitalocean.com). Hosting and database costs are theirs.
+- A [Village developer account](https://village.ai/platform), which you can create during setup with Google. Only network search and intros need it. Your community spends your Village app's credits.
+
+No terminal, no code. It's MIT licensed, and you run your own copy.
 
 ## Deploy
 
-> **Status:** No button below has been tried on a live platform. The repo is private, and the Vercel and DigitalOcean buttons need a public repo. The Railway template does not exist yet.
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template/REPLACE_WITH_TEMPLATE_CODE)
+> **Status:** No button below has been tried on a live platform yet. If a step doesn't match what you see, [tell us](https://github.com/VillageHQ/community/issues).
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity&project-name=community&repository-name=community&env=SETUP_TOKEN&envDescription=Choose%20a%20long%20random%20password%20of%20at%20least%2032%20characters.%20You%20will%20enter%20it%20once%20at%20%2Fsetup%20to%20create%20your%20admin%20account.&envLink=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity%23setup-token&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D)
 
 [![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/VillageHQ/community/tree/main)
 
-1. Click a button and follow the platform's steps.
-2. Set your setup token when asked. On Railway it's created for you: copy `SETUP_TOKEN` from the service's variables. See [Setup token](#setup-token).
-3. Wait for the deploy to finish.
+**Railway: coming soon.** We haven't published the one-click template yet, so there's no button to click. Use Vercel or DigitalOcean for now.
+
+<!-- PLACEHOLDER for the Railway button. Once the template below exists, replace the line above with:
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template/YOUR_TEMPLATE_CODE?utm_medium=integration&utm_source=button&utm_campaign=community)
+-->
+
+1. Click a button and follow your host's steps. It creates the app and its database for you.
+2. Choose your setup token when asked: a long password you enter once, in the next section. See [Setup token](#setup-token). On DigitalOcean, replace the `change-me` placeholder.
+3. Wait for the deploy to finish, then open your new site. Your host shows its address.
 
 ## Your first 10 minutes
 
-1. **Create your admin account.** Open `/setup` on your new site. Enter the setup token and your name, email and password. Setup closes for good after this.
+1. **Create your admin account.** Your site opens on it. Enter the setup token and your name, email and password. Setup closes for good after this.
 2. **Follow the checklist.** You land on it after you sign in. Your progress saves as you go.
    - **Brand your community:** your name, logo and color.
-   - **Register your domain:** the page shows the exact address to add in Village's Platform Settings.
-   - **Add your Village keys:** paste them in. We check them with Village before saving.
+   - **Register your domain:** create your account on [Village's platform](https://village.ai/platform) with **New developer account**. Follow [Village's checklist](https://village.ai/platform/onboarding), which asks for a payment method before your app goes live. Then, in [App Settings](https://village.ai/platform/settings/app-settings), set **Title** to your community's name and paste the address the page shows you under **Domain Name**.
+   - **Add your Village keys:** copy both from [API Keys](https://village.ai/platform/settings/api-keys) and paste them in. We check them with Village before saving.
    - **Create the group:** first open **Network**, add your LinkedIn and sync in Village's popup. Then create the group. **Your own Village network becomes shared with every current and future member.**
    - **Invite your first members:** see below.
 3. **Say hello.** Post a welcome in the feed, so the first founder doesn't walk into an empty room.
-
-You need a Village platform account and an active app. Your community spends your app's Village credits.
 
 ## How to invite people
 
@@ -45,7 +54,7 @@ The person opens the link, chooses a name and password, and lands in a short fir
 
 **A LinkedIn profile someone else holds:** Paste it under **Free up a LinkedIn profile** in **Members**, or use **Clear their LinkedIn** under **Manage**.
 
-**Email is optional:** To send invites and intro notices by email, add `RESEND_API_KEY` and `RESEND_FROM_ADDRESS` in your host's settings, using a sender on a domain you verified in [Resend](https://resend.com). The deploy buttons don't ask for these. **Admin**, **Settings** shows whether email is on and what that changes.
+**Email is optional:** To send invites and intro notices by email, [add two settings on your host](#changing-a-setting-on-your-host): `RESEND_API_KEY`, the key from your [Resend](https://resend.com) account, and `RESEND_FROM_ADDRESS`, a sender on a domain you verified there. The deploy buttons don't ask for these. **Admin**, **Settings** shows whether email is on and what that changes.
 
 ## Running your community
 
@@ -55,7 +64,7 @@ Everything lives in **Admin**.
 - **Reports:** Members can report posts, replies, messages they received and intro notes they received. You see a copy of what was reported and who reported it. You can dismiss it, delete it if it's a post or reply, or remove the member. Messages and intro notes can't be deleted from here. You never see the rest of a conversation or an ask.
 - **Audit log:** Who did what, and when: role changes, removals, approvals, deletions, settings and more.
 - **Health:** Real counts of members, sharing, posts, active members, intros and invites.
-- **Credits:** Searches and intro path lookups per day and per member, an estimated cost, and the daily limit per member. Village doesn't tell this site your credit balance, so check it on [Village's platform](https://village.ai/platform/usage) and [buy more there](https://village.ai/platform/settings/billing). If you run out, members see a friendly note and you see a notice here.
+- **Credits:** Searches and intro path lookups per day and per member, an estimated cost, and the daily limit per member. This site doesn't show your credit balance, so check it on [Village's platform](https://village.ai/platform/usage) and [buy more there](https://village.ai/platform/settings/billing). If you run out, members see a friendly note and you see a notice here.
 - **Settings:** Come back to any step of the checklist, check email, and see your version.
 
 **Removing someone:** They're signed out, can't sign back in, and leave the directory. You choose whether their posts and replies stay, which is the default, or go for good. If they're in the Village group, we also ask Village to take them out, using their own account on their behalf, and tell you what happened:
@@ -70,7 +79,7 @@ Everything lives in **Admin**.
 
 **With email on:** Anyone can use **Forgot your password?** on the sign-in page. The link works once and lasts one hour, and using it signs them out everywhere.
 
-**With email off, for an admin:** Use **I lost my admin password**, on that same page, with your setup token. It works for active admins only, signs you out everywhere and goes in the audit log. Lost the token too? Set a new `SETUP_TOKEN` in your host's settings and redeploy.
+**With email off, for an admin:** Use **I lost my admin password**, on that same page, with your setup token. It works for active admins only, signs you out everywhere and goes in the audit log. Lost the token too? [Set a new `SETUP_TOKEN` on your host](#changing-a-setting-on-your-host).
 
 **With email off, for a member:** Turn email on, or remove them and use **Invite them back as a new account**. That's a new account: their old private messages stay on the old one, and they don't get them back. There's no way for an admin to set or reset a member's password, on purpose. It would let that admin sign in as them and read their private messages.
 
@@ -80,10 +89,21 @@ Everything lives in **Admin**.
 - **Someone can't sign in:** See [If someone forgets their password](#if-someone-forgets-their-password).
 - **Village keys, credits or billing:** Use [Village's platform](https://village.ai/platform/usage).
 - **A bug in this app, or a question:** [Open an issue](https://github.com/VillageHQ/community/issues) on GitHub. Don't paste keys or members' details there.
+- **A security problem:** See [SECURITY.md](SECURITY.md). Don't open a public issue.
 
 ## Setup token
 
-The setup token is a long password that proves you own the deployment. It needs at least 32 random characters. A password manager's generator works, or run `openssl rand -hex 32`. If it's missing or too weak, `/setup` explains how to fix it and creates nothing. Keep it safe after setup: with email off, it can also change an admin's password.
+The setup token is a long password that proves you own the deployment. You need it once, to create your admin account, and again if you lose your admin password while email is off, so keep it safe.
+
+Use at least 32 random characters. A password manager's generator works, like [1Password's free one](https://1password.com/password-generator). If it's missing or too weak, your site explains how to fix it and creates nothing.
+
+## Changing a setting on your host
+
+Some settings live on your host, not in this app. Hosts call them environment variables. To add or change one:
+
+- **Vercel:** Open your project, then **Settings**, **Environment Variables**. Save it, then open **Deployments** and choose **Redeploy** on the latest one.
+- **Railway:** Open your service, then **Variables**. Save it, then click **Deploy**.
+- **DigitalOcean:** Open your app, then **Settings**, **App-Level Environment Variables**. Saving restarts the app.
 
 ## Before real use
 
@@ -101,7 +121,7 @@ You can see your version in **Admin**, **Settings**. Updates aren't automatic.
 
 Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and password, Drizzle adapter), Drizzle with `pg` over TCP, pnpm, Vitest.
 
-**Design:** [`docs/design/tokens.md`](docs/design/tokens.md) defines the tokens and [`docs/design/mockup.html`](docs/design/mockup.html) shows the target. The mockup's people and numbers are fictional. Figtree comes from the `@fontsource-variable/figtree` npm package through `next/font/local`, so builds and pages need no font network. To add a page to the sidebar and tabs, add one line to `NAVIGATION` in `src/lib/navigation.ts`.
+**Design:** [`docs/design/tokens.md`](docs/design/tokens.md) defines the tokens. [`docs/design/mockup.html`](docs/design/mockup.html) is the early design mock: its people and numbers are fictional, and the app is the source of truth where they differ. Figtree comes from the `@fontsource-variable/figtree` npm package through `next/font/local`, so builds and pages need no font network. To add a page to the sidebar and tabs, add one line to `NAVIGATION` in `src/lib/navigation.ts`.
 
 **Branding:** An admin sets the community's name, descriptor, logo and one accent color in **Admin**. The server derives every accent token per theme and writes them in the page's `<head>`, so there's no flash. Only a six-digit hex color reaches that style tag, checked on save and again on read. Logos live in Postgres so one-click deploys need no file storage. The limit is 512 KB, and only PNG, JPEG and WebP pass, verified by magic bytes. SVG is refused. A light mark on transparency gets a dark tile, chosen in the browser at upload. `GET /api/branding/logo` serves the logo publicly, because the sign-in page shows it, with the detected content type and `nosniff`.
 
@@ -159,7 +179,7 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 
 **Credit limits:** Each member gets a daily number of searches and uncached path lookups per UTC day, 50 by default. An admin can set it from 1 to 500 in **Admin**, **Credits**, stored in `instance_settings`. Path results stay cached per member for 24 hours. Village error responses (400 and up) don't count, because Village doesn't debit them. Timeouts, network errors and any response that isn't a Village JSON error do count, including a proxy's HTML 502, because Village may have debited them.
 
-**Credit estimates:** The app records lookups, not credits, and `member_daily_usage.search_count` says how many were searches. **Credits** counts about 11 credits for a search, which is a full page of results, and 5 for `POST /v2/people/paths`, at $0.02 a credit. Searches with fewer results cost less, and Village's prices can change, so it's labeled an estimate. Usage from before this count existed reads as path lookups. `GET /v2/app` returns no balance and `/v2/credits` isn't open to an app's secret key, so the app shows no balance and links to Village's platform. Village answers 402 with a flat `{"error":"insufficient_credits"}`, not its usual error object, and the client reads both. Members get a plain note, the app stores the time in `instance_settings`, and **Admin** shows a badge and a notice until the next lookup succeeds.
+**Credit estimates:** The app records lookups, not credits, and `member_daily_usage.search_count` says how many were searches. **Credits** counts about 11 credits for a search, which is a full page of results, and 5 for `POST /v2/people/paths`, at $0.02 a credit. Searches with fewer results cost less, and Village's prices can change, so it's labeled an estimate. Usage from before this count existed reads as path lookups. `GET /v2/app` returns no balance, so the app shows none and links to Village's platform. Village answers 402 with a flat `{"error":"insufficient_credits"}`, not its usual error object, and the client reads both. `src/test/village-recorded-responses.ts` records the response shapes Village really sends, and a test fails if the fake server in `src/test` drifts from them. Members get a plain note, the app stores the time in `instance_settings`, and **Admin** shows a badge and a notice until the next lookup succeeds.
 
 **Village status:** **Members** reads it from `member_network`, without calling Village. *Blocked for approval* means a mismatched Village email is waiting. *Ready* means they joined the group. *Syncing* means this site has seen their Village account but they haven't joined. *Sharing* means they agreed but this site hasn't seen their Village account. *Not shared* is everyone else. `village_linked_at` is set the next time the member's status loads, so accounts from before this version read as *Sharing* until then.
 
@@ -203,7 +223,7 @@ With no trusted header, all clients share one bucket per path. That can't be spo
 
 ### Railway template (for maintainers)
 
-Build the template by hand. This repo has no Railway files, because Railway [deprecated Config as Code](https://docs.railway.com/infrastructure-as-code). Add a web service from this repo and a Postgres service, then set:
+It doesn't exist yet. Build the template by hand, then swap the placeholder in [Deploy](#deploy) for the button. This repo has no Railway files, because Railway [deprecated Config as Code](https://docs.railway.com/infrastructure-as-code). Add a web service from this repo and a Postgres service, then set:
 
 - `SETUP_TOKEN`: `${{secret(64)}}`
 - `DATABASE_URL`: `${{Postgres.DATABASE_URL}}`
@@ -214,7 +234,7 @@ Build the template by hand. This repo has no Railway files, because Railway [dep
 
 **Vercel**
 
-- The button clones a public repo. A private repo needs a manual import.
+- The button clones a public repo.
 - The button provisions Neon only. We have not seen it work.
 - Next.js documents `register` as running once per server instance, and Vercel documents `instrumentation.ts` for tracing, but neither says exactly when it runs on Vercel's functions. Check the first deploy's logs for `Migrations applied.`.
 - A frozen function can't run background retries, so a failed migration retries on the next cold start.
@@ -223,13 +243,15 @@ Build the template by hand. This repo has no Railway files, because Railway [dep
 
 **DigitalOcean**
 
-- The button needs a public repo, and its docs list only one service plus a dev database.
+- The button needs a public repo, and supports one service plus a dev database. It prompts for `SETUP_TOKEN` because the template lists a `change-me` placeholder, which the app refuses as too weak.
 - **No `/api/health` check, on purpose.** DigitalOcean [grants `public` rights during deployment](https://docs.digitalocean.com/support/how-do-i-fix-a-permission-denied-for-schema-public-error-in-my-dev-database/), and a failed deployment never gets them. A health check that requires migrations could block that grant, so the template uses the default TCP check. The first deploy may log `permission denied` and recover by itself. Whether dev databases allow migrations at all is unverified.
 - **Database TLS fails closed.** The template binds `DATABASE_CA_CERT` to `${db.CA_CERT}`, which DigitalOcean documents only for managed databases. If it doesn't resolve on a dev database, the app refuses the self-signed certificate, keeps logging the cause, and `/api/health` stays at 503. No template disables verification. Setting `DATABASE_TLS_ALLOW_UNVERIFIED=true` yourself would connect without verifying the server, scoped to this app's database connections.
 
 ### Troubleshooting
 
-**A page says "Something went wrong":** Open `/api/health`. A 503 means the app can't reach its database or migrations haven't landed yet. Check your host's logs for lines with `"scope":"migrations"` or `"scope":"health"`, which give the real cause. Migrations retry by themselves, so `permission denied` on a first DigitalOcean deploy can clear within a minute. `unable to verify the first certificate` means `DATABASE_CA_CERT` is missing or wrong. Otherwise, check that `DATABASE_URL` is set and the database is running.
+**A page says "Something went wrong":** Wait a minute and reload, because a first deploy can take a moment to prepare its database. Still stuck? Add `/api/health` to your site's address. `{"status":"ok"}` means the database is fine. `{"status":"unavailable"}` means the app can't reach its database or hasn't finished preparing it. Check your host's logs for lines with `"scope":"migrations"` or `"scope":"health"`, which give the real cause. Migrations retry by themselves, so `permission denied` on a first DigitalOcean deploy can clear within a minute. `unable to verify the first certificate` means `DATABASE_CA_CERT` is missing or wrong. Otherwise, check that `DATABASE_URL` is set and the database is running.
+
+**Every page fails, and the logs say `Cannot resolve the app URL`:** The app can't work out its own public address. On Railway, generate a public domain under your service's **Networking**. Anywhere else, [add a setting](#changing-a-setting-on-your-host) named `APP_URL` with your site's address, like `https://community.example.com`.
 
 ### Other hosts
 
@@ -259,6 +281,10 @@ TEST_DATABASE_URL=postgres://community:community@localhost:5432/community_test p
 
 `pnpm db:auth-schema` regenerates `src/database/auth-schema.ts` from the Better Auth config. `pnpm db:generate` writes a new SQL migration to `drizzle/`.
 
+## Contributing and security
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+
 ## License
 
-MIT
+[MIT](LICENSE)

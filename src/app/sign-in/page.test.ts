@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { claimFirstAdmin } from "@/lib/first-admin";
-import { ROUTES } from "@/lib/routes";
+import { ADMIN_CREATED_PARAM, ROUTES } from "@/lib/routes";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 
 import SignInPage from "./page";
@@ -64,5 +64,18 @@ describe("the sign-in page", () => {
 
     expect(html).not.toContain(ROUTES.signUp);
     expect(html).not.toContain("Need an account");
+  });
+
+  it("tells a new admin their account worked and what comes next", async () => {
+    const html = renderToStaticMarkup(await SignInPage({ searchParams: Promise.resolve({ [ADMIN_CREATED_PARAM]: "true" }) }));
+
+    expect(html).toContain("Your admin account is ready.");
+    expect(html).toContain("A checklist takes you through the rest.");
+  });
+
+  it("welcomes everyone else back", async () => {
+    const html = renderToStaticMarkup(await SignInPage({ searchParams: Promise.resolve({}) }));
+
+    expect(html).toContain("Welcome back.");
   });
 });

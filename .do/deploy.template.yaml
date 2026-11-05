@@ -27,3 +27,4 @@ spec:
         - key: SETUP_TOKEN
           scope: RUN_TIME
           type: SECRET
+          value: change-me

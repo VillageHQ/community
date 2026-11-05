@@ -3,10 +3,12 @@
 import { ShieldCheck } from "lucide-react";
 import { useActionState } from "react";
 
+import { ExternalTextLink } from "@/components/external-text-link";
 import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { useFocusOnFailure } from "@/components/use-focus-on-failure";
+import { VILLAGE_PLATFORM_LINKS } from "@/lib/admin/settings-copy";
 import { API_ROUTES } from "@/lib/routes";
 import { acknowledgedResponseSchema } from "@/lib/village/network-api";
 import { postNetworkRequest } from "@/lib/village/post-network-request";
@@ -38,7 +40,8 @@ export function KeysForm({ savedPublicKey, hasSavedKeys }: KeysFormProps) {
   return (
     <form action={formAction} className="grid gap-5">
       <p className="text-foreground-soft">
-        You&apos;ll find both keys in Village&apos;s Platform Settings. We check them with Village before saving.
+        Open <ExternalTextLink href={VILLAGE_PLATFORM_LINKS.apiKeys}>API Keys in Village</ExternalTextLink> and copy both
+        keys here. We check them with Village before saving.
         {hasSavedKeys ? " Keys are saved. The secret key never leaves this server." : ""}
       </p>
       <FormError message={state.errorMessage} />

@@ -17,10 +17,10 @@ import { PAGE_TITLES } from "@/lib/branding/page-metadata";
 export const dynamic = "force-dynamic";
 
 const SETUP_TOKEN_STEPS = [
-  `Create a random value of at least ${MINIMUM_SETUP_TOKEN_LENGTH} characters. A password manager's generator works well. Don't use a word or a repeated pattern.`,
-  "Open your hosting dashboard and find this app's environment variables.",
-  "Save the value in a variable named SETUP_TOKEN.",
-  "Redeploy the app, then reload this page.",
+  `Create a random password of at least ${MINIMUM_SETUP_TOKEN_LENGTH} characters. A password manager's generator works well, like 1Password's free one at 1password.com/password-generator. Don't use a word or a repeated pattern.`,
+  "Open the settings for this app on your host. On Vercel: Settings, then Environment Variables. On Railway: your service, then Variables. On DigitalOcean: your app, then Settings, then App-Level Environment Variables.",
+  "Add a setting named SETUP_TOKEN, and paste the password as its value.",
+  "Save it and restart the app. On Vercel: Deployments, then Redeploy. On Railway: Deploy. DigitalOcean restarts it by itself. Then reload this page.",
 ];
 
 function MissingTokenCopy() {

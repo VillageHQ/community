@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { ExternalTextLink } from "@/components/external-text-link";
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
 import { Button } from "@/components/ui/button";
+import { SETUP_TOKEN_GUIDE_URL } from "@/lib/admin/settings-copy";
 import { readBrandingForPage } from "@/lib/branding/branding";
 import { PAGE_TITLES } from "@/lib/branding/page-metadata";
 import { readResendConfig } from "@/lib/email/resend";
@@ -34,6 +36,11 @@ export default async function RecoverAdminPage() {
             <RecoverAdminForm />
           )}
         </div>
+        {isEmailConfigured ? null : (
+          <p className="type-small mt-4 text-foreground-soft">
+            Lost the setup token too? <ExternalTextLink href={SETUP_TOKEN_GUIDE_URL}>Set a new one in your host&apos;s settings</ExternalTextLink>.
+          </p>
+        )}
         <div className="mt-5">
           <Button asChild variant="quiet">
             <Link href={ROUTES.signIn}>Back to sign in</Link>

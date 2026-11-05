@@ -2,11 +2,12 @@ import { ExternalLink, Mail, MailX, PackageCheck } from "lucide-react";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { ExternalTextLink } from "@/components/external-text-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { getDatabase } from "@/database/client";
-import { UPDATE_GUIDE_URL } from "@/lib/admin/settings-copy";
+import { HOST_SETTINGS_GUIDE_URL, UPDATE_GUIDE_URL } from "@/lib/admin/settings-copy";
 import { parseSetupStep, readSetupProgress } from "@/lib/admin-setup";
 import { APP_VERSION } from "@/lib/app-version";
 import { readBranding } from "@/lib/branding/branding";
@@ -23,6 +24,8 @@ const EMAIL_ON_EFFECTS = [
   "New members confirm their own email from a link we send.",
   "Introducers and requesters get a short email about intro asks.",
 ];
+
+const RESEND_URL = "https://resend.com";
 
 const EMAIL_OFF_EFFECTS = [
   "You copy each invite link and send it yourself.",
@@ -63,13 +66,12 @@ function EmailOff() {
       <p className="type-small text-foreground-soft">Everything still works without email. What changes:</p>
       <EffectList effects={EMAIL_OFF_EFFECTS} />
       <p className="type-small text-foreground-soft">
-        To turn it on, add <code className="font-bold">RESEND_API_KEY</code> and <code className="font-bold">RESEND_FROM_ADDRESS</code> in your host&apos;s settings, then
-        redeploy. You need a free{" "}
-        <a href="https://resend.com" target="_blank" rel="noreferrer" className="font-bold text-brand-emphasis underline underline-offset-3 hover:no-underline">
-          Resend
-          <span className="sr-only"> (opens in a new tab)</span>
-        </a>{" "}
-        account and a sending domain you verified there.
+        To turn it on, create a free <ExternalTextLink href={RESEND_URL}>Resend</ExternalTextLink> account and verify a
+        domain you send from there. Then{" "}
+        <ExternalTextLink href={HOST_SETTINGS_GUIDE_URL}>add two settings on your host</ExternalTextLink>:{" "}
+        <code className="font-bold">RESEND_API_KEY</code>, the key from Resend, and{" "}
+        <code className="font-bold">RESEND_FROM_ADDRESS</code>, the sender, like{" "}
+        <code className="font-bold">Northwind &lt;hello@example.com&gt;</code>.
       </p>
     </>
   );

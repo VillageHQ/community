@@ -36,7 +36,7 @@ export const POST = withRouteLogging(
     const setupToken = readSetupToken(process.env);
     if (!setupToken) {
       return Response.json(
-        { message: "SETUP_TOKEN is missing or too weak, so setup is disabled." },
+        { message: "The setup token is missing or too weak, so setup is off. Reload this page to see how to fix it." },
         { status: NOT_CONFIGURED_STATUS },
       );
     }

@@ -39,7 +39,7 @@ export function RecoverAdminForm() {
   }
   return (
     <form action={formAction} className="grid gap-5">
-      <FormField name="token" label="Setup token" type="password" autoComplete="off" hint="The SETUP_TOKEN value in your host's settings." required />
+      <FormField name="token" label="Setup token" type="password" autoComplete="off" hint="The long password you set when you deployed. It's called SETUP_TOKEN in your host's settings." required />
       <FormField name="email" label="Your admin email" type="email" autoComplete="email" required />
       <FormField
         name="newPassword"

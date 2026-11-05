@@ -293,18 +293,12 @@ Icons: Lucide, which the repo already has, at stroke 2. No emoji.
 - CTA and panel shadows, and fully rounded controls (`rounded-full` is the landing page's most used radius).
 - The network motif: avatars joined by thin lines, from the village.ai hero.
 - Bold, tightly tracked headings.
-- The mark: its gradient `#2DBFD4`, `#1DA8BC`, `#17A97C`. The real asset (`landing/public/village-icon.png`) is a rounded square, not a circle, so the mockup draws a rounded square.
+- The mark: its gradient `#2DBFD4`, `#1DA8BC`, `#17A97C`. The real asset is a rounded square, not a circle, so the mockup draws a rounded square.
 
 What we changed on purpose: Village's white text on its teal CTA reaches only 2.85:1 on `#1DA8BC`, so the default accent is deeper. Village's 8px control radius and near-black primary button read as enterprise, so we use pills and the accent.
 
-## Decisions to confirm
+## Not in the app
 
-These appear in the mockup but aren't built or promised yet:
-
-- **"Not now" on the consent screen.** The current flow reads "Share your network to join". The mockup lets a founder in without sharing and holds back network search only.
-- **"Ask me about" and the "Coming up" event card** are design proposals, not specified features.
-- Member counts and setup time estimates are placeholder content.
-
-Consent copy keeps every disclosure from `src/app/network/consent-step.tsx`, reworded.
+The mockup also shows an "Ask me about" field, a "Coming up" event card, and placeholder member counts and setup times. None of them are built.
 
 Logo uploads: treat SVG as untrusted. Sanitize it or render it only through `<img>`.

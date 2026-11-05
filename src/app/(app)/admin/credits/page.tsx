@@ -136,7 +136,7 @@ export default async function AdminCreditsPage() {
           <div className="grid gap-1.5">
             <CardTitle>Your credit balance</CardTitle>
             <CardDescription>
-              Village doesn&apos;t tell this site your balance, so we can&apos;t show it here. You&apos;ll find it on Village&apos;s platform, along with your exact usage. Your community
+              This site doesn&apos;t show your balance. You&apos;ll find it on Village&apos;s platform, along with your exact usage. Your community
               spends the credits of your Village app.
             </CardDescription>
           </div>

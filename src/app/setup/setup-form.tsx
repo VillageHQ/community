@@ -29,7 +29,7 @@ async function submitSetup(_previousState: SetupState, formData: FormData): Prom
     };
   }
 
-  window.location.assign(ROUTES.signIn);
+  window.location.assign(ROUTES.signInAsNewAdmin);
   return INITIAL_STATE;
 }
 
@@ -46,7 +46,7 @@ export function SetupForm() {
         label="Setup token"
         type="password"
         autoComplete="off"
-        hint="The SETUP_TOKEN value you chose at deploy time."
+        hint="The long password you set when you deployed. It's called SETUP_TOKEN in your host's settings."
         required
       />
       <FormField

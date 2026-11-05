@@ -70,6 +70,25 @@ describe("the Village admin API", () => {
     });
   });
 
+  describe("creating the group with a mismatched Village account", () => {
+    it("tells the admin they can approve it themselves", async () => {
+      const admin = await createSignedInMember(database, "admin");
+      await saveVillageKeys(database, FAKE_VILLAGE_KEYS);
+      await postLinkedin(jsonRequest(admin, { linkedinUrl: "https://www.linkedin.com/in/avery-admin" }));
+      const [network] = await database.select().from(memberNetwork);
+      if (!network) throw new Error("The member network row is missing.");
+      village.state.linkedMembers.set(network.villageExternalId, { isSynced: true, email: "other@example.com" });
+
+      const response = await postGroup(jsonRequest(admin, { name: "Group", acknowledged: true }));
+
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        code: NETWORK_ERROR_CODES.linkMismatch,
+        message: expect.stringContaining("Approve it under Admin, Members"),
+      });
+    });
+  });
+
   describe("saving keys", () => {
     it("stores keys Village accepts and returns neither", async () => {
       const admin = await createSignedInMember(database, "admin");

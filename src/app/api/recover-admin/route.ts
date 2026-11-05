@@ -43,7 +43,7 @@ export const POST = withRouteLogging(
     if (readResendConfig(process.env)) return respond("Email is on, so use Forgot password instead.", CONFLICT_STATUS);
 
     const setupToken = readSetupToken(process.env);
-    if (!setupToken) return respond("SETUP_TOKEN is missing or too weak, so recovery is off.", NOT_CONFIGURED_STATUS);
+    if (!setupToken) return respond("The setup token is missing or too weak, so recovery is off. Set a new one in your host's settings.", NOT_CONFIGURED_STATUS);
 
     const database = getDatabase();
     const body = await readJsonBody(request);

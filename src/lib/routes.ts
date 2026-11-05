@@ -1,6 +1,9 @@
+export const ADMIN_CREATED_PARAM = "adminCreated";
+
 export const ROUTES = {
   feed: "/",
   signIn: "/sign-in",
+  signInAsNewAdmin: `/sign-in?${ADMIN_CREATED_PARAM}=true`,
   signUp: "/sign-up",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
