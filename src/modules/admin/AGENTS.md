@@ -6,6 +6,7 @@ Core. Always on. It sits on top of the features it manages, so it may import the
 - `service-reports.ts`, `service-report-resolution.ts`: saving reports and working the queue.
 - `reads-*.ts`: the member list, audit log and community health.
 - `schema.ts`: `content_report` and `member_removal`.
+- `contract-modules.ts`, `queries-modules.ts`, `components/feature-screen.tsx`: the features screen. `src/shell/module-settings.ts` holds its logic, because it needs the registry.
 - `queries-*.ts`: client requests. `components/`: the UI.
 
 Rules:

@@ -3,11 +3,11 @@ import { getAuth } from "@/platform/auth/auth";
 import { isStaticAuthEndpoint } from "@/platform/auth/auth-endpoints";
 import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/platform/http/body-limit";
 import { pruneExpiredRateLimits } from "@/platform/rate-limit/rate-limit-pruning";
-import { withRouteLogging } from "@/platform/observability/route-logging";
+import { platformRoutes } from "@/platform/modules/platform-routes";
 
 const NOT_FOUND_STATUS = 404;
 
-const handleAuthRequest = withRouteLogging(
+const handleAuthRequest = platformRoutes.open(
   "auth",
   withBodyLimit(MAXIMUM_JSON_BODY_BYTES, async (request) => {
     const auth = await getAuth();

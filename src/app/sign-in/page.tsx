@@ -10,6 +10,8 @@ import { ADMIN_CREATED_PARAM, ROUTES } from "@/platform/http/routes";
 
 import { SignInForm } from "./sign-in-form";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { PLATFORM_MANIFEST } from "@/platform/modules/platform-manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +19,7 @@ export const metadata: Metadata = { title: PAGE_TITLES.signIn };
 
 type SignInPageProps = { searchParams: Promise<{ [RETURN_PATH_PARAM]?: string; [ADMIN_CREATED_PARAM]?: string }> };
 
-export default async function SignInPage({ searchParams }: SignInPageProps) {
+export default modulePage(PLATFORM_MANIFEST, async function SignInPage({ searchParams }: SignInPageProps) {
   if (!(await isFirstAdminClaimed(getDatabase()))) redirect(ROUTES.setup);
 
   const community = await readBrandingForPage();
@@ -48,4 +50,4 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
       </div>
     </SplitLayout>
   );
-}
+});

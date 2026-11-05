@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { readWaitingMemberCount, readWaitingMembers } from "@/modules/members/service-admin";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { adminRoutes } from "@/modules/admin/routes";
 
-export const POST = createMemberRoute(
+export const POST = adminRoutes.member(
   "members-waiting",
   z.unknown(),
   async ({ database }) =>

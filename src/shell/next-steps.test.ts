@@ -155,4 +155,16 @@ describe("the next step card", () => {
     expect(nextStep?.progress).toBeNull();
     expect(nextStep?.action?.href).toBe(ROUTES.network);
   });
+
+  describe("with network off", () => {
+    it("suggests nothing once the card is filled", () => {
+      expect(selectNextSteps({ ...READY_FACTS, networkProgress: null })).toEqual([]);
+    });
+
+    it("still asks a member to finish their card", () => {
+      const steps = selectNextSteps({ ...READY_FACTS, networkProgress: null, isCardFilled: false });
+
+      expect(steps.map(({ title }) => title)).toEqual(["Finish your card"]);
+    });
+  });
 });

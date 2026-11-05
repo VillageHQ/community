@@ -1,4 +1,6 @@
-import { useId } from "react";
+"use client";
+
+import { createContext, use, useId, type ReactNode } from "react";
 
 const DEFAULT_MARK_SIZE_PX = 18;
 
@@ -19,11 +21,23 @@ export function VillageMark({ sizePx = DEFAULT_MARK_SIZE_PX }: { sizePx?: number
   );
 }
 
+const RunsOnVillageContext = createContext(true);
+
+export function RunsOnVillageProvider({ value, children }: { value: boolean; children: ReactNode }) {
+  return <RunsOnVillageContext.Provider value={value}>{children}</RunsOnVillageContext.Provider>;
+}
+
+export function OnlyOnVillage({ children, otherwise = null }: { children: ReactNode; otherwise?: ReactNode }) {
+  return use(RunsOnVillageContext) ? children : otherwise;
+}
+
 export function NetworkByVillage() {
   return (
-    <p className="type-micro flex items-center gap-2 text-muted-foreground">
-      <VillageMark />
-      Network by Village
-    </p>
+    <OnlyOnVillage>
+      <p className="type-micro flex items-center gap-2 text-muted-foreground">
+        <VillageMark />
+        Network by Village
+      </p>
+    </OnlyOnVillage>
   );
 }

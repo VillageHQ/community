@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { QueryBoundary } from "@/components/query-boundary";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { networkManifest } from "@/modules/network/manifest";
+import { useIsModuleEnabled } from "@/platform/modules/enabled-modules";
 import type { WaitingMember } from "@/modules/members/contract-invites";
 
 import { ConfirmDialog } from "@/modules/admin/components/confirm-dialog";
@@ -68,6 +70,7 @@ function WaitingRow({ member }: { member: WaitingMember }) {
 type WaitingMembersProps = { isEmailConfigured: boolean };
 
 function WaitingList({ isEmailConfigured }: WaitingMembersProps) {
+  const isNetworkOn = useIsModuleEnabled(networkManifest.id);
   const { data } = useSuspenseQuery(waitingMembersQuery);
   if (data.members.length === 0) return null;
   const hiddenCount = data.waitingCount - data.members.length;
@@ -79,7 +82,7 @@ function WaitingList({ isEmailConfigured }: WaitingMembersProps) {
         </h2>
         <p className="text-foreground-soft">
           These people accepted an invite, but anyone holding the link could have done that. Yes says this person really
-          owns this email, and turns on network search for them. Only confirm someone you recognize.
+          owns this email{isNetworkOn ? ", and turns on network search for them" : ""}. Only confirm someone you recognize.
           {isEmailConfigured ? ` ${EMAIL_CONFIGURED_NOTE}` : ""}
         </p>
       </div>

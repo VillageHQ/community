@@ -1,9 +1,9 @@
 import { linkedinClaimBodySchema } from "@/modules/members/contract-invites";
 import { clearLinkedinClaim } from "@/modules/members/service-admin";
 import { logAdminAction } from "@/platform/observability/route-logging";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { adminRoutes } from "@/modules/admin/routes";
 
-export const POST = createMemberRoute(
+export const POST = adminRoutes.member(
   "member-clear-linkedin",
   linkedinClaimBodySchema,
   async (context, { linkedinUrl }) => {

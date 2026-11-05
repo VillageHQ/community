@@ -2,7 +2,9 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 
+import { networkManifest } from "../modules/network/manifest.ts";
 import type { Database } from "../platform/database/client.ts";
+import { isModuleEnabled } from "../platform/modules/enablement.ts";
 import { memberProfile } from "../modules/members/schema.ts";
 import type { SessionMember } from "../platform/http/request-context.ts";
 import { NETWORK_PROGRESS, readNetworkProgress } from "../modules/network/reads-progress.ts";
@@ -24,7 +26,8 @@ export async function resolveOnboardingStep(database: Database, member: SessionM
   if (!profile || profile.onboardingCompletedAt) return ONBOARDING_STEPS.done;
   if (!profile.cardStepDoneAt) return ONBOARDING_STEPS.card;
 
-  if (PROGRESS_THAT_ASKS_TO_SHARE.has(await readNetworkProgress(database, member))) return ONBOARDING_STEPS.network;
+  const isNetworkOn = await isModuleEnabled(database, networkManifest);
+  if (isNetworkOn && PROGRESS_THAT_ASKS_TO_SHARE.has(await readNetworkProgress(database, member))) return ONBOARDING_STEPS.network;
 
   await completeOnboarding(database, member.id);
   return ONBOARDING_STEPS.done;

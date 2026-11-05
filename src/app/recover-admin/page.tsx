@@ -11,12 +11,14 @@ import { readResendConfig } from "@/platform/email/resend";
 import { ROUTES } from "@/platform/http/routes";
 
 import { RecoverAdminForm } from "./recover-admin-form";
+import { PLATFORM_MANIFEST } from "@/platform/modules/platform-manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: PAGE_TITLES.recoverAdmin };
 
-export default async function RecoverAdminPage() {
+export default modulePage(PLATFORM_MANIFEST, async function RecoverAdminPage() {
   const community = await readBrandingForPage();
   const isEmailConfigured = readResendConfig(process.env) !== null;
 
@@ -49,4 +51,4 @@ export default async function RecoverAdminPage() {
       </div>
     </SplitLayout>
   );
-}
+});

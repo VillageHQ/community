@@ -23,6 +23,8 @@ import { ROUTES } from "@/platform/http/routes";
 
 import { AcceptForm } from "./accept-form";
 import { SignOutToAccept } from "./sign-out-to-accept";
+import { membersManifest } from "@/modules/members/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const dynamic = "force-dynamic";
 
@@ -65,7 +67,7 @@ function UnusableLink({ community, copy, inviterName, isMemberLikely = false }: 
   );
 }
 
-export default async function JoinPage({ params }: { params: Promise<{ token: string }> }) {
+export default modulePage(membersManifest, async function JoinPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const requestHeaders = await headers();
   const community = await readBrandingForPage();
@@ -116,4 +118,4 @@ export default async function JoinPage({ params }: { params: Promise<{ token: st
       </p>
     </SplitLayout>
   );
-}
+});

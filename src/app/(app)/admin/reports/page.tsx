@@ -10,12 +10,14 @@ import { requireAdmin } from "@/platform/auth/session";
 import { AdminSection } from "@/shell/admin-section";
 import { reportPageQuery } from "@/modules/admin/queries-reports";
 import { ReportQueue } from "@/modules/admin/components/report-queue";
+import { adminManifest } from "@/modules/admin/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 const FIRST_PAGE = 1;
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminReports };
 
-export default async function AdminReportsPage() {
+export default modulePage(adminManifest, async function AdminReportsPage() {
   const admin = await requireAdmin();
   const reports = await readReports(getDatabase(), REPORT_FILTERS.open, FIRST_PAGE);
   const queryClient = new QueryClient();
@@ -28,4 +30,4 @@ export default async function AdminReportsPage() {
       </HydrationBoundary>
     </AdminSection>
   );
-}
+});

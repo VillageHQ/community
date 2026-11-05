@@ -41,7 +41,7 @@ async function saveLinkedin(context: RequestContext, linkedinUrl: string | undef
   throw new RequestError(
     UNPROCESSABLE_STATUS,
     MEMBER_ERROR_CODES.linkedinInvalid,
-    "Network search matches you by your LinkedIn, so it can't be removed. You can change it to another profile.",
+    "Members recognize you by your LinkedIn, so it can't be removed. You can change it to another profile.",
   );
 }
 

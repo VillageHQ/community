@@ -1,8 +1,8 @@
 import { deleteComment } from "@/modules/feed/service";
 import { commentIdBodySchema } from "@/modules/feed/contract";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { feedRoutes } from "@/modules/feed/routes";
 
-export const POST = createMemberRoute("feed-comment-delete", commentIdBodySchema, async (context, { commentId }) => {
+export const POST = feedRoutes.member("feed-comment-delete", commentIdBodySchema, async (context, { commentId }) => {
   await deleteComment(context, commentId);
   return Response.json({ message: "Reply deleted." });
 });

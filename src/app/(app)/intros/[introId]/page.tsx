@@ -15,12 +15,14 @@ import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 
 import { IntroDetailView } from "@/modules/intros/components/intro-detail";
+import { introsManifest } from "@/modules/intros/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const metadata: Metadata = { title: PAGE_TITLES.intro };
 
 const introIdSchema = z.uuid();
 
-export default async function IntroPage({ params }: { params: Promise<{ introId: string }> }) {
+export default modulePage(introsManifest, async function IntroPage({ params }: { params: Promise<{ introId: string }> }) {
   const member = await requireMember();
   const parsedId = introIdSchema.safeParse((await params).introId);
   if (!parsedId.success) notFound();
@@ -48,4 +50,4 @@ export default async function IntroPage({ params }: { params: Promise<{ introId:
       </HydrationBoundary>
     </div>
   );
-}
+});

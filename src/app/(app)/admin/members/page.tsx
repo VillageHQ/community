@@ -17,12 +17,14 @@ import { AdminSection } from "@/shell/admin-section";
 import { InviteManager, INVITE_SECTION_ID } from "@/modules/admin/components/invite-manager";
 import { inviteListQuery, waitingMembersQuery } from "@/modules/members/queries-invites";
 import { memberPageQuery } from "@/modules/admin/queries-members";
+import { adminManifest } from "@/modules/admin/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 const FIRST_PAGE = 1;
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminMembers };
 
-export default async function AdminMembersPage({ searchParams }: { searchParams: Promise<{ search?: string }> }) {
+export default modulePage(adminManifest, async function AdminMembersPage({ searchParams }: { searchParams: Promise<{ search?: string }> }) {
   const admin = await requireAdmin();
   const { search: requestedSearch } = await searchParams;
   const search = (requestedSearch ?? "").trim().slice(0, MAXIMUM_SEARCH_LENGTH);
@@ -59,4 +61,4 @@ export default async function AdminMembersPage({ searchParams }: { searchParams:
       </HydrationBoundary>
     </AdminSection>
   );
-}
+});

@@ -7,6 +7,8 @@ import { Fragment } from "react";
 
 import type { ConstellationPerson } from "@/components/constellation";
 import { Avatar } from "@/components/ui/avatar";
+import { useIsModuleEnabled } from "@/platform/modules/enabled-modules";
+import { HOME_FEED_MODULE_ID } from "@/platform/modules/manifest";
 import { Button } from "@/components/ui/button";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { ROUTES } from "@/platform/http/routes";
@@ -98,16 +100,19 @@ function DirectConnectionNote({ targetName, targetSlug }: { targetName: string; 
 }
 
 function NoWayIn({ targetName }: { targetName: string }) {
+  const isFeedOn = useIsModuleEnabled(HOME_FEED_MODULE_ID);
   return (
     <div role="status" className="grid justify-items-center gap-2 rounded-field bg-muted px-5 py-7 text-center">
       <MessageCirclePlus aria-hidden="true" className="size-8 text-brand-emphasis" />
       <p className="type-h3">No warm way in yet</p>
       <p className="type-small text-foreground-soft">
-        Nobody&apos;s network reaches {readFirstName(targetName)} right now. Ask the community in the feed, or try someone else.
+        Nobody&apos;s network reaches {readFirstName(targetName)} right now. {isFeedOn ? "Ask the community in the feed, or try someone else." : "Try someone else."}
       </p>
-      <Button asChild variant="soft" size="sm" className="mt-2">
-        <Link href={ROUTES.feed}>Ask in the feed</Link>
-      </Button>
+      {isFeedOn ? (
+        <Button asChild variant="soft" size="sm" className="mt-2">
+          <Link href={ROUTES.feed}>Ask in the feed</Link>
+        </Button>
+      ) : null}
     </div>
   );
 }

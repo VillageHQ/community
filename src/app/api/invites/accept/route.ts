@@ -8,9 +8,10 @@ import { INVITE_STATES, type InviteState } from "@/modules/members/contract-invi
 import { INVITE_UNUSABLE_COPY, INVITE_INVALID_COPY } from "@/modules/members/copy-invites";
 import { acceptInvite, readInviteByToken } from "@/modules/members/service-invites";
 import { readJsonBody } from "@/platform/http/read-json-body";
-import { logError, withRouteLogging } from "@/platform/observability/route-logging";
+import { logError } from "@/platform/observability/route-logging";
 import { hasTrustedOrigin, readSessionMember } from "@/platform/http/member-route";
 import { NETWORK_ERROR_CODES } from "@/modules/network/contract";
+import { membersRoutes } from "@/modules/members/routes";
 
 const CREATED_STATUS = 201;
 const FORBIDDEN_STATUS = 403;
@@ -64,7 +65,7 @@ function respondAccepted(cookies: string[]) {
   return new Response(JSON.stringify({ isSignedIn: cookies.length > 0 }), { status: CREATED_STATUS, headers });
 }
 
-export const POST = withRouteLogging(
+export const POST = membersRoutes.open(
   "invite-accept",
   withBodyLimit(MAXIMUM_JSON_BODY_BYTES, async (request) => {
     if (!hasTrustedOrigin(request)) {

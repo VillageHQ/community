@@ -130,7 +130,7 @@ export type NextStep = {
 
 type NextStepFacts = {
   setupProgress: SetupProgress | null;
-  networkProgress: NetworkProgress;
+  networkProgress: NetworkProgress | null;
   communityName: string;
   isCardFilled: boolean;
   confirmationCopy: EmailConfirmationCopy;
@@ -182,10 +182,10 @@ function describeNetworkStep(progress: NetworkProgress, confirmationCopy: EmailC
 
 export function selectNextSteps(facts: NextStepFacts): NextStep[] {
   const { setupProgress, networkProgress, communityName, isCardFilled, confirmationCopy } = facts;
-  const leadStep =
-    setupProgress && !setupProgress.isComplete
-      ? describeAdminSetup(setupProgress, communityName)
-      : describeNetworkStep(networkProgress, confirmationCopy);
+  const hasOpenSetup = setupProgress && !setupProgress.isComplete;
+  if (!hasOpenSetup && !networkProgress) return isCardFilled ? [] : [FINISH_CARD_STEP];
+
+  const leadStep = hasOpenSetup ? describeAdminSetup(setupProgress, communityName) : describeNetworkStep(networkProgress ?? NETWORK_PROGRESS.ready, confirmationCopy);
   if (isCardFilled) return [leadStep];
   return leadStep.isUrgent ? [leadStep, FINISH_CARD_STEP] : [FINISH_CARD_STEP, leadStep];
 }

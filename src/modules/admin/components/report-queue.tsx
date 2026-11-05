@@ -24,6 +24,10 @@ import {
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatDateAndTimeUtc, formatLongDate } from "@/platform/text/format-date";
 
+import { feedManifest } from "@/modules/feed/manifest";
+import { introsManifest } from "@/modules/intros/manifest";
+import { messagesManifest } from "@/modules/messages/manifest";
+import { useIsModuleEnabled } from "@/platform/modules/enabled-modules";
 import { ConfirmDialog } from "@/modules/admin/components/confirm-dialog";
 import { RemoveMemberDialog } from "@/modules/admin/components/remove-member-dialog";
 import { deleteReportedContentRequest, dismissReportRequest, REPORT_QUERY_KEYS, reportPageQuery } from "@/modules/admin/queries-reports";
@@ -44,6 +48,13 @@ const TARGET_DISPLAY: Record<ReportTarget, { label: string; scope: string; delet
     scope: "You're seeing a copy of this note, and nothing else about the ask. You can't delete notes from here.",
     deleteLabel: null,
   },
+};
+
+const TARGET_FEATURES: Record<ReportTarget, { id: string; label: string }> = {
+  [REPORT_TARGETS.post]: feedManifest,
+  [REPORT_TARGETS.comment]: feedManifest,
+  [REPORT_TARGETS.directMessage]: messagesManifest,
+  [REPORT_TARGETS.introNote]: introsManifest,
 };
 
 const RESOLUTION_LABELS: Record<ReportResolution, string> = {
@@ -146,6 +157,8 @@ function ResolvedLine({ report }: { report: Report }) {
 function ReportCard({ report, viewerId, onDone }: ReportActionsProps) {
   const { targetType, body, contentCreatedAt, createdAt, reporterName, reportedMemberName, isContentGone, resolution } = report;
   const { label, scope } = TARGET_DISPLAY[targetType];
+  const feature = TARGET_FEATURES[targetType];
+  const isFeatureOn = useIsModuleEnabled(feature.id);
   return (
     <li className="grid gap-3.5 rounded-card-phone bg-card p-card-phone shadow-panel sm:rounded-card sm:p-6">
       <div className="flex flex-wrap items-center gap-2">
@@ -154,6 +167,7 @@ function ReportCard({ report, viewerId, onDone }: ReportActionsProps) {
           {label}
         </Tag>
         {isContentGone ? <Tag tone="gold">Already deleted</Tag> : null}
+        {isFeatureOn ? null : <Tag>{feature.label} is off</Tag>}
         <span className="type-small text-muted-foreground">Reported {formatLongDate(createdAt)}</span>
       </div>
       <dl className="type-small grid gap-1 sm:grid-cols-2">

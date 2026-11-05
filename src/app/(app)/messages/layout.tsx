@@ -9,10 +9,12 @@ import { readInbox } from "@/modules/messages/reads";
 import { requireMember } from "@/platform/auth/session";
 
 import { MessagePanes } from "@/modules/messages/components/message-panes";
+import { messagesManifest } from "@/modules/messages/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const metadata: Metadata = { title: PAGE_TITLES.messages };
 
-export default async function MessagesLayout({ children }: { children: ReactNode }) {
+export default modulePage(messagesManifest, async function MessagesLayout({ children }: { children: ReactNode }) {
   const member = await requireMember();
   const queryClient = new QueryClient();
   const firstPage = await readInbox(getDatabase(), member.id, { search: "", cursor: null });
@@ -23,4 +25,4 @@ export default async function MessagesLayout({ children }: { children: ReactNode
       <MessagePanes>{children}</MessagePanes>
     </HydrationBoundary>
   );
-}
+});

@@ -13,6 +13,10 @@ import { toSignInPath } from "@/platform/http/return-path";
 import { ROUTES } from "@/platform/http/routes";
 
 import { ConfirmEmailPanel } from "./confirm-email-panel";
+import { membersManifest } from "@/modules/members/manifest";
+import { networkManifest } from "@/modules/network/manifest";
+import { isModuleEnabled } from "@/platform/modules/enablement";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +24,14 @@ export const metadata: Metadata = { title: PAGE_TITLES.confirmEmail, robots: { i
 
 type ConfirmEmailPageProps = { searchParams: Promise<{ token?: string }> };
 
-export default async function ConfirmEmailPage({ searchParams }: ConfirmEmailPageProps) {
+export default modulePage(membersManifest, async function ConfirmEmailPage({ searchParams }: ConfirmEmailPageProps) {
   const { token = "" } = await searchParams;
   const session = await readActiveSession(await headers());
   const view = await readConfirmationView(getDatabase(), token, session?.user ?? null);
   const path = `${ROUTES.confirmEmail}?token=${encodeURIComponent(token)}`;
   if (view === CONFIRMATION_VIEWS.signIn) redirect(toSignInPath(path));
 
-  const community = await readBrandingForPage();
+  const [community, isNetworkOn] = await Promise.all([readBrandingForPage(), isModuleEnabled(getDatabase(), networkManifest)]);
   return (
     <SplitLayout
       community={community}
@@ -40,8 +44,9 @@ export default async function ConfirmEmailPage({ searchParams }: ConfirmEmailPag
           path={path}
           accountName={session?.user.name ?? ""}
           accountEmail={session?.user.email ?? ""}
+          isNetworkOn={isNetworkOn}
         />
       </div>
     </SplitLayout>
   );
-}
+});

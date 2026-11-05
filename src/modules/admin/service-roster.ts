@@ -6,12 +6,12 @@ import { memberRemoval, invite, memberNetwork } from "../members/schema.ts";
 import { session, user, verification } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
 import { memberPathResult } from "../network/schema.ts";
-import { deleteMemberContent } from "../feed/service.ts";
 import { isReclaimedEmail, RECLAIMED_EMAIL_DOMAIN } from "../../platform/auth/reclaimed-email.ts";
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { DEPARTURE_SENTENCES, leaveGroupOnBehalf } from "../network/service-departure.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import type { RequestContext } from "../../platform/http/request-context.ts";
+import type { MemberRemoval } from "../../platform/modules/integration.ts";
 import {
   NETWORK_ERROR_CODES,
   isDepartureIncomplete,
@@ -129,7 +129,11 @@ function readRemovedSentence(name: string, outcome: GroupDepartureOutcome | null
   return outcome ? `${removed} ${DEPARTURE_SENTENCES[outcome](name)}` : removed;
 }
 
-export async function removeMember(context: RequestContext, { memberId, contentChoice }: RemoveMemberBody) {
+export async function removeMember(
+  context: RequestContext,
+  { memberId, contentChoice }: RemoveMemberBody,
+  onRemoved: (transaction: Transaction, removal: MemberRemoval) => Promise<void>,
+) {
   const { database, member } = context;
   if (memberId === member.id) throw ownAccountError("You can't remove yourself. Ask another admin.");
   const keepsContent = contentChoice === CONTENT_CHOICES.keep;
@@ -148,7 +152,7 @@ export async function removeMember(context: RequestContext, { memberId, contentC
       .insert(memberRemoval)
       .values({ userId: memberId, keepsContent, removedByUserId: member.id })
       .onConflictDoUpdate({ target: memberRemoval.userId, set: { keepsContent, removedByUserId: member.id, removedAt: new Date() } });
-    if (!keepsContent) await deleteMemberContent(transaction, { id: memberId, name: target.name }, member.id);
+    await onRemoved(transaction, { memberId, memberName: target.name, actorId: member.id, keepsContent });
     await resolveOpenReportsAgainstMember(transaction, memberId, member.id, REPORT_RESOLUTIONS.memberRemoved);
     await recordAdminAction(transaction, member.id, {
       action: AUDIT_ACTIONS.memberRemoved,

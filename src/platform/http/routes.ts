@@ -24,6 +24,7 @@ export const ROUTES = {
   adminAuditLog: "/admin/audit-log",
   adminHealth: "/admin/health",
   adminCredits: "/admin/credits",
+  adminFeatures: "/admin/features",
   adminSettings: "/admin/settings",
 } as const;
 
@@ -61,6 +62,7 @@ export const API_ROUTES = {
   reportDismiss: "/api/admin/reports/dismiss",
   reportDeleteContent: "/api/admin/reports/delete-content",
   auditLog: "/api/admin/audit-log",
+  moduleState: "/api/admin/modules",
   dailyLimit: "/api/admin/credits/limit",
   feedReport: "/api/feed/report",
   introReport: "/api/intros/report",

@@ -21,6 +21,8 @@ import { POST as postAccept } from "@/app/api/invites/accept/route";
 import { POST as postLinkedin } from "@/app/api/network/linkedin/route";
 import { POST as postClearLinkedin } from "@/app/api/admin/members/clear-linkedin/route";
 import { POST as postConfirm } from "@/app/api/admin/members/confirm/route";
+import { networkManifest } from "@/modules/network/manifest";
+import { saveModuleState } from "@/platform/modules/enablement";
 import { POST as postWaiting } from "@/app/api/admin/members/waiting/route";
 
 const APP_URL = "http://localhost:3000";
@@ -165,6 +167,19 @@ describe("member admin", () => {
       const response = await postConfirm(jsonRequest(admin.cookie, { memberId: member.userId }));
 
       expect(response.status).toBe(CONFLICT_STATUS);
+    });
+  });
+
+  describe("confirming a member with network off", () => {
+    it("promises no network search", async () => {
+      const { link } = await createInvite();
+      await accept(link);
+      const account = await readAccount();
+      await saveModuleState(database, networkManifest, false);
+
+      const response = await postConfirm(jsonRequest(admin.cookie, { memberId: account?.id }));
+
+      expect(await response.json()).toEqual({ message: "Confirmed." });
     });
   });
 

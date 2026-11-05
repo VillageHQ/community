@@ -27,30 +27,42 @@ import { feedQuery } from "@/modules/feed/queries";
 import { NewThisWeekCard } from "@/modules/members/components/new-this-week-card";
 import { NextStepCard } from "@/shell/next-step-card";
 import { WaitingOnYouCard } from "@/modules/intros/components/waiting-on-you-card";
+import { membersManifest } from "@/modules/members/manifest";
+import { feedManifest } from "@/modules/feed/manifest";
+import { introsManifest } from "@/modules/intros/manifest";
+import { networkManifest } from "@/modules/network/manifest";
+import { readEnabledIds } from "@/shell/enabled-modules";
+import { isModuleEnabled } from "@/platform/modules/enablement";
+import { modulePage } from "@/platform/modules/module-page";
 
-export const metadata: Metadata = { title: PAGE_TITLES.feed };
+export async function generateMetadata(): Promise<Metadata> {
+  const isFeedOn = await isModuleEnabled(getDatabase(), feedManifest);
+  return { title: isFeedOn ? PAGE_TITLES.feed : PAGE_TITLES.home };
+}
 
 function readWeekSentence(newCount: number) {
   if (newCount === 0) return "Here's what's happening.";
   return newCount === 1 ? "1 new member joined this week." : `${newCount} new members joined this week.`;
 }
 
-export default async function FeedPage() {
+export default modulePage(membersManifest, async function FeedPage() {
   const member = await requireMember();
   const database = getDatabase();
   if ((await resolveOnboardingStep(database, member)) !== ONBOARDING_STEPS.done) redirect(ROUTES.welcome);
 
   const isAdmin = isAdminMember(member);
+  const enabledIds = await readEnabledIds(database);
+  const isFeedOn = enabledIds.has(feedManifest.id);
   const [community, networkProgress, setupProgress, { newCount, newMembers }, profile, avatarUrl, feedPage, waitingIntros] =
     await Promise.all([
       readBrandingForPage(),
-      readNetworkProgress(database, member),
+      enabledIds.has(networkManifest.id) ? readNetworkProgress(database, member) : null,
       isAdmin ? readSetupProgress(database, process.env) : null,
       readNewMembers(database, member.id),
       readMemberProfile(database, member.id),
       readAvatarUrl(database, member.id),
-      readFeedPage(database, member, null),
-      readWaitingIntros(database, member.id),
+      isFeedOn ? readFeedPage(database, member, null) : null,
+      enabledIds.has(introsManifest.id) ? readWaitingIntros(database, member.id) : [],
     ]);
 
   const nextSteps = selectNextSteps({
@@ -64,12 +76,29 @@ export default async function FeedPage() {
     ),
   });
 
+  const greeting = <PageHeader title={`Good to see you, ${readFirstName(member.name)}.`} description={readWeekSentence(newCount)} />;
+
+  if (!feedPage) {
+    return (
+      <>
+        {greeting}
+        <div className="grid max-w-[640px] gap-5">
+          {waitingIntros.length > 0 ? <WaitingOnYouCard intros={waitingIntros} /> : null}
+          {nextSteps.map((nextStep) => (
+            <NextStepCard key={nextStep.title} nextStep={nextStep} />
+          ))}
+          <NewThisWeekCard newMembers={newMembers} />
+        </div>
+      </>
+    );
+  }
+
   const queryClient = new QueryClient();
   queryClient.setQueryData(feedQuery().queryKey, { pages: [feedPage], pageParams: [null] });
 
   return (
     <>
-      <PageHeader title={`Good to see you, ${readFirstName(member.name)}.`} description={readWeekSentence(newCount)} />
+      {greeting}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_296px] lg:gap-7">
         <div className="grid gap-5">
           {nextSteps
@@ -104,4 +133,4 @@ export default async function FeedPage() {
       </div>
     </>
   );
-}
+});

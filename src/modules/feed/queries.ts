@@ -17,6 +17,7 @@ import {
   type SetReactionBody,
 } from "@/modules/feed/contract";
 import { readNewPostPollMs } from "@/modules/feed/rules-polling";
+import { isRouteGone } from "@/platform/http/polling";
 import { API_ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { postRequest } from "@/platform/http/post-request";
@@ -46,7 +47,7 @@ export function newPostCountQuery(since: string | null) {
   return queryOptions({
     queryKey: [FEED_QUERY_KEYS.newPostCount, since],
     queryFn: () => postRequest(API_ROUTES.feedNewCount, { since }, newPostCountSchema),
-    refetchInterval: ({ state }) => readNewPostPollMs(state.status === "error"),
+    refetchInterval: ({ state }) => (isRouteGone(state.error) ? false : readNewPostPollMs(state.status === "error")),
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });

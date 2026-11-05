@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 import { LogoTile } from "@/components/logo-tile";
 import { MAIN_CONTENT_ID } from "@/components/skip-link";
 import { NetworkByVillage } from "@/components/village-mark";
-import type { NavigationBadgeCounts } from "@/shell/navigation";
+import type { NavigationBadgeCounts, ShellNavigationItem } from "./navigation-rules";
 
 import { SidebarNavigation, TabBar } from "./navigation-links";
+import { ModuleOffNotice } from "./module-off-notice";
 import { SearchReadyNotice } from "./search-ready-notice";
 import { PhoneUserMenu, SidebarUserMenu, type ShellMember } from "./user-menu";
 import type { CommunityLogo } from "@/platform/branding/branding";
@@ -15,11 +16,13 @@ type ShellCommunity = { name: string; descriptor: string; logo: CommunityLogo | 
 type AppShellProps = {
   community: ShellCommunity;
   member: ShellMember;
+  navigation: readonly ShellNavigationItem[];
   badges: NavigationBadgeCounts;
+  isNetworkOn: boolean;
   children: ReactNode;
 };
 
-export function AppShell({ community, member, badges, children }: AppShellProps) {
+export function AppShell({ community, member, navigation, badges, isNetworkOn, children }: AppShellProps) {
   return (
     <div data-slot="app-shell" className="min-h-dvh lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
       <aside data-slot="sidebar" aria-label="Community" className="hidden border-r lg:block">
@@ -33,7 +36,7 @@ export function AppShell({ community, member, badges, children }: AppShellProps)
               ) : null}
             </div>
           </div>
-          <SidebarNavigation isAdmin={member.isAdmin} badges={badges} />
+          <SidebarNavigation items={navigation} isAdmin={member.isAdmin} badges={badges} />
           <div className="mt-auto flex flex-col gap-3 pt-6">
             <SidebarUserMenu member={member} />
             <div className="px-3">
@@ -57,8 +60,9 @@ export function AppShell({ community, member, badges, children }: AppShellProps)
           {children}
         </div>
       </main>
-      <SearchReadyNotice />
-      <TabBar badges={badges} />
+      {isNetworkOn ? <SearchReadyNotice /> : null}
+      <ModuleOffNotice />
+      <TabBar items={navigation} badges={badges} />
     </div>
   );
 }

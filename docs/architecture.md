@@ -1,6 +1,6 @@
 # Architecture
 
-The app is one Next.js deployment made of feature modules on a shared platform. Tests enforce the boundaries.
+The app is one Next.js deployment made of feature modules on a shared platform. An admin turns features on and off. Tests enforce the boundaries.
 
 ## The tree
 
@@ -11,11 +11,12 @@ src/
                 next steps, onboarding, the app shell UI.
   modules/
     members/    Core. Directory, profiles, invites, LinkedIn claim, blocks.
-    feed/       Posts, replies, reactions, pins.
-    messages/   Direct messages.
-    network/    Village search, sync, group, paths, credits.
-    intros/     Warm intros. Needs network.
-    admin/      Core. Roster, reports, audit view, health.
+    registry.ts The list of modules. A new module adds one line here.
+    feed/       Toggle. Posts, replies, reactions, pins.
+    messages/   Toggle. Direct messages.
+    network/    Toggle. Village search, sync, group, paths, credits.
+    intros/     Toggle. Warm intros. Needs network.
+    admin/      Core. Roster, reports, audit view, health, the features screen.
   platform/     Infrastructure with no product opinion: auth, audit, branding, database,
                 design, email, http, observability, rate-limit, secrets, settings, text, village.
   components/   Generic product UI.
@@ -51,6 +52,9 @@ A public file may be imported by a higher module. `src/app` and `src/shell` may 
 
 | File | Role | Public |
 |---|---|---|
+| `manifest.ts` | Pure data: identity, nav, requirements, owned paths | Yes |
+| `integration.ts` | Server hooks for the registry | Registry only |
+| `routes.ts` | `createModuleRoutes(manifest)` | `src/app` only |
 | `service.ts` | Operations that change things | Yes |
 | `reads.ts` | Read queries, with their visibility rules | Yes |
 | `contract.ts` | Zod schemas, constants, API shapes. Client-safe | Yes |
@@ -91,7 +95,8 @@ export function MemberConversationSlot(props: MemberConversationProps) {
 
 Some effects have to cross a boundary without an import. The route, which may import anything, passes them in:
 
-- **Blocks.** `setMemberBlocked(context, body, onBlocked)` runs the effect in its own transaction. The block route passes the intros effect that closes open asks.
+- **Blocks.** `setMemberBlocked(context, body, onBlocked)` runs the effect in its own transaction. The block route passes `runMemberBlockedEffects`, which runs every module's `onMemberBlocked` hook.
+- **Removals.** `removeMember(context, body, onRemoved)` works the same way through `onMemberRemoved`.
 - **Open asks.** `readMemberPaths(context, slug, readOpenAsks)` takes the reader as an argument. The paths route passes the one from intros.
 
 ## Where things live
@@ -115,12 +120,163 @@ Some placements aren't obvious:
 
 ## Routes
 
-`createMemberRoute` in `platform/village/member-routes.ts` handles origin, session, admin check, body limit and Zod parsing. It's built from two parts:
+Each module's `routes.ts` is `createModuleRoutes(manifest)`. A route file looks like this:
+
+```ts
+export const POST = introsRoutes.member("intros-create", createIntroBodySchema, async (context, body) =>
+  Response.json(await createIntroRequest(context, body)),
+);
+```
+
+`member` handles origin, session, admin check, body limit and Zod parsing. `memberBinary` and `adminBinary` take raw bytes. `open` is for routes that check for themselves, like invite acceptance.
+
+The kit is built from two parts:
 
 - `platform/http/member-route.ts`: the generic wrapper, which takes a list of error responders.
 - `platform/village/route-errors.ts`: turns Village failures into friendly responses.
 
 A service throws `RequestError` to send a status and code. The wrapper turns it into a response.
+
+## Modules and the registry
+
+`platform/modules/manifest.ts` defines the manifest. Here's a real one:
+
+```ts
+export const introsManifest = {
+  kind: MODULE_KINDS.toggleable,
+  id: "intros",
+  label: "Intros",
+  description: "Members ask each other for warm introductions.",
+  icon: Handshake,
+  isOnByDefault: true,
+  needsVillage: true,
+  requires: [networkManifest],
+  navigation: [{ label: "Intros", href: ROUTES.intros, icon: Handshake, section: NAVIGATION_SECTIONS.primary, badge: "intros" }],
+  adminTabs: [],
+  paths: { pages: [ROUTES.intros], api: [API_ROUTES.intros] },
+} satisfies ToggleableManifest;
+```
+
+Manifests are pure, so a route can import one without pulling in every module. `requires` holds manifest objects, so a typo can't compile. Paths match by whole segment and the longest match wins. `/` matches only itself.
+
+`integration.ts` adds server hooks, and only `registry.ts` imports it:
+
+```ts
+export const introsModule: ModuleIntegration = {
+  manifest: introsManifest,
+  readNavigationBadge: async (database, memberId) => readIntroBadgeCount(await readIntroCounts(database, memberId)),
+  onMemberBlocked: stopOpenAsksOnBlock,
+};
+```
+
+Hook names carry a rule:
+
+- **`read*` runs only when the module is on.** That's how badges stop being computed.
+- **`on*` always runs.** It keeps retained data correct. If intros is off and a member blocks someone, their open asks must still close, or turning intros back on would revive them.
+
+## Turning a module off
+
+Each toggleable module has one `instance_settings` row: key `module_state:<id>`, value `on` or `off`. No row means the manifest's `isOnByDefault`. The state isn't cached, so every instance sees a change on its next request.
+
+A module is enabled when it and everything in its `requires` chain are stored on. A dependent's stored choice survives, so turning network off pauses intros, and turning network on restores it.
+
+When a module is off:
+
+| Where | What happens | How |
+|---|---|---|
+| API routes | 404 with code `module_off` | The route kit's guard, inside route logging. It reads no body or session. A stale tab shows `ModuleOffNotice` with a way home. |
+| Pages and layouts | Not-found UI | `modulePage` wraps each one. |
+| Navigation | Entry hidden | `buildShellNavigation(enabledIds)` in the layout. |
+| Badges | Not read | `readModuleBadges`. |
+| Polling | Stops on a 404 | Every `refetchInterval` checks `isRouteGone`, so an open tab stops asking. |
+| The Village mark | Hidden when nothing needs Village | `readRunsOnVillageSafely` in the root layout. |
+| Setup checklist | Steps gone | `SETUP_STEP_OWNERS` in `shell/admin-setup.ts`. |
+| Next steps, onboarding | Skipped | `shell/next-steps.ts` and `shell/onboarding.ts`. |
+| Admin tabs | Hidden | Each manifest's `adminTabs`. |
+| Emails | None sent | Intro emails only start from intros routes. |
+| Data | Kept | Nothing is deleted. |
+
+The guard is on the page because a layout can't protect its pages. Next's docs say a layout doesn't re-render on navigation and doesn't stop its child segments running (`01-app/02-guides/authentication.md`).
+
+Hidden pages answer status 200 with the not-found UI and a `noindex` tag, because `(app)/loading.tsx` makes them stream. API routes answer a real 404.
+
+Three things deliberately keep working:
+
+- **Reports.** A report on a feature that's off stays visible and resolvable, labelled with that feature, and still counts toward the admin badge. Moderation can't disappear because a switch was flipped.
+- **Leaving Village.** Turning network off doesn't take anyone out of the Village group. `/api/network/leave` stays open with `staysOpenWhenOff`, the only route allowed to use it, and a member still in the group gets a leave card on their own card page.
+- **Departure on removal.** Removing a member still tries to take them out of the group, and the admin keeps the group row for any member still in it.
+
+`/` always renders. With the feed off, it shows next steps and new members, and the nav gets a "Home" entry.
+
+## The features screen
+
+`/admin/features` lists the toggles as cards, each with a large switch. Core modules appear once, under "Always on". `POST /api/admin/modules` writes the state and the audit log in one transaction. It refuses core modules, and it refuses to turn on a module whose requirement is off.
+
+The screen handles dependencies in words:
+
+- Turning off a requirement says what it pauses, plus the manifest's `turnOffNote` if it has one.
+- A paused feature shows "Paused: needs Network" and a button to turn on Network.
+
+The domain and keys steps of setup also offer "Run without Village", so a new community can skip Village in one click. It confirms what happened.
+
+## Adding a module
+
+Asks, for example, needs this:
+
+```text
+src/modules/asks/
+  manifest.ts  routes.ts  integration.ts  contract.ts  schema.ts
+  service.ts   reads.ts   queries.ts      components/  asks.test.ts  AGENTS.md
+```
+
+```ts
+// manifest.ts
+export const asksManifest = {
+  kind: MODULE_KINDS.toggleable,
+  id: "asks",
+  label: "Asks",
+  description: "Members post what they need, and others step in.",
+  icon: HandHelping,
+  isOnByDefault: false,
+  needsVillage: false,
+  requires: [],
+  navigation: [{ label: "Asks", href: ASK_PAGE, icon: HandHelping, section: NAVIGATION_SECTIONS.primary, badge: "asks" }],
+  adminTabs: [],
+  paths: { pages: [ASK_PAGE], api: ["/api/asks"] },
+} satisfies ToggleableManifest;
+
+// integration.ts
+export const asksModule: ModuleIntegration = {
+  manifest: asksManifest,
+  readNavigationBadge: readWaitingAskCount,
+  onMemberRemoved: async (transaction, { memberId, keepsContent }) => {
+    if (!keepsContent) await deleteMemberAsks(transaction, memberId);
+  },
+};
+
+// src/app/api/asks/create/route.ts
+export const POST = asksRoutes.member("asks-create", createAskBodySchema, async (context, body) =>
+  Response.json(await createAsk(context, body)),
+);
+
+// src/app/(app)/asks/page.tsx
+export default modulePage(asksManifest, async function AsksPage() { /* ... */ });
+```
+
+Then one line in `registry.ts`, and a generated migration. `drizzle.config.ts` finds the schema by glob. The tests for wrapping, ownership and 404-when-off cover the new module without any change.
+
+Some extras cost more than a line:
+
+| If a module wants | It also needs | Why |
+|---|---|---|
+| A badge that updates without a page load | A query in `useLiveBadges` | Client code can't import the server registry. |
+| Its own badge wording | A line in `BADGE_DESCRIPTIONS` | Otherwise it says "needs your attention". |
+| Reportable content | A migration, plus entries in `admin/service-reports.ts` and `report-queue.tsx` | `content_report_target_known` is a check constraint. |
+| Audit log entries | Lines in `AUDIT_ACTIONS` and `ACTION_SENTENCES` | The list is a strict `z.enum`. |
+| An admin tab | A line in `ADMIN_TABS`, plus `adminTabs` in the manifest | The tab's badge reads facts from the shell. |
+| A setup step | A line in `SETUP_STEP_OWNERS` and the checklist | No module has needed this yet. |
+
+There's no scheduler in this deployment. Do work at read time, with `after()` if it shouldn't block the response, as intro expiry does.
 
 ## Tests
 
@@ -131,6 +287,23 @@ A service throws `RequestError` to send a status and code. The wrapper turns it 
 - any cycle between modules exists
 - code loaded outside Next reaches `server-only` or the `@/` alias
 - a module has no `AGENTS.md`
+- a local import doesn't resolve, a file imports itself, or an import is computed, because the graph can't follow it
+- `scripts/migrate.ts` doesn't start under plain Node
+
+`schema-files.test.ts` fails when a file declares a table `drizzle.config.ts` doesn't load, or a table in the migrations has no loaded file. drizzle-kit would drop that table in the next migration.
+
+`src/app/(app)/slot-wiring.test.ts` renders the layout and the network page, and fails when a slot provider goes missing.
+
+`ownership.test.ts` imports every route, page and layout and fails when:
+
+- a route handler didn't come from a route kit
+- a route or page belongs to no manifest, or declares the wrong owner
+- a route under `/api/admin` doesn't require an admin
+- any route other than `/api/network/leave` uses `staysOpenWhenOff`
+- a module folder has no registry line
+- a module imports a toggleable module it doesn't list in `requires`
+
+`disabled-modules.test.ts` turns each toggleable module off and calls everything it owns. New modules are covered automatically.
 
 Route tests sit next to their module and call the real route handlers against a real database.
 

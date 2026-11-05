@@ -9,6 +9,11 @@ import { requireAdmin } from "@/platform/auth/session";
 import { AdminSection } from "@/shell/admin-section";
 import { IntroCountsCard } from "@/modules/admin/components/intro-counts-card";
 import { StatRows } from "@/modules/admin/components/stat-rows";
+import { adminManifest } from "@/modules/admin/manifest";
+import { introsManifest } from "@/modules/intros/manifest";
+import { networkManifest } from "@/modules/network/manifest";
+import { readEnabledIds } from "@/shell/enabled-modules";
+import { modulePage } from "@/platform/modules/module-page";
 
 const ACTIVE_MEMBER_MEANING = "An active member posted, replied, reacted, sent a message or asked for an intro. Reading doesn't count, because this site doesn't track it.";
 
@@ -21,9 +26,11 @@ function readInviteHeadline({ accepted, sent, acceptedPercent }: CommunityHealth
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminHealth };
 
-export default async function AdminHealthPage() {
+export default modulePage(adminManifest, async function AdminHealthPage() {
   await requireAdmin();
-  const health = await readCommunityHealth(getDatabase());
+  const database = getDatabase();
+  const [health, enabledIds] = await Promise.all([readCommunityHealth(database), readEnabledIds(database)]);
+  const isNetworkOn = enabledIds.has(networkManifest.id);
   const { members, sharing, synced, windows, intros, invites } = health;
 
   return (
@@ -34,8 +41,12 @@ export default async function AdminHealthPage() {
           <StatRows
             rows={[
               { value: members, label: "Members", note: "Everyone who can sign in today." },
-              { value: sharing, label: "Agreed to share", note: "Said yes to sharing their network." },
-              { value: synced, label: "Synced and in the group", note: "Their network is in the search." },
+              ...(isNetworkOn
+                ? [
+                    { value: sharing, label: "Agreed to share", note: "Said yes to sharing their network." },
+                    { value: synced, label: "Synced and in the group", note: "Their network is in the search." },
+                  ]
+                : []),
             ]}
           />
         </Card>
@@ -68,10 +79,12 @@ export default async function AdminHealthPage() {
 
         <p className="type-small px-1 text-foreground-soft lg:col-span-2">{ACTIVE_MEMBER_MEANING}</p>
 
-        <div className="lg:col-span-2">
-          <IntroCountsCard counts={intros} />
-        </div>
+        {enabledIds.has(introsManifest.id) ? (
+          <div className="lg:col-span-2">
+            <IntroCountsCard counts={intros} />
+          </div>
+        ) : null}
       </div>
     </AdminSection>
   );
-}
+});

@@ -1,5 +1,6 @@
 import { queryOptions, skipToken } from "@tanstack/react-query";
 
+import { isRouteGone } from "@/platform/http/polling";
 import { API_ROUTES } from "@/platform/http/routes";
 import {
   NETWORK_STAGES,
@@ -53,7 +54,7 @@ export const networkStatusQuery = queryOptions({
   queryKey: [NETWORK_QUERY_KEYS.status],
   queryFn: () => postRequest(API_ROUTES.networkStatus, {}, networkStatusSchema),
   refetchIntervalInBackground: false,
-  refetchInterval: ({ state }) => readStatusPollInterval(state.data),
+  refetchInterval: ({ state }) => (isRouteGone(state.error) ? false : readStatusPollInterval(state.data)),
   refetchOnWindowFocus: ({ state }) => isPolled(state.data),
 });
 

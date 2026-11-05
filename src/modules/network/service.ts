@@ -432,7 +432,7 @@ export type OpenAsksReader = (
   targetSlug: string,
 ) => Promise<ReadonlyMap<string, { id: string; state: string }>>;
 
-const NO_OPEN_ASKS: OpenAsksReader = async () => new Map();
+export const NO_OPEN_ASKS: OpenAsksReader = async () => new Map();
 
 async function describePathsForViewer(
   context: RequestContext,
@@ -451,7 +451,7 @@ async function describePathsForViewer(
   return describeMemberPaths(villagePaths, facts, connectors);
 }
 
-export async function readMemberPaths(context: RequestContext, linkedinSlug: string, readOpenAsks: OpenAsksReader = NO_OPEN_ASKS) {
+export async function readMemberPaths(context: RequestContext, linkedinSlug: string, readOpenAsks: OpenAsksReader) {
   const { database, member } = context;
   const { keys, network } = await requireJoinedMember(context);
   const { session } = await connectMember(context, keys);

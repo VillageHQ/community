@@ -1,10 +1,10 @@
 import { createInviteBodySchema } from "@/modules/members/contract-invites";
 import { createInvite } from "@/modules/members/service-invites";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { membersRoutes } from "@/modules/members/routes";
 
 const CREATED_STATUS = 201;
 
-export const POST = createMemberRoute(
+export const POST = membersRoutes.member(
   "invite-create",
   createInviteBodySchema,
   async (context, { email }) => Response.json(await createInvite(context, email), { status: CREATED_STATUS }),

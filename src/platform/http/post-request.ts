@@ -1,6 +1,9 @@
 import type { z } from "zod";
 
+import { REQUEST_ERROR_CODES } from "./error-codes.ts";
 import { readResponseFailure } from "./read-response-message.ts";
+
+export const MODULE_OFF_EVENT = "community:module-off";
 
 const FALLBACK_ERROR_MESSAGE = "Something went wrong. Try again.";
 const UNREACHABLE_ERROR_MESSAGE = "We couldn't reach the server. Check your connection and try again.";
@@ -37,6 +40,7 @@ export async function postRequest<Schema extends z.ZodType>(
   const response = await sendPost(path, body);
   if (!response.ok) {
     const { message, code } = await readResponseFailure(response, failureMessage);
+    if (code === REQUEST_ERROR_CODES.moduleOff) window.dispatchEvent(new Event(MODULE_OFF_EVENT));
     throw new RequestFailure(response.status, message, code);
   }
   return schema.parse(await response.json());

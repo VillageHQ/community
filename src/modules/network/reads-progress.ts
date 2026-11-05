@@ -59,3 +59,8 @@ export async function readPendingLinkCount(database: Database) {
     .where(isNotNull(memberNetwork.pendingVillageEmail));
   return row?.pendingCount ?? 0;
 }
+
+export async function readIsInVillageGroup(database: Database, memberId: string) {
+  const [network] = await database.select({ groupJoinedAt: memberNetwork.groupJoinedAt }).from(memberNetwork).where(eq(memberNetwork.userId, memberId));
+  return Boolean(network?.groupJoinedAt);
+}

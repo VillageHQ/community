@@ -1,8 +1,8 @@
 import { saveBrandingAsAdmin } from "@/platform/branding/admin-actions";
 import { brandingBodySchema } from "@/platform/branding/branding-api";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { adminRoutes } from "@/modules/admin/routes";
 
-export const POST = createMemberRoute(
+export const POST = adminRoutes.member(
   "branding",
   brandingBodySchema,
   async (context, body) => {

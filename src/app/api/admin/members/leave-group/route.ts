@@ -1,9 +1,9 @@
 import { adminMemberIdBodySchema } from "@/modules/admin/contract";
 import { retryGroupDeparture } from "@/modules/admin/service-roster";
 import { logAdminAction } from "@/platform/observability/route-logging";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { adminRoutes } from "@/modules/admin/routes";
 
-export const POST = createMemberRoute(
+export const POST = adminRoutes.member(
   "admin-member-leave-group",
   adminMemberIdBodySchema,
   async (context, { memberId }) => {

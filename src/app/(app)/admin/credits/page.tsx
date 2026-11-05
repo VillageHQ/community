@@ -17,6 +17,8 @@ import { readDailyLookupLimit, readVillageOutOfCreditsAt } from "@/platform/vill
 import { AdminSection } from "@/shell/admin-section";
 import { StatRows } from "@/modules/admin/components/stat-rows";
 import { DailyLimitForm } from "@/modules/network/components/daily-limit-form";
+import { networkManifest } from "@/modules/network/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 function ExternalButton({ href, children, isPrimary = false }: { href: string; children: ReactNode; isPrimary?: boolean }) {
   return (
@@ -88,7 +90,7 @@ function EmptyUsage() {
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminCredits };
 
-export default async function AdminCreditsPage() {
+export default modulePage(networkManifest, async function AdminCreditsPage() {
   await requireAdmin();
   const database = getDatabase();
   const [usage, limit, outOfCreditsAt] = await Promise.all([
@@ -199,4 +201,4 @@ export default async function AdminCreditsPage() {
       </div>
     </AdminSection>
   );
-}
+});

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { createCommunityGroup } from "@/modules/network/service";
-import { createMemberRoute } from "@/platform/village/member-routes";
+import { networkRoutes } from "@/modules/network/routes";
 
 const MAXIMUM_GROUP_NAME_LENGTH = 100;
 
@@ -10,7 +10,7 @@ const groupBodySchema = z.object({
   acknowledged: z.literal(true, "Confirm that your network becomes shared."),
 });
 
-export const POST = createMemberRoute(
+export const POST = networkRoutes.member(
   "village-group",
   groupBodySchema,
   async (context, body) => {

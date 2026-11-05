@@ -66,6 +66,8 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.memberReinvited]: ({ target, detail }) => `invited ${target} back as a new account, at ${detail}`,
   [AUDIT_ACTIONS.passwordReset]: () => "reset their own password by email",
   [AUDIT_ACTIONS.adminPasswordRecovered]: () => "recovered their admin password with the setup token",
+  [AUDIT_ACTIONS.moduleTurnedOn]: ({ detail }) => `turned on ${detail}`,
+  [AUDIT_ACTIONS.moduleTurnedOff]: ({ detail }) => `turned off ${detail}`,
   [AUDIT_ACTIONS.domainConfirmed]: ({ detail }) => `confirmed the domain ${detail} in Village`,
 };
 

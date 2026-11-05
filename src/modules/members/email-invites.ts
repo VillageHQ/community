@@ -39,7 +39,7 @@ export function renderConfirmationEmail({ link, memberName, communityName, accen
   const community = toSingleLine(communityName);
   const member = toSingleLine(memberName);
   const subject = `Confirm your email for ${community}`;
-  const opening = `Someone named ${member} just accepted the ${community} invite sent to this address. If that's you, open this link and confirm while signed in. That turns on network search.`;
+  const opening = `Someone named ${member} just accepted the ${community} invite sent to this address. If that's you, open this link and confirm while signed in.`;
   const warning = `If that wasn't you, someone else has your invite, so tell your admin. They can fix it and send you a new one.`;
   const html = [
     `<div style="font-family:Arial,sans-serif;font-size:16px;line-height:24px;color:#0c2427;max-width:520px;margin:0 auto;padding:24px">`,

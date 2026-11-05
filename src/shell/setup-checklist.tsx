@@ -14,6 +14,8 @@ import { readVillageGroupReadiness } from "@/modules/network/service";
 import { readVillageGroup, type VillageGroup } from "@/modules/network/service-settings";
 import { readVillageKeys, type VillageKeys } from "@/platform/village/settings";
 
+import { RunWithoutVillage } from "@/modules/admin/components/run-without-village";
+import { networkManifest } from "@/modules/network/manifest";
 import { BrandCard } from "@/modules/admin/components/brand-card";
 import { BRAND_NAME_INPUT_ID } from "@/modules/admin/components/brand-fields";
 import { DomainStep } from "@/modules/network/components/domain-step";
@@ -72,8 +74,18 @@ type StepBodyFacts = {
 };
 
 const STEP_BODIES: Partial<Record<SetupStepId, (facts: StepBodyFacts) => ReactNode>> = {
-  [SETUP_STEPS.domain]: ({ domain, isDone }) => <DomainStep domain={domain} isDone={isDone} />,
-  [SETUP_STEPS.keys]: ({ keys }) => <KeysForm savedPublicKey={keys?.publicKey ?? ""} hasSavedKeys={Boolean(keys)} />,
+  [SETUP_STEPS.domain]: ({ domain, isDone, keys }) => (
+    <>
+      <DomainStep domain={domain} isDone={isDone} />
+      {keys ? null : <RunWithoutVillage moduleId={networkManifest.id} />}
+    </>
+  ),
+  [SETUP_STEPS.keys]: ({ keys }) => (
+    <>
+      <KeysForm savedPublicKey={keys?.publicKey ?? ""} hasSavedKeys={Boolean(keys)} />
+      {keys ? null : <RunWithoutVillage moduleId={networkManifest.id} />}
+    </>
+  ),
   [SETUP_STEPS.group]: ({ keys, group, isVillageReachable, isSynced, branding }) => (
     <GroupForm
       hasKeys={Boolean(keys)}
@@ -110,10 +122,15 @@ type SetupChecklistProps = {
 };
 
 export async function SetupChecklist({ database, admin, progress, openStepId, basePath }: SetupChecklistProps) {
-  const [branding, keys, group] = await Promise.all([readBranding(database), readVillageKeys(database), readVillageGroup(database)]);
+  const isNetworkStepShown = progress.steps.some(({ id }) => id === SETUP_STEPS.keys);
+  const [branding, keys, group] = await Promise.all([
+    readBranding(database),
+    isNetworkStepShown ? readVillageKeys(database) : null,
+    isNetworkStepShown ? readVillageGroup(database) : null,
+  ]);
   const context = createRequestContext(database, process.env, admin);
   const { villageUser, isVillageReachable } =
-    openStepId === SETUP_STEPS.group ? await readAdminUserSafely(context) : { villageUser: null, isVillageReachable: true };
+    isNetworkStepShown && openStepId === SETUP_STEPS.group ? await readAdminUserSafely(context) : { villageUser: null, isVillageReachable: true };
   const domain = new URL(resolveAppUrl(process.env)).hostname;
   const isEmailConfigured = readResendConfig(process.env) !== null;
 

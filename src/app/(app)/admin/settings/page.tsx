@@ -18,19 +18,25 @@ import { requireAdmin } from "@/platform/auth/session";
 
 import { AdminSection } from "@/shell/admin-section";
 import { AdminBrandCard, SetupChecklist } from "@/shell/setup-checklist";
+import { adminManifest } from "@/modules/admin/manifest";
+import { introsManifest } from "@/modules/intros/manifest";
+import { networkManifest } from "@/modules/network/manifest";
+import { readEnabledIds } from "@/shell/enabled-modules";
+import { modulePage } from "@/platform/modules/module-page";
 
 const EMAIL_ON_EFFECTS = [
-  "Invites go out by email, and you can still copy the link.",
-  "New members confirm their own email from a link we send.",
-  "Introducers and requesters get a short email about intro asks.",
+  { text: "Invites go out by email, and you can still copy the link." },
+  { text: "New members confirm their own email from a link we send." },
+  { text: "Introducers and requesters get a short email about intro asks.", moduleId: introsManifest.id },
 ];
 
 const RESEND_URL = "https://resend.com";
 
 const EMAIL_OFF_EFFECTS = [
-  "You copy each invite link and send it yourself.",
-  "You confirm each new member by hand in Members. They can't use network search until you do.",
-  "Intro asks only show up as a badge in the app.",
+  { text: "You copy each invite link and send it yourself." },
+  { text: "You confirm each new member by hand in Members." },
+  { text: "They can't use network search until you do.", moduleId: networkManifest.id },
+  { text: "Intro asks only show up as a badge in the app.", moduleId: introsManifest.id },
 ];
 
 const PLATFORM_UPDATES = [
@@ -38,6 +44,12 @@ const PLATFORM_UPDATES = [
   { platform: "Vercel", steps: "Pull the changes from VillageHQ/community into your copy on GitHub. Each push redeploys." },
   { platform: "DigitalOcean", steps: "Start a new deploy from your app's dashboard. It doesn't update by itself." },
 ];
+
+type EmailEffect = { text: string; moduleId?: string };
+
+function selectEffects(effects: readonly EmailEffect[], enabledIds: ReadonlySet<string>) {
+  return effects.filter(({ moduleId }) => !moduleId || enabledIds.has(moduleId)).map(({ text }) => text);
+}
 
 function EffectList({ effects }: { effects: string[] }) {
   return (
@@ -49,22 +61,22 @@ function EffectList({ effects }: { effects: string[] }) {
   );
 }
 
-function EmailOn({ fromAddress }: { fromAddress: string }) {
+function EmailOn({ fromAddress, enabledIds }: { fromAddress: string; enabledIds: ReadonlySet<string> }) {
   return (
     <>
       <p className="type-small wrap-anywhere text-foreground-soft">
         Sending as <strong className="font-bold text-foreground">{fromAddress}</strong>. What that means:
       </p>
-      <EffectList effects={EMAIL_ON_EFFECTS} />
+      <EffectList effects={selectEffects(EMAIL_ON_EFFECTS, enabledIds)} />
     </>
   );
 }
 
-function EmailOff() {
+function EmailOff({ enabledIds }: { enabledIds: ReadonlySet<string> }) {
   return (
     <>
       <p className="type-small text-foreground-soft">Everything still works without email. What changes:</p>
-      <EffectList effects={EMAIL_OFF_EFFECTS} />
+      <EffectList effects={selectEffects(EMAIL_OFF_EFFECTS, enabledIds)} />
       <p className="type-small text-foreground-soft">
         To turn it on, create a free <ExternalTextLink href={RESEND_URL}>Resend</ExternalTextLink> account and verify a
         domain you send from there. Then{" "}
@@ -89,7 +101,7 @@ function SettingCard({ title, tag, children }: { title: string; tag: ReactNode; 
   );
 }
 
-function EmailCard({ config }: { config: ResendConfig | null }) {
+function EmailCard({ config, enabledIds }: { config: ResendConfig | null; enabledIds: ReadonlySet<string> }) {
   const tag = config ? (
     <Tag tone="sage">
       <Mail aria-hidden="true" />
@@ -103,7 +115,7 @@ function EmailCard({ config }: { config: ResendConfig | null }) {
   );
   return (
     <SettingCard title="Email" tag={tag}>
-      {config ? <EmailOn fromAddress={config.fromAddress} /> : <EmailOff />}
+      {config ? <EmailOn fromAddress={config.fromAddress} enabledIds={enabledIds} /> : <EmailOff enabledIds={enabledIds} />}
     </SettingCard>
   );
 }
@@ -143,22 +155,22 @@ function VersionCard() {
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminSettings };
 
-export default async function AdminSettingsPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
+export default modulePage(adminManifest, async function AdminSettingsPage({ searchParams }: { searchParams: Promise<{ step?: string }> }) {
   const admin = await requireAdmin();
   const { step } = await searchParams;
   const database = getDatabase();
-  const [progress, branding] = await Promise.all([readSetupProgress(database, process.env), readBranding(database)]);
+  const [progress, branding, enabledIds] = await Promise.all([readSetupProgress(database, process.env), readBranding(database), readEnabledIds(database)]);
 
   return (
     <AdminSection title="Settings" description="Come back to any part of setup, any time.">
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_312px]">
         <div className="grid gap-5">
-          <SetupChecklist database={database} admin={admin} progress={progress} openStepId={parseSetupStep(step)} basePath={ROUTES.adminSettings} />
-          <EmailCard config={readResendConfig(process.env)} />
+          <SetupChecklist database={database} admin={admin} progress={progress} openStepId={parseSetupStep(step, progress.steps.map(({ id }) => id))} basePath={ROUTES.adminSettings} />
+          <EmailCard config={readResendConfig(process.env)} enabledIds={enabledIds} />
           <VersionCard />
         </div>
         <AdminBrandCard branding={branding} isCurrentStep={false} />
       </div>
     </AdminSection>
   );
-}
+});

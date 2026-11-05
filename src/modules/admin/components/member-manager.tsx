@@ -11,6 +11,8 @@ import { QueryBoundary } from "@/components/query-boundary";
 import { Alert } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { networkManifest } from "@/modules/network/manifest";
+import { useIsModuleEnabled } from "@/platform/modules/enabled-modules";
 import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,6 +73,7 @@ function RemovedNote({ member }: { member: AdminMember }) {
 
 function MemberTags({ member, isViewer }: { member: AdminMember; isViewer: boolean }) {
   const village = VILLAGE_STATUS_DETAILS[member.villageStatus];
+  const isNetworkOn = useIsModuleEnabled(networkManifest.id);
   return (
     <div className="mt-1.5 flex flex-wrap gap-1.5">
       {isViewer ? <Tag tone="accent">You</Tag> : null}
@@ -84,7 +87,7 @@ function MemberTags({ member, isViewer }: { member: AdminMember; isViewer: boole
       )}
       {member.isRemoved ? <Tag tone="destructive">Removed</Tag> : null}
       <Tag tone={member.isEmailConfirmed ? "sage" : "gold"}>{member.isEmailConfirmed ? "Email confirmed" : "Email not confirmed"}</Tag>
-      <Tag tone={village.tone}>Village: {village.label}</Tag>
+      {isNetworkOn ? <Tag tone={village.tone}>Village: {village.label}</Tag> : null}
     </div>
   );
 }

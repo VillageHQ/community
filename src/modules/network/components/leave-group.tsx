@@ -17,12 +17,15 @@ function leaveGroup() {
   );
 }
 
-export function LeaveGroup() {
+export function LeaveGroup({ onLeft }: { onLeft?: () => void }) {
   const queryClient = useQueryClient();
   const [isConfirming, setIsConfirming] = useState(false);
   const leaveMutation = useMutation({
     mutationFn: leaveGroup,
-    onSuccess: () => queryClient.resetQueries(),
+    onSuccess: async () => {
+      await queryClient.resetQueries();
+      onLeft?.();
+    },
   });
 
   return (

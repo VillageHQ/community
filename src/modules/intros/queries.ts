@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 
-import { readInboxPollMs, INBOX_POLL_MS } from "../../platform/http/polling.ts";
+import { readInboxPollMs, INBOX_POLL_MS, isRouteGone } from "../../platform/http/polling.ts";
 import { API_ROUTES } from "../../platform/http/routes.ts";
 import { acknowledgedResponseSchema } from "../../platform/http/contract.ts";
 import { postRequest } from "../../platform/http/post-request.ts";
@@ -17,7 +17,7 @@ export function introBoardQuery() {
     queryKey: [INTRO_QUERY_KEYS.board],
     queryFn: () => postRequest(API_ROUTES.intros, {}, introBoardSchema),
     staleTime: INBOX_POLL_MS,
-    refetchInterval: ({ state }) => readInboxPollMs(state.status === "error"),
+    refetchInterval: ({ state }) => (isRouteGone(state.error) ? false : readInboxPollMs(state.status === "error")),
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });
@@ -28,7 +28,7 @@ export function introCountsQuery() {
     queryKey: [INTRO_QUERY_KEYS.counts],
     queryFn: () => postRequest(API_ROUTES.introCounts, {}, introCountsSchema),
     staleTime: INBOX_POLL_MS,
-    refetchInterval: ({ state }) => readInboxPollMs(state.status === "error"),
+    refetchInterval: ({ state }) => (isRouteGone(state.error) ? false : readInboxPollMs(state.status === "error")),
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });
@@ -39,7 +39,7 @@ export function introDetailQuery(introId: string) {
     queryKey: [INTRO_QUERY_KEYS.detail, introId],
     queryFn: () => postRequest(API_ROUTES.introDetail, { introId }, introSchema),
     staleTime: INBOX_POLL_MS,
-    refetchInterval: ({ state }) => readInboxPollMs(state.status === "error"),
+    refetchInterval: ({ state }) => (isRouteGone(state.error) ? false : readInboxPollMs(state.status === "error")),
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });

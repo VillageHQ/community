@@ -4,6 +4,8 @@ import { Check, ExternalLink, Link2, LogOut, MailCheck, MailPlus, RotateCcw, Shi
 import type { ReactNode, RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
+import { networkManifest } from "@/modules/network/manifest";
+import { useIsModuleEnabled } from "@/platform/modules/enabled-modules";
 import { GROUP_DEPARTURE_OUTCOMES, VILLAGE_STATUSES, type VillageStatus } from "@/modules/network/contract";
 import { type AdminMember } from "@/modules/admin/contract";
 import { MEMBER_ROLES } from "@/platform/auth/roles";
@@ -147,7 +149,8 @@ function VillageActions({ member, manageButtonRef, fallbackFocusId, onDone }: Me
   const { id, name, email, villageStatus, pendingVillageEmail, hasVillageLink, hasStaleVillageMembership } = member;
   const firstName = readFirstName(name);
   const statusNote = member.isRemoved ? REMOVED_VILLAGE_NOTE : VILLAGE_STATUS_DETAILS[villageStatus].meaning;
-  if (!hasVillageLink) return <ActionGroup title="Village" note={statusNote} />;
+  const isNetworkOn = useIsModuleEnabled(networkManifest.id);
+  if (!hasVillageLink || !isNetworkOn) return <ActionGroup title="Village" note={hasStaleVillageMembership ? `${statusNote} ${STALE_MEMBERSHIP_NOTE}` : statusNote} />;
   return (
     <ActionGroup title="Village" note={hasStaleVillageMembership ? `${statusNote} ${STALE_MEMBERSHIP_NOTE}` : statusNote}>
       {pendingVillageEmail ? (
@@ -311,11 +314,12 @@ function RemovalActions({ member, viewerId, manageButtonRef, fallbackFocusId, on
 
 export function MemberActions(context: MemberActionContext) {
   const { member } = context;
+  const isNetworkOn = useIsModuleEnabled(networkManifest.id);
   return (
     <div className="grid gap-2.5 pt-1">
       {member.isRemoved ? null : <RoleActions {...context} />}
       {member.isRemoved ? null : <EmailActions {...context} />}
-      <VillageActions {...context} />
+      {isNetworkOn || member.isInVillageGroup || member.hasStaleVillageMembership ? <VillageActions {...context} /> : null}
       {member.isRemoved ? null : <LinkedinActions {...context} />}
       <RemovalActions {...context} />
     </div>

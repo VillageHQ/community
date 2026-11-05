@@ -24,6 +24,8 @@ import { BlockMemberButton } from "@/modules/members/components/block-member-but
 import { MemberConversationSlot } from "@/modules/members/slots";
 import { INBOX_QUERY_FILTER } from "@/modules/messages/queries";
 import { AdminMemberPanel } from "@/modules/members/components/admin-member-panel";
+import { membersManifest } from "@/modules/members/manifest";
+import { modulePage } from "@/platform/modules/module-page";
 
 export const metadata: Metadata = { title: PAGE_TITLES.profile };
 
@@ -52,7 +54,7 @@ function ProfileSection({ title, children }: { title: string; children: ReactNod
   );
 }
 
-export default async function MemberProfilePage({ params }: { params: Promise<{ memberId: string }> }) {
+export default modulePage(membersManifest, async function MemberProfilePage({ params }: { params: Promise<{ memberId: string }> }) {
   const viewer = await requireMember();
   const { memberId } = await params;
   const database = getDatabase();
@@ -156,4 +158,4 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
       ) : null}
     </div>
   );
-}
+});
