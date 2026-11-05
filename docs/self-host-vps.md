@@ -163,7 +163,7 @@ It asks you to confirm, and saves your current data first as a file starting wit
 3. Copy your backup to it with `scp`.
 4. Run `sudo community restore` with that file.
 
-Everyone needs to sign in again, because the new server has new secrets. Your setup token also changes. See it with `sudo community setup-token`.
+Everyone needs to sign in again, because the new server has new secrets. Your setup token also changes, so paste your Village keys again under **Admin**, **Settings**. See it with `sudo community setup-token`.
 
 ## Change a setting
 

@@ -1,13 +1,15 @@
 import { ExternalLink, Mail, MailX, PackageCheck } from "lucide-react";
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 
 import { ExternalTextLink } from "@/components/external-text-link";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { CardDescription } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { getDatabase } from "@/platform/database/client";
+import { SettingCard } from "@/modules/admin/components/setting-card";
+import { VillageSecretCard } from "@/modules/admin/components/village-secret-card";
 import { HOST_SETTINGS_GUIDE_URL, UPDATE_GUIDE_URL } from "@/modules/admin/copy";
+import { readVillageKeyState } from "@/platform/village/settings";
 import { parseSetupStep, readSetupProgress } from "@/shell/admin-setup";
 import { APP_VERSION } from "@/platform/app-version";
 import { readBranding } from "@/platform/branding/branding";
@@ -89,18 +91,6 @@ function EmailOff({ enabledIds }: { enabledIds: ReadonlySet<string> }) {
   );
 }
 
-function SettingCard({ title, tag, children }: { title: string; tag: ReactNode; children: ReactNode }) {
-  return (
-    <Card className="grid gap-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <CardTitle>{title}</CardTitle>
-        {tag}
-      </div>
-      {children}
-    </Card>
-  );
-}
-
 function EmailCard({ config, enabledIds }: { config: ResendConfig | null; enabledIds: ReadonlySet<string> }) {
   const tag = config ? (
     <Tag tone="sage">
@@ -160,6 +150,7 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
   const { step } = await searchParams;
   const database = getDatabase();
   const [progress, branding, enabledIds] = await Promise.all([readSetupProgress(database, process.env), readBranding(database), readEnabledIds(database)]);
+  const keyState = await readVillageKeyState(database);
 
   return (
     <AdminSection title="Settings" description="Come back to any part of setup, any time.">
@@ -167,6 +158,7 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
         <div className="grid gap-5">
           <SetupChecklist database={database} admin={admin} progress={progress} openStepId={parseSetupStep(step, progress.steps.map(({ id }) => id))} basePath={ROUTES.adminSettings} />
           <EmailCard config={readResendConfig(process.env)} enabledIds={enabledIds} />
+          <VillageSecretCard status={keyState.status} isNetworkOn={enabledIds.has(networkManifest.id)} />
           <VersionCard />
         </div>
         <AdminBrandCard branding={branding} isCurrentStep={false} />

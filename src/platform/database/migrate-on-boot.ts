@@ -9,22 +9,25 @@ const DEFAULT_RETRY_DELAYS = { firstMs: 5_000, maximumMs: 60_000 };
 const BACKOFF_FACTOR = 2;
 
 type RetryDelays = typeof DEFAULT_RETRY_DELAYS;
+type AfterMigrations = () => Promise<void>;
 
 async function attemptUntilApplied(
   connectionString: string,
   environment: Environment,
   retryDelays: RetryDelays,
+  afterMigrations: AfterMigrations,
 ) {
   try {
     const { migrated } = await runMigrations(connectionString, environment);
     console.log(migrated ? "Migrations applied." : "Migrations already applied.");
+    await afterMigrations();
   } catch (error) {
     logError("migrations", error);
     const nextDelays = {
       ...retryDelays,
       firstMs: Math.min(retryDelays.firstMs * BACKOFF_FACTOR, retryDelays.maximumMs),
     };
-    const retry = () => attemptUntilApplied(connectionString, environment, nextDelays);
+    const retry = () => attemptUntilApplied(connectionString, environment, nextDelays, afterMigrations);
     setTimeout(retry, retryDelays.firstMs).unref();
   }
 }
@@ -34,6 +37,7 @@ async function attemptUntilApplied(
 export async function migrateOnBoot(
   environment: Environment,
   retryDelays: RetryDelays = DEFAULT_RETRY_DELAYS,
+  afterMigrations: AfterMigrations = async () => undefined,
 ) {
   try {
     const plan = resolveMigrationPlan(environment);
@@ -42,7 +46,7 @@ export async function migrateOnBoot(
       return;
     }
     await withDeadline(
-      attemptUntilApplied(plan.connectionString, environment, retryDelays),
+      attemptUntilApplied(plan.connectionString, environment, retryDelays, afterMigrations),
       BOOT_WAIT_MS,
       "Migrations are still running. The server is starting without waiting for them.",
     );

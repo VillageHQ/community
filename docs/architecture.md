@@ -219,6 +219,50 @@ The screen handles dependencies in words:
 
 The domain and keys steps of setup also offer "Run without Village", so a new community can skip Village in one click. It confirms what happened.
 
+## The sealed Village secret
+
+`village_secret_key` is stored as `sealed.v1.<salt>.<iv>.<ciphertext+tag>`, in `platform/secrets/sealed.ts` and `platform/village/settings.ts`. Encryption is AES-256-GCM, with the setting key as additional data, so a ciphertext can't be copied to another setting. There's no new env var.
+
+The key comes from `SETUP_TOKEN` through scrypt, not HKDF. HKDF assumes its input is already high entropy, and this token is a password a person chose: `readSetupToken` accepts any 32 characters with 8 distinct ones and no repeated 8-character run. Scrypt makes a stolen backup slow to guess. Each derivation costs tens of milliseconds and about 32 MiB. A process remembers its keys, shares one derivation between callers at the same moment, and forgets a failed one so it can try again.
+
+Plaintext is sealed once at boot, after migrations, whatever the toggles say. It's also sealed on first read, for a token that appears later. Both use a compare-and-set update, so they can't overwrite keys another instance just saved. A failed attempt waits five minutes before the next. A Vercel preview never seals, and refuses to save keys, because it may share production's database and its own token would lock production out. `MIGRATE_ON_PREVIEW=true` doesn't change this: it says whether to migrate, not whether the database is separate.
+
+The status comes from what's stored:
+
+| Stored value | Token | Status | Result |
+|---|---|---|---|
+| Sealed | Matches | `sealed` | Keys work. |
+| Sealed | Different | `token_different` | The app asks for the old token or the keys. One log line, no secret, no crash. |
+| Sealed | Missing or too weak | `token_missing` | The app asks to restore the token, and warns that keys pasted without it are stored unencrypted. |
+| Sealed | Key couldn't be derived | `unavailable` | The app says to reload. It doesn't blame the token. |
+| Starts with `sealed.`, otherwise unreadable | Any, or none | `damaged` | Fails closed. It's never used as a key, or re-sealed. |
+| Any | On a Vercel preview, when it can't be read or would need sealing | `preview` | Keys work if readable. Nothing is sealed or saved. |
+| Plain | Usable | `sealed`, or `seal_failed` if the write failed | Keys work. `seal_failed` shows a warning. |
+| Plain | Missing or too weak | `plain` | Keys work. **Settings** shows a warning, and the keys form warns before a save that it would be unencrypted. |
+| Nothing | Any | `missing` | The not-configured path. |
+
+Anything starting with `sealed.` counts as sealed, so a version this build doesn't know can't be read as a plain key. A real key starting that way round-trips when a token is set, and is refused without one.
+
+While keys can't be opened, removing a member reports the Village departure as failed, and the admin can retry once keys work.
+
+What this does and doesn't protect:
+
+| Attacker has | Helps? | Why |
+|---|---|---|
+| A dump or read-only SQL access, taken after sealing | **Yes, for the Village secret only** | They can't call Village as this community from elsewhere, unless they guess the token. |
+| A backup, disk image or WAL from before sealing | **No** | See below. |
+| The same access, for anything else | **No** | Messages, emails and password hashes are all there. So is `auth_secret`, unless `BETTER_AUTH_SECRET` is set. With it and the `session` table, they can forge a session cookie and act as any member or admin in the app. |
+| A forged admin session | **Partly** | They can spend credits through the app and replace the keys. They can't read the secret, because the UI only receives the public key. |
+| Database write access | **No** | They can overwrite the value with their own plaintext key, and the app will use it. |
+| The host's env settings, or code running on the server | **No** | They have the token and the database. |
+| A leaked `SETUP_TOKEN` alone | **Yes, for the Village secret** | The sealed value is in the database. The token can still reset an admin password while email is off. |
+
+**Sealing doesn't erase the old value.** A community that stored its key before this version keeps the plaintext in places the update can't reach: backups taken before the upgrade, and dead Postgres row versions and WAL on disk until they're vacuumed and recycled. A `pg_dump` taken after sealing is clean, but the disk may not be. If old backups or disk access are a concern, rotate the Village key in Village and paste the new one.
+
+So this limits one thing: a database leak taken after sealing no longer hands over the fund's Village account. It doesn't make the database safe to leak.
+
+`auth_secret` isn't sealed, because a changed token would sign everyone out, or lock them out if the token is gone. `BETTER_AUTH_SECRET` already exists for that separation. The group invite link isn't sealed yet, because `advanceNetwork` treats no group as "create one", so an unreadable link could produce a second group.
+
 ## Adding a module
 
 Asks, for example, needs this:
