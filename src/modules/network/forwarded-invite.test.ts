@@ -30,8 +30,8 @@ import { POST as postReclaim } from "@/app/api/admin/invites/reclaim/route";
 import { GET as getAuthRoute, POST as postAuthRoute } from "@/app/api/auth/[...all]/route";
 import { POST as postAccept } from "@/app/api/invites/accept/route";
 import { POST as postOnboarding } from "@/app/api/onboarding/route";
-import { POST as postConfirm } from "@/app/api/network/confirmation/confirm/route";
-import { POST as postConfirmation } from "@/app/api/network/confirmation/route";
+import { POST as postConfirm } from "@/app/api/members/confirmation/confirm/route";
+import { POST as postConfirmation } from "@/app/api/members/confirmation/route";
 import { POST as postConsent } from "@/app/api/network/consent/route";
 import { POST as postPaths } from "@/app/api/network/paths/route";
 import { POST as postSearch } from "@/app/api/network/search/route";
@@ -110,7 +110,7 @@ describe("a forwarded invite", () => {
 
   function postConfirmToken(cookie: string | null, token: string, origin = APP_URL) {
     return postConfirm(
-      new Request(`${APP_URL}/api/network/confirmation/confirm`, {
+      new Request(`${APP_URL}/api/members/confirmation/confirm`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Origin: origin, ...(cookie ? { Cookie: cookie } : {}) },
         body: JSON.stringify({ token }),

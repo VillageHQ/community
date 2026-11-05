@@ -24,7 +24,7 @@ import { seedMember } from "@/test/members";
 import { seedConversation, seedMessages } from "@/test/messages";
 import { createSignedInMember } from "@/test/signed-in-member";
 
-import { POST as postBlock } from "@/app/api/messages/block/route";
+import { POST as postBlock } from "@/app/api/members/block/route";
 import { POST as postChanges } from "@/app/api/messages/changes/route";
 import { POST as postDelete } from "@/app/api/messages/delete/route";
 import { POST as postRead } from "@/app/api/messages/read/route";

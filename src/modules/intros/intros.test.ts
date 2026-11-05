@@ -33,7 +33,7 @@ import { createSignedInMember } from "@/test/signed-in-member";
 
 import { POST as postClearLinkedin } from "@/app/api/admin/members/clear-linkedin/route";
 import { POST as postConfirmLinkedin } from "@/app/api/admin/members/confirm-linkedin/route";
-import { POST as postBlock } from "@/app/api/messages/block/route";
+import { POST as postBlock } from "@/app/api/members/block/route";
 import { POST as postLinkedin } from "@/app/api/network/linkedin/route";
 import { POST as postPaths } from "@/app/api/network/paths/route";
 import { POST as postSearch } from "@/app/api/network/search/route";
