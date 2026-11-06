@@ -9,11 +9,11 @@ Village search, sync, the community group and intro paths. Toggleable. The only 
 - `contract*.ts`: Zod schemas and constants. `queries.ts`: client requests. `components/`: the UI.
 - `slots.tsx`: `ConnectorAskSlot` and `ConnectorPromiseSlot`. Intros fills them, so network never imports intros.
 
-The Village client, credentials, credit ledger and error mapping live in `src/platform/village`.
+The Village client (a thin layer over `@villagehq/sdk`), credentials, credit ledger and error mapping live in `src/platform/village`.
 
 Rules:
 
-- The secret key and member tokens stay on the server.
+- The secret key stays on the server. A member token leaves it only through `/api/network/sync-token`, for the signed-in member at the sync step.
 - Never name a path through a member who hasn't agreed to share.
 - Every paid call goes through `withCreditCall`.
 - Departure runs whatever else happens. A removed member's network must stop being shared.

@@ -91,7 +91,7 @@ describe("a forwarded invite", () => {
       .insert(memberNetwork)
       .values({ userId: holder.id, linkedinSlug: "not-alice", sharingConsentedAt: new Date() })
       .returning();
-    village.state.linkedMembers.set(network?.villageExternalId ?? "", { isSynced: true, email: ALICE_EMAIL });
+    village.state.linkedMembers.set(network?.villageExternalId ?? "", { status: "ready", email: ALICE_EMAIL });
     village.state.requests = [];
     return holder;
   }
@@ -467,7 +467,7 @@ describe("a forwarded invite", () => {
         })
         .returning();
       village.state.linkedMembers.set(network?.villageExternalId ?? "", {
-        isSynced: true,
+        status: "ready",
         email: "their-village@example.test",
       });
 
@@ -480,7 +480,7 @@ describe("a forwarded invite", () => {
         .insert(memberNetwork)
         .values({ userId: member.userId, linkedinSlug: "verified-member", sharingConsentedAt: new Date() })
         .returning();
-      village.state.linkedMembers.set(network?.villageExternalId ?? "", { isSynced: true, email: member.email });
+      village.state.linkedMembers.set(network?.villageExternalId ?? "", { status: "ready", email: member.email });
 
       expect(await readStage({ cookie: member.cookie, id: member.userId, email: member.email })).toBe(NETWORK_STAGES.ready);
     });

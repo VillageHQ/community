@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { ROUTES } from "@/platform/http/routes";
-import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
+import { linkedinUrl } from "@villagehq/sdk";
 import type { Connector } from "@/modules/network/contract";
 
 import { MemberConversationSlot } from "@/modules/members/slots";
@@ -48,7 +48,7 @@ function OutsideActions({ connector }: { connector: Connector }) {
       </p>
       {connector.linkedinSlug ? (
         <Button asChild variant="outline" size="default" className="w-full">
-          <a href={toLinkedinUrl(connector.linkedinSlug)} target="_blank" rel="noreferrer">
+          <a href={linkedinUrl(connector.linkedinSlug)} target="_blank" rel="noreferrer">
             {firstName} on LinkedIn
             <ExternalLink aria-hidden="true" className="size-4" />
             <span className="sr-only"> (opens in a new tab)</span>

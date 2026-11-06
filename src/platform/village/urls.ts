@@ -1,12 +1,12 @@
 import type { Environment } from "../environment.ts";
 
-const DEFAULT_VILLAGE_API_URL = "https://api.village.do";
-const DEFAULT_VILLAGE_SDK_URL = "https://js.village.do";
+const DEFAULT_VILLAGE_APP_URL = "https://village.ai";
 
 export function resolveVillageApiUrl(environment: Environment) {
-  return environment.VILLAGE_API_URL ?? DEFAULT_VILLAGE_API_URL;
+  return environment.VILLAGE_API_URL;
 }
 
-export function resolveVillageSdkUrl(environment: Environment) {
-  return environment.VILLAGE_SDK_URL ?? DEFAULT_VILLAGE_SDK_URL;
+// TODO(@villagehq/sdk): openSyncModal needs appUrl, and the SDK doesn't export the default it uses everywhere else.
+export function resolveVillageAppUrl(environment: Environment) {
+  return environment.VILLAGE_APP_URL ?? DEFAULT_VILLAGE_APP_URL;
 }

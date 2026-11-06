@@ -42,6 +42,7 @@ export const API_ROUTES = {
   networkSearch: "/api/network/search",
   networkPaths: "/api/network/paths",
   networkLeave: "/api/network/leave",
+  networkSyncToken: "/api/network/sync-token",
   invites: "/api/admin/invites",
   inviteList: "/api/admin/invites/list",
   inviteResend: "/api/admin/invites/resend",

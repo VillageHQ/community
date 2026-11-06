@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { claimVillageBrowserSession, clearVillageBrowserSession } from "./browser-session";
+import { clearVillageBrowserSession } from "./browser-session";
 
 function createStorage() {
   const entries = new Map<string, string>();
@@ -25,37 +25,16 @@ describe("the Village browser session", () => {
     vi.unstubAllGlobals();
   });
 
-  describe("when another member signs in on the same browser", () => {
-    it("expires the first member's Village token so it can't link the second member", () => {
-      claimVillageBrowserSession("member-a");
-      sessionStorage.setItem("village.token", "member-a-token");
-
-      claimVillageBrowserSession("member-b");
-
-      expect(fakeDocument.cookie).toBe("village.token=; Max-Age=0; path=/");
-      expect(sessionStorage.getItem("village.token")).toBeNull();
-    });
-  });
-
-  describe("when the same member returns", () => {
-    it("keeps the Village token", () => {
-      claimVillageBrowserSession("member-a");
-      fakeDocument.cookie = "untouched";
-
-      claimVillageBrowserSession("member-a");
-
-      expect(fakeDocument.cookie).toBe("untouched");
-    });
-  });
-
   describe("on sign-out", () => {
-    it("expires the Village token", () => {
+    it("expires the token the old Village script left", () => {
       sessionStorage.setItem("village.token", "member-a-token");
+      localStorage.setItem("community.village-member", "member-a");
 
       clearVillageBrowserSession();
 
       expect(fakeDocument.cookie).toContain("Max-Age=0");
       expect(sessionStorage.getItem("village.token")).toBeNull();
+      expect(localStorage.getItem("community.village-member")).toBeNull();
     });
   });
 });

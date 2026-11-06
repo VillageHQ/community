@@ -105,7 +105,7 @@ describe("network progress", () => {
         .values({ userId: member.id, linkedinSlug: LINKEDIN_SLUG, sharingConsentedAt: now })
         .returning();
       await saveVillageGroup(database, GROUP);
-      village.state.linkedMembers.set(network?.villageExternalId ?? "", { isSynced: true, email: OTHER_EMAIL });
+      village.state.linkedMembers.set(network?.villageExternalId ?? "", { status: "ready", email: OTHER_EMAIL });
 
       expect((await status()).stage).toBe(NETWORK_STAGES.linkMismatch);
       expect(await readNetworkProgress(database, member)).toBe(NETWORK_PROGRESS.needsApproval);

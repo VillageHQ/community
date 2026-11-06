@@ -156,7 +156,7 @@ export async function SetupChecklist({ database, admin, progress, openStepId, ba
             action={<StepAction stepId={id} isDone={isDone} isOpen={isOpen} basePath={basePath} />}
           >
             {isOpen
-              ? (STEP_BODIES[id]?.({ branding, keys, savedPublicKey, keyStatus, group, domain, isDone, isVillageReachable, isSynced: Boolean(villageUser?.isSyncComplete), isEmailConfigured }) ?? null)
+              ? (STEP_BODIES[id]?.({ branding, keys, savedPublicKey, keyStatus, group, domain, isDone, isVillageReachable, isSynced: villageUser?.isSynced ?? false, isEmailConfigured }) ?? null)
               : null}
           </StepRow>
         );

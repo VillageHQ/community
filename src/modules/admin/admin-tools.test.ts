@@ -268,15 +268,15 @@ describe("the admin tools", () => {
         await send(postNetworkConsent, member, CONSENT_BODY);
         expect(await readStatus()).toBe(VILLAGE_STATUSES.sharing);
 
-        village.state.linkedMembers.set(await externalId(), { isSynced: false, email: member.email });
+        village.state.linkedMembers.set(await externalId(), { status: "syncing", email: member.email });
         networkStatusSchema.parse(await (await send(postNetworkStatus, member, {})).json());
         expect(await readStatus()).toBe(VILLAGE_STATUSES.syncing);
 
-        village.state.linkedMembers.set(await externalId(), { isSynced: true, email: member.email });
+        village.state.linkedMembers.set(await externalId(), { status: "ready", email: member.email });
         networkStatusSchema.parse(await (await send(postNetworkStatus, member, {})).json());
         expect(await readStatus()).toBe(VILLAGE_STATUSES.ready);
 
-        village.state.linkedMembers.set(await externalId(), { isSynced: true, email: "someone-else@example.test" });
+        village.state.linkedMembers.set(await externalId(), { status: "ready", email: "someone-else@example.test" });
         await send(postNetworkStatus, member, {});
         expect(await readStatus()).toBe(VILLAGE_STATUSES.blocked);
       });
@@ -1045,7 +1045,7 @@ describe("the admin tools", () => {
         await saveVillageGroup(database, { id: "group", inviteLink: "https://village.test/join/x" });
         await joinMemberToGroup(database, member.userId, "mo");
         const [network] = await database.select().from(memberNetwork).where(eq(memberNetwork.userId, member.userId));
-        village.state.linkedMembers.set(network?.villageExternalId ?? "", { isSynced: true, email: member.email });
+        village.state.linkedMembers.set(network?.villageExternalId ?? "", { status: "ready", email: member.email });
       });
 
       function search() {

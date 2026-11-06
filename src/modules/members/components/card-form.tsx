@@ -14,7 +14,7 @@ import { MAXIMUM_NAME_LENGTH } from "@/platform/auth/member-name";
 import { ONBOARDING_STEPS, PROFILE_LIMITS } from "@/modules/members/contract-profile";
 import { parseTagsText, toProfileBody } from "@/modules/members/rules-profile-form";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
-import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
+import { linkedinUrl } from "@villagehq/sdk";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { postRequest } from "@/platform/http/post-request";
 
@@ -105,7 +105,7 @@ function LinkedinField({ profile }: CardFieldsProps) {
       type="url"
       autoComplete="url"
       placeholder="https://www.linkedin.com/in/your-name"
-      defaultValue={profile.linkedinSlug ? toLinkedinUrl(profile.linkedinSlug) : ""}
+      defaultValue={profile.linkedinSlug ? linkedinUrl(profile.linkedinSlug) : ""}
       maxLength={PROFILE_LIMITS.linkedinUrl}
       hint="Members see this on your profile and recognize you by it in their intro paths."
     />

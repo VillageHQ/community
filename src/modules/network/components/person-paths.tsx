@@ -12,7 +12,7 @@ import { HOME_FEED_MODULE_ID } from "@/platform/modules/manifest";
 import { Button } from "@/components/ui/button";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { ROUTES } from "@/platform/http/routes";
-import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
+import { linkedinUrl } from "@villagehq/sdk";
 import { LOW_LOOKUPS_LEFT, type Connector } from "@/modules/network/contract";
 
 import { MemberConversationSlot } from "@/modules/members/slots";
@@ -89,7 +89,7 @@ function DirectConnectionNote({ targetName, targetSlug }: { targetName: string; 
     <div className="grid gap-3 rounded-field bg-accent p-4">
       <p className="type-note text-accent-foreground">You already know {firstName}, so no intro needed. Reach out directly.</p>
       <Button asChild variant="outline" size="sm">
-        <a href={toLinkedinUrl(targetSlug)} target="_blank" rel="noreferrer">
+        <a href={linkedinUrl(targetSlug)} target="_blank" rel="noreferrer">
           {firstName} on LinkedIn
           <ExternalLink aria-hidden="true" className="size-4" />
           <span className="sr-only"> (opens in a new tab)</span>

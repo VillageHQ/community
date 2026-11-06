@@ -23,6 +23,7 @@ import { POST as postLinkedin } from "@/app/api/network/linkedin/route";
 import { POST as postPaths } from "@/app/api/network/paths/route";
 import { POST as postSearch } from "@/app/api/network/search/route";
 import { POST as postStatus } from "@/app/api/network/status/route";
+import { POST as postSyncToken } from "@/app/api/network/sync-token/route";
 
 const APP_URL = "http://localhost:3000";
 const INVITE_LINK = "https://village.test/join/stored-invite";
@@ -79,7 +80,7 @@ describe("the member network API", () => {
     const member = await createMemberWithLinkedin(slug);
     await postConsent(jsonRequest(member, { acknowledged: true }));
     await readStatus(member);
-    village.state.linkedMembers.set(await readExternalId(member), { isSynced: true });
+    village.state.linkedMembers.set(await readExternalId(member), { status: "ready" });
     expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.ready);
     return member;
   }
@@ -87,12 +88,12 @@ describe("the member network API", () => {
   beforeAll(async () => {
     village = await startFakeVillageServer();
     process.env.VILLAGE_API_URL = village.url;
-    process.env.VILLAGE_SDK_URL = "https://sdk.village.test";
+    process.env.VILLAGE_APP_URL = "https://app.village.test";
   });
 
   afterAll(async () => {
     delete process.env.VILLAGE_API_URL;
-    delete process.env.VILLAGE_SDK_URL;
+    delete process.env.VILLAGE_APP_URL;
     await village.stop();
   });
 
@@ -112,6 +113,7 @@ describe("the member network API", () => {
       ["consent", postConsent],
       ["search", postSearch],
       ["paths", postPaths],
+      ["sync token", postSyncToken],
     ])("rejects %s with 401", async (_name, post) => {
       const response = await post(jsonRequest(null, {}));
 
@@ -148,7 +150,7 @@ describe("the member network API", () => {
 
         expect((await readStatus(admin)).stage).toBe(NETWORK_STAGES.needsSync);
 
-        village.state.linkedMembers.set(await readExternalId(admin), { isSynced: true });
+        village.state.linkedMembers.set(await readExternalId(admin), { status: "ready" });
 
         expect((await readStatus(admin)).stage).toBe(NETWORK_STAGES.needsGroupCreation);
       });
@@ -174,18 +176,34 @@ describe("the member network API", () => {
           expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.needsConsent);
         });
 
-        it("reports an unlinked member from a Village 404 and gives the SDK what it needs", async () => {
+        it("sends an unlinked member to sync, with only the sync window's address", async () => {
           const member = await createMemberWithLinkedin("member-a");
           await postConsent(jsonRequest(member, { acknowledged: true }));
 
           const status = await readStatus(member);
 
           expect(status.stage).toBe(NETWORK_STAGES.needsSync);
-          expect(status.sync).toEqual({
-            publicKey: FAKE_VILLAGE_KEYS.publicKey,
-            externalId: await readExternalId(member),
-            sdkUrl: "https://sdk.village.test",
-          });
+          expect(status.sync).toEqual({ appUrl: "https://app.village.test" });
+        });
+
+        it("keeps a linked member with nothing connected on the sync step", async () => {
+          const member = await createMemberWithLinkedin("member-a");
+          await postConsent(jsonRequest(member, { acknowledged: true }));
+          await readStatus(member);
+          village.state.linkedMembers.set(await readExternalId(member), { status: "not_connected" });
+
+          expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.needsSync);
+          expect(village.readRequests(JOIN_PATH)).toEqual([]);
+        });
+
+        it("joins a member whose network needs a reconnect, because their older network still works", async () => {
+          const member = await createMemberWithLinkedin("member-a");
+          await postConsent(jsonRequest(member, { acknowledged: true }));
+          await readStatus(member);
+          village.state.linkedMembers.set(await readExternalId(member), { status: "needs_attention" });
+
+          expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.ready);
+          expect(village.readRequests(JOIN_PATH)).toHaveLength(1);
         });
 
         it("reports syncing until Village says the sync is complete", async () => {
@@ -193,7 +211,7 @@ describe("the member network API", () => {
           await postConsent(jsonRequest(member, { acknowledged: true }));
           await readStatus(member);
           const externalId = await readExternalId(member);
-          village.state.linkedMembers.set(externalId, { isSynced: false });
+          village.state.linkedMembers.set(externalId, { status: "syncing" });
 
           expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.syncing);
           expect(village.readRequests(JOIN_PATH)).toEqual([]);
@@ -213,7 +231,7 @@ describe("the member network API", () => {
           await postConsent(jsonRequest(member, { acknowledged: true }));
           await readStatus(member);
           const externalId = await readExternalId(member);
-          village.state.linkedMembers.set(externalId, { isSynced: true });
+          village.state.linkedMembers.set(externalId, { status: "ready" });
           village.state.joinedMembers.add(externalId);
 
           expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.ready);
@@ -223,7 +241,7 @@ describe("the member network API", () => {
           const member = await createMemberWithLinkedin("member-a");
           await postConsent(jsonRequest(member, { acknowledged: true }));
           await readStatus(member);
-          village.state.linkedMembers.set(await readExternalId(member), { isSynced: true });
+          village.state.linkedMembers.set(await readExternalId(member), { status: "ready" });
           village.state.failures.set(JOIN_PATH, { status: 500, type: "internal_error" });
           vi.spyOn(console, "error").mockImplementation(() => undefined);
 
@@ -250,7 +268,7 @@ describe("the member network API", () => {
       await readStatus(member);
 
       const [mint] = village.readRequests(TOKEN_PATH);
-      expect(mint?.body).toEqual({ external_user_id: await readExternalId(member), email: member.email });
+      expect(mint?.body).toEqual({ external_user_id: await readExternalId(member), email: member.email, grant: "full" });
       expect(await readExternalId(member)).toMatch(/^[0-9a-f-]{36}$/);
     });
 
@@ -275,6 +293,95 @@ describe("the member network API", () => {
       expect(body).not.toContain(FAKE_VILLAGE_KEYS.secretKey);
       expect(body).not.toContain("fake-token");
       expect(body).not.toContain(INVITE_LINK);
+    });
+  });
+
+  describe("the sync token", () => {
+    beforeEach(async () => {
+      await saveVillageKeys(database, FAKE_VILLAGE_KEYS);
+      await saveVillageGroup(database, { id: "group-1", inviteLink: INVITE_LINK });
+    });
+
+    async function createMemberAtSync(slug: string) {
+      const member = await createMemberWithLinkedin(slug);
+      await postConsent(jsonRequest(member, { acknowledged: true }));
+      expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.needsSync);
+      return member;
+    }
+
+    describe("at the sync step", () => {
+      it("mints a full token for the signed-in member's own Village identity", async () => {
+        const member = await createMemberAtSync("member-a");
+        const externalId = await readExternalId(member);
+
+        const response = await postSyncToken(jsonRequest(member, {}));
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe("no-store");
+        expect(await response.json()).toEqual({ token: `fake-token.${externalId}` });
+        expect(village.readRequests(TOKEN_PATH).at(-1)?.body).toEqual({
+          external_user_id: externalId,
+          email: member.email,
+          grant: "full",
+        });
+      });
+
+      it("still mints while Village is syncing, so the member can reopen the window", async () => {
+        const member = await createMemberAtSync("member-a");
+        village.state.linkedMembers.set(await readExternalId(member), { status: "syncing" });
+
+        const response = await postSyncToken(jsonRequest(member, {}));
+
+        expect(response.status).toBe(200);
+      });
+
+      it("never returns the secret key", async () => {
+        const member = await createMemberAtSync("member-a");
+
+        const body = await (await postSyncToken(jsonRequest(member, {}))).text();
+
+        expect(body).not.toContain(FAKE_VILLAGE_KEYS.secretKey);
+      });
+    });
+
+    describe("away from the sync step", () => {
+      it("refuses before consent, without calling Village", async () => {
+        const member = await createMemberWithLinkedin("member-a");
+
+        const response = await postSyncToken(jsonRequest(member, {}));
+
+        expect(response.status).toBe(409);
+        expect(await response.json()).toMatchObject({ code: NETWORK_ERROR_CODES.notReady });
+        expect(village.readRequests(TOKEN_PATH)).toEqual([]);
+      });
+
+      it("refuses a member whose Village account uses another email", async () => {
+        const member = await createMemberAtSync("member-a");
+        village.state.linkedMembers.set(await readExternalId(member), { status: "ready", email: "someone@else.test" });
+        expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.linkMismatch);
+        const mintsBefore = village.readRequests(TOKEN_PATH).length;
+
+        const response = await postSyncToken(jsonRequest(member, {}));
+
+        expect(response.status).toBe(409);
+        expect(village.readRequests(TOKEN_PATH)).toHaveLength(mintsBefore);
+      });
+
+      it("refuses once the network is ready", async () => {
+        const member = await createJoinedMember("member-a");
+
+        const response = await postSyncToken(jsonRequest(member, {}));
+
+        expect(response.status).toBe(409);
+      });
+
+      it("refuses a request from another site", async () => {
+        const member = await createMemberAtSync("member-a");
+
+        const response = await postSyncToken(jsonRequest(member, {}, { Origin: "https://evil.test" }));
+
+        expect(response.status).toBe(403);
+      });
     });
   });
 
@@ -668,7 +775,7 @@ describe("the member network API", () => {
         expect(await response.json()).toMatchObject({ code });
       });
 
-      it("logs the status and path without tokens or keys", async () => {
+      it("logs the status and operation without tokens or keys", async () => {
         village.state.failures.set(SEARCH_PATH, { status: 500, type: "internal_error" });
         const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
@@ -676,7 +783,7 @@ describe("the member network API", () => {
 
         const output = JSON.stringify(logged.mock.calls);
         expect(output).toContain(`\\"status\\":500`);
-        expect(output).toContain(SEARCH_PATH);
+        expect(output).toContain("people.search");
         expect(output).toContain("trace_fake");
         expect(output).not.toContain("fake-token");
         expect(output).not.toContain(FAKE_VILLAGE_KEYS.secretKey);
@@ -692,7 +799,7 @@ describe("the member network API", () => {
 
         expect(response.status).toBe(502);
         expect(await response.json()).toMatchObject({ code: NETWORK_ERROR_CODES.unavailable });
-        expect(JSON.stringify(logged.mock.calls)).toContain("unreachable");
+        expect(JSON.stringify(logged.mock.calls)).toContain(`\\"code\\":\\"network\\"`);
       });
 
       it("keeps the group settings when a call fails", async () => {

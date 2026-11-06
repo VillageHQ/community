@@ -33,7 +33,7 @@ export function DomainStep({ domain, isDone }: { domain: string; isDone: boolean
     <>
       <p className="text-foreground-soft">
         Village runs network search for your community, and it needs to know this site&apos;s address before its sync
-        popup can work here. This takes a few minutes in Village&apos;s own site.
+        window can work here. This takes a few minutes in Village&apos;s own site.
       </p>
       <ol className="grid list-decimal gap-2 pl-5 text-foreground-soft">
         <li>
@@ -48,7 +48,7 @@ export function DomainStep({ domain, isDone }: { domain: string; isDone: boolean
         <li>
           Open <ExternalTextLink href={VILLAGE_PLATFORM_LINKS.appSettings}>App Settings</ExternalTextLink>. Set{" "}
           <strong className="font-bold text-foreground">Title</strong> to your community&apos;s name, because members see
-          it in the popup. Paste this exact address under{" "}
+          it in the sync window. Paste this exact address under{" "}
           <strong className="font-bold text-foreground">Domain Name</strong>:
         </li>
       </ol>

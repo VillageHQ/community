@@ -119,7 +119,7 @@ describe("the review fixes", () => {
   async function joinAndLink(target: Member, slug = "mo") {
     await joinMemberToGroup(database, target.userId, slug);
     const externalId = await readExternalId(target.userId);
-    village.state.linkedMembers.set(externalId, { isSynced: true, email: target.email });
+    village.state.linkedMembers.set(externalId, { status: "ready", email: target.email });
     return externalId;
   }
 
@@ -223,7 +223,7 @@ describe("the review fixes", () => {
 
     it("rolls back new Village keys", async () => {
       await database.insert(memberNetwork).values({ userId: admin.userId });
-      village.state.linkedMembers.set(await readExternalId(admin.userId), { isSynced: true, email: admin.email });
+      village.state.linkedMembers.set(await readExternalId(admin.userId), { status: "ready", email: admin.email });
 
       expect((await send(postVillageKeys, admin, FAKE_VILLAGE_KEYS)).status).toBe(INTERNAL_ERROR_STATUS);
       expect(await database.select().from(instanceSettings).where(eq(instanceSettings.key, INSTANCE_SETTING_KEYS.villageSecretKey))).toEqual([]);
@@ -376,7 +376,7 @@ describe("the review fixes", () => {
 
     it("doesn't touch a Village account with someone else's email", async () => {
       const externalId = await joinAndLink(member);
-      village.state.linkedMembers.set(externalId, { isSynced: true, email: "someone-else@example.test" });
+      village.state.linkedMembers.set(externalId, { status: "ready", email: "someone-else@example.test" });
 
       await remove(member);
 
@@ -455,7 +455,7 @@ describe("the review fixes", () => {
         const issued = issuedInviteSchema.parse(await (await send(postInvite, admin, { email: member.email.replace("@", "+x@") })).json());
         await database.update(invite).set({ acceptedAt: new Date(), acceptedUserId: member.userId }).where(eq(invite.id, issued.invite.id));
         const externalId = await joinAndLink(member);
-        village.state.linkedMembers.set(externalId, { isSynced: true, email: issued.invite.email });
+        village.state.linkedMembers.set(externalId, { status: "ready", email: issued.invite.email });
 
         const response = await send(postReclaim, admin, { inviteId: issued.invite.id });
         const replacement = issuedInviteSchema.parse(await response.json());

@@ -78,7 +78,7 @@ describe("the Village admin API", () => {
       await postLinkedin(jsonRequest(admin, { linkedinUrl: "https://www.linkedin.com/in/avery-admin" }));
       const [network] = await database.select().from(memberNetwork);
       if (!network) throw new Error("The member network row is missing.");
-      village.state.linkedMembers.set(network.villageExternalId, { isSynced: true, email: "other@example.com" });
+      village.state.linkedMembers.set(network.villageExternalId, { status: "ready", email: "other@example.com" });
 
       const response = await postGroup(jsonRequest(admin, { name: "Group", acknowledged: true }));
 
@@ -142,19 +142,19 @@ describe("the Village admin API", () => {
   describe("creating the group", () => {
     const GROUP_REQUEST = { name: "Fund Network", acknowledged: true };
 
-    async function createConnectedAdmin(isSynced: boolean) {
+    async function createConnectedAdmin(status: "ready" | "syncing") {
       const admin = await createSignedInMember(database, "admin");
       await saveVillageKeys(database, FAKE_VILLAGE_KEYS);
       await postLinkedin(jsonRequest(admin, { linkedinUrl: "https://linkedin.com/in/fund-admin" }));
       await postStatus(jsonRequest(admin, {}));
       const [network] = await database.select().from(memberNetwork);
       if (!network) throw new Error("The admin has no network row.");
-      village.state.linkedMembers.set(network.villageExternalId, { isSynced });
+      village.state.linkedMembers.set(network.villageExternalId, { status });
       return admin;
     }
 
     it("requires the explicit acknowledgement", async () => {
-      const admin = await createConnectedAdmin(true);
+      const admin = await createConnectedAdmin("ready");
 
       const response = await postGroup(jsonRequest(admin, { name: "Fund Network", acknowledged: false }));
 
@@ -163,7 +163,7 @@ describe("the Village admin API", () => {
     });
 
     it("refuses before the admin's account is synced", async () => {
-      const admin = await createConnectedAdmin(false);
+      const admin = await createConnectedAdmin("syncing");
 
       const response = await postGroup(jsonRequest(admin, GROUP_REQUEST));
 
@@ -182,7 +182,7 @@ describe("the Village admin API", () => {
     });
 
     it("stores the invite link without returning it", async () => {
-      const admin = await createConnectedAdmin(true);
+      const admin = await createConnectedAdmin("ready");
 
       const response = await postGroup(jsonRequest(admin, GROUP_REQUEST));
       const responseBody = await response.text();
@@ -196,7 +196,7 @@ describe("the Village admin API", () => {
     });
 
     it("makes the creator a joined member who needs no second consent", async () => {
-      const admin = await createConnectedAdmin(true);
+      const admin = await createConnectedAdmin("ready");
 
       await postGroup(jsonRequest(admin, GROUP_REQUEST));
 
@@ -206,7 +206,7 @@ describe("the Village admin API", () => {
     });
 
     it("refuses a second group", async () => {
-      const admin = await createConnectedAdmin(true);
+      const admin = await createConnectedAdmin("ready");
       await postGroup(jsonRequest(admin, GROUP_REQUEST));
 
       const response = await postGroup(jsonRequest(admin, GROUP_REQUEST));
