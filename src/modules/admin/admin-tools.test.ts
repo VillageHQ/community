@@ -73,7 +73,6 @@ import { POST as postWaiting } from "@/app/api/admin/members/waiting/route";
 import { POST as postReportDelete } from "@/app/api/admin/reports/delete-content/route";
 import { POST as postReportDismiss } from "@/app/api/admin/reports/dismiss/route";
 import { POST as postReportList } from "@/app/api/admin/reports/list/route";
-import { POST as postDomain } from "@/app/api/admin/setup/domain/route";
 import { POST as postVillageGroup } from "@/app/api/admin/village/group/route";
 import { POST as postVillageKeys } from "@/app/api/admin/village/keys/route";
 import { POST as postVillageLinkReset } from "@/app/api/admin/village/links/reset/route";
@@ -926,7 +925,6 @@ describe("the admin tools", () => {
       }],
       ["creating an invite", AUDIT_ACTIONS.inviteCreated, () => send(postInvite, admin, { email: "new@example.test" })],
       ["saving the daily limit", AUDIT_ACTIONS.dailyLimitChanged, () => send(postDailyLimit, admin, { limit: 20 })],
-      ["confirming the domain", AUDIT_ACTIONS.domainConfirmed, () => send(postDomain, admin, { confirmed: true })],
     ])("after %s", (_label, action, perform) => {
       it("writes an entry", async () => {
         const response = await perform();
@@ -1109,7 +1107,6 @@ describe("the admin tools", () => {
       ["keys", postVillageKeys, () => FAKE_VILLAGE_KEYS],
       ["group", postVillageGroup, () => ({ name: "G", acknowledged: true })],
       ["branding", postBranding, () => ({ name: "Hijacked", descriptor: "", accentColor: "#0f7f86" })],
-      ["domain", postDomain, () => ({ confirmed: true })],
       ["invite", postInvite, () => ({ email: "x@y.test" })],
       ["invite list", postInviteList, () => ({})],
       ["invite resend", postInviteResend, () => ({ inviteId: RANDOM_UUID })],

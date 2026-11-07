@@ -4,7 +4,7 @@ Village search, sync, the community group and intro paths. Toggleable. The only 
 
 - `service.ts`: the join flow, search, paths, keys, the group, leaving and link approval.
 - `service-departure.ts`: taking a removed member out of the Village group. It never throws.
-- `service-settings.ts`: group, domain and the admin's daily limit.
+- `service-settings.ts`: group and the admin's daily limit.
 - `reads-*.ts`: progress for next steps, reachable members and credit usage.
 - `contract*.ts`: Zod schemas and constants. `queries.ts`: client requests. `components/`: the UI.
 - `slots.tsx`: `ConnectorAskSlot` and `ConnectorPromiseSlot`. Intros fills them, so network never imports intros.

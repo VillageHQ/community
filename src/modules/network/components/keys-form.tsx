@@ -59,7 +59,10 @@ export function KeysForm({ savedPublicKey, hasSavedKeys, keyStatus = VILLAGE_KEY
       {notice ? <Alert>{notice}</Alert> : null}
       <p className="text-foreground-soft">
         Open <ExternalTextLink href={VILLAGE_PLATFORM_LINKS.apiKeys}>API Keys in Village</ExternalTextLink> and copy both
-        keys here. We check them with Village before saving.
+        keys here. We check them with Village before saving. In{" "}
+        <ExternalTextLink href={VILLAGE_PLATFORM_LINKS.appSettings}>App Settings</ExternalTextLink>, set{" "}
+        <strong className="font-bold text-foreground">Title</strong> to your community&apos;s name, because members see it
+        when they sync.
         {hasSavedKeys ? " Keys are saved. The secret key never leaves this server." : ""}
       </p>
       <FormError message={state.errorMessage} />

@@ -1,10 +1,8 @@
 import type { Database } from "../platform/database/client.ts";
-import { resolveAppUrl } from "../platform/http/app-url.ts";
 import { readBranding } from "../platform/branding/branding.ts";
 import { hasOpenOrAcceptedInvite } from "../modules/members/service-invites.ts";
-import type { Environment } from "../platform/environment.ts";
 import { SETUP_STEPS, type SetupStepId } from "./admin-setup-steps.ts";
-import { readConfirmedVillageDomain, readVillageGroup } from "../modules/network/service-settings.ts";
+import { readVillageGroup } from "../modules/network/service-settings.ts";
 import { readVillageKeys } from "../platform/village/settings.ts";
 
 import { adminManifest } from "../modules/admin/manifest.ts";
@@ -17,7 +15,6 @@ export { SETUP_STEPS, type SetupStepId };
 
 export type SetupFacts = {
   isBrandSaved: boolean;
-  isDomainConfirmed: boolean;
   hasKeys: boolean;
   hasGroup: boolean;
   hasInvite: boolean;
@@ -25,7 +22,6 @@ export type SetupFacts = {
 
 const SETUP_STEP_OWNERS: Record<SetupStepId, ModuleManifest> = {
   [SETUP_STEPS.brand]: adminManifest,
-  [SETUP_STEPS.domain]: networkManifest,
   [SETUP_STEPS.keys]: networkManifest,
   [SETUP_STEPS.group]: networkManifest,
   [SETUP_STEPS.invite]: membersManifest,
@@ -33,7 +29,6 @@ const SETUP_STEP_OWNERS: Record<SetupStepId, ModuleManifest> = {
 
 const SETUP_STEP_ORDER: SetupStepId[] = [
   SETUP_STEPS.brand,
-  SETUP_STEPS.domain,
   SETUP_STEPS.keys,
   SETUP_STEPS.group,
   SETUP_STEPS.invite,
@@ -41,7 +36,6 @@ const SETUP_STEP_ORDER: SetupStepId[] = [
 
 const SETUP_STEP_COMPLETION: Record<SetupStepId, (facts: SetupFacts) => boolean> = {
   [SETUP_STEPS.brand]: ({ isBrandSaved }) => isBrandSaved,
-  [SETUP_STEPS.domain]: ({ isDomainConfirmed }) => isDomainConfirmed,
   [SETUP_STEPS.keys]: ({ hasKeys }) => hasKeys,
   [SETUP_STEPS.group]: ({ hasGroup }) => hasGroup,
   [SETUP_STEPS.invite]: ({ hasInvite }) => hasInvite,
@@ -49,7 +43,6 @@ const SETUP_STEP_COMPLETION: Record<SetupStepId, (facts: SetupFacts) => boolean>
 
 export const SETUP_STEP_NAMES: Record<SetupStepId, string> = {
   [SETUP_STEPS.brand]: "brand your community",
-  [SETUP_STEPS.domain]: "register your domain",
   [SETUP_STEPS.keys]: "add your Village keys",
   [SETUP_STEPS.group]: "create the group",
   [SETUP_STEPS.invite]: "invite your first members",
@@ -75,12 +68,11 @@ export function parseSetupStep(value: unknown, stepIds: readonly SetupStepId[] =
   return stepIds.find((step) => step === value) ?? null;
 }
 
-export async function readSetupProgress(database: Database, environment: Environment) {
+export async function readSetupProgress(database: Database) {
   const enabledIds = await readEnabledIds(database);
   const isNetworkOn = enabledIds.has(networkManifest.id);
-  const [branding, confirmedDomain, keys, group, hasInvite] = await Promise.all([
+  const [branding, keys, group, hasInvite] = await Promise.all([
     readBranding(database),
-    isNetworkOn ? readConfirmedVillageDomain(database) : null,
     isNetworkOn ? readVillageKeys(database) : null,
     isNetworkOn ? readVillageGroup(database) : null,
     hasOpenOrAcceptedInvite(database),
@@ -88,7 +80,6 @@ export async function readSetupProgress(database: Database, environment: Environ
   return describeSetupProgress(
     {
       isBrandSaved: branding.isSaved,
-      isDomainConfirmed: confirmedDomain === new URL(resolveAppUrl(environment)).hostname,
       hasKeys: Boolean(keys),
       hasGroup: Boolean(group),
       hasInvite,

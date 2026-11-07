@@ -68,14 +68,14 @@ describe("the shell with modules off", () => {
     });
 
     it("asks for no Village setup", async () => {
-      const { steps } = await readSetupProgress(database, ENVIRONMENT);
+      const { steps } = await readSetupProgress(database);
 
       expect(steps.map(({ id }) => id)).toEqual([SETUP_STEPS.brand, SETUP_STEPS.invite]);
     });
 
     describe("a request for a Village setup step", () => {
       it("is refused, however it's asked for", async () => {
-        const { steps } = await readSetupProgress(database, ENVIRONMENT);
+        const { steps } = await readSetupProgress(database);
 
         expect(parseSetupStep(SETUP_STEPS.group, steps.map(({ id }) => id))).toBeNull();
       });
@@ -84,7 +84,7 @@ describe("the shell with modules off", () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
         const admin = await createSignedInMember(database, "admin");
         await saveVillageKeys(database, FAKE_VILLAGE_KEYS);
-        const progress = await readSetupProgress(database, ENVIRONMENT);
+        const progress = await readSetupProgress(database);
 
         await SetupChecklist({ database, admin: { id: admin.userId, email: admin.email, role: "admin" }, progress, openStepId: SETUP_STEPS.group, basePath: "/admin" });
 
@@ -136,9 +136,9 @@ describe("the shell with modules off", () => {
   describe("the first Village step of setup", () => {
     it("offers to run without Village", async () => {
       const admin = await createSignedInMember(database, "admin");
-      const progress = await readSetupProgress(database, ENVIRONMENT);
+      const progress = await readSetupProgress(database);
 
-      const checklist = await SetupChecklist({ database, admin: { id: admin.userId, email: admin.email, role: "admin" }, progress, openStepId: SETUP_STEPS.domain, basePath: "/admin" });
+      const checklist = await SetupChecklist({ database, admin: { id: admin.userId, email: admin.email, role: "admin" }, progress, openStepId: SETUP_STEPS.keys, basePath: "/admin" });
 
       expect(renderToStaticMarkup(createElement(QueryClientProvider, { client: new QueryClient() }, checklist))).toContain("Run without Village");
     });

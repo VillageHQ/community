@@ -13,7 +13,6 @@ export const INSTANCE_SETTING_KEYS = {
   villageSecretKey: "village_secret_key",
   villageGroupId: "village_group_id",
   villageGroupInviteLink: "village_group_invite_link",
-  villageDomainConfirmed: "village_domain_confirmed",
   dailyLookupLimit: "daily_lookup_limit",
   villageOutOfCreditsAt: "village_out_of_credits_at",
 } as const;

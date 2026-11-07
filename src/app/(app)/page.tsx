@@ -57,7 +57,7 @@ export default modulePage(membersManifest, async function FeedPage() {
     await Promise.all([
       readBrandingForPage(),
       enabledIds.has(networkManifest.id) ? readNetworkProgress(database, member) : null,
-      isAdmin ? readSetupProgress(database, process.env) : null,
+      isAdmin ? readSetupProgress(database) : null,
       readNewMembers(database, member.id),
       readMemberProfile(database, member.id),
       readAvatarUrl(database, member.id),

@@ -35,7 +35,6 @@ export const API_ROUTES = {
   recoverAdmin: "/api/recover-admin",
   branding: "/api/admin/branding",
   brandingLogo: "/api/branding/logo",
-  setupDomain: "/api/admin/setup/domain",
   networkStatus: "/api/network/status",
   networkLinkedin: "/api/network/linkedin",
   networkConsent: "/api/network/consent",

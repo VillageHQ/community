@@ -116,7 +116,7 @@ describe("the Village keys at rest", () => {
     });
 
     it("reopens the keys step of setup", async () => {
-      const { steps } = await readSetupProgress(database, { APP_URL });
+      const { steps } = await readSetupProgress(database);
 
       expect(steps.find(({ id }) => id === SETUP_STEPS.keys)?.isDone).toBe(false);
     });

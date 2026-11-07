@@ -13,15 +13,6 @@ import { recordAdminAction } from "../../platform/audit/record.ts";
 
 export type VillageGroup = { id: string; inviteLink: string };
 
-export async function readConfirmedVillageDomain(database: Database) {
-  const settings = await readSettings(database, [INSTANCE_SETTING_KEYS.villageDomainConfirmed]);
-  return settings.get(INSTANCE_SETTING_KEYS.villageDomainConfirmed) ?? null;
-}
-
-export async function saveConfirmedVillageDomain(database: DatabaseOrTransaction, domain: string) {
-  await saveSettings(database, { [INSTANCE_SETTING_KEYS.villageDomainConfirmed]: domain });
-}
-
 export async function readVillageGroup(database: Database): Promise<VillageGroup | null> {
   const settings = await readSettings(database, [
     INSTANCE_SETTING_KEYS.villageGroupId,
@@ -55,12 +46,5 @@ export function setDailyLookupLimit({ database, member }: RequestContext, limit:
   return withAdminTransaction(database, member.id, async (transaction) => {
     await saveDailyLookupLimit(transaction, limit);
     await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.dailyLimitChanged, detail: String(limit) });
-  });
-}
-
-export function confirmVillageDomain({ database, member }: RequestContext, domain: string) {
-  return withAdminTransaction(database, member.id, async (transaction) => {
-    await saveConfirmedVillageDomain(transaction, domain);
-    await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.domainConfirmed, detail: domain });
   });
 }

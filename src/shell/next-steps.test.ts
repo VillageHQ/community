@@ -82,9 +82,9 @@ describe("the next step card", () => {
   const PENDING_SETUP = {
     steps: [],
     doneCount: 1,
-    totalCount: 5,
-    stepsLeft: 4,
-    currentStepId: SETUP_STEPS.domain,
+    totalCount: 4,
+    stepsLeft: 3,
+    currentStepId: SETUP_STEPS.keys,
     isComplete: false,
   };
 
@@ -93,7 +93,7 @@ describe("the next step card", () => {
 
     expect(nextStep?.title).toBe("Let's get Northwind ready");
     expect(nextStep?.action?.href).toBe(ROUTES.admin);
-    expect(nextStep?.progress).toMatchObject({ doneCount: 1, totalCount: 5 });
+    expect(nextStep?.progress).toMatchObject({ doneCount: 1, totalCount: 4 });
     expect(nextStep?.isUrgent).toBe(true);
   });
 

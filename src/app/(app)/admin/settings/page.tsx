@@ -149,7 +149,7 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
   const admin = await requireAdmin();
   const { step } = await searchParams;
   const database = getDatabase();
-  const [progress, branding, enabledIds] = await Promise.all([readSetupProgress(database, process.env), readBranding(database), readEnabledIds(database)]);
+  const [progress, branding, enabledIds] = await Promise.all([readSetupProgress(database), readBranding(database), readEnabledIds(database)]);
   const keyState = await readVillageKeyState(database);
 
   return (

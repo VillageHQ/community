@@ -56,7 +56,6 @@ import { POST as postReinvite } from "@/app/api/admin/members/reinvite/route";
 import { POST as postRemove } from "@/app/api/admin/members/remove/route";
 import { POST as postReportDismiss } from "@/app/api/admin/reports/dismiss/route";
 import { POST as postReportList } from "@/app/api/admin/reports/list/route";
-import { POST as postDomain } from "@/app/api/admin/setup/domain/route";
 import { POST as postVillageKeys } from "@/app/api/admin/village/keys/route";
 import { POST as postLinkReset } from "@/app/api/admin/village/links/reset/route";
 
@@ -227,11 +226,6 @@ describe("the review fixes", () => {
 
       expect((await send(postVillageKeys, admin, FAKE_VILLAGE_KEYS)).status).toBe(INTERNAL_ERROR_STATUS);
       expect(await database.select().from(instanceSettings).where(eq(instanceSettings.key, INSTANCE_SETTING_KEYS.villageSecretKey))).toEqual([]);
-    });
-
-    it("rolls back a domain confirmation", async () => {
-      expect((await send(postDomain, admin, { confirmed: true })).status).toBe(INTERNAL_ERROR_STATUS);
-      expect(await database.select().from(instanceSettings).where(eq(instanceSettings.key, INSTANCE_SETTING_KEYS.villageDomainConfirmed))).toEqual([]);
     });
 
     it("rolls back branding", async () => {
