@@ -52,6 +52,21 @@ describe("the keys form", () => {
     });
   });
 
+  describe("for an admin without keys yet", () => {
+    const form = renderForm();
+
+    it("walks through getting them from Village, in order", () => {
+      const steps = ["New developer account", "checklist", "App Settings", "API Keys"].map((step) => form.indexOf(step));
+
+      expect(steps.every((position) => position >= 0)).toBe(true);
+      expect(steps).toEqual(steps.toSorted((first, second) => first - second));
+    });
+
+    it("says to set the app's title to the community's name", () => {
+      expect(form).toContain("Title</strong> to your community&#x27;s name");
+    });
+  });
+
   it("keeps the public key for pasting again", () => {
     expect(renderForm(VILLAGE_KEY_STATUSES.tokenDifferent)).toContain("pk_test");
   });
