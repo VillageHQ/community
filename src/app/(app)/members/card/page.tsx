@@ -18,6 +18,24 @@ import { networkManifest } from "@/modules/network/manifest";
 import { readIsInVillageGroup } from "@/modules/network/reads-progress";
 import { isModuleEnabled } from "@/platform/modules/enablement";
 import { modulePage } from "@/platform/modules/module-page";
+import { EMAIL_TOPICS } from "@/platform/email/kinds";
+import { readResendConfig } from "@/platform/email/resend";
+import { readOptedOutTopics } from "@/platform/email/unsubscribe";
+import { introsManifest } from "@/modules/intros/manifest";
+import { messagesManifest } from "@/modules/messages/manifest";
+import { EmailPreferencesCard } from "@/shell/email-preferences-card";
+import { readEnabledIds } from "@/shell/enabled-modules";
+
+const TOPIC_MODULES = [
+  { topic: EMAIL_TOPICS.intros, moduleId: introsManifest.id },
+  { topic: EMAIL_TOPICS.messages, moduleId: messagesManifest.id },
+];
+
+async function readEmailSettings(database: ReturnType<typeof getDatabase>, memberId: string) {
+  if (!readResendConfig(process.env)) return [];
+  const [enabledIds, optedOut] = await Promise.all([readEnabledIds(database), readOptedOutTopics(database, memberId)]);
+  return TOPIC_MODULES.filter(({ moduleId }) => enabledIds.has(moduleId)).map(({ topic }) => ({ topic, isOn: !optedOut.has(topic) }));
+}
 
 export const metadata: Metadata = { title: PAGE_TITLES.editCard };
 
@@ -29,6 +47,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
 
   const isNetworkOn = await isModuleEnabled(database, networkManifest);
   const showsLeaveCard = !isNetworkOn && (await readIsInVillageGroup(database, member.id));
+  const emailSettings = await readEmailSettings(database, member.id);
 
   return (
     <div className="mx-auto max-w-[720px]">
@@ -47,6 +66,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
       <div className="rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
         <CardForm profile={profile} />
       </div>
+      <EmailPreferencesCard settings={emailSettings} />
       {showsLeaveCard ? <LeaveGroupCard /> : null}
     </div>
   );

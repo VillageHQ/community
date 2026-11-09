@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { deliverInviteEmail, renderConfirmationEmail, renderInviteEmail } from "./email-invites";
-import { INVITE_EMAIL_STATUSES, INVITE_STATES, readInviteExpiry, readInviteState } from "./contract-invite-state";
+import { renderConfirmationEmail, renderInviteEmail } from "./email-invites";
+import { EMAIL_KINDS } from "../../platform/email/kinds";
+import { queueEmail } from "../../platform/email/outbox";
+import { INVITE_STATES, readInviteExpiry, readInviteState } from "./contract-invite-state";
 import { createInviteToken, hashInviteToken, isInviteTokenShape } from "./service-invite-token";
 
 const NOW = new Date("2026-11-04T12:00:00Z");
@@ -9,7 +11,6 @@ const LATER = new Date("2026-11-05T12:00:00Z");
 const EARLIER = new Date("2026-11-03T12:00:00Z");
 const OPEN = { acceptedAt: null, revokedAt: null };
 const FACTS = {
-  to: "amara@example.test",
   link: "https://community.example/join/token",
   inviterName: "Priya Raman",
   communityName: "Northwind",
@@ -96,7 +97,10 @@ describe("the invite email", () => {
     expect(html).not.toContain("<img");
   });
 
-  it("calls nothing when email isn't configured", async () => {
-    expect(await deliverInviteEmail(FACTS, {})).toBe(INVITE_EMAIL_STATUSES.notSent);
+  it("queues nothing when email isn't configured", async () => {
+    const email = { kind: EMAIL_KINDS.invite, to: "amara@example.test", memberId: null, ...renderInviteEmail(FACTS) };
+
+    // The connection is never touched, so a missing one proves no write was tried.
+    expect(await queueEmail(undefined as never, {}, email)).toBeNull();
   });
 });

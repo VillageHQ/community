@@ -101,3 +101,19 @@ export const messageReport = pgTable(
     check("message_report_body_length", sql`char_length(${table.messageBody}) between 1 and ${MAXIMUM_BODY_LENGTH}`),
   ],
 );
+
+// When a member was last emailed about a conversation. At most one email per conversation per
+// recipient in each window, so a burst of messages sends one email.
+export const messageEmailNotice = pgTable(
+  "message_email_notice",
+  {
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversation.id, { onDelete: "cascade" }),
+    recipientId: text("recipient_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    emailedAt: messageTimestamp("emailed_at").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.conversationId, table.recipientId] })],
+);

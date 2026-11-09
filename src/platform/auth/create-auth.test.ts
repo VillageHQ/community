@@ -11,6 +11,7 @@ const APP_URL = "http://localhost:3000";
 const ADMIN = { name: "Ada", email: "ada@example.com", password: "correct-horse-battery" };
 const JSON_HEADERS = { "Content-Type": "application/json", Origin: APP_URL };
 const SIGN_IN_ATTEMPTS_PER_WINDOW = 3;
+const SIGN_INS_PER_EMAIL_PER_MINUTE = 5;
 const WRONG_CREDENTIALS = { email: ADMIN.email, password: "wrong-password-1" };
 
 describe("createAuth", () => {
@@ -93,9 +94,9 @@ describe("createAuth", () => {
       return instance.handler(createPost("/sign-in/email", WRONG_CREDENTIALS, headers));
     }
 
-    it("ignores rotating X-Forwarded-For values", async () => {
+    it("limits one account, whatever rotating X-Forwarded-For values say", async () => {
       const statuses = [];
-      for (let attempt = 0; attempt <= SIGN_IN_ATTEMPTS_PER_WINDOW; attempt += 1) {
+      for (let attempt = 0; attempt <= SIGN_INS_PER_EMAIL_PER_MINUTE; attempt += 1) {
         const response = await attemptSignIn(auth, { "x-forwarded-for": `203.0.113.${attempt}` });
         statuses.push(response.status);
       }
@@ -103,11 +104,28 @@ describe("createAuth", () => {
       expect(statuses.at(-1)).toBe(429);
     });
 
+    it("doesn't lock another member out when no client IP header is set", async () => {
+      const member = { email: "member@example.com", password: "the-members-own-password" };
+      await database.insert(user).values({ id: "other-member", name: "Other", email: member.email, emailVerified: true, role: "user" });
+      await database.insert(account).values({
+        id: "other-member-account",
+        userId: "other-member",
+        accountId: "other-member",
+        providerId: "credential",
+        password: await hashPassword(member.password),
+      });
+      for (let attempt = 0; attempt < SIGN_IN_ATTEMPTS_PER_WINDOW; attempt += 1) {
+        expect((await attemptSignIn(auth)).status).toBe(401);
+      }
+
+      expect((await post("/sign-in/email", member)).status).toBe(200);
+    });
+
     it("shares its count across instances through the database", async () => {
       const otherInstance = createAuth("test-secret-with-at-least-32-characters", database, {
         APP_URL,
       });
-      for (let attempt = 0; attempt < SIGN_IN_ATTEMPTS_PER_WINDOW; attempt += 1) {
+      for (let attempt = 0; attempt < SIGN_INS_PER_EMAIL_PER_MINUTE; attempt += 1) {
         await attemptSignIn(auth);
       }
 

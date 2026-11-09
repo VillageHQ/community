@@ -11,6 +11,8 @@ import { moderationRecord } from "../modules/feed/schema.ts";
 import { instanceSettings } from "../platform/settings/schema.ts";
 import { invite } from "../modules/members/schema.ts";
 import { messageReport } from "../modules/messages/schema.ts";
+import { emailOutbox, emailSuppression } from "../platform/email/schema.ts";
+import { jobLease } from "../platform/jobs/schema.ts";
 
 export function readTestConnectionString() {
   const connectionString = process.env.TEST_DATABASE_URL;
@@ -24,6 +26,9 @@ export function createTestDatabase() {
 
 export async function clearDatabase(database: Database) {
   await database.delete(rateLimit);
+  await database.delete(emailOutbox);
+  await database.delete(emailSuppression);
+  await database.delete(jobLease);
   await database.delete(verification);
   await database.delete(moderationRecord);
   await database.delete(messageReport);

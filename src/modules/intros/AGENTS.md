@@ -4,9 +4,9 @@ A member asks another member for an introduction to someone in their network. To
 
 - `contract.ts`: states, allowed moves and limits. `INTRO_TRANSITIONS` is the state machine.
 - `service.ts`: create an ask and move it between states.
-- `reads.ts`, `reads-open-asks.ts`: boards, counts, details. Expiry happens at read time, because there are no scheduled jobs.
+- `reads.ts`, `reads-open-asks.ts`: boards, counts, details. Expiry happens at read time, and a timed sweep (`integration.ts` jobs) expires the rest so admin counts stay right.
 - `service-blocks.ts`: what a block does to open asks. The block route passes it to members.
-- `email.ts`: the notices. `limits.ts`: rate limits. `copy.ts`: words.
+- `email.ts`: the notices. `queueIntroEmail` runs inside the move's transaction and puts the email in the platform outbox. `limits.ts`: rate limits. `copy.ts`: words.
 - `queries.ts`: client requests. `components/`: the UI.
 - `components/connector-ask.tsx`: fills the network slots with the ask dialog and the promise line.
 

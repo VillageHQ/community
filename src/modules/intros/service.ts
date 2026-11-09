@@ -4,7 +4,8 @@ import { and, eq, gt, inArray } from "drizzle-orm";
 
 import { introRequest } from "./schema.ts";
 import { memberBlock } from "../members/schema.ts";
-import { runAfterResponse } from "../../platform/observability/after-response.ts";
+import { readEmailBranding } from "../../platform/email/outbox.ts";
+import { sendQueuedEmailsSoon } from "../../platform/email/outbox-sender.ts";
 import { readAskableConnectors } from "../network/service.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import { type RequestContext } from "../../platform/http/request-context.ts";
@@ -15,11 +16,10 @@ import {
   INTRO_ROLES,
   readStatesLeadingTo,
   type CreateIntroBody,
-  type Intro,
   type IntroAction,
   type IntroTransitionBody,
 } from "./contract.ts";
-import { deliverIntroEmail, INTRO_EMAIL_EVENTS, type IntroEmailEvent } from "./email.ts";
+import { INTRO_EMAIL_EVENTS, queueIntroEmail, type IntroEmailEvent } from "./email.ts";
 import { enforceIntroLimit, INTRO_LIMIT_KINDS } from "./limits.ts";
 import { expireDueIntros, hasBothParticipantsJoined, readIntroDeadline, readIntroForViewer } from "./reads.ts";
 
@@ -37,20 +37,6 @@ async function isBlockedBy(context: RequestContext, blockerId: string, blockedId
     .from(memberBlock)
     .where(and(eq(memberBlock.blockerId, blockerId), eq(memberBlock.blockedId, blockedId)));
   return block !== undefined;
-}
-
-function sendIntroEmail(context: RequestContext, intro: Intro, event: IntroEmailEvent) {
-  runAfterResponse(() =>
-    deliverIntroEmail(context.database, context.environment, {
-      introId: intro.id,
-      event,
-      requesterId: intro.requester.id,
-      introducerId: intro.introducer.id,
-      requesterName: intro.requester.name,
-      introducerName: intro.introducer.name,
-      targetName: intro.target.name,
-    }),
-  );
 }
 
 async function readRequiredIntro(context: RequestContext, introId: string) {
@@ -109,25 +95,29 @@ export async function createIntroRequest(context: RequestContext, body: CreateIn
   const isWithheld = await isBlockedBy(context, asked.introducerId, member.id);
 
   await expireDueIntros(database, member.id);
-  const [created] = await database
-    .insert(introRequest)
-    .values({
-      ...asked,
-      requesterId: member.id,
-      targetLinkedinSlug: body.targetSlug,
-      note: body.note,
-      isWithheld,
-      expiresAt: readIntroDeadline(),
-    })
-    .onConflictDoNothing()
-    .returning({ id: introRequest.id });
+  const branding = isWithheld ? null : await readEmailBranding(database, context.environment);
+  const created = await database.transaction(async (transaction) => {
+    const [inserted] = await transaction
+      .insert(introRequest)
+      .values({
+        ...asked,
+        requesterId: member.id,
+        targetLinkedinSlug: body.targetSlug,
+        note: body.note,
+        isWithheld,
+        expiresAt: readIntroDeadline(),
+      })
+      .onConflictDoNothing()
+      .returning({ id: introRequest.id });
+    if (inserted) await queueIntroEmail(transaction, context.environment, branding, inserted.id, INTRO_EMAIL_EVENTS.asked);
+    return inserted;
+  });
   if (!created) {
     throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.duplicate, "You already have an open ask with this person for this intro.");
   }
 
-  const intro = await readRequiredIntro(context, created.id);
-  if (!isWithheld) sendIntroEmail(context, intro, INTRO_EMAIL_EVENTS.asked);
-  return intro;
+  sendQueuedEmailsSoon(database, context.environment);
+  return readRequiredIntro(context, created.id);
 }
 
 const ACTION_EMAILS: Partial<Record<IntroAction, IntroEmailEvent>> = {
@@ -161,25 +151,30 @@ export async function transitionIntro(context: RequestContext, body: IntroTransi
   const now = new Date();
   const isRequesterActing = actor === INTRO_ROLES.requester;
   const actorColumn = isRequesterActing ? introRequest.requesterId : introRequest.introducerId;
-  const [applied] = await database
-    .update(introRequest)
-    .set(readTransitionPatch(body, now))
-    .where(
-      and(
-        eq(introRequest.id, body.introId),
-        eq(actorColumn, member.id),
-        inArray(introRequest.state, readStatesLeadingTo(nextState)),
-        gt(introRequest.expiresAt, now),
-        hasBothParticipantsJoined(database),
-        isRequesterActing ? undefined : eq(introRequest.isWithheld, false),
-      ),
-    )
-    .returning({ id: introRequest.id });
+  const emailEvent = ACTION_EMAILS[body.action];
+  const branding = emailEvent ? await readEmailBranding(database, context.environment) : null;
+  const applied = await database.transaction(async (transaction) => {
+    const [updated] = await transaction
+      .update(introRequest)
+      .set(readTransitionPatch(body, now))
+      .where(
+        and(
+          eq(introRequest.id, body.introId),
+          eq(actorColumn, member.id),
+          inArray(introRequest.state, readStatesLeadingTo(nextState)),
+          gt(introRequest.expiresAt, now),
+          hasBothParticipantsJoined(database),
+          isRequesterActing ? undefined : eq(introRequest.isWithheld, false),
+        ),
+      )
+      .returning({ id: introRequest.id });
+    if (updated && emailEvent) await queueIntroEmail(transaction, context.environment, branding, updated.id, emailEvent);
+    return updated;
+  });
 
   const current = await readRequiredIntro(context, body.introId);
   if (applied) {
-    const emailEvent = ACTION_EMAILS[body.action];
-    if (emailEvent) sendIntroEmail(context, current, emailEvent);
+    if (emailEvent) sendQueuedEmailsSoon(database, context.environment);
     return current;
   }
   if (current.state === nextState) return current;

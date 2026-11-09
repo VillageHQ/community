@@ -13,6 +13,7 @@ export const ROUTES = {
   join: "/join",
   welcome: "/welcome",
   confirmEmail: "/confirm-email",
+  unsubscribe: "/unsubscribe",
   messages: "/messages",
   intros: "/intros",
   members: "/members",
@@ -32,6 +33,10 @@ export const AUTH_BASE_PATH = "/api/auth";
 
 export const API_ROUTES = {
   setup: "/api/setup",
+  jobsTick: "/api/jobs/tick",
+  emailUnsubscribe: "/api/email/unsubscribe",
+  emailPreferences: "/api/email/preferences",
+  resendWebhook: "/api/email/resend-webhook",
   recoverAdmin: "/api/recover-admin",
   branding: "/api/admin/branding",
   brandingLogo: "/api/branding/logo",

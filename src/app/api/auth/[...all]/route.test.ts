@@ -9,12 +9,12 @@ const APP_URL = "http://localhost:3000";
 const LONG_SEGMENT = "a".repeat(8_000);
 const JSON_HEADERS = { "Content-Type": "application/json", Origin: APP_URL };
 
-function postAuth(path: string) {
+function postAuth(path: string, body = "{}") {
   return POST(
     new Request(`${APP_URL}/api/auth/${path}`, {
       method: "POST",
       headers: JSON_HEADERS,
-      body: "{}",
+      body,
     }),
   );
 }
@@ -54,7 +54,7 @@ describe("/api/auth route", () => {
     });
 
     it("keeps the rate limit on sign-in", async () => {
-      const response = await postAuth("sign-in/email");
+      const response = await postAuth("sign-in/email", JSON.stringify({ email: "nobody@example.com", password: "a-wrong-password" }));
 
       expect(response.status).not.toBe(404);
       expect(await database.select().from(rateLimit)).toHaveLength(1);

@@ -6,8 +6,8 @@ import * as authSchema from "../database/auth-schema.ts";
 import type { Database } from "../database/client.ts";
 import { runAfterResponse } from "../observability/after-response.ts";
 import { resolveAppUrl, resolveTrustedOrigins } from "../http/app-url.ts";
-import { createAuthGuards } from "./auth-guards.ts";
-import { resolveClientIpHeaders } from "../http/client-ip.ts";
+import { createAuthAfterHooks, createAuthGuards } from "./auth-guards.ts";
+import { readTrustedClientIp, resolveClientIpHeaders } from "../http/client-ip.ts";
 import { readResendConfig } from "../email/resend.ts";
 import type { Environment } from "../environment.ts";
 import { PASSWORD_RESET_LIFETIME_SECONDS, recordPasswordReset, sendResetEmailSafely } from "./password-recovery.ts";
@@ -16,6 +16,17 @@ import { AUTH_BASE_PATH } from "../http/routes.ts";
 
 const PASSWORD_RESET_RATE_LIMIT = { window: 60, max: 5 };
 
+type RateLimitRule = { window: number; max: number };
+
+// With no trusted IP header, Better Auth puts every client in one bucket per path, so a few
+// wrong passwords from anyone would lock everyone out. There, these paths use only their
+// per-account limits: sign-in in the auth guards, reset emails in password-recovery.
+function perIpOnlyWhenKnown(environment: Environment, rule?: RateLimitRule) {
+  return (request: Request, current: RateLimitRule) => (readTrustedClientIp(request, environment) ? (rule ?? current) : false);
+}
+
+// Queuing waits until after the response, so its timing can't tell whether an address has an
+// account. Once queued, the outbox keeps the email until it goes out.
 function createResetEmailSender(database: Database, environment: Environment) {
   if (!readResendConfig(environment)) return undefined;
   return async ({ user, token }: { user: { id: string }; token: string }) => {
@@ -44,14 +55,15 @@ export function createAuth(secret: string, database: Database, environment: Envi
       enabled: environment.NODE_ENV !== "development",
       storage: "database",
       customRules: {
-        "/request-password-reset": PASSWORD_RESET_RATE_LIMIT,
+        "/sign-in/email": perIpOnlyWhenKnown(environment),
+        "/request-password-reset": perIpOnlyWhenKnown(environment, PASSWORD_RESET_RATE_LIMIT),
         "/reset-password": PASSWORD_RESET_RATE_LIMIT,
       },
     },
     advanced: {
       ipAddress: { ipAddressHeaders: resolveClientIpHeaders(environment) },
     },
-    hooks: { before: createAuthGuards() },
+    hooks: { before: createAuthGuards(database), after: createAuthAfterHooks(database) },
     plugins: [admin()],
   });
 }
