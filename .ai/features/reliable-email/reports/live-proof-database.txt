@@ -1,0 +1,20 @@
+        kind        |    to_email     | status | attempts 
+--------------------+-----------------+--------+----------
+ invite             | sam@example.com | sent   |        2
+ email_confirmation | sam@example.com | sent   |        1
+ direct_message     | ada@example.com | sent   |        1
+ invite             | lee@example.com | failed |        6
+(4 rows)
+
+      email      | reason  
+-----------------+---------
+ sam@example.com | bounced
+(1 row)
+
+         name         | ok 
+----------------------+----
+ email-outbox-pruning | t
+ intro-expiry         | t
+ email-outbox         | t
+(3 rows)
+
