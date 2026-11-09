@@ -15,6 +15,7 @@ import type { RequestContext } from "../../platform/http/request-context.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
 import { recordFailedAttempt } from "../../platform/rate-limit/attempt-rate-limit.ts";
+import { JOB_OUTCOMES, runJob } from "../../platform/jobs/runner.ts";
 import { INSTANCE_SETTING_KEYS } from "../../platform/settings/schema.ts";
 import { readSettings } from "../../platform/settings/store.ts";
 import {
@@ -191,8 +192,25 @@ export function saveFillInBasis({ database, member }: RequestContext, body: Fill
   });
 }
 
-// The admin's "Fill in everyone now": the nightly run, at once. It never looks up anyone the gate refuses.
+export const FILL_IN_JOB_NAME = "profile-fill-in";
+export const FILL_IN_LEASE_MS = 30 * 60_000;
+
+// The admin's "Fill in everyone now": the nightly run, at once. It takes the nightly job's lease, so
+// it never overlaps that job or a second click, and never looks up anyone the gate refuses.
 export async function runFillInNow({ database, environment, member }: RequestContext) {
   await withAdminTransaction(database, member.id, (transaction) => recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.fillInRunStarted }));
-  return runFillIn(database, environment);
+  const finished: { run: FillInRun | null } = { run: null };
+  const outcome = await runJob(database, environment, {
+    name: FILL_IN_JOB_NAME,
+    intervalMs: 0,
+    leaseMs: FILL_IN_LEASE_MS,
+    run: async (jobDatabase, jobEnvironment) => {
+      finished.run = await runFillIn(jobDatabase, jobEnvironment);
+    },
+  });
+  if (outcome === JOB_OUTCOMES.busy || outcome === JOB_OUTCOMES.notDue) {
+    throw new RequestError(CONFLICT_STATUS, NETWORK_ERROR_CODES.fillInRunning, "Profiles are being filled in right now. Check back in a few minutes.");
+  }
+  if (!finished.run) throw new Error("The fill-in run failed. It's in the server log.");
+  return finished.run;
 }

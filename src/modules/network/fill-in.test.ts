@@ -18,6 +18,7 @@ import { POST as postFillInBasis } from "@/app/api/admin/village/fill-in/route";
 import { POST as postLookupChoice } from "@/app/api/profile/lookup-choice/route";
 import { POST as postVisibility } from "@/app/api/profile/fill-in/route";
 import { POST as postProfile } from "@/app/api/profile/route";
+import { POST as postFillInRun } from "@/app/api/admin/village/fill-in/run/route";
 
 import { runFillIn } from "./service-fill-in";
 
@@ -203,5 +204,35 @@ describe("profile fill-in", () => {
     await runFillIn(database, process.env);
 
     expect(village.readRequests(BY_LINKEDIN_PATH).map(({ body }) => body)).toContainEqual({ linkedin_url: "https://www.linkedin.com/in/riley-own" });
+  });
+
+  it("removes every filled-in line when the admin turns fill-in off", async () => {
+    await recordTermsBasis();
+    await runFillIn(database, process.env);
+
+    expect((await postFillInBasis(post(admin, { basis: "off" }))).status).toBe(200);
+
+    expect(await database.select().from(memberFillIn)).toEqual([]);
+    expect((await readMemberProfile(database, member.userId))?.shown).toMatchObject({ title: null, company: null, location: null, imageUrl: null });
+  });
+
+  it("hides the headline too when the member hides their role", async () => {
+    await recordTermsBasis();
+    await runFillIn(database, process.env);
+    expect((await readMemberProfile(database, member.userId))?.shown.headline).toBe("Head of Partnerships at Example Co");
+
+    await postVisibility(post(member, { field: FILL_IN_FIELDS.title, isHidden: true }));
+
+    expect((await readMemberProfile(database, member.userId))?.shown).toMatchObject({ title: null, headline: null });
+  });
+
+  it("runs Fill in everyone now once, even when clicked twice at once", async () => {
+    await recordTermsBasis();
+    village.state.delayMsByPath.set(BY_EMAIL_PATH, 300);
+
+    const responses = await Promise.all([postFillInRun(post(admin)), postFillInRun(post(admin))]);
+
+    expect(responses.map(({ status }) => status).toSorted()).toEqual([200, 409]);
+    expect(village.readRequests(BY_EMAIL_PATH)).toHaveLength(2);
   });
 });

@@ -38,6 +38,7 @@ export const NETWORK_ERROR_CODES = {
   groupAdminCannotLeave: "group_admin_cannot_leave",
   fillInOff: "fill_in_off",
   fillInTooSoon: "fill_in_too_soon",
+  fillInRunning: "fill_in_running",
   nudgeTooSoon: "nudge_too_soon",
 } as const;
 

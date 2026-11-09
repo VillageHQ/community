@@ -16,7 +16,7 @@ const FILL_IN_ITEM: DisclosureItem = {
   what: "Your email the first time, then your LinkedIn address every 30 days. It goes under the community's account, not yours, and only while you allow it.",
 };
 
-const NEVER_SENT = "Village never gets your messages, posts, asks, intro notes or anything you write on your card.";
+const NEVER_SENT = "Village never gets your messages, posts, asks, intro notes or what you write on your card, apart from the LinkedIn address you add there.";
 
 // The member's privacy area: everything this site sends to Village, in plain words.
 export function VillageDisclosure({ isFillInOn }: { isFillInOn: boolean }) {

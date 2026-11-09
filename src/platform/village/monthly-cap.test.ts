@@ -92,4 +92,17 @@ describe("the monthly credit cap", () => {
     const warnings = await database.select().from(emailOutbox).where(eq(emailOutbox.kind, EMAIL_KINDS.creditWarning));
     expect(warnings.map(({ subject }) => subject)).toEqual([expect.stringContaining("80%")]);
   });
+
+  it("sends no warning when a big call is refused while usage is still low", async () => {
+    await createSignedInMember(database, "admin");
+    await saveMonthlyCreditCap(database, 20);
+    for (let call = 0; call < 10; call += 1) await spend(null);
+
+    await expect(spend(null, CREDIT_CALL_KINDS.search)).rejects.toBeInstanceOf(MonthlyCapReachedError);
+
+    expect(await database.select().from(emailOutbox).where(eq(emailOutbox.kind, EMAIL_KINDS.creditWarning))).toEqual([]);
+    for (let call = 0; call < 6; call += 1) await spend(null);
+    const warnings = await database.select().from(emailOutbox).where(eq(emailOutbox.kind, EMAIL_KINDS.creditWarning));
+    expect(warnings.map(({ subject }) => subject)).toEqual([expect.stringContaining("80%")]);
+  });
 });

@@ -4,7 +4,7 @@ import { logAdminAction } from "@/platform/observability/route-logging";
 import { networkRoutes } from "@/modules/network/routes";
 
 const SAVED_MESSAGES = {
-  off: "Saved. Nobody is looked up.",
+  off: "Saved. Nobody is looked up, and every filled-in line is gone from members' cards.",
   ask: "Saved. Each member is asked first, the next time they open the site.",
   terms: "Saved. Members are filled in tonight, unless they said no.",
 } as const;

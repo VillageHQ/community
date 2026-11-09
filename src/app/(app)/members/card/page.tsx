@@ -52,8 +52,8 @@ function readOwnWords(profile: Profile, lines: readonly FilledLine[]): OwnWords 
   };
 }
 
-async function readFillIn(database: ReturnType<typeof getDatabase>, memberId: string, isNetworkOn: boolean) {
-  if (!isNetworkOn) return null;
+// The member keeps their controls even with Network off, as long as filled-in lines can show.
+async function readFillIn(database: ReturnType<typeof getDatabase>, memberId: string) {
   const state = await readLookupState(database, memberId);
   if (!state.basis) return null;
   return { state, lines: await readFilledLines(database, memberId) };
@@ -75,7 +75,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
 
   const isNetworkOn = await isModuleEnabled(database, networkManifest);
   const showsLeaveCard = !isNetworkOn && (await readIsInVillageGroup(database, member.id));
-  const [emailSettings, fillIn] = await Promise.all([readEmailSettings(database, member.id), readFillIn(database, member.id, isNetworkOn)]);
+  const [emailSettings, fillIn] = await Promise.all([readEmailSettings(database, member.id), readFillIn(database, member.id)]);
 
   return (
     <div className="mx-auto max-w-[720px]">
@@ -94,12 +94,12 @@ export default modulePage(membersManifest, async function EditCardPage() {
       <div className="rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
         <CardForm profile={profile} />
       </div>
-      {fillIn?.state.needsAnswer ? (
+      {isNetworkOn && fillIn?.state.needsAnswer ? (
         <div className="mt-5">
           <LookupQuestionCard communityName={(await readBrandingForPage()).name} />
         </div>
       ) : null}
-      {fillIn && fillIn.state.basis && !fillIn.state.needsAnswer ? (
+      {fillIn && fillIn.state.basis && !(isNetworkOn && fillIn.state.needsAnswer) ? (
         <FillInCard
           state={{
             basis: fillIn.state.basis,
@@ -110,7 +110,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
           }}
           lines={fillIn.lines}
           ownWords={readOwnWords(profile, fillIn.lines)}
-          fillNowButton={<FillInNowButton />}
+          fillNowButton={isNetworkOn ? <FillInNowButton /> : null}
         />
       ) : null}
       <EmailPreferencesCard settings={emailSettings} />

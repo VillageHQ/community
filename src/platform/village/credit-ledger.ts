@@ -175,7 +175,8 @@ export async function withCreditCall<Result>(
   const cap = await readMonthlyCreditCap(database);
   const reservedCredits = await reserveMonthlyCredits(database, usageMonth, cap, kind);
   if (reservedCredits === null) {
-    await warnSafely(spender, usageMonth, cap, [CREDIT_WARNING_LEVELS.nearCap, CREDIT_WARNING_LEVELS.atCap]);
+    const { credits } = await readMonthlyCreditUsage(database);
+    await warnSafely(spender, usageMonth, cap, readCrossedLevels(credits, cap));
     throw new MonthlyCapReachedError(cap);
   }
 

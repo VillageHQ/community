@@ -20,7 +20,7 @@ const OFF = "off";
 type BasisChoice = FillInBasis | typeof OFF;
 
 const CHOICES: { value: BasisChoice; title: string; description: string }[] = [
-  { value: OFF, title: "Off", description: "Nobody is looked up. Cards hold only what members write." },
+  { value: OFF, title: "Off", description: "Nobody is looked up, and lines already filled in are removed. Cards hold only what members write." },
   {
     value: FILL_IN_BASES.terms,
     title: "Our membership terms allow it",
