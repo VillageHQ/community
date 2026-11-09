@@ -19,4 +19,6 @@ export const INSTANCE_SETTING_KEYS = {
   monthlyCreditCap: "monthly_credit_cap",
   fillInBasis: "fill_in_basis",
   fillInTermsDate: "fill_in_terms_date",
+  partnerReportRecipients: "partner_report_recipients",
+  partnerReportSharedAt: "partner_report_shared_at",
 } as const;

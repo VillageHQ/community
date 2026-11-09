@@ -37,6 +37,8 @@ export const AUDIT_ACTIONS = {
   fillInRunStarted: "fill_in_run_started",
   monthlyCapChanged: "monthly_cap_changed",
   connectNudgeSent: "connect_nudge_sent",
+  partnerReportSent: "partner_report_sent",
+  partnerReportMarkedShared: "partner_report_marked_shared",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

@@ -7,10 +7,10 @@ import { POST as postOutcome } from "@/app/api/intros/outcome/route";
 import { POST as postBoard } from "@/app/api/intros/route";
 import { POST as postTransition } from "@/app/api/intros/transition/route";
 import { POST as postBlock } from "@/app/api/members/block/route";
-import { readCommunityHealth } from "@/modules/admin/reads-health";
 import {
   INTRO_ACTIONS,
   INTRO_OUTCOMES,
+  INTRO_RESULTS,
   INTRO_STATES,
   OUTCOME_PROMPT_AFTER_DAYS,
   OUTCOME_PROMPT_WINDOW_DAYS,
@@ -19,7 +19,8 @@ import {
   introCountsSchema,
   introSchema,
 } from "@/modules/intros/contract";
-import { readIntroBadgeCount, readIntroCommunityCounts, readIntroCounts } from "@/modules/intros/reads";
+import { readIntroBadgeCount, readIntroCounts } from "@/modules/intros/reads";
+import { readIntroReport } from "@/modules/intros/reads-report";
 import { resetOutcomeEmailGap, sendDueOutcomeEmails } from "@/modules/intros/outcome-email";
 import { introRequest } from "@/modules/intros/schema";
 import { EVENTUALLY } from "@/test/async-timeouts";
@@ -401,29 +402,45 @@ describe("asking if an intro helped", () => {
     });
   });
 
-  describe("the totals admins see", () => {
-    it("counts asked, introduced, declined and helped", async () => {
-      await seedIntro();
-      await seedIntro({ state: INTRO_STATES.withdrawn, closedAt: new Date() });
-      await seedIntro({ state: INTRO_STATES.declined, closedAt: new Date() });
-      await seedIntro({ state: INTRO_STATES.targetDeclined, closedAt: new Date() });
-      await seedIntroducedDaysAgo(1);
-      await seedIntroducedDaysAgo(OUTCOME_PROMPT_AFTER_DAYS, { outcome: INTRO_OUTCOMES.helped, outcomeAnsweredAt: new Date() });
-      await seedIntroducedDaysAgo(OUTCOME_PROMPT_AFTER_DAYS, { outcome: INTRO_OUTCOMES.notHelped, outcomeAnsweredAt: new Date() });
+  describe("what came of it", () => {
+    async function readResults(introId: string) {
+      const [row] = await database.select({ results: introRequest.outcomeResults }).from(introRequest).where(eq(introRequest.id, introId));
+      return row?.results ?? null;
+    }
 
-      expect(await readIntroCommunityCounts(database)).toEqual({ asked: 7, introduced: 3, declined: 2, helped: 1 });
+    it("saves what a helpful intro led to, once each", async () => {
+      const introId = await seedIntroducedDaysAgo(OUTCOME_PROMPT_AFTER_DAYS);
+      const response = await call(postOutcome, requester, { introId, outcome: INTRO_OUTCOMES.helped, results: [INTRO_RESULTS.hire, INTRO_RESULTS.hire, INTRO_RESULTS.investor] });
+
+      expect(response.status).toBe(OK_STATUS);
+      expect(await readResults(introId)).toEqual([INTRO_RESULTS.hire, INTRO_RESULTS.investor]);
     });
 
-    it("appear on the health read with no private detail", async () => {
-      await seedIntroducedDaysAgo(OUTCOME_PROMPT_AFTER_DAYS, { outcome: INTRO_OUTCOMES.helped, outcomeAnsweredAt: new Date() });
+    it("drops results sent with any answer but a yes", async () => {
+      const introId = await seedIntroducedDaysAgo(OUTCOME_PROMPT_AFTER_DAYS);
+      await call(postOutcome, requester, { introId, outcome: INTRO_OUTCOMES.notHelped, results: [INTRO_RESULTS.customer] });
 
-      const { intros } = await readCommunityHealth(database);
-      const health = JSON.stringify(intros);
+      expect(await readResults(introId)).toBeNull();
+    });
 
-      expect(intros).toEqual({ asked: 1, introduced: 1, declined: 0, helped: 1 });
-      expect(health).not.toContain(NOTE);
-      expect(health).not.toContain(TARGET_NAME);
-      expect(health).not.toContain(requester.userId);
+    it("refuses a result it doesn't know", async () => {
+      const introId = await seedIntroducedDaysAgo(OUTCOME_PROMPT_AFTER_DAYS);
+
+      expect((await call(postOutcome, requester, { introId, outcome: INTRO_OUTCOMES.helped, results: ["unicorn"] })).status).toBe(UNPROCESSABLE_STATUS);
+    });
+
+    it("reaches the admins' totals with no private detail", async () => {
+      const introId = await seedIntroducedDaysAgo(OUTCOME_PROMPT_AFTER_DAYS);
+      await call(postOutcome, requester, { introId, outcome: INTRO_OUTCOMES.helped, results: [INTRO_RESULTS.customer] });
+
+      const report = await readIntroReport(database, { from: null, to: null });
+      const text = JSON.stringify(report);
+
+      expect(report).toMatchObject({ introduced: 1, helped: 1, helpedPercent: 100, results: { customer: 1, hire: 0, investor: 0 } });
+      expect(text).not.toContain(NOTE);
+      expect(text).not.toContain(TARGET_NAME);
+      expect(text).not.toContain(requester.userId);
+      expect(text).not.toContain(connector.userId);
     });
   });
 

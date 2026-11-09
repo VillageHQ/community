@@ -26,6 +26,8 @@ import { readOptedOutTopics } from "@/platform/email/unsubscribe";
 import { introsManifest } from "@/modules/intros/manifest";
 import { messagesManifest } from "@/modules/messages/manifest";
 import { EmailPreferencesCard } from "@/shell/email-preferences-card";
+import { ReportCreditCard } from "@/modules/members/components/report-credit-card";
+import { readReportCredit } from "@/modules/members/service-report-credit";
 import { readEnabledIds } from "@/shell/enabled-modules";
 import { FILL_IN_FIELDS, type FilledLine } from "@/modules/members/contract-fill-in";
 import { readFilledLines, readLookupState } from "@/modules/members/service-fill-in";
@@ -82,6 +84,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
     readFillIn(database, member.id),
     hasPassword(database, member.id),
   ]);
+  const [isIntrosOn, isReportCreditOn] = await Promise.all([isModuleEnabled(database, introsManifest), readReportCredit(database, member.id)]);
 
   return (
     <div className="mx-auto max-w-[720px]">
@@ -122,6 +125,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
       <PasswordCard hasPassword={memberHasPassword} isLinkOn={readResendConfig(process.env) !== null} />
       <EmailPreferencesCard settings={emailSettings} />
       {isNetworkOn ? <VillageDisclosure isFillInOn={fillIn?.state.isAllowed === true} /> : null}
+      {isIntrosOn ? <ReportCreditCard isOn={isReportCreditOn} /> : null}
       {showsLeaveCard ? <LeaveGroupCard /> : null}
     </div>
   );

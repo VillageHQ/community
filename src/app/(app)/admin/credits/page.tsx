@@ -20,6 +20,9 @@ import { readFilledMemberCount, readFillInSettings } from "@/modules/members/ser
 import { FillInSettingsForm } from "@/modules/network/components/fill-in-settings-form";
 import { MonthlyCapForm } from "@/modules/network/components/monthly-cap-form";
 import { UsageMeter } from "@/modules/network/components/usage-meter";
+import { ConnectNudgeButton } from "@/modules/network/components/connect-nudge-button";
+import { readConnectMeter } from "@/modules/network/service-nudge";
+import { readResendConfig } from "@/platform/email/resend";
 
 import { AdminSection } from "@/shell/admin-section";
 import { StatRows } from "@/modules/admin/components/stat-rows";
@@ -97,13 +100,35 @@ function EmptyUsage() {
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminCredits };
 
+function NetworkReachCard({ meter }: { meter: Awaited<ReturnType<typeof readConnectMeter>> }) {
+  const { memberCount, connectedCount, unconnectedCount, nudgeableCount } = meter;
+  return (
+    <Card className="grid gap-4 lg:col-span-2">
+      <div className="grid gap-1.5">
+        <CardTitle>Who members can ask for intros</CardTitle>
+        <CardDescription>
+          Members who connected their network and share it with the community, so others can ask them for an intro. {unconnectedCount} haven&apos;t connected yet.
+        </CardDescription>
+      </div>
+      <UsageMeter
+        label="Connected and open to intro asks"
+        value={connectedCount}
+        maximum={Math.max(memberCount, 1)}
+        valueText={`${connectedCount} of ${memberCount} members`}
+      />
+      <ConnectNudgeButton nudgeableCount={nudgeableCount} isEmailOn={readResendConfig(process.env) !== null} />
+    </Card>
+  );
+}
+
+
 function readMonthSentence({ credits, cap, usedPercent }: Awaited<ReturnType<typeof readMonthlyCreditUsage>>) {
   if (credits >= cap || usedPercent >= 100) return "The cap is reached. Lookups are paused until the 1st (UTC), or until you raise it.";
   return `Lookups stop at the cap, and admins get an email at ${NEAR_CAP_PERCENT}% and at 100%. These are this site's estimates.`;
 }
 
 export default modulePage(networkManifest, async function AdminCreditsPage() {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const database = getDatabase();
   const [usage, limit, outOfCreditsAt, month, fillIn, filledMemberCount, memberCount] = await Promise.all([
     readCreditUsage(database),
@@ -114,6 +139,7 @@ export default modulePage(networkManifest, async function AdminCreditsPage() {
     readFilledMemberCount(database),
     readActiveMemberCount(database),
   ]);
+  const connectMeter = await readConnectMeter(database, admin.id);
   const hiddenMemberCount = usage.spendingMemberCount - usage.members.length;
 
   return (
@@ -194,6 +220,8 @@ export default modulePage(networkManifest, async function AdminCreditsPage() {
           </div>
           <DailyLimitForm currentLimit={limit} />
         </Card>
+
+        <NetworkReachCard meter={connectMeter} />
 
         <Card className="grid gap-4 lg:col-span-2">
           <div className="grid gap-1.5">

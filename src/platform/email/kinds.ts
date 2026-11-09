@@ -16,6 +16,7 @@ export const EMAIL_KINDS = {
   directMessage: "direct_message",
   creditWarning: "credit_warning",
   connectNudge: "connect_nudge",
+  partnerReport: "partner_report",
 } as const;
 
 export type EmailKind = (typeof EMAIL_KINDS)[keyof typeof EMAIL_KINDS];
@@ -31,6 +32,8 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.directMessage]: EMAIL_TOPICS.messages,
   [EMAIL_KINDS.creditWarning]: null,
   [EMAIL_KINDS.connectNudge]: EMAIL_TOPICS.network,
+  // Sent by an admin to people outside the community, who have no member switch. The send itself skips addresses that bounced.
+  [EMAIL_KINDS.partnerReport]: null,
 };
 
 export const EMAIL_TOPIC_LABELS: Record<EmailTopic, { title: string; description: string }> = {

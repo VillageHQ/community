@@ -23,4 +23,4 @@ Rules:
 - A token is live only while both members are active, joined, unblocked and the ask isn't withheld. Checked in SQL by `isConsentTokenLive`.
 - "Stop all asks" saves an HMAC of the target's LinkedIn slug, keyed with the app's auth secret (`opt-out.ts`), in `intro_opt_out`, nothing else, and audits it without a name. A slug is public, so a plain hash could be reversed by guessing. If the auth secret changes, earlier stop-all choices are forgotten.
 - The target's email is optional, typed by the connector, used only with Resend, and cleared when the ask leaves `asking_target` or `target_agreed`. Nothing here spends Village credits to find an address.
-- Admins see four totals: asked, introduced, declined, helped.
+- Admins see totals only, from `reads-report.ts`: by period asked, no withheld asks, expiries never declines.

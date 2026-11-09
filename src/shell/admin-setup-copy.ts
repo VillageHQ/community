@@ -25,4 +25,10 @@ export const SETUP_STEP_COPY: Record<SetupStepId, { title: string; todo: string;
     done: "Your invites are out. Add more any time.",
     manageLabel: "Invite more",
   },
+  [SETUP_STEPS.report]: {
+    title: "Your first partner report",
+    todo: "Send your partners this community's numbers: intros made, what came of them and who's active. Counts only.",
+    done: "Your first report is out. Send the next one from Partner report.",
+    manageLabel: "Open",
+  },
 };
