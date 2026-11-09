@@ -143,7 +143,7 @@ describe("the partner report", () => {
     it("match the seeded intros in every state, per period", async () => {
       const { intros } = await readPartnerReport(database);
 
-      expect(intros?.[REPORT_PERIOD_KEYS.thisQuarter]).toMatchObject({
+      expect(intros?.periods[REPORT_PERIOD_KEYS.thisQuarter]).toMatchObject({
         asked: 12,
         connectorSaidYes: 7,
         targetSaidYes: 4,
@@ -154,6 +154,7 @@ describe("the partner report", () => {
         expired: 3,
         expiredAtConnector: 2,
         expiredAtTarget: 1,
+        expiredBeforeIntro: 0,
         withdrawn: 1,
         open: 3,
         helped: 1,
@@ -164,19 +165,27 @@ describe("the partner report", () => {
         results: { customer: 1, hire: 1, investor: 0 },
         medianDaysToIntroduced: 4,
       });
-      expect(intros?.[REPORT_PERIOD_KEYS.lastQuarter]).toMatchObject({ asked: 2, introduced: 1, declined: 1, expired: 0, open: 0, helped: 1, helpedPercent: 100, medianDaysToIntroduced: 1 });
-      expect(intros?.[REPORT_PERIOD_KEYS.sinceLaunch]).toMatchObject({ asked: 15, introduced: 4, declined: 3, expired: 4, withdrawn: 1, open: 3, helped: 2, notHelped: 1, helpedPercent: 67 });
+      expect(intros?.periods[REPORT_PERIOD_KEYS.lastQuarter]).toMatchObject({ asked: 2, introduced: 1, declined: 1, expired: 0, open: 0, helped: 1, helpedPercent: 100, medianDaysToIntroduced: 1 });
+      expect(intros?.periods[REPORT_PERIOD_KEYS.sinceLaunch]).toMatchObject({ asked: 15, introduced: 4, declined: 3, expired: 4, withdrawn: 1, open: 3, helped: 2, notHelped: 1, helpedPercent: 67 });
     });
 
     it("never counts an expiry as a decline, and every period adds up", async () => {
       const { intros } = await readPartnerReport(database);
 
-      for (const period of Object.values(intros ?? {})) {
+      for (const period of Object.values(intros?.periods ?? {})) {
         expect(period.declined).toBe(period.declinedByConnector + period.declinedByTarget);
         expect(period.asked).toBe(period.introduced + period.declined + period.expired + period.withdrawn + period.open);
       }
       const declinedRows = await database.select({ id: introRequest.id }).from(introRequest).where(inArray(introRequest.state, [INTRO_STATES.declined, INTRO_STATES.targetDeclined]));
-      expect(intros?.[REPORT_PERIOD_KEYS.sinceLaunch].declined).toBe(declinedRows.length);
+      expect(intros?.periods[REPORT_PERIOD_KEYS.sinceLaunch].declined).toBe(declinedRows.length);
+    });
+
+    it("puts an ask that expired after both said yes on its own line, not on the person's", async () => {
+      await seedIntro(credited, { state: INTRO_STATES.expired, askedTargetAt: new Date(), targetAgreedAt: new Date(), closedAt: new Date() });
+
+      const { intros } = await readPartnerReport(database);
+
+      expect(intros?.periods[REPORT_PERIOD_KEYS.thisQuarter]).toMatchObject({ expired: 4, expiredAtTarget: 1, expiredBeforeIntro: 1 });
     });
 
     it("expires a due ask before counting, so it isn't counted as open", async () => {
@@ -237,6 +246,26 @@ describe("the partner report", () => {
       await database.update(user).set({ banned: true }).where(eq(user.id, credited.userId));
 
       expect(renderPartnerReportCsv(await readPartnerReport(database))).not.toContain(CREDITED_NAME);
+    });
+
+    it("names at most five, counts the rest, and keeps two people with one name apart", async () => {
+      const extras = await Promise.all(Array.from({ length: 6 }, () => createSignedInMember(database)));
+      for (const [index, extra] of extras.entries()) {
+        await nameMember(database, extra.userId, index < 2 ? "Same Name" : `Extra ${index}`);
+        await call(postReportCredit, extra, { isOn: true });
+        for (let made = 0; made < (index < 2 ? 4 : 3); made += 1) {
+          await seedIntro(extra, { state: INTRO_STATES.completed, askedTargetAt: new Date(), targetAgreedAt: new Date(), closedAt: new Date() });
+        }
+      }
+
+      const report = await readPartnerReport(database);
+      const connectors = report.intros!.periods[REPORT_PERIOD_KEYS.sinceLaunch].connectors;
+      const introduced = report.intros!.periods[REPORT_PERIOD_KEYS.sinceLaunch].introduced;
+
+      expect(report.intros!.namedConnectors).toHaveLength(5);
+      expect(connectors.named.reduce((total, { introduced: count }) => total + count, 0) + connectors.others.introduced).toBe(introduced);
+      expect(report.intros!.namedConnectors.filter(({ name }) => name === "Same Name")).toHaveLength(2);
+      expect(renderPartnerReportCsv(report).match(/Top connectors,Same Name,4,0,4/g)).toHaveLength(2);
     });
 
     it("keeps credit off until a member turns it on", async () => {

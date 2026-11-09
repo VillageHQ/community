@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, gte, lt, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, sql, type SQL } from "drizzle-orm";
 
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { user } from "../../platform/database/auth-schema.ts";
@@ -54,7 +54,8 @@ async function readCounts(database: Database, period: ReportPeriod) {
       declinedByConnector: countWhere(sql`${introRequest.state} = ${INTRO_STATES.declined}`),
       declinedByTarget: countWhere(sql`${introRequest.state} = ${INTRO_STATES.targetDeclined}`),
       expiredAtConnector: countWhere(sql`${introRequest.state} = ${INTRO_STATES.expired} and not ${connectorSaidYes}`),
-      expiredAtTarget: countWhere(sql`${introRequest.state} = ${INTRO_STATES.expired} and ${connectorSaidYes}`),
+      expiredAtTarget: countWhere(sql`${introRequest.state} = ${INTRO_STATES.expired} and ${introRequest.askedTargetAt} is not null and ${introRequest.targetAgreedAt} is null`),
+      expiredBeforeIntro: countWhere(sql`${introRequest.state} = ${INTRO_STATES.expired} and ${connectorSaidYes} and not (${introRequest.askedTargetAt} is not null and ${introRequest.targetAgreedAt} is null)`),
       withdrawn: countWhere(sql`${introRequest.state} = ${INTRO_STATES.withdrawn}`),
       open: countWhere(inStates(OPEN_INTRO_STATES)),
       helped: countWhere(sql`${introRequest.outcome} = ${INTRO_OUTCOMES.helped}`),
@@ -71,15 +72,16 @@ async function readCounts(database: Database, period: ReportPeriod) {
     .from(introRequest)
     .where(isInPeriod(period));
   if (!row) throw new Error("The intro report read returned no row.");
-  const { declinedByConnector, declinedByTarget, expiredAtConnector, expiredAtTarget, helped, notHelped, customer, hire, investor, ...rest } = row;
+  const { declinedByConnector, declinedByTarget, expiredAtConnector, expiredAtTarget, expiredBeforeIntro, helped, notHelped, customer, hire, investor, ...rest } = row;
   return {
     ...rest,
     declined: declinedByConnector + declinedByTarget,
     declinedByConnector,
     declinedByTarget,
-    expired: expiredAtConnector + expiredAtTarget,
+    expired: expiredAtConnector + expiredAtTarget + expiredBeforeIntro,
     expiredAtConnector,
     expiredAtTarget,
+    expiredBeforeIntro,
     helped,
     notHelped,
     helpedPercent: helped + notHelped === 0 ? null : Math.round((helped / (helped + notHelped)) * 100),
@@ -87,15 +89,13 @@ async function readCounts(database: Database, period: ReportPeriod) {
   };
 }
 
-// Connectors who made at least one intro in the period. Only a member who turned on "credit me in reports", and is
-// still an active member, is named. Everyone else is folded into one count.
-async function readConnectors(database: Database, period: ReportPeriod) {
+// Connectors who made at least one intro in the period, most intros first.
+async function readConnectorRows(database: Database, period: ReportPeriod) {
   const introducedCount = countWhere(introduced);
-  const rows = await database
+  return database
     .select({
-      introducerId: introRequest.introducerId,
+      id: introRequest.introducerId,
       introduced: introducedCount,
-      saidYes: countWhere(connectorSaidYes),
       name: user.name,
       isCredited: sql<boolean>`coalesce(bool_or(${memberProfile.creditInReports} and ${isActiveMember()}), false)`,
     })
@@ -105,17 +105,38 @@ async function readConnectors(database: Database, period: ReportPeriod) {
     .where(isInPeriod(period))
     .groupBy(introRequest.introducerId, user.name)
     .having(sql`${introducedCount} > 0`)
-    .orderBy(desc(introducedCount), desc(countWhere(connectorSaidYes)), user.name);
-  const credited = rows.filter(({ isCredited }) => isCredited);
-  const others = rows.filter(({ isCredited }) => !isCredited);
+    .orderBy(desc(introducedCount), desc(countWhere(connectorSaidYes)), user.name, introRequest.introducerId);
+}
+
+// The named connectors: the top credited ones over the whole history, so every period names the same people.
+// Only a member who turned on "credit me in reports", and is still an active member, can be named.
+async function readNamedConnectorIds(database: Database) {
+  const rows = await readConnectorRows(database, { from: null, to: null });
+  return rows.filter(({ isCredited }) => isCredited).slice(0, TOP_CONNECTOR_LIMIT).map(({ id }) => id);
+}
+
+// Everyone not named is folded into one count, so named + others always covers every intro made.
+async function readConnectors(database: Database, period: ReportPeriod, namedIds: readonly string[]) {
+  const rows = await readConnectorRows(database, period);
+  const others = rows.filter(({ id, isCredited }) => !(isCredited && namedIds.includes(id)));
   return {
-    credited: credited.slice(0, TOP_CONNECTOR_LIMIT).map(({ name, introduced: count }) => ({ name, introduced: count })),
+    named: namedIds.map((id) => {
+      const row = rows.find((candidate) => candidate.id === id && candidate.isCredited);
+      return { id, introduced: row?.introduced ?? 0 };
+    }),
     others: { connectors: others.length, introduced: others.reduce((total, row) => total + row.introduced, 0) },
   };
 }
 
-export async function readIntroReport(database: Database, period: ReportPeriod) {
-  const [counts, connectors] = await Promise.all([readCounts(database, period), readConnectors(database, period)]);
+async function readConnectorNames(database: Database, ids: readonly string[]) {
+  if (ids.length === 0) return [];
+  const rows = await database.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, [...ids]));
+  return ids.map((id) => ({ id, name: rows.find((row) => row.id === id)?.name ?? "" }));
+}
+
+export async function readIntroReport(database: Database, period: ReportPeriod, namedIds?: readonly string[]) {
+  const named = namedIds ?? (await readNamedConnectorIds(database));
+  const [counts, connectors] = await Promise.all([readCounts(database, period), readConnectors(database, period, named)]);
   return { ...counts, connectors };
 }
 
@@ -124,6 +145,7 @@ export type IntroReport = Awaited<ReturnType<typeof readIntroReport>>;
 // Due expiries are applied first, so an ask past its deadline counts as expired, never as open.
 export async function readIntroReports<Key extends string>(database: Database, periods: Record<Key, ReportPeriod>) {
   await expireDueIntros(database, null);
-  const entries = await Promise.all(Object.entries<ReportPeriod>(periods).map(async ([key, period]) => [key, await readIntroReport(database, period)] as const));
-  return Object.fromEntries(entries) as Record<Key, IntroReport>;
+  const namedIds = await readNamedConnectorIds(database);
+  const entries = await Promise.all(Object.entries<ReportPeriod>(periods).map(async ([key, period]) => [key, await readIntroReport(database, period, namedIds)] as const));
+  return { periods: Object.fromEntries(entries) as Record<Key, IntroReport>, namedConnectors: await readConnectorNames(database, namedIds) };
 }

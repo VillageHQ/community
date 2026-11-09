@@ -1,6 +1,6 @@
 import { ASK_CATEGORIES, type AskCategory } from "../asks/contract.ts";
 import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
-import type { IntroReport } from "../intros/reads-report.ts";
+import { TOP_CONNECTOR_LIMIT, type IntroReport } from "../intros/reads-report.ts";
 import type { PartnerReport } from "./reads-partner-report.ts";
 
 // Every line of the partner report, in order, built once from the one read. The page, the CSV and the email all
@@ -28,8 +28,9 @@ function readPercent(value: number | null) {
   return value === null ? null : `${value}%`;
 }
 
-function readIntroSections(intros: IntroReport[]): ReportSection[] {
-  const creditedNames = [...new Set(intros.flatMap(({ connectors }) => connectors.credited.map(({ name }) => name)))];
+type NamedConnector = { id: string; name: string };
+
+function readIntroSections(intros: IntroReport[], namedConnectors: readonly NamedConnector[]): ReportSection[] {
   return [
     {
       id: "intros",
@@ -44,6 +45,7 @@ function readIntroSections(intros: IntroReport[]): ReportSection[] {
         introRow(intros, "Declined by the person asked for", ({ declinedByTarget }) => declinedByTarget),
         introRow(intros, "Expired, connector never answered", ({ expiredAtConnector }) => expiredAtConnector, { note: "Not a decline. Includes asks closed because a member left." }),
         introRow(intros, "Expired, person asked for never answered", ({ expiredAtTarget }) => expiredAtTarget, { note: "Not a decline." }),
+        introRow(intros, "Expired before the connector made the intro", ({ expiredBeforeIntro }) => expiredBeforeIntro, { note: "Not a decline. Both had said yes, or it predates asking the person." }),
         introRow(intros, "Withdrawn by the member who asked", ({ withdrawn }) => withdrawn),
         introRow(intros, "Still open", ({ open }) => open),
         introRow(intros, "Median days from ask to intro", ({ medianDaysToIntroduced }) => medianDaysToIntroduced),
@@ -70,9 +72,9 @@ function readIntroSections(intros: IntroReport[]): ReportSection[] {
     {
       id: "connectors",
       title: "Top connectors",
-      description: "Intros made, per connector. Only members who turned on \"credit me in reports\" are named.",
+      description: `Intros made, per connector. Only members who turned on "credit me in reports" are named, at most ${TOP_CONNECTOR_LIMIT}; everyone else is counted together.`,
       rows: [
-        ...creditedNames.map((name) => introRow(intros, name, ({ connectors }) => connectors.credited.find((connector) => connector.name === name)?.introduced ?? 0)),
+        ...namedConnectors.map(({ id, name }) => introRow(intros, name, ({ connectors }) => connectors.named.find((connector) => connector.id === id)?.introduced ?? 0)),
         introRow(intros, "Other connectors, not named", ({ connectors }) => connectors.others.connectors),
         introRow(intros, "Intros made by them", ({ connectors }) => connectors.others.introduced),
       ],
@@ -97,7 +99,7 @@ function readNeedSection(needs: NonNullable<PartnerReport["needs"]>, periods: Pa
 }
 
 export function readPeriodSections(report: PartnerReport): ReportSection[] {
-  const intros = report.intros ? readIntroSections(report.periods.map(({ key }) => report.intros![key])) : [];
+  const intros = report.intros ? readIntroSections(report.periods.map(({ key }) => report.intros!.periods[key]), report.intros.namedConnectors) : [];
   const needs = report.needs ? readNeedSection(report.needs, report.periods) : null;
   return [...intros, ...(needs ? [needs] : [])];
 }

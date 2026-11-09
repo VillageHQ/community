@@ -20,8 +20,8 @@ Out: cohorts (the data does not exist), per-intro logs, charts, scheduled sends.
    every number, so no connector looks unresponsive for an ask they never saw.
 3. **Funnel:** connector said yes = the connector accepted (the target was asked, or the old single opt-in yes);
    target said yes = the target agreed, or the intro was made; introduced = made. Declined is split into "by the
-   connector" and "by the person asked for"; expired is its own line, split the same way (no answer from the
-   connector / from the person asked for). Due expiries are applied before the report is read.
+   connector" and "by the person asked for"; expired is its own line, split by stage (no answer from the
+   connector / from the person asked for / both said yes but the intro was never made). Due expiries are applied before the report is read.
 4. **"Did it help" share** = said it helped / (said it helped + said no). "Not yet" and "not answered" are shown
    beside it. **Results** (customer conversation, hire, investor meeting) are new: when a member says an intro
    helped, they can tick what came of it. Results start at zero for older intros.

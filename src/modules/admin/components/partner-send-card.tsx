@@ -77,7 +77,11 @@ export function PartnerSendCard({ savedRecipients, isEmailConfigured }: PartnerS
         maxLength={PARTNER_REPORT_LIMITS.noteLength}
         rows={3}
       />
-      <FormError message={preview.error?.message ?? send.error?.message ?? null} />
+      <FormError
+        message={
+          isTooMany ? `Send to at most ${PARTNER_REPORT_LIMITS.recipients} addresses at a time. Remove ${addressCount - PARTNER_REPORT_LIMITS.recipients}.` : (preview.error?.message ?? send.error?.message ?? null)
+        }
+      />
       {send.data ? <Alert variant="success">{readSentMessage(send.data.queued, send.data.skipped)}</Alert> : null}
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="outline" disabled={preview.isPending} onClick={() => preview.mutate()}>
