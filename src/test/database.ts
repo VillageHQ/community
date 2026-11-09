@@ -9,6 +9,7 @@ import { communityBranding } from "../platform/branding/schema.ts";
 import { createDatabase, type Database } from "../platform/database/client.ts";
 import { moderationRecord } from "../modules/feed/schema.ts";
 import { instanceSettings } from "../platform/settings/schema.ts";
+import { introOptOut } from "../modules/intros/schema.ts";
 import { invite } from "../modules/members/schema.ts";
 import { messageReport } from "../modules/messages/schema.ts";
 
@@ -30,6 +31,7 @@ export async function clearDatabase(database: Database) {
   await database.delete(contentReport);
   await database.delete(adminAuditEntry);
   await database.delete(invite);
+  await database.delete(introOptOut);
   await database.delete(user);
   await database.delete(instanceSettings);
   await database.delete(communityBranding);

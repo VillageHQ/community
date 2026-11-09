@@ -16,7 +16,16 @@ import { ROUTES } from "../../platform/http/routes.ts";
 
 export const ASKED_EMAIL_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
-export const INTRO_EMAIL_EVENTS = { asked: "asked", accepted: "accepted", declined: "declined" } as const;
+export const INTRO_EMAIL_EVENTS = {
+  asked: "asked",
+  declined: "declined",
+  targetAgreed: "target_agreed",
+  targetDeclined: "target_declined",
+  joinNeeded: "join_needed",
+  joined: "joined",
+  outcomeAsked: "outcome_asked",
+  outcomeReminder: "outcome_reminder",
+} as const;
 
 export type IntroEmailEvent = (typeof INTRO_EMAIL_EVENTS)[keyof typeof INTRO_EMAIL_EVENTS];
 
@@ -28,26 +37,61 @@ const INTRO_EMAIL_COPY: Record<IntroEmailEvent, (names: IntroEmailNames) => Intr
     subject: `${requesterName} asked you for an intro`,
     heading: "Someone asked you for an intro",
     body: `${requesterName} would like an intro to ${targetName}. Read their note and say yes or no. ${readFirstName(targetName)} hears nothing unless you say yes.`,
-    action: "Read the ask",
+    action: "Read the intro request",
   }),
-  [INTRO_EMAIL_EVENTS.accepted]: ({ introducerName, targetName }) => ({
-    subject: `${introducerName} said yes to your intro`,
-    heading: "Good news",
-    body: `${introducerName} said yes to your intro to ${targetName}. They'll reach out to ${readFirstName(targetName)} themselves.`,
-    action: "See your ask",
-  }),
-  [INTRO_EMAIL_EVENTS.declined]: ({ introducerName, targetName }) => ({
-    subject: `${introducerName} passed on your intro`,
+  [INTRO_EMAIL_EVENTS.declined]: ({ targetName }) => ({
+    subject: `Your intro to ${targetName} isn't happening this time`,
     heading: "Not this time",
-    body: `${introducerName} passed on your intro to ${targetName}. ${readFirstName(targetName)} heard nothing about it. Someone else may be able to help.`,
-    action: "See your ask",
+    body: `Your intro to ${targetName} isn't happening this time. That's normal, and we don't share who answered. Someone else may be able to help.`,
+    action: "See other ways in",
+  }),
+  [INTRO_EMAIL_EVENTS.targetAgreed]: ({ introducerName, targetName }) => ({
+    subject: `${readFirstName(targetName)} said yes to your intro`,
+    heading: "Good news",
+    body: `${targetName} said yes. ${readFirstName(introducerName)} will connect you both with one message.`,
+    action: "See your intro request",
+  }),
+  [INTRO_EMAIL_EVENTS.targetDeclined]: ({ requesterName, targetName }) => ({
+    subject: `${readFirstName(targetName)} said no thanks`,
+    heading: "No thanks this time",
+    body: `${targetName} said no thanks to meeting ${requesterName}. ${readFirstName(requesterName)} sees that this intro isn't happening, not who answered. Nothing more to do.`,
+    action: "See the intro request",
+  }),
+  [INTRO_EMAIL_EVENTS.joinNeeded]: ({ requesterName, targetName }) => ({
+    subject: `${readFirstName(targetName)} said yes`,
+    heading: "One last step",
+    body: `${targetName} said yes to meeting ${requesterName}. Send the message that joins them, then mark it as introduced.`,
+    action: "Connect them",
+  }),
+  [INTRO_EMAIL_EVENTS.joined]: ({ requesterName, targetName }) => ({
+    subject: `${readFirstName(targetName)} said yes, and they're connected`,
+    heading: "They're connected",
+    body: `${targetName} said yes to meeting ${requesterName}, so we emailed them both. Nothing more to do. Thank you.`,
+    action: "See the intro request",
+  }),
+  [INTRO_EMAIL_EVENTS.outcomeAsked]: ({ introducerName, targetName }) => ({
+    subject: `Did your intro to ${readFirstName(targetName)} help?`,
+    heading: "Did it help?",
+    body: `${readFirstName(introducerName)} introduced you to ${targetName} a couple of weeks ago. Did it help? One tap tells ${readFirstName(introducerName)} their intro mattered, and helps this community see which intros work.`,
+    action: "Answer in one tap",
+  }),
+  [INTRO_EMAIL_EVENTS.outcomeReminder]: ({ introducerName, targetName }) => ({
+    subject: `A quick one: did meeting ${readFirstName(targetName)} help?`,
+    heading: "One tap, then we'll stop asking",
+    body: `Did ${readFirstName(introducerName)}'s intro to ${targetName} help? "Not yet" is a fine answer too. This is the last time we'll email about it.`,
+    action: "Answer in one tap",
   }),
 };
 
 const RECIPIENT_BY_EVENT: Record<IntroEmailEvent, keyof IntroEmailParticipants> = {
   [INTRO_EMAIL_EVENTS.asked]: "introducerId",
-  [INTRO_EMAIL_EVENTS.accepted]: "requesterId",
   [INTRO_EMAIL_EVENTS.declined]: "requesterId",
+  [INTRO_EMAIL_EVENTS.targetAgreed]: "requesterId",
+  [INTRO_EMAIL_EVENTS.targetDeclined]: "introducerId",
+  [INTRO_EMAIL_EVENTS.joinNeeded]: "introducerId",
+  [INTRO_EMAIL_EVENTS.joined]: "introducerId",
+  [INTRO_EMAIL_EVENTS.outcomeAsked]: "requesterId",
+  [INTRO_EMAIL_EVENTS.outcomeReminder]: "requesterId",
 };
 
 type IntroEmailParticipants = { requesterId: string; introducerId: string };
@@ -92,18 +136,19 @@ async function claimAskedEmail(database: Database, { introId, requesterId, intro
   return claimed.length > 0;
 }
 
+// Resolves true only when Resend took the email. Failures are logged, never thrown.
 export async function deliverIntroEmail(database: Database, environment: Environment, facts: IntroEmailFacts) {
   const config = readResendConfig(environment);
-  if (!config) return;
+  if (!config) return false;
 
   try {
-    if (facts.event === INTRO_EMAIL_EVENTS.asked && !(await claimAskedEmail(database, facts))) return;
+    if (facts.event === INTRO_EMAIL_EVENTS.asked && !(await claimAskedEmail(database, facts))) return false;
 
     const [recipient] = await database
       .select({ email: user.email })
       .from(user)
       .where(eq(user.id, facts[RECIPIENT_BY_EVENT[facts.event]]));
-    if (!recipient) return;
+    if (!recipient) return false;
 
     const { accentColor } = await readBranding(database);
     const link = `${resolveAppUrl(environment)}${ROUTES.intros}/${facts.introId}`;
@@ -112,7 +157,9 @@ export async function deliverIntroEmail(database: Database, environment: Environ
       idempotencyKey: `intro-${facts.event}-${facts.introId}`,
       ...renderIntroEmail(facts.event, facts, link, accentColor),
     });
+    return true;
   } catch (error) {
     logError("intro-email", error);
+    return false;
   }
 }

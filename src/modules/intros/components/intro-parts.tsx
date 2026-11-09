@@ -1,4 +1,4 @@
-import { CalendarClock, Check, CircleSlash, Hourglass, Link2, MessageCircle, Undo2, UserRoundCheck, type LucideIcon } from "lucide-react";
+import { CalendarClock, Check, CircleSlash, Hourglass, Link2, MessageCircle, Send, Undo2, UserRoundCheck, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -23,6 +23,9 @@ type StatePresentation = { label: string; tone: "accent" | "neutral" | "sage" | 
 const STATE_PRESENTATIONS: Record<IntroState, StatePresentation> = {
   [INTRO_STATES.requested]: { label: "Waiting for an answer", tone: "gold", icon: Hourglass },
   [INTRO_STATES.accepted]: { label: "Said yes", tone: "accent", icon: UserRoundCheck },
+  [INTRO_STATES.askingTarget]: { label: "Waiting on their answer", tone: "gold", icon: Send },
+  [INTRO_STATES.targetAgreed]: { label: "They said yes", tone: "accent", icon: UserRoundCheck },
+  [INTRO_STATES.targetDeclined]: { label: "No thanks", tone: "neutral", icon: CircleSlash },
   [INTRO_STATES.completed]: { label: "Introduced", tone: "sage", icon: Check },
   [INTRO_STATES.declined]: { label: "Not this time", tone: "neutral", icon: CircleSlash },
   [INTRO_STATES.withdrawn]: { label: "Withdrawn", tone: "neutral", icon: Undo2 },
@@ -88,9 +91,9 @@ export function IntroMessageButton({ person, isPrimary }: { person: IntroPerson;
 type TimelineEntry = { key: string; label: string; date: string | null; isDone: boolean; icon: LucideIcon };
 
 const CLOSING_ENTRIES: Partial<Record<IntroState, { label: (intro: Intro) => string; icon: LucideIcon }>> = {
-  [INTRO_STATES.declined]: { label: ({ introducer }) => `${readFirstName(introducer.name)} can't help this time`, icon: CircleSlash },
-  [INTRO_STATES.withdrawn]: { label: () => "You withdrew your ask", icon: Undo2 },
-  [INTRO_STATES.expired]: { label: () => "The ask expired", icon: CalendarClock },
+  [INTRO_STATES.declined]: { label: () => "Not this time", icon: CircleSlash },
+  [INTRO_STATES.withdrawn]: { label: () => "You withdrew your intro request", icon: Undo2 },
+  [INTRO_STATES.expired]: { label: () => "The intro request expired", icon: CalendarClock },
 };
 
 export function readTimeline(intro: Intro): TimelineEntry[] {
@@ -103,15 +106,18 @@ export function readTimeline(intro: Intro): TimelineEntry[] {
   if (intro.acceptedAt) {
     entries.push({ key: "accepted", label: `${introducerFirst} said yes`, date: intro.acceptedAt, isDone: true, icon: UserRoundCheck });
   }
+  if (intro.targetAgreedAt) {
+    entries.push({ key: "agreed", label: `${targetFirst} said yes`, date: intro.targetAgreedAt, isDone: true, icon: UserRoundCheck });
+  }
   if (closing) {
     return [...entries, { key: "closed", label: closing.label(intro), date: intro.closedAt, isDone: true, icon: closing.icon }];
   }
-  if (!intro.acceptedAt) {
-    entries.push({ key: "accepted", label: `${introducerFirst} decides`, date: null, isDone: false, icon: UserRoundCheck });
+  if (!intro.acceptedAt && !intro.targetAgreedAt) {
+    entries.push({ key: "deciding", label: `${introducerFirst} and ${targetFirst} each get a say`, date: null, isDone: false, icon: UserRoundCheck });
   }
   entries.push({
     key: "introduced",
-    label: `${introducerFirst} connects you with ${targetFirst}`,
+    label: `You and ${targetFirst} get connected`,
     date: intro.state === INTRO_STATES.completed ? intro.closedAt : null,
     isDone: intro.state === INTRO_STATES.completed,
     icon: Check,
@@ -144,8 +150,8 @@ export function IntroTimeline({ intro }: { intro: Intro }) {
 
 export function readIntroLinkLabel({ viewerRole, requester, target }: Intro) {
   return viewerRole === INTRO_ROLES.introducer
-    ? `${requester.name}'s ask for an intro to ${target.name}`
-    : `Your ask for an intro to ${target.name}`;
+    ? `${requester.name}'s intro request for ${target.name}`
+    : `Your intro request for ${target.name}`;
 }
 
 export function ClosedIntroRow({ intro }: { intro: Intro }) {

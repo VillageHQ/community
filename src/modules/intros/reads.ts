@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, desc, eq, inArray, isNotNull, lte, notExists, notInArray, or } from "drizzle-orm";
+import { and, count, desc, eq, gt, inArray, isNotNull, isNull, lte, notExists, notInArray, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { user } from "../../platform/database/auth-schema.ts";
@@ -13,10 +13,15 @@ import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import {
   INTRO_LIFETIME_DAYS,
   INTRO_LIMITS,
+  INTRO_OUTCOMES,
   INTRO_ROLES,
   INTRO_STATES,
-  OPEN_INTRO_STATES,
+  OUTCOME_PROMPT_AFTER_DAYS,
+  OUTCOME_PROMPT_WINDOW_DAYS,
+  STATES_WAITING_ON_INTRODUCER,
+  TARGET_ANSWER_MINIMUM_DAYS,
   introSchema,
+  readRequesterState,
   readStatesLeadingTo,
   type Intro,
   type IntroBoard,
@@ -36,6 +41,17 @@ export function readIntroDeadline(from = new Date()) {
   return new Date(from.getTime() + INTRO_LIFETIME_DAYS * MILLISECONDS_PER_DAY);
 }
 
+export function readTargetDeadline(currentDeadline: Date, from = new Date()) {
+  const earliestDeadline = from.getTime() + TARGET_ANSWER_MINIMUM_DAYS * MILLISECONDS_PER_DAY;
+  return new Date(Math.max(currentDeadline.getTime(), earliestDeadline));
+}
+
+export const CLOSES_CONSENT = { targetEmail: null };
+
+function daysBefore(now: Date, days: number) {
+  return new Date(now.getTime() - days * MILLISECONDS_PER_DAY);
+}
+
 function selectJoinedMemberIds(database: Database) {
   return database.select({ userId: memberNetwork.userId }).from(memberNetwork).where(isNotNull(memberNetwork.groupJoinedAt));
 }
@@ -51,7 +67,7 @@ export async function expireDueIntros(database: Database, memberId: string) {
   const now = new Date();
   await database
     .update(introRequest)
-    .set({ state: INTRO_STATES.expired, closedAt: now, requesterHasUpdate: true })
+    .set({ state: INTRO_STATES.expired, closedAt: now, requesterHasUpdate: true, ...CLOSES_CONSENT })
     .where(
       and(
         or(eq(introRequest.requesterId, memberId), eq(introRequest.introducerId, memberId)),
@@ -113,21 +129,73 @@ function toIso(date: Date | null) {
   return date ? date.toISOString() : null;
 }
 
-function toIntro(row: IntroRow, viewerId: string): Intro {
+function isOutcomeDueNow(now: Date) {
+  const promptedFrom = daysBefore(now, OUTCOME_PROMPT_AFTER_DAYS);
+  return and(
+    eq(introRequest.state, INTRO_STATES.completed),
+    lte(introRequest.closedAt, promptedFrom),
+    gt(introRequest.closedAt, daysBefore(now, OUTCOME_PROMPT_WINDOW_DAYS)),
+    or(isNull(introRequest.outcome), and(eq(introRequest.outcome, INTRO_OUTCOMES.notYet), lte(introRequest.outcomeAnsweredAt, promptedFrom))),
+  );
+}
+
+export function isOutcomeDueForRequester(memberId: string, now = new Date()) {
+  return and(eq(introRequest.requesterId, memberId), isOutcomeDueNow(now));
+}
+
+type OutcomeFacts = Pick<typeof introRequest.$inferSelect, "state" | "closedAt" | "outcome" | "outcomeAnsweredAt">;
+
+function isOutcomeDue({ state, closedAt, outcome, outcomeAnsweredAt }: OutcomeFacts, now: Date) {
+  if (state !== INTRO_STATES.completed || !closedAt) return false;
+  const promptedFrom = daysBefore(now, OUTCOME_PROMPT_AFTER_DAYS);
+  if (closedAt > promptedFrom || closedAt <= daysBefore(now, OUTCOME_PROMPT_WINDOW_DAYS)) return false;
+  if (outcome === null) return true;
+  return outcome === INTRO_OUTCOMES.notYet && outcomeAnsweredAt !== null && outcomeAnsweredAt <= promptedFrom;
+}
+
+function readRequesterDeadline({ createdAt, expiresAt, targetAgreedAt, acceptedAt }: typeof introRequest.$inferSelect) {
+  return targetAgreedAt || acceptedAt ? expiresAt : readIntroDeadline(createdAt);
+}
+
+function readIntroForRequester(request: typeof introRequest.$inferSelect, now: Date) {
+  return {
+    state: readRequesterState(request.state),
+    declineReason: null,
+    declineKind: null,
+    hasUpdate: request.requesterHasUpdate,
+    askedTargetAt: null,
+    outcome: request.outcome,
+    isOutcomeDue: isOutcomeDue(request, now),
+    expiresAt: readRequesterDeadline(request).toISOString(),
+  };
+}
+
+function readIntroForIntroducer(request: typeof introRequest.$inferSelect) {
+  return {
+    state: request.state,
+    declineReason: request.declineReason,
+    declineKind: request.declineKind,
+    hasUpdate: false,
+    askedTargetAt: toIso(request.askedTargetAt),
+    outcome: null,
+    isOutcomeDue: false,
+    expiresAt: request.expiresAt.toISOString(),
+  };
+}
+
+function toIntro(row: IntroRow, viewerId: string, now = new Date()): Intro {
   const { request } = row;
   const isRequester = request.requesterId === viewerId;
   return introSchema.parse({
     id: request.id,
-    state: request.state,
     viewerRole: isRequester ? INTRO_ROLES.requester : INTRO_ROLES.introducer,
     note: request.note,
     reason: request.reason,
-    declineReason: isRequester ? null : request.declineReason,
-    hasUpdate: isRequester && request.requesterHasUpdate,
     createdAt: request.createdAt.toISOString(),
     acceptedAt: toIso(request.acceptedAt),
+    targetAgreedAt: toIso(request.targetAgreedAt),
     closedAt: toIso(request.closedAt),
-    expiresAt: request.expiresAt.toISOString(),
+    ...(isRequester ? readIntroForRequester(request, now) : readIntroForIntroducer(request)),
     target: { name: request.targetName, headline: request.targetHeadline, linkedinSlug: request.targetLinkedinSlug },
     requester: {
       id: request.requesterId,
@@ -167,18 +235,27 @@ async function countWaitingOnYou(database: Database, memberId: string) {
     .select({ value: count() })
     .from(introRequest)
     .innerJoin(requesterUser, eq(requesterUser.id, introRequest.requesterId))
-    .where(and(isDeliveredToIntroducer(database, memberId), inArray(introRequest.state, OPEN_INTRO_STATES)));
+    .where(and(isDeliveredToIntroducer(database, memberId), inArray(introRequest.state, STATES_WAITING_ON_INTRODUCER)));
   return waiting?.value ?? 0;
+}
+
+async function countOutcomesDue(database: Database, memberId: string) {
+  const [due] = await database.select({ value: count() }).from(introRequest).where(isOutcomeDueForRequester(memberId));
+  return due?.value ?? 0;
 }
 
 export async function readIntroCounts(database: Database, memberId: string): Promise<IntroCounts> {
   await expireDueIntros(database, memberId);
-  const [waitingOnYou, updates] = await Promise.all([countWaitingOnYou(database, memberId), countUpdates(database, memberId)]);
-  return { waitingOnYou, updates };
+  const [waitingOnYou, updates, outcomesDue] = await Promise.all([
+    countWaitingOnYou(database, memberId),
+    countUpdates(database, memberId),
+    countOutcomesDue(database, memberId),
+  ]);
+  return { waitingOnYou, updates, outcomesDue };
 }
 
-export function readIntroBadgeCount({ waitingOnYou, updates }: IntroCounts) {
-  return waitingOnYou + updates;
+export function readIntroBadgeCount({ waitingOnYou, updates, outcomesDue }: IntroCounts) {
+  return waitingOnYou + updates + outcomesDue;
 }
 
 export async function readIntroBoard(database: Database, memberId: string): Promise<IntroBoard> {
@@ -203,7 +280,7 @@ export async function readIntroBoard(database: Database, memberId: string): Prom
 export async function readWaitingIntros(database: Database, memberId: string) {
   await expireDueIntros(database, memberId);
   const rows = await selectIntros(database)
-    .where(and(isDeliveredToIntroducer(database, memberId), inArray(introRequest.state, OPEN_INTRO_STATES)))
+    .where(and(isDeliveredToIntroducer(database, memberId), inArray(introRequest.state, STATES_WAITING_ON_INTRODUCER)))
     .orderBy(introRequest.createdAt)
     .limit(INTRO_LIMITS.shownPerList);
   const intros = rows.map((row) => toIntro(row, memberId));
@@ -223,11 +300,20 @@ export async function markIntrosSeen(database: Database, memberId: string, intro
     );
 }
 
-export async function readIntroStateCounts(database: Database) {
+const DECLINED_STATES = new Set<string>([INTRO_STATES.declined, INTRO_STATES.targetDeclined]);
+
+export async function readIntroCommunityCounts(database: Database) {
   const rows = await database
-    .select({ state: introRequest.state, value: count() })
+    .select({ state: introRequest.state, outcome: introRequest.outcome, value: count() })
     .from(introRequest)
-    .groupBy(introRequest.state);
-  const counts = new Map(rows.map(({ state, value }) => [state, value]));
-  return Object.values(INTRO_STATES).map((state) => ({ state, count: counts.get(state) ?? 0 }));
+    .groupBy(introRequest.state, introRequest.outcome);
+  function sumWhere(isCounted: (row: (typeof rows)[number]) => boolean) {
+    return rows.filter(isCounted).reduce((total, { value }) => total + value, 0);
+  }
+  return {
+    asked: sumWhere(() => true),
+    introduced: sumWhere(({ state }) => state === INTRO_STATES.completed),
+    declined: sumWhere(({ state }) => DECLINED_STATES.has(state)),
+    helped: sumWhere(({ outcome }) => outcome === INTRO_OUTCOMES.helped),
+  };
 }

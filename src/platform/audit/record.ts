@@ -7,6 +7,8 @@ import { user } from "../database/auth-schema.ts";
 import type { DatabaseOrTransaction } from "../database/client.ts";
 import { type AuditAction } from "./actions.ts";
 
+export const AUDIT_OUTSIDER_NAME = "Someone outside this community";
+
 type AuditFacts = {
   action: AuditAction;
   targetMemberId?: string | null;
@@ -22,4 +24,8 @@ async function readActorName(connection: DatabaseOrTransaction, actorId: string)
 export async function recordAdminAction(connection: DatabaseOrTransaction, actorId: string, facts: AuditFacts) {
   const actorName = await readActorName(connection, actorId);
   await connection.insert(adminAuditEntry).values({ ...facts, actorId, actorName });
+}
+
+export async function recordOutsiderAction(connection: DatabaseOrTransaction, action: AuditAction) {
+  await connection.insert(adminAuditEntry).values({ action, actorId: null, actorName: AUDIT_OUTSIDER_NAME });
 }

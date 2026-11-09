@@ -11,6 +11,7 @@ export const PAGE_TITLES = {
   network: "Network",
   intros: "Intros",
   intro: "Intro",
+  introConsent: "An intro for you",
   members: "Members",
   editCard: "Your card",
   profile: "Member",

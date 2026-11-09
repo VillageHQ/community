@@ -4,13 +4,7 @@ import { and, eq, gt, inArray } from "drizzle-orm";
 
 import type { Database } from "../../platform/database/client.ts";
 import { introRequest } from "./schema.ts";
-import { OPEN_INTRO_STATES, type IntroState } from "./contract.ts";
-
-function toKnownState(state: string): IntroState {
-  const known = OPEN_INTRO_STATES.find((openState) => openState === state);
-  if (!known) throw new Error(`Unexpected open intro state: ${state}`);
-  return known;
-}
+import { OPEN_INTRO_STATES, readRequesterState } from "./contract.ts";
 
 export async function readOpenAsks(database: Database, requesterId: string, targetSlug: string) {
   const asks = await database
@@ -24,5 +18,5 @@ export async function readOpenAsks(database: Database, requesterId: string, targ
         gt(introRequest.expiresAt, new Date()),
       ),
     );
-  return new Map(asks.map(({ id, state, introducerId }) => [introducerId, { id, state: toKnownState(state) }]));
+  return new Map(asks.map(({ id, state, introducerId }) => [introducerId, { id, state: readRequesterState(state) }]));
 }

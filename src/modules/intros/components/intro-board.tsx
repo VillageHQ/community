@@ -8,12 +8,13 @@ import { useState, type ReactNode } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import { isOpenIntroState, type Intro } from "@/modules/intros/contract";
+import { isOpenIntroState, STATES_WAITING_ON_INTRODUCER, type Intro, type IntroState } from "@/modules/intros/contract";
 import { introBoardQuery } from "@/modules/intros/queries";
 import { ROUTES } from "@/platform/http/routes";
 
 import { AskForYouCard } from "./ask-for-you-card";
 import { ClosedIntroRow } from "./intro-parts";
+import { OutcomePrompt } from "./outcome-prompt";
 import { useMarkIntrosSeen } from "./use-intro-actions";
 import { YourAskCard } from "./your-ask-card";
 
@@ -23,9 +24,9 @@ type IntroView = (typeof INTRO_VIEWS)[keyof typeof INTRO_VIEWS];
 
 const HOW_INTROS_WORK = [
   "Search for someone and see which member knows them, and why.",
-  "Write a note. That member reads it first, and may share it with the person you want to meet.",
-  "They say yes or no. The person you want to meet hears nothing unless they say yes.",
-  "On a yes, the member makes the intro themselves. This community contacts nobody on your behalf.",
+  "Write a note. That member reads it first, and the person you want to meet sees it only if that member says yes.",
+  "The person you want to meet says yes or no thanks on a private page. They don't need an account.",
+  "Only after both say yes does one message join you. A week later, we ask if it helped.",
 ];
 
 function HowIntrosWork() {
@@ -105,6 +106,10 @@ function renderYourAsk(intro: Intro) {
   return <YourAskCard intro={intro} />;
 }
 
+function renderOutcomePrompt(intro: Intro) {
+  return <OutcomePrompt intro={intro} />;
+}
+
 function splitOpenFirst(intros: Intro[]) {
   return {
     open: intros.filter(({ state }) => isOpenIntroState(state)),
@@ -112,12 +117,15 @@ function splitOpenFirst(intros: Intro[]) {
   };
 }
 
+const WAITING_ON_INTRODUCER: ReadonlySet<IntroState> = new Set(STATES_WAITING_ON_INTRODUCER);
+
 function AsksForYou({ intros }: { intros: Intro[] }) {
   if (intros.length === 0) return <EmptyAsksForYou />;
   const { open, closed } = splitOpenFirst(intros);
   return (
     <div className="grid gap-7">
-      <IntroSection title="Waiting on you" intros={open} renderCard={renderAskForYou} />
+      <IntroSection title="Waiting on you" intros={open.filter(({ state }) => WAITING_ON_INTRODUCER.has(state))} renderCard={renderAskForYou} />
+      <IntroSection title="Waiting on their answer" intros={open.filter(({ state }) => !WAITING_ON_INTRODUCER.has(state))} renderCard={renderAskForYou} />
       <IntroSection title="Earlier" intros={closed} renderCard={renderClosedIntro} />
     </div>
   );
@@ -129,6 +137,7 @@ function YourAsks({ intros, hasUpdates }: { intros: Intro[]; hasUpdates: boolean
   const { open, closed } = splitOpenFirst(intros);
   return (
     <div className="grid gap-7">
+      <IntroSection title="A quick question" intros={intros.filter(({ isOutcomeDue }) => isOutcomeDue)} renderCard={renderOutcomePrompt} />
       <IntroSection title="In progress" intros={open} renderCard={renderYourAsk} />
       <IntroSection title="Earlier" intros={closed} renderCard={renderClosedIntro} />
     </div>
@@ -145,27 +154,28 @@ function CountBubble({ count, description }: { count: number; description: strin
   );
 }
 
-function readInitialView(asksForYouCount: number, waitingOnYou: number, updates: number): IntroView {
+function readInitialView(asksForYouCount: number, waitingOnYou: number, yourNews: number): IntroView {
   if (waitingOnYou > 0) return INTRO_VIEWS.asksForYou;
-  if (updates > 0 || asksForYouCount === 0) return INTRO_VIEWS.yourAsks;
+  if (yourNews > 0 || asksForYouCount === 0) return INTRO_VIEWS.yourAsks;
   return INTRO_VIEWS.asksForYou;
 }
 
 export function IntroBoardView() {
   const { data: board } = useSuspenseQuery(introBoardQuery());
-  const { waitingOnYou, updates } = board.counts;
-  const [view, setView] = useState<IntroView>(readInitialView(board.asksForYou.length, waitingOnYou, updates));
+  const { waitingOnYou, updates, outcomesDue } = board.counts;
+  const yourNews = updates + outcomesDue;
+  const [view, setView] = useState<IntroView>(readInitialView(board.asksForYou.length, waitingOnYou, yourNews));
 
   return (
     <div className="grid gap-5">
       <div role="group" aria-label="Filter intros" className="flex flex-wrap gap-2">
         <Chip isPressed={view === INTRO_VIEWS.asksForYou} onClick={() => setView(INTRO_VIEWS.asksForYou)}>
-          Asks for you
+          Intro requests for you
           <CountBubble count={waitingOnYou} description="waiting on you" />
         </Chip>
         <Chip isPressed={view === INTRO_VIEWS.yourAsks} onClick={() => setView(INTRO_VIEWS.yourAsks)}>
-          Your asks
-          <CountBubble count={updates} description="with news" />
+          Your intro requests
+          <CountBubble count={yourNews} description="with news" />
         </Chip>
       </div>
       {view === INTRO_VIEWS.asksForYou ? (
