@@ -3,6 +3,7 @@ import { eq, like } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { account, session, user, verification } from "@/platform/database/auth-schema";
+import { emailOutbox } from "@/platform/email/schema";
 import { EVENTUALLY } from "@/test/async-timeouts";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
@@ -77,6 +78,11 @@ describe("signing in by emailed link", () => {
     expect(JSON.stringify(rows)).not.toContain(token);
     expect(rows[0]!.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(15 * 60 * 1000);
     expect(rows[0]!.expiresAt.getTime() - Date.now()).toBeGreaterThan(14 * 60 * 1000);
+    // Sent through the outbox, which drops the body, and so the link, once it goes out.
+    await vi.waitFor(async () => {
+      const [queued] = await database.select().from(emailOutbox);
+      expect(queued).toMatchObject({ kind: "sign_in_link", toEmail: MEMBER.email, status: "sent", html: "", text: "" });
+    }, EVENTUALLY);
   });
 
   it("signs in once from the button's POST, and never again with the same link", async () => {

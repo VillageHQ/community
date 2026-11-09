@@ -1,11 +1,15 @@
 import { eq } from "drizzle-orm";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { adminAuditEntry } from "@/platform/audit/schema";
 import { memberProfile, invite } from "@/modules/members/schema";
 import { acceptInvite, readInviteByToken } from "@/modules/members/service-invites";
 import { bulkInviteResultSchema, parseInviteList, parseInvitesCsv, toCsv, toSafeCell } from "@/modules/members/contract-bulk-invites";
+import { emailOutbox } from "@/platform/email/schema";
+import { sendDueEmails } from "@/platform/email/outbox-sender";
+import { EVENTUALLY } from "@/test/async-timeouts";
 import { clearDatabase, createTestDatabase } from "@/test/database";
+import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
 import { POST as postBulk } from "@/app/api/admin/invites/bulk/route";
@@ -167,5 +171,45 @@ describe("inviting many people", () => {
     const member = await createSignedInMember(database);
 
     expect((await postBulk(bulkRequest(member, "list", "ada@example.com"))).status).toBe(403);
+  });
+});
+
+describe("inviting many people with email on", () => {
+  const database = createTestDatabase();
+  let resend: Awaited<ReturnType<typeof startFakeResendServer>>;
+  let admin: Member;
+
+  beforeAll(async () => {
+    resend = await startFakeResendServer();
+    vi.stubEnv("APP_URL", APP_URL);
+    vi.stubEnv("RESEND_API_KEY", FAKE_RESEND_API_KEY);
+    vi.stubEnv("RESEND_FROM_ADDRESS", "Northwind <hello@example.test>");
+    vi.stubEnv("RESEND_API_URL", resend.url);
+  });
+
+  afterAll(async () => {
+    vi.unstubAllEnvs();
+    await resend.stop();
+  });
+
+  beforeEach(async () => {
+    await clearDatabase(database);
+    resend.reset();
+    admin = await createSignedInMember(database, "admin");
+  });
+
+  it("queues each invite's email with its invite, and the outbox sends them", async () => {
+    const response = await postBulk(bulkRequest(admin, "list", "Ada, ada@example.com\nGrace <grace@example.com>\nlin@example.com"));
+    const result = bulkInviteResultSchema.parse(await response.json());
+
+    expect(result.invitedCount).toBe(3);
+    expect(result.links).toEqual([]);
+    const invites = await database.select().from(invite);
+    const queued = await database.select().from(emailOutbox);
+    expect(queued.map(({ toEmail }) => toEmail).sort()).toEqual(["ada@example.com", "grace@example.com", "lin@example.com"]);
+    expect(invites.map(({ emailOutboxId }) => emailOutboxId).sort()).toEqual(queued.map(({ id }) => id).sort());
+
+    await sendDueEmails(database, process.env);
+    await vi.waitFor(() => expect(resend.state.emails).toHaveLength(3), EVENTUALLY);
   });
 });
