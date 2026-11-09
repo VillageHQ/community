@@ -31,4 +31,4 @@ The tests wipe that database. They run against fake Village and Resend servers, 
 - Test behavior, and add a test for each bug you fix.
 - Never commit keys, real people's data or anything from a real community.
 
-By contributing, you agree that your work is licensed under the [MIT License](LICENSE).
+By contributing, you agree that your work is licensed under the [GNU Affero General Public License v3.0](LICENSE), and that Village may also release it under other licences, including more permissive ones such as MIT. This keeps the project able to change its licence later as one whole.

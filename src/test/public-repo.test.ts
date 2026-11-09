@@ -76,7 +76,8 @@ describe("the public repo", () => {
     expect(readRepositoryFile(file).length).toBeGreaterThan(0);
   });
 
-  it("uses the MIT License", () => {
-    expect(readRepositoryFile("LICENSE")).toContain("MIT License");
+  it("uses the AGPL-3.0 licence, and says so in package.json", () => {
+    expect(readRepositoryFile("LICENSE")).toContain("GNU AFFERO GENERAL PUBLIC LICENSE");
+    expect(JSON.parse(readRepositoryFile("package.json")).license).toBe("AGPL-3.0-only");
   });
 });

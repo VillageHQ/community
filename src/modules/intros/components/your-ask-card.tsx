@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ui/tag";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatShortDate } from "@/platform/text/format-date";
-import { INTRO_ACTIONS, INTRO_STATES, type Intro } from "@/modules/intros/contract";
-import { readIntroPromise } from "@/modules/intros/copy";
+import { INTRO_ACTIONS, INTRO_STATES, type Intro, type RequesterIntroState, REQUESTER_STATES } from "@/modules/intros/contract";
+import { readConsentPromise, readIntroPromise } from "@/modules/intros/copy";
 
 import { ConfirmAction } from "@/components/confirm-action";
 import {
@@ -23,6 +23,8 @@ import {
   readIntroLinkLabel,
   type HeadingLevel,
 } from "./intro-parts";
+import { OtherPaths } from "./other-paths";
+import { OutcomePrompt } from "./outcome-prompt";
 import { useIntroTransition } from "./use-intro-actions";
 
 function WithdrawAction({ intro }: { intro: Intro }) {
@@ -33,8 +35,8 @@ function WithdrawAction({ intro }: { intro: Intro }) {
   if (isConfirming) {
     return (
       <ConfirmAction
-        message={`Withdraw this ask? ${introducerFirst} won't need to answer it any more.`}
-        confirmLabel="Withdraw my ask"
+        message={`Withdraw this intro request? ${introducerFirst} won't need to answer it any more.`}
+        confirmLabel="Withdraw my intro request"
         pendingLabel="Withdrawing…"
         cancelLabel="Keep it"
         isPending={transition.isPending}
@@ -49,34 +51,43 @@ function WithdrawAction({ intro }: { intro: Intro }) {
       <FormError message={transition.error?.message ?? null} />
       <Button type="button" variant="quiet" size="default" className="w-full" onClick={() => setIsConfirming(true)}>
         <Undo2 aria-hidden="true" />
-        Withdraw my ask
+        Withdraw my intro request
       </Button>
     </>
   );
 }
 
-const FOLLOW_UP_STATES: ReadonlySet<Intro["state"]> = new Set([INTRO_STATES.accepted, INTRO_STATES.completed]);
+const FOLLOW_UP_STATES: ReadonlySet<RequesterIntroState> = new Set([INTRO_STATES.accepted, INTRO_STATES.targetAgreed, INTRO_STATES.completed]);
 
-function readStatusNote({ state, introducer, target, expiresAt, acceptedAt }: Intro) {
+function readStatusNote({ state, introducer, target, expiresAt, acceptedAt, targetAgreedAt }: Intro) {
   const introducerFirst = readFirstName(introducer.name);
   const targetFirst = readFirstName(target.name);
-  const notes: Record<Intro["state"], string> = {
-    [INTRO_STATES.requested]: `${readIntroPromise(introducer.name, target.name)} This ask closes on ${formatShortDate(expiresAt)} if nothing happens.`,
+  const hasYes = acceptedAt !== null || targetAgreedAt !== null;
+  const notes: Record<RequesterIntroState, string> = {
+    [INTRO_STATES.requested]: `${readIntroPromise(introducer.name, target.name)} ${readConsentPromise(target.name)} If nothing happens, this closes by itself around ${formatShortDate(expiresAt)}.`,
     [INTRO_STATES.accepted]: `Good news. ${introducerFirst} will reach out to ${targetFirst} themselves. This community doesn't contact ${targetFirst}.`,
-    [INTRO_STATES.completed]: `${introducerFirst} says the intro is made. ${targetFirst} may get in touch, or you can follow up with ${introducerFirst}.`,
-    [INTRO_STATES.declined]: `${introducerFirst} can't help with this one. That's completely normal, and ${targetFirst} heard nothing about it. Someone else may be able to help.`,
-    [INTRO_STATES.withdrawn]: `You withdrew this ask. ${targetFirst} heard nothing about it.`,
-    [INTRO_STATES.expired]: acceptedAt
-      ? `${introducerFirst} said yes, but this closed before the intro was marked as made. A quick message can sort it out.`
-      : `This ask closed without an answer. ${targetFirst} heard nothing about it. You can ask again from Network.`,
+    [INTRO_STATES.targetAgreed]: `Good news. ${targetFirst} said yes. ${introducerFirst} will connect you both with one message.`,
+    [INTRO_STATES.completed]: targetAgreedAt
+      ? `You're connected. ${targetFirst} said yes, and the intro is made. If you don't hear back, follow up with ${introducerFirst}.`
+      : `${introducerFirst} says the intro is made. ${targetFirst} may get in touch, or you can follow up with ${introducerFirst}.`,
+    [INTRO_STATES.declined]: "This intro isn't happening this time. That's completely normal, and we don't share who answered. Someone else may be able to help.",
+    [INTRO_STATES.withdrawn]: "You withdrew this intro request, so it's closed for everyone.",
+    [INTRO_STATES.expired]: hasYes
+      ? `${targetAgreedAt ? targetFirst : introducerFirst} said yes, but this closed before the intro was marked as made. A quick message to ${introducerFirst} can sort it out.`
+      : "This intro request closed without a yes. That's completely normal. Someone else may be able to help.",
   };
-  return notes[state];
+  return notes[REQUESTER_STATES[state]];
+}
+
+function hasNoYes({ state, acceptedAt, targetAgreedAt }: Intro) {
+  return (state === INTRO_STATES.declined || state === INTRO_STATES.expired) && !acceptedAt && !targetAgreedAt;
 }
 
 type YourAskCardProps = { intro: Intro; headingLevel?: HeadingLevel };
 
 export function YourAskCard({ intro, headingLevel: Heading = "h3" }: YourAskCardProps) {
-  const { introducer, target, state, note, reason, hasUpdate } = intro;
+  const { introducer, target, note, reason, hasUpdate } = intro;
+  const state = REQUESTER_STATES[intro.state];
   const StatusIcon = state === INTRO_STATES.requested ? Lock : Info;
 
   return (
@@ -97,9 +108,11 @@ export function YourAskCard({ intro, headingLevel: Heading = "h3" }: YourAskCard
       </p>
       <IntroTimeline intro={intro} />
       <IntroNote label="Your note" note={note} />
+      {intro.isOutcomeDue ? <OutcomePrompt intro={intro} /> : null}
+      {hasNoYes(intro) ? <OtherPaths intro={intro} /> : null}
       {FOLLOW_UP_STATES.has(state) ? <IntroMessageButton person={introducer} isPrimary /> : null}
       {state === INTRO_STATES.requested ? <WithdrawAction intro={intro} /> : null}
-      {FOLLOW_UP_STATES.has(state) ? null : <IntroMessageButton person={introducer} isPrimary={false} />}
+      {FOLLOW_UP_STATES.has(state) || hasNoYes(intro) ? null : <IntroMessageButton person={introducer} isPrimary={false} />}
     </IntroCardFrame>
   );
 }
