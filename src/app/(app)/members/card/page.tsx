@@ -25,11 +25,39 @@ import { introsManifest } from "@/modules/intros/manifest";
 import { messagesManifest } from "@/modules/messages/manifest";
 import { EmailPreferencesCard } from "@/shell/email-preferences-card";
 import { readEnabledIds } from "@/shell/enabled-modules";
+import { FILL_IN_FIELDS, type FilledLine } from "@/modules/members/contract-fill-in";
+import { readFilledLines, readLookupState } from "@/modules/members/service-fill-in";
+import { FillInCard, type OwnWords } from "@/modules/members/components/fill-in-card";
+import { LookupQuestionCard } from "@/modules/members/components/lookup-question-card";
+import { FillInNowButton } from "@/modules/network/components/fill-in-now-button";
+import { VillageDisclosure } from "@/modules/network/components/village-disclosure";
+import { readBrandingForPage } from "@/platform/branding/branding";
 
 const TOPIC_MODULES = [
   { topic: EMAIL_TOPICS.intros, moduleId: introsManifest.id },
   { topic: EMAIL_TOPICS.messages, moduleId: messagesManifest.id },
+  { topic: EMAIL_TOPICS.network, moduleId: networkManifest.id },
 ];
+
+type Profile = NonNullable<Awaited<ReturnType<typeof readMemberProfile>>>;
+
+function readOwnWords(profile: Profile, lines: readonly FilledLine[]): OwnWords {
+  const hasFace = lines.some(({ field, isHidden }) => field === FILL_IN_FIELDS.face && !isHidden);
+  return {
+    [FILL_IN_FIELDS.title]: Boolean(profile.title),
+    [FILL_IN_FIELDS.company]: Boolean(profile.company),
+    [FILL_IN_FIELDS.location]: Boolean(profile.location),
+    [FILL_IN_FIELDS.face]: profile.avatarUrl !== null,
+    [FILL_IN_FIELDS.companyLogo]: profile.avatarUrl !== null || hasFace,
+  };
+}
+
+async function readFillIn(database: ReturnType<typeof getDatabase>, memberId: string, isNetworkOn: boolean) {
+  if (!isNetworkOn) return null;
+  const state = await readLookupState(database, memberId);
+  if (!state.basis) return null;
+  return { state, lines: await readFilledLines(database, memberId) };
+}
 
 async function readEmailSettings(database: ReturnType<typeof getDatabase>, memberId: string) {
   if (!readResendConfig(process.env)) return [];
@@ -47,7 +75,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
 
   const isNetworkOn = await isModuleEnabled(database, networkManifest);
   const showsLeaveCard = !isNetworkOn && (await readIsInVillageGroup(database, member.id));
-  const emailSettings = await readEmailSettings(database, member.id);
+  const [emailSettings, fillIn] = await Promise.all([readEmailSettings(database, member.id), readFillIn(database, member.id, isNetworkOn)]);
 
   return (
     <div className="mx-auto max-w-[720px]">
@@ -66,7 +94,27 @@ export default modulePage(membersManifest, async function EditCardPage() {
       <div className="rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
         <CardForm profile={profile} />
       </div>
+      {fillIn?.state.needsAnswer ? (
+        <div className="mt-5">
+          <LookupQuestionCard communityName={(await readBrandingForPage()).name} />
+        </div>
+      ) : null}
+      {fillIn && fillIn.state.basis && !fillIn.state.needsAnswer ? (
+        <FillInCard
+          state={{
+            basis: fillIn.state.basis,
+            termsDate: fillIn.state.termsDate,
+            isAllowed: fillIn.state.isAllowed,
+            status: fillIn.state.status,
+            lookedUpAt: fillIn.state.lookedUpAt?.toISOString() ?? null,
+          }}
+          lines={fillIn.lines}
+          ownWords={readOwnWords(profile, fillIn.lines)}
+          fillNowButton={<FillInNowButton />}
+        />
+      ) : null}
       <EmailPreferencesCard settings={emailSettings} />
+      {isNetworkOn ? <VillageDisclosure isFillInOn={fillIn?.state.isAllowed === true} /> : null}
       {showsLeaveCard ? <LeaveGroupCard /> : null}
     </div>
   );

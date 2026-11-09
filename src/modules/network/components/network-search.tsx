@@ -14,6 +14,7 @@ import { readFirstName } from "@/platform/design/avatar-identity";
 import { ROUTES } from "@/platform/http/routes";
 import { LOW_LOOKUPS_LEFT, type NetworkPerson } from "@/modules/network/contract";
 
+import { AskCommunityLink, readSearchAskDraft, useCanAskCommunity } from "./ask-community-link";
 import { LeaveGroup } from "./leave-group";
 import { LinkedinForm } from "./linkedin-step";
 import { NetworkFailure } from "./network-failure";
@@ -87,6 +88,7 @@ function SearchResults({ prompt, viewer }: { prompt: string; viewer: Constellati
   const panelId = useId();
   const selectedPerson = result.people.find(({ linkedinSlug }) => linkedinSlug === selectedSlug);
   useMarkSearchSeen();
+  const canAskCommunity = useCanAskCommunity();
 
   if (result.people.length === 0) {
     return (
@@ -94,8 +96,14 @@ function SearchResults({ prompt, viewer }: { prompt: string; viewer: Constellati
         <EmptyState
           icon={Search}
           title="Nobody in your network matches"
-          description="Try different words. A role, a company or a city often works."
-        />
+          description={
+            canAskCommunity
+              ? "Try different words, like a role, a company or a city. Or ask the community: someone may know a way in."
+              : "Try different words. A role, a company or a city often works."
+          }
+        >
+          {canAskCommunity ? <AskCommunityLink draft={readSearchAskDraft(prompt)} size="lg" /> : null}
+        </EmptyState>
       </div>
     );
   }

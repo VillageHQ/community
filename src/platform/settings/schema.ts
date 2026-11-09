@@ -16,4 +16,7 @@ export const INSTANCE_SETTING_KEYS = {
   dailyLookupLimit: "daily_lookup_limit",
   villageOutOfCreditsAt: "village_out_of_credits_at",
   jobsTickSecret: "jobs_tick_secret",
+  monthlyCreditCap: "monthly_credit_cap",
+  fillInBasis: "fill_in_basis",
+  fillInTermsDate: "fill_in_terms_date",
 } as const;

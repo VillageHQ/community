@@ -72,7 +72,17 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.askRemoved]: ({ target, detail }) => `removed an ask by ${target}: "${detail}"`,
   [AUDIT_ACTIONS.domainConfirmed]: ({ detail }) => `confirmed the domain ${detail} in Village`,
   [AUDIT_ACTIONS.introAsksStopped]: () => "asked this community to stop sending them intro asks",
+  [AUDIT_ACTIONS.fillInBasisChanged]: ({ detail }) => readFillInBasisSentence(detail),
+  [AUDIT_ACTIONS.fillInRunStarted]: () => "filled in every due member from public profiles",
+  [AUDIT_ACTIONS.monthlyCapChanged]: ({ detail }) => `set the monthly cap to ${detail} credits`,
+  [AUDIT_ACTIONS.connectNudgeSent]: ({ detail }) => `reminded ${detail} to connect their network`,
 };
+
+function readFillInBasisSentence(detail: string) {
+  if (detail === "off") return "turned off filling in profiles from public profiles";
+  if (detail === "ask") return "turned on filling in profiles, asking each member first";
+  return `turned on filling in profiles, under the terms dated ${detail.replace("terms:", "")}`;
+}
 
 function readReplyClause(removedReplyCount: number) {
   if (removedReplyCount === 0) return "";

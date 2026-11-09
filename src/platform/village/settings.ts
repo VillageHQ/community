@@ -12,7 +12,7 @@ import { RequestError } from "../http/request-error.ts";
 import { isReadableSealedValue, looksSealed, openSealedSecret, OPEN_OUTCOMES, sealSecret, type OpenResult } from "../secrets/sealed.ts";
 import { readSetupToken } from "../secrets/setup-token.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../settings/schema.ts";
-import { DAILY_LOOKUP_LIMITS, dailyLimitBodySchema, KEY_STORAGE, VILLAGE_KEY_STATUSES, type VillageKeyStatus } from "./contract.ts";
+import { DAILY_LOOKUP_LIMITS, dailyLimitBodySchema, MONTHLY_CREDIT_CAPS, monthlyCapBodySchema, KEY_STORAGE, VILLAGE_KEY_STATUSES, type VillageKeyStatus } from "./contract.ts";
 import { VILLAGE_ERROR_CODES } from "./error-codes.ts";
 import { readSettings, saveSettings } from "../settings/store.ts";
 
@@ -186,6 +186,19 @@ export async function readDailyLookupLimit(database: Database) {
 
 export async function saveDailyLookupLimit(database: DatabaseOrTransaction, limit: number) {
   await saveSettings(database, { [INSTANCE_SETTING_KEYS.dailyLookupLimit]: String(limit) });
+}
+
+export async function readMonthlyCreditCap(database: DatabaseOrTransaction) {
+  const [setting] = await database
+    .select({ value: instanceSettings.value })
+    .from(instanceSettings)
+    .where(eq(instanceSettings.key, INSTANCE_SETTING_KEYS.monthlyCreditCap));
+  const cap = monthlyCapBodySchema.shape.cap.safeParse(Number(setting?.value));
+  return cap.success ? cap.data : MONTHLY_CREDIT_CAPS.default;
+}
+
+export async function saveMonthlyCreditCap(database: DatabaseOrTransaction, cap: number) {
+  await saveSettings(database, { [INSTANCE_SETTING_KEYS.monthlyCreditCap]: String(cap) });
 }
 
 export async function readVillageOutOfCreditsAt(database: Database) {

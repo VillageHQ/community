@@ -33,6 +33,10 @@ export const AUDIT_ACTIONS = {
   moduleTurnedOff: "module_turned_off",
   askRemoved: "ask_removed",
   introAsksStopped: "intro_asks_stopped",
+  fillInBasisChanged: "fill_in_basis_changed",
+  fillInRunStarted: "fill_in_run_started",
+  monthlyCapChanged: "monthly_cap_changed",
+  connectNudgeSent: "connect_nudge_sent",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

@@ -6,7 +6,7 @@ import type { Database, DatabaseOrTransaction } from "../../platform/database/cl
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../../platform/settings/schema.ts";
 import { readSettings, saveSettings } from "../../platform/settings/store.ts";
 import type { RequestContext } from "../../platform/http/request-context.ts";
-import { saveDailyLookupLimit } from "../../platform/village/settings.ts";
+import { saveDailyLookupLimit, saveMonthlyCreditCap } from "../../platform/village/settings.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
@@ -46,5 +46,12 @@ export function setDailyLookupLimit({ database, member }: RequestContext, limit:
   return withAdminTransaction(database, member.id, async (transaction) => {
     await saveDailyLookupLimit(transaction, limit);
     await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.dailyLimitChanged, detail: String(limit) });
+  });
+}
+
+export function setMonthlyCreditCap({ database, member }: RequestContext, cap: number) {
+  return withAdminTransaction(database, member.id, async (transaction) => {
+    await saveMonthlyCreditCap(transaction, cap);
+    await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.monthlyCapChanged, detail: String(cap) });
   });
 }

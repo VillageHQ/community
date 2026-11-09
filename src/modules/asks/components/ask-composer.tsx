@@ -23,8 +23,8 @@ const DETAIL_FIELD = "ask-detail";
 const TITLE_EXAMPLE = "Looking for a fractional CFO who's done a Series A";
 const CATEGORY_LABEL_ID = "ask-category-label";
 
-function AskForm({ onPosted }: { onPosted: () => void }) {
-  const [title, setTitle] = useState("");
+function AskForm({ onPosted, draftTitle }: { onPosted: () => void; draftTitle: string }) {
+  const [title, setTitle] = useState(draftTitle);
   const [detail, setDetail] = useState("");
   const [category, setCategory] = useState<AskCategory | null>(null);
   const createAsk = useCreateAsk(onPosted);
@@ -85,9 +85,11 @@ function AskForm({ onPosted }: { onPosted: () => void }) {
   );
 }
 
-function AskFormOrLimit({ onPosted, onSeeYourAsks }: { onPosted: () => void; onSeeYourAsks: () => void }) {
+type AskFormOrLimitProps = { onPosted: () => void; onSeeYourAsks: () => void; draftTitle: string };
+
+function AskFormOrLimit({ onPosted, onSeeYourAsks, draftTitle }: AskFormOrLimitProps) {
   const { data } = useSuspenseQuery(ownAsksQuery());
-  if (data.openCount < ASK_LIMITS.openPerMember) return <AskForm onPosted={onPosted} />;
+  if (data.openCount < ASK_LIMITS.openPerMember) return <AskForm onPosted={onPosted} draftTitle={draftTitle} />;
   return (
     <div className="grid gap-4">
       <Alert variant="info" role="none">
@@ -102,9 +104,15 @@ function AskFormOrLimit({ onPosted, onSeeYourAsks }: { onPosted: () => void; onS
   );
 }
 
-type AskComposerProps = { isOpen: boolean; onOpenChange: (isOpen: boolean) => void; onPosted: () => void; onSeeYourAsks: () => void };
+type AskComposerProps = {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onPosted: () => void;
+  onSeeYourAsks: () => void;
+  draftTitle?: string;
+};
 
-export function AskComposer({ isOpen, onOpenChange, onPosted, onSeeYourAsks }: AskComposerProps) {
+export function AskComposer({ isOpen, onOpenChange, onPosted, onSeeYourAsks, draftTitle = "" }: AskComposerProps) {
   return (
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -122,7 +130,7 @@ export function AskComposer({ isOpen, onOpenChange, onPosted, onSeeYourAsks }: A
             </Dialog.Close>
           </div>
           <QueryBoundary loadingMessage="Just a moment…">
-            <AskFormOrLimit onPosted={onPosted} onSeeYourAsks={onSeeYourAsks} />
+            <AskFormOrLimit onPosted={onPosted} onSeeYourAsks={onSeeYourAsks} draftTitle={draftTitle} />
           </QueryBoundary>
         </Dialog.Content>
       </Dialog.Portal>

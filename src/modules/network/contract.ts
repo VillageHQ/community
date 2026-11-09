@@ -3,6 +3,7 @@ import { z } from "zod";
 import { MEMBER_ERROR_CODES } from "../members/contract-linkedin.ts";
 import { REQUEST_ERROR_CODES } from "../../platform/http/error-codes.ts";
 import { VILLAGE_ERROR_CODES } from "../../platform/village/error-codes.ts";
+import { CREDIT_CALL_KINDS, ESTIMATED_CREDITS, USD_PER_CREDIT } from "../../platform/village/contract.ts";
 
 export const CONNECTOR_LIMITS = { nameLength: 200, headlineLength: 300, reasonLength: 600 } as const;
 
@@ -35,6 +36,9 @@ export const NETWORK_ERROR_CODES = {
   searchCutOff: "search_cut_off",
   leaveNotConfirmed: "leave_not_confirmed",
   groupAdminCannotLeave: "group_admin_cannot_leave",
+  fillInOff: "fill_in_off",
+  fillInTooSoon: "fill_in_too_soon",
+  nudgeTooSoon: "nudge_too_soon",
 } as const;
 
 const networkStageSchema = z.enum([
@@ -133,11 +137,11 @@ export const VILLAGE_STATUSES = {
 
 export const GROUP_DEPARTURE_OUTCOMES = { left: "left", creatorRefused: "creator_refused", failed: "failed" } as const;
 
-export const USD_PER_CREDIT = 0.02;
+export { USD_PER_CREDIT };
 
-export const CREDITS_PER_PATH_LOOKUP = 5;
+export const CREDITS_PER_PATH_LOOKUP = ESTIMATED_CREDITS[CREDIT_CALL_KINDS.path];
 
-export const CREDITS_PER_FULL_SEARCH = 11;
+export const CREDITS_PER_FULL_SEARCH = ESTIMATED_CREDITS[CREDIT_CALL_KINDS.search];
 
 export const departureResponseSchema = z.object({ message: z.string(), isGroupLeaveIncomplete: z.boolean() });
 

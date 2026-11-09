@@ -35,6 +35,29 @@ type FakePath = {
 type FakeTarget = { first_name?: string; last_name?: string; full_name?: string };
 type FakePaths = { summary: string; paths: FakePath[]; target?: FakeTarget };
 type FakePerson = { full_name: string; linkedin_url: string; headline?: string };
+export type FakeProfile = {
+  full_name: string;
+  linkedin_url: string;
+  avatar?: string;
+  headline: string | null;
+  location: { city?: string | null; state?: string | null; country?: string | null } | null;
+  work_relevant: { title: string; start_date: string | null; end_date: string | null; company: { id: number | null; name: string; image_url?: string | null } } | null;
+  work_history: [];
+  last_enrichment_at: string | null;
+};
+
+export function createFakeProfile({ fullName = "Riley Example", title = "Head of Partnerships", company = "Example Co", city = "Lisbon", slug = "riley-example" } = {}): FakeProfile {
+  return {
+    full_name: fullName,
+    linkedin_url: `https://www.linkedin.com/in/${slug}`,
+    avatar: `https://images.example.com/${slug}.jpg`,
+    headline: `${title} at ${company}`,
+    location: { city, state: null, country: "Portugal" },
+    work_relevant: { title, start_date: null, end_date: null, company: { id: 1, name: company, image_url: "https://images.example.com/logo.png" } },
+    work_history: [],
+    last_enrichment_at: FAKE_TIMESTAMP,
+  };
+}
 
 type FakeVillageState = {
   requests: RecordedRequest[];
@@ -57,6 +80,9 @@ type FakeVillageState = {
   createdGroups: string[];
   inviteLink: string;
   isPathsNotSynced: boolean;
+  profilesByEmail: Map<string, FakeProfile>;
+  profilesByUrl: Map<string, FakeProfile>;
+  mintedGrants: Map<string, string>;
 };
 
 export function createFakeVillageState(): FakeVillageState {
@@ -81,6 +107,9 @@ export function createFakeVillageState(): FakeVillageState {
     createdGroups: [],
     inviteLink: "https://village.test/join/invite-code",
     isPathsNotSynced: false,
+    profilesByEmail: new Map(),
+    profilesByUrl: new Map(),
+    mintedGrants: new Map(),
   };
 }
 
@@ -246,6 +275,14 @@ function respondToAuthenticated(
   if (path === "/v2/people/search" && !readObjectField(body, "prompt")) {
     return respondWithInvalidField(response, "prompt");
   }
+  if (path === "/v2/people/enrich/by-email") {
+    const profile = state.profilesByEmail.get(readObjectField(body, "email").toLowerCase());
+    return profile ? respondWithData(response, 200, profile) : respondWithError(response, 404, "not_found");
+  }
+  if (path === "/v2/people/enrich") {
+    const profile = state.profilesByUrl.get(readObjectField(body, "linkedin_url").replace(/\/$/, ""));
+    return profile ? respondWithData(response, 200, profile) : respondWithError(response, 404, "not_found");
+  }
   const linked = state.linkedMembers.get(externalId);
   if (path === "/v2/user/status") return respondWithData(response, 200, toVillageUserStatus(state, externalId, linked));
   if (path === "/v2/people/search" && !linked) {
@@ -340,6 +377,7 @@ async function handleRequest(state: FakeVillageState, request: IncomingMessage, 
     const email = readObjectField(body, "email");
     if (!email) return respondWithInvalidField(response, "email");
     state.mintedEmails.set(externalId, email);
+    state.mintedGrants.set(externalId, readObjectField(body, "grant"));
     const token = `${TOKEN_PREFIX}${externalId}`;
     return respondWithData(response, 200, { token, token_type: "Bearer", expires_in: 1, expires_at: 1 });
   }

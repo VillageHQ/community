@@ -13,6 +13,10 @@ import { adminManifest } from "@/modules/admin/manifest";
 import { introsManifest } from "@/modules/intros/manifest";
 import { networkManifest } from "@/modules/network/manifest";
 import { readEnabledIds } from "@/shell/enabled-modules";
+import { readConnectMeter } from "@/modules/network/service-nudge";
+import { ConnectNudgeButton } from "@/modules/network/components/connect-nudge-button";
+import { UsageMeter } from "@/modules/network/components/usage-meter";
+import { readResendConfig } from "@/platform/email/resend";
 import { modulePage } from "@/platform/modules/module-page";
 
 const ACTIVE_MEMBER_MEANING = "An active member posted, replied, reacted, sent a message or asked for an intro. Reading doesn't count, because this site doesn't track it.";
@@ -26,11 +30,33 @@ function readInviteHeadline({ accepted, sent, acceptedPercent }: CommunityHealth
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminHealth };
 
+function NetworkReachCard({ meter }: { meter: Awaited<ReturnType<typeof readConnectMeter>> }) {
+  const { memberCount, connectedCount, unconnectedCount, nudgeableCount } = meter;
+  return (
+    <Card className="grid gap-4 lg:col-span-2">
+      <div className="grid gap-1.5">
+        <CardTitle>Who members can ask for intros</CardTitle>
+        <CardDescription>
+          Members who connected their network and share it with the community, so others can ask them for an intro. {unconnectedCount} haven&apos;t connected yet.
+        </CardDescription>
+      </div>
+      <UsageMeter
+        label="Connected and open to intro asks"
+        value={connectedCount}
+        maximum={Math.max(memberCount, 1)}
+        valueText={`${connectedCount} of ${memberCount} members`}
+      />
+      <ConnectNudgeButton nudgeableCount={nudgeableCount} isEmailOn={readResendConfig(process.env) !== null} />
+    </Card>
+  );
+}
+
 export default modulePage(adminManifest, async function AdminHealthPage() {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const database = getDatabase();
   const [health, enabledIds] = await Promise.all([readCommunityHealth(database), readEnabledIds(database)]);
   const isNetworkOn = enabledIds.has(networkManifest.id);
+  const connectMeter = isNetworkOn ? await readConnectMeter(database, admin.id) : null;
   const { members, sharing, synced, windows, intros, invites } = health;
 
   return (
@@ -78,6 +104,8 @@ export default modulePage(adminManifest, async function AdminHealthPage() {
         ))}
 
         <p className="type-small px-1 text-foreground-soft lg:col-span-2">{ACTIVE_MEMBER_MEANING}</p>
+
+        {connectMeter ? <NetworkReachCard meter={connectMeter} /> : null}
 
         {enabledIds.has(introsManifest.id) ? (
           <div className="lg:col-span-2">

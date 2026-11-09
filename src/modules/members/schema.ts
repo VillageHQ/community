@@ -125,3 +125,42 @@ export const memberRemoval = pgTable("member_removal", {
   removedAt: timestamp("removed_at", { withTimezone: true, precision: MILLISECOND_PRECISION }).notNull().defaultNow(),
   villageLeaveOutcome: text("village_leave_outcome"),
 });
+
+// A member's own answer about the profile fill-in, and how their last lookup went.
+// No row means they never answered and were never looked up.
+export const memberLookup = pgTable(
+  "member_lookup",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    consentedAt: timestamp("consented_at", { withTimezone: true }),
+    refusedAt: timestamp("refused_at", { withTimezone: true }),
+    status: text("status"),
+    lookedUpAt: timestamp("looked_up_at", { withTimezone: true }),
+    linkedinUrl: text("linkedin_url"),
+  },
+  (table) => [
+    check("member_lookup_status", sql`${table.status} is null or ${table.status} in ('found', 'not_found', 'failed')`),
+    index("member_lookup_looked_up_at_idx").on(table.lookedUpAt),
+  ],
+);
+
+// One line filled in from public profiles. The member's own words live in member_profile and always win.
+// A refresh replaces the value and the date, never hidden_at, so a hidden line stays hidden.
+export const memberFillIn = pgTable(
+  "member_fill_in",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    field: text("field").notNull(),
+    value: text("value").notNull(),
+    filledAt: timestamp("filled_at", { withTimezone: true }).notNull(),
+    hiddenAt: timestamp("hidden_at", { withTimezone: true }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.field] }),
+    check("member_fill_in_field", sql`${table.field} in ('title', 'company', 'location', 'headline', 'face', 'company_logo')`),
+  ],
+);

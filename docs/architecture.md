@@ -112,6 +112,8 @@ Some placements aren't obvious:
 | `member_removal` | `members/schema.ts` | Feed and network read it. |
 | `admin_audit_entry` | `platform/audit/schema.ts` | Every module records admin actions. |
 | `member_daily_usage`, daily limit | `platform/village/` | The credit ledger applies to anything that spends Village credits. |
+| `village_monthly_usage`, monthly cap, its warning emails | `platform/village/` | The cap applies to every paid call, including the nightly fill-in. |
+| `member_lookup`, `member_fill_in` | `members/schema.ts` | The card reads them whatever else is on. Network makes the Village calls and saves through members. |
 | Reclaim and reinvite | `admin/service-roster.ts` | They hold the roster lock and call group departure. |
 | Reports | `admin/service-reports.ts` | Feature routes like `/api/feed/report` call it. |
 | Credit usage | `network/reads-credits.ts` | It only reads Village usage. |

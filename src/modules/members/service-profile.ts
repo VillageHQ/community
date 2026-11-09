@@ -14,6 +14,8 @@ import { MEMBER_ERROR_CODES } from "./contract-linkedin.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { parseExternalUrl } from "./rules-external-url.ts";
 import { normalizeTag, type ProfileBody } from "./contract-profile.ts";
+import { readShownCard } from "./rules-fill-in.ts";
+import { readShownFillIn } from "./service-fill-in.ts";
 
 const UNPROCESSABLE_STATUS = 422;
 const NULL_BYTE = "\0";
@@ -129,19 +131,21 @@ export async function readMemberProfile(database: Database, memberId: string) {
     .where(and(eq(user.id, memberId), isActiveMember()));
   if (!row) return null;
 
-  const tags = await database
-    .select({ tag: memberTag.tag })
-    .from(memberTag)
-    .where(eq(memberTag.userId, memberId))
-    .orderBy(memberTag.tag);
+  const [tags, shownFillIn] = await Promise.all([
+    database.select({ tag: memberTag.tag }).from(memberTag).where(eq(memberTag.userId, memberId)).orderBy(memberTag.tag),
+    readShownFillIn(database, memberId),
+  ]);
 
   const { avatarUpdatedAt, website, linkedinConfirmedSlug, ...fields } = row;
+  const avatarUrl = toAvatarUrl(memberId, avatarUpdatedAt);
   return {
     ...fields,
     isLinkedinConfirmed: fields.linkedinSlug !== null && linkedinConfirmedSlug === fields.linkedinSlug,
     website: website ? parseExternalUrl(website) : null,
-    avatarUrl: toAvatarUrl(memberId, avatarUpdatedAt),
+    avatarUrl,
     tags: tags.map(({ tag }) => tag),
+    // What others see: the member's own words, with filled-in lines only where they wrote nothing.
+    shown: readShownCard({ title: fields.title, company: fields.company, location: fields.location, avatarUrl }, shownFillIn),
   };
 }
 

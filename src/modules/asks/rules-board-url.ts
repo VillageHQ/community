@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { ASK_CATEGORIES, type AskCategory } from "./contract.ts";
+import { ASK_CATEGORIES, ASK_LIMITS, type AskCategory } from "./contract.ts";
+import { ASK_DRAFT_PARAM } from "../../platform/modules/manifest.ts";
 
 const VIEW_PARAM = "view";
 const CATEGORY_PARAM = "category";
@@ -32,4 +33,10 @@ export function toAskBoardQueryString({ view, category }: AskBoardFilters) {
   if (category) params.set(CATEGORY_PARAM, category);
   const queryString = params.toString();
   return queryString ? `?${queryString}` : "";
+}
+
+// A prefilled ask from another screen, like an empty network search. Cut to fit the title.
+export function parseAskDraft(params: Record<string, SearchParamValue>) {
+  const draft = readFirstValue(params[ASK_DRAFT_PARAM])?.replace(/\s+/g, " ").trim() ?? "";
+  return draft ? draft.slice(0, ASK_LIMITS.titleLength) : null;
 }
