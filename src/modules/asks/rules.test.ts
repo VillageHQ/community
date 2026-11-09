@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ASK_CATEGORIES, ASK_LIMITS, ASK_STATES, composeAskReportBody, composeOfferMessage, describeNewOffers } from "./contract";
+import { ASK_CATEGORIES, ASK_KINDS, ASK_LIMITS, ASK_STATES, composeAskReportBody, composeOfferMessage, describeNewOffers } from "./contract";
 import { ASK_VIEWS, parseAskBoardFilters, toAskBoardQueryString } from "./rules-board-url";
 import { canRenewAsk, readAskState, readExpiresAt } from "./rules-state";
 import { describeAge, describeTimeLeft } from "./rules-time";
@@ -73,25 +73,30 @@ describe("age words", () => {
 
 describe("the board URL", () => {
   it("defaults to every open ask", () => {
-    expect(parseAskBoardFilters({})).toEqual({ view: ASK_VIEWS.board, category: null });
+    expect(parseAskBoardFilters({})).toEqual({ view: ASK_VIEWS.board, category: null, kind: null });
   });
 
   it("reads a view and a category", () => {
-    expect(parseAskBoardFilters({ view: "yours", category: "hire" })).toEqual({ view: ASK_VIEWS.yours, category: ASK_CATEGORIES.hire });
+    expect(parseAskBoardFilters({ view: "yours", category: "hire" })).toEqual({ view: ASK_VIEWS.yours, category: ASK_CATEGORIES.hire, kind: null });
   });
 
   it("ignores values it doesn't know", () => {
-    expect(parseAskBoardFilters({ view: "<script>", category: "investor" })).toEqual({ view: ASK_VIEWS.board, category: null });
+    expect(parseAskBoardFilters({ view: "<script>", category: "investor" })).toEqual({ view: ASK_VIEWS.board, category: null, kind: null });
   });
 
   it("round trips", () => {
-    const filters = { view: ASK_VIEWS.board, category: ASK_CATEGORIES.advice };
+    const filters = { view: ASK_VIEWS.board, category: ASK_CATEGORIES.advice, kind: null };
 
     expect(toAskBoardQueryString(filters)).toBe("?category=advice");
   });
 
+  it("keeps the updates filter", () => {
+    expect(parseAskBoardFilters({ kind: "update" })).toEqual({ view: ASK_VIEWS.board, category: null, kind: ASK_KINDS.update });
+    expect(toAskBoardQueryString({ view: ASK_VIEWS.board, category: null, kind: ASK_KINDS.update })).toBe("?kind=update");
+  });
+
   it("stays clean with no filters", () => {
-    expect(toAskBoardQueryString({ view: ASK_VIEWS.board, category: null })).toBe("");
+    expect(toAskBoardQueryString({ view: ASK_VIEWS.board, category: null, kind: null })).toBe("");
   });
 });
 

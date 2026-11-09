@@ -5,15 +5,22 @@ import { INBOX_POLL_MS, isRouteGone, readInboxPollMs } from "../../platform/http
 import { postRequest } from "../../platform/http/post-request.ts";
 import {
   ASK_API_ROUTES,
+  allowanceSettingSchema,
   askBoardPageSchema,
   askCountsSchema,
+  createdAnswerSchema,
   createdAskSchema,
+  createdIntroSchema,
   offerResultSchema,
   ownAsksSchema,
+  type AnswerAskBody,
   type AskCategory,
   type AskCursor,
   type AskDraft,
+  type AskHelperBody,
+  type AskKind,
   type CloseAskBody,
+  type KnowSomeoneDraft,
   type OfferHelpBody,
 } from "./contract.ts";
 
@@ -25,10 +32,10 @@ export const ASK_QUERY_KEYS = {
 
 const FIRST_PAGE: AskCursor | null = null;
 
-export function askBoardQuery(category: AskCategory | null) {
+export function askBoardQuery(category: AskCategory | null, kind: AskKind | null = null) {
   return infiniteQueryOptions({
-    queryKey: [ASK_QUERY_KEYS.board, category],
-    queryFn: ({ pageParam }) => postRequest(ASK_API_ROUTES.board, { category, cursor: pageParam }, askBoardPageSchema),
+    queryKey: [ASK_QUERY_KEYS.board, category, kind],
+    queryFn: ({ pageParam }) => postRequest(ASK_API_ROUTES.board, { category, kind, cursor: pageParam }, askBoardPageSchema),
     initialPageParam: FIRST_PAGE,
     getNextPageParam: ({ nextCursor }) => nextCursor,
     staleTime: INBOX_POLL_MS,
@@ -80,4 +87,24 @@ export function reportAskRequest(askId: string) {
 
 export function removeAskRequest(askId: string) {
   return postRequest(ASK_API_ROUTES.remove, { askId }, acknowledgedResponseSchema);
+}
+
+export function answerAskRequest(body: AnswerAskBody) {
+  return postRequest(ASK_API_ROUTES.answer, body, createdAnswerSchema);
+}
+
+export function reportAnswerRequest(answerId: string) {
+  return postRequest(ASK_API_ROUTES.reportAnswer, { answerId }, acknowledgedResponseSchema);
+}
+
+export function knowSomeoneRequest(body: KnowSomeoneDraft) {
+  return postRequest(ASK_API_ROUTES.knowSomeone, body, createdIntroSchema);
+}
+
+export function askHelperRequest(body: AskHelperBody) {
+  return postRequest(ASK_API_ROUTES.askHelper, body, createdIntroSchema);
+}
+
+export function saveAllowanceRequest(weeklyAllowance: number) {
+  return postRequest(ASK_API_ROUTES.allowance, { weeklyAllowance }, allowanceSettingSchema);
 }

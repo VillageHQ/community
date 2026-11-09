@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { ASK_REPORT_TARGET } from "../asks/contract.ts";
+import { ASK_ANSWER_REPORT_TARGET, ASK_REPORT_TARGET } from "../asks/contract.ts";
 import { FEED_REPORT_TARGETS } from "../feed/contract.ts";
 import { MEMBER_ROLES } from "../../platform/auth/roles.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
@@ -14,6 +14,7 @@ export const REPORT_TARGETS = {
   ...FEED_REPORT_TARGETS,
   introNote: "intro_note",
   ask: ASK_REPORT_TARGET,
+  askAnswer: ASK_ANSWER_REPORT_TARGET,
 } as const;
 export const REPORT_RESOLUTIONS = {
   dismissed: "dismissed",

@@ -34,7 +34,7 @@ export const contentReport = pgTable(
     index("content_report_reported_member_id_idx").on(table.reportedMemberId),
     check(
       "content_report_target_known",
-      sql`${table.targetType} in ('${sql.raw(REPORT_TARGETS.post)}', '${sql.raw(REPORT_TARGETS.comment)}', '${sql.raw(REPORT_TARGETS.introNote)}', '${sql.raw(REPORT_TARGETS.ask)}')`,
+      sql`${table.targetType} in ('${sql.raw(REPORT_TARGETS.post)}', '${sql.raw(REPORT_TARGETS.comment)}', '${sql.raw(REPORT_TARGETS.introNote)}', '${sql.raw(REPORT_TARGETS.ask)}', '${sql.raw(REPORT_TARGETS.askAnswer)}')`,
     ),
     check("content_report_body_length", sql`char_length(${table.body}) between 1 and ${sql.raw(String(FEED_LIMITS.postLength))}`),
   ],

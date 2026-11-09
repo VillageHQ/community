@@ -11,7 +11,8 @@ import { QueryBoundary } from "@/components/query-boundary";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
-import { ASK_LIMITS, type AskCategory } from "@/modules/asks/contract";
+import { ASK_CATEGORIES, ASK_KINDS, ASK_LIMITS, describeAllowance, type AskAllowance, type AskCategory, type AskKind } from "@/modules/asks/contract";
+import { formatLongDate } from "@/platform/text/format-date";
 import { ownAsksQuery } from "@/modules/asks/queries";
 
 import { CATEGORIES, CATEGORY_DISPLAY } from "./ask-display";
@@ -20,27 +21,80 @@ import { useCreateAsk } from "./use-ask-mutations";
 
 const TITLE_FIELD = "ask-title";
 const DETAIL_FIELD = "ask-detail";
+const TARGET_FIELD = "ask-target";
+const KIND_LABEL_ID = "ask-kind-label";
+const UPDATE_EXAMPLE = "We closed our first enterprise customer";
 const TITLE_EXAMPLE = "Looking for a fractional CFO who's done a Series A";
 const CATEGORY_LABEL_ID = "ask-category-label";
 
-function AskForm({ onPosted }: { onPosted: () => void }) {
+type OnPosted = (kind: AskKind, helperCount: number) => void;
+
+function AllowanceLine({ allowance }: { allowance: AskAllowance }) {
+  return (
+    <p className="type-small text-foreground-soft">
+      {describeAllowance(allowance)}. Asks you post and intro asks share it.
+    </p>
+  );
+}
+
+function KindChoice({ kind, onChange }: { kind: AskKind; onChange: (kind: AskKind) => void }) {
+  return (
+    <div className="grid gap-2">
+      <p id={KIND_LABEL_ID} className="type-label">
+        What are you posting?
+      </p>
+      <div role="group" aria-labelledby={KIND_LABEL_ID} className="flex flex-wrap gap-2">
+        <Chip isPressed={kind === ASK_KINDS.ask} onClick={() => onChange(ASK_KINDS.ask)}>
+          An ask
+        </Chip>
+        <Chip isPressed={kind === ASK_KINDS.update} onClick={() => onChange(ASK_KINDS.update)}>
+          An update, like a win
+        </Chip>
+      </div>
+    </div>
+  );
+}
+
+function AskForm({ onPosted, allowance }: { onPosted: OnPosted; allowance: AskAllowance }) {
+  const [kind, setKind] = useState<AskKind>(ASK_KINDS.ask);
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
+  const [targetLinkedin, setTargetLinkedin] = useState("");
   const [category, setCategory] = useState<AskCategory | null>(null);
-  const createAsk = useCreateAsk(onPosted);
+  const createAsk = useCreateAsk((helperCount) => onPosted(kind, helperCount));
+  const isAsk = kind === ASK_KINDS.ask;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    createAsk.mutate({ title, detail: detail.trim() || null, category });
+    createAsk.mutate({
+      title,
+      detail: detail.trim() || null,
+      kind,
+      category: isAsk ? category : ASK_CATEGORIES.other,
+      targetLinkedin: isAsk ? targetLinkedin.trim() || null : null,
+    });
+  }
+
+  if (isAsk && allowance.left === 0) {
+    return (
+      <div className="grid gap-5">
+        <KindChoice kind={kind} onChange={setKind} />
+        <Alert variant="info" role="none">
+          You&apos;ve used this week&apos;s {allowance.cap} asks.
+          {allowance.backAt ? ` The next one comes back on ${formatLongDate(allowance.backAt)}.` : ""} You can still share an update.
+        </Alert>
+      </div>
+    );
   }
 
   return (
     <form className="grid gap-5" onSubmit={submit}>
+      <KindChoice kind={kind} onChange={setKind} />
       <div className="grid gap-1.5">
         <FormField
           name={TITLE_FIELD}
-          label="What do you need?"
-          placeholder={TITLE_EXAMPLE}
+          label={isAsk ? "What do you need?" : "What happened?"}
+          placeholder={isAsk ? TITLE_EXAMPLE : UPDATE_EXAMPLE}
           autoFocus
           autoComplete="off"
           value={title}
@@ -48,6 +102,7 @@ function AskForm({ onPosted }: { onPosted: () => void }) {
         />
         <CharactersLeft length={title.length} maximumLength={ASK_LIMITS.titleLength} />
       </div>
+      {isAsk ? (
       <div className="grid gap-2">
         <p id={CATEGORY_LABEL_ID} className="type-label">
           What kind of help is it?
@@ -64,6 +119,19 @@ function AskForm({ onPosted }: { onPosted: () => void }) {
           })}
         </div>
       </div>
+      ) : null}
+      {isAsk ? (
+        <FormField
+          name={TARGET_FIELD}
+          label="Someone specific you want to reach? (optional)"
+          placeholder="https://www.linkedin.com/in/their-name"
+          autoComplete="off"
+          inputMode="url"
+          value={targetLinkedin}
+          onChange={(event) => setTargetLinkedin(event.target.value)}
+          hint="Paste their LinkedIn link, and we'll tell members who know them."
+        />
+      ) : null}
       <div className="grid gap-1.5">
         <TextareaField
           name={DETAIL_FIELD}
@@ -76,18 +144,23 @@ function AskForm({ onPosted }: { onPosted: () => void }) {
         />
         <CharactersLeft length={detail.length} maximumLength={ASK_LIMITS.detailLength} />
       </div>
-      <p className="type-small text-foreground-soft">Your ask stays up for {ASK_LIMITS.lifetimeDays} days. You can close it sooner, or renew it.</p>
+      <p className="type-small text-foreground-soft">
+        {isAsk
+          ? `Your ask stays up for ${ASK_LIMITS.lifetimeDays} days, and members who may help hear about it once. You can close it sooner, or renew it.`
+          : `Your update stays up for ${ASK_LIMITS.lifetimeDays} days.`}
+      </p>
+      {isAsk ? <AllowanceLine allowance={allowance} /> : null}
       <FormError message={createAsk.error?.message ?? null} />
       <Button type="submit" size="lg" disabled={createAsk.isPending}>
-        {createAsk.isPending ? "Posting…" : "Post my ask"}
+        {createAsk.isPending ? "Posting…" : isAsk ? "Post my ask" : "Post my update"}
       </Button>
     </form>
   );
 }
 
-function AskFormOrLimit({ onPosted, onSeeYourAsks }: { onPosted: () => void; onSeeYourAsks: () => void }) {
+function AskFormOrLimit({ onPosted, onSeeYourAsks }: { onPosted: OnPosted; onSeeYourAsks: () => void }) {
   const { data } = useSuspenseQuery(ownAsksQuery());
-  if (data.openCount < ASK_LIMITS.openPerMember) return <AskForm onPosted={onPosted} />;
+  if (data.openCount < ASK_LIMITS.openPerMember) return <AskForm onPosted={onPosted} allowance={data.allowance} />;
   return (
     <div className="grid gap-4">
       <Alert variant="info" role="none">
@@ -102,7 +175,7 @@ function AskFormOrLimit({ onPosted, onSeeYourAsks }: { onPosted: () => void; onS
   );
 }
 
-type AskComposerProps = { isOpen: boolean; onOpenChange: (isOpen: boolean) => void; onPosted: () => void; onSeeYourAsks: () => void };
+type AskComposerProps = { isOpen: boolean; onOpenChange: (isOpen: boolean) => void; onPosted: OnPosted; onSeeYourAsks: () => void };
 
 export function AskComposer({ isOpen, onOpenChange, onPosted, onSeeYourAsks }: AskComposerProps) {
   return (

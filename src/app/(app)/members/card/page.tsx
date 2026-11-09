@@ -21,6 +21,7 @@ import { modulePage } from "@/platform/modules/module-page";
 import { EMAIL_TOPICS } from "@/platform/email/kinds";
 import { readResendConfig } from "@/platform/email/resend";
 import { readOptedOutTopics } from "@/platform/email/unsubscribe";
+import { asksManifest } from "@/modules/asks/manifest";
 import { introsManifest } from "@/modules/intros/manifest";
 import { messagesManifest } from "@/modules/messages/manifest";
 import { EmailPreferencesCard } from "@/shell/email-preferences-card";
@@ -29,6 +30,7 @@ import { readEnabledIds } from "@/shell/enabled-modules";
 const TOPIC_MODULES = [
   { topic: EMAIL_TOPICS.intros, moduleId: introsManifest.id },
   { topic: EMAIL_TOPICS.messages, moduleId: messagesManifest.id },
+  { topic: EMAIL_TOPICS.asks, moduleId: asksManifest.id },
 ];
 
 async function readEmailSettings(database: ReturnType<typeof getDatabase>, memberId: string) {

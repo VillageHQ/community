@@ -54,6 +54,10 @@ export const introRequest = pgTable(
     outcomeAnsweredAt: introTimestamp("outcome_answered_at"),
     outcomeEmailAt: introTimestamp("outcome_email_at"),
     outcomeReminderAt: introTimestamp("outcome_reminder_at"),
+    // The ask this intro came from, if any. No foreign key: asks is another module, and an intro outlives its ask.
+    askId: uuid("ask_id"),
+    // The connector offered it ("I know someone") instead of being asked. It counts toward no allowance or cap.
+    isConnectorOffer: boolean("is_connector_offer").notNull().default(false),
   },
   (table) => [
     uniqueIndex("intro_request_open_unique")
@@ -61,6 +65,7 @@ export const introRequest = pgTable(
       .where(sql`${table.state} in (${toSqlLiterals(OPEN_INTRO_STATES)})`),
     index("intro_request_requester_created_idx").on(table.requesterId, table.createdAt),
     index("intro_request_introducer_created_idx").on(table.introducerId, table.createdAt),
+    index("intro_request_ask_id_idx").on(table.askId).where(sql`${table.askId} is not null`),
     check("intro_request_state_known", sql`${table.state} in (${toSqlLiterals(Object.values(INTRO_STATES))})`),
     check("intro_request_not_self", sql`${table.requesterId} <> ${table.introducerId}`),
     check("intro_request_note_length", sql`char_length(${table.note}) between 1 and ${toSqlNumber(INTRO_LIMITS.noteLength)}`),
