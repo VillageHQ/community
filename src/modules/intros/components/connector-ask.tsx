@@ -17,6 +17,7 @@ import { AskIntroDialog } from "./ask-intro-dialog";
 const OPEN_ASK_LABELS: Record<string, (firstName: string) => string> = {
   [INTRO_STATES.requested]: (firstName) => `You asked. Waiting on ${firstName}.`,
   [INTRO_STATES.accepted]: (firstName) => `${firstName} said yes.`,
+  [INTRO_STATES.targetAgreed]: () => "They said yes. An intro is on its way.",
 };
 
 type OpenAskRowProps = {
@@ -31,7 +32,7 @@ function OpenAskRow({ openAsk, firstName, linkRef }: OpenAskRowProps) {
       <p className="type-label text-accent-foreground">{OPEN_ASK_LABELS[openAsk.state]?.(firstName)}</p>
       <Button asChild variant="quiet" size="sm">
         <Link ref={linkRef} href={`${ROUTES.intros}/${openAsk.id}`}>
-          See your ask
+          See your intro request
           <ArrowRight aria-hidden="true" />
         </Link>
       </Button>
@@ -39,7 +40,7 @@ function OpenAskRow({ openAsk, firstName, linkRef }: OpenAskRowProps) {
   );
 }
 
-function ConnectorAsk({ connector, isTop, targetSlug, targetName, viewer }: ConnectorSlotProps) {
+export function ConnectorAsk({ connector, isTop, targetSlug, targetName, viewer }: ConnectorSlotProps) {
   const { linkedinSlug, name, openAsk } = connector;
   const openAskLink = useRef<HTMLAnchorElement>(null);
   if (!linkedinSlug) return null;

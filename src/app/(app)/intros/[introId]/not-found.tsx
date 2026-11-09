@@ -11,7 +11,7 @@ export default function IntroNotFound() {
       <EmptyState
         headingLevel="h1"
         icon={Handshake}
-        title="This ask isn't available"
+        title="This intro request isn't available"
         description="It may have been removed, or it belongs to someone else."
       >
         <Button asChild size="lg">
