@@ -14,7 +14,7 @@ import {
   type ConsentEmailBody,
   type ConsentIssue,
   type CreateIntroBody,
-  type IntroOutcomeBody,
+  type IntroOutcomeRequest,
   type IntroTransitionBody,
 } from "./contract.ts";
 
@@ -84,7 +84,7 @@ export function reportIntroNoteRequest(introId: string) {
   return postRequest(API_ROUTES.introReport, { introId }, acknowledgedResponseSchema);
 }
 
-export function recordIntroOutcomeRequest(body: IntroOutcomeBody) {
+export function recordIntroOutcomeRequest(body: IntroOutcomeRequest) {
   return postRequest(API_ROUTES.introOutcome, body, introSchema);
 }
 

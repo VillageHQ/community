@@ -92,7 +92,8 @@ function isAtOrAfterSendTime(moment: Date, { weekday, hour, timeZone }: WeeklySc
 }
 
 // The first instant of the set day at or after the set hour. On a day the clocks skip that hour,
-// that is the first time after the gap; on a day they repeat it, only its first pass counts.
+// that is the first time after the gap. Where a repeat makes it happen twice, both share the
+// week's name, so the second sends nothing new.
 function isScheduledMoment(moment: Date, schedule: WeeklySchedule) {
   return isAtOrAfterSendTime(moment, schedule) && !isAtOrAfterSendTime(new Date(moment.getTime() - STEP_MS), schedule);
 }

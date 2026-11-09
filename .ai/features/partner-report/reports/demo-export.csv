@@ -1,0 +1,41 @@
+section,measure,Q4 2026 so far,Q3 2026,Since launch
+Intros,Asked for,13,2,15
+Intros,Connector said yes,8,1,9
+Intros,Person asked for said yes,5,1,6
+Intros,Introduced,4,1,5
+Intros,Declined by the connector,1,1,2
+Intros,Declined by the person asked for,1,0,1
+Intros,"Expired, connector never answered",2,0,2
+Intros,"Expired, person asked for never answered",1,0,1
+Intros,Withdrawn by the member who asked,1,0,1
+Intros,Still open,3,0,3
+Intros,Median days from ask to intro,3.5,1,3
+What came of them,Said it helped,75%,100%,80%
+What came of them,"Yes, it helped",3,1,4
+What came of them,"No, it didn't",1,0,1
+What came of them,Too early to say,0,0,0
+What came of them,Not answered yet,0,0,0
+What came of them,A customer conversation,1,0,1
+What came of them,A hire,2,0,2
+What came of them,An investor meeting,1,0,1
+Top connectors,Credited Connie,2,0,2
+Top connectors,"Other connectors, not named",2,1,2
+Top connectors,Intros made by them,2,1,3
+Asks by need,Intros: asked,1,0,1
+Asks by need,Intros: solved here,1,0,1
+Asks by need,Hires: asked,1,0,1
+Asks by need,Hires: solved here,0,0,0
+Asks by need,Customers: asked,1,0,1
+Asks by need,Customers: solved here,0,0,0
+
+section,measure,As of 2026-11-09
+Community,Members,5
+Community,Agreed to share their network,5
+Community,Network synced,5
+Community,Invites accepted,0
+Community,Invites still waiting,0
+Community,Invites expired,0
+Community,"Active members, last 7 days",0
+Community,"Active members, last 30 days",0
+Community,"Posts, last 7 days",0
+Community,"Posts, last 30 days",0

@@ -302,20 +302,3 @@ export async function markIntrosSeen(database: Database, memberId: string, intro
     );
 }
 
-const DECLINED_STATES = new Set<string>([INTRO_STATES.declined, INTRO_STATES.targetDeclined]);
-
-export async function readIntroCommunityCounts(database: Database) {
-  const rows = await database
-    .select({ state: introRequest.state, outcome: introRequest.outcome, value: count() })
-    .from(introRequest)
-    .groupBy(introRequest.state, introRequest.outcome);
-  function sumWhere(isCounted: (row: (typeof rows)[number]) => boolean) {
-    return rows.filter(isCounted).reduce((total, { value }) => total + value, 0);
-  }
-  return {
-    asked: sumWhere(() => true),
-    introduced: sumWhere(({ state }) => state === INTRO_STATES.completed),
-    declined: sumWhere(({ state }) => DECLINED_STATES.has(state)),
-    helped: sumWhere(({ outcome }) => outcome === INTRO_OUTCOMES.helped),
-  };
-}

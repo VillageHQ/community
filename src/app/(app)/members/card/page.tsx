@@ -26,6 +26,8 @@ import { readOptedOutTopics } from "@/platform/email/unsubscribe";
 import { introsManifest } from "@/modules/intros/manifest";
 import { messagesManifest } from "@/modules/messages/manifest";
 import { EmailPreferencesCard } from "@/shell/email-preferences-card";
+import { ReportCreditCard } from "@/modules/members/components/report-credit-card";
+import { readReportCredit } from "@/modules/members/service-report-credit";
 import { readEnabledIds } from "@/shell/enabled-modules";
 
 // A topic with no module is always offered: the weekly email works whatever is on.
@@ -53,6 +55,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
   const showsLeaveCard = !isNetworkOn && (await readIsInVillageGroup(database, member.id));
   const memberHasPassword = await hasPassword(database, member.id);
   const emailSettings = await readEmailSettings(database, member.id);
+  const [isIntrosOn, isReportCreditOn] = await Promise.all([isModuleEnabled(database, introsManifest), readReportCredit(database, member.id)]);
 
   return (
     <div className="mx-auto max-w-[720px]">
@@ -73,6 +76,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
       </div>
       <PasswordCard hasPassword={memberHasPassword} isLinkOn={readResendConfig(process.env) !== null} />
       <EmailPreferencesCard settings={emailSettings} />
+      {isIntrosOn ? <ReportCreditCard isOn={isReportCreditOn} /> : null}
       {showsLeaveCard ? <LeaveGroupCard /> : null}
     </div>
   );

@@ -127,6 +127,13 @@
       "when": 1794245074021,
       "tag": "0017_today_weekly",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794244432283,
+      "tag": "0018_partner_report",
+      "breakpoints": true
     }
   ]
 }

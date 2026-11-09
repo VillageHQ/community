@@ -24,7 +24,7 @@ export const PAGE_TITLES = {
   adminMembers: "Members admin",
   adminReports: "Reports",
   adminAuditLog: "Audit log",
-  adminHealth: "Community health",
+  adminReport: "Partner report",
   adminCredits: "Credits",
   adminFeatures: "Features",
   adminSettings: "Settings",

@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
-import { INTRO_DECLINE_KINDS, INTRO_LIMITS, INTRO_OUTCOMES, INTRO_STATES, OPEN_INTRO_STATES } from "./contract.ts";
+import { INTRO_DECLINE_KINDS, INTRO_LIMITS, INTRO_OUTCOMES, INTRO_RESULTS, INTRO_STATES, OPEN_INTRO_STATES } from "./contract.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 
 const MILLISECOND_PRECISION = 3;
@@ -52,6 +52,7 @@ export const introRequest = pgTable(
     targetAgreedAt: introTimestamp("target_agreed_at"),
     outcome: text("outcome"),
     outcomeAnsweredAt: introTimestamp("outcome_answered_at"),
+    outcomeResults: text("outcome_results").array(),
     outcomeEmailAt: introTimestamp("outcome_email_at"),
     outcomeReminderAt: introTimestamp("outcome_reminder_at"),
   },
@@ -79,6 +80,10 @@ export const introRequest = pgTable(
     check(
       "intro_request_outcome_known",
       sql`${table.outcome} is null or (${table.state} = '${sql.raw(INTRO_STATES.completed)}' and ${table.outcome} in (${toSqlLiterals(Object.values(INTRO_OUTCOMES))}))`,
+    ),
+    check(
+      "intro_request_outcome_results",
+      sql`${table.outcomeResults} is null or (${table.outcome} = '${sql.raw(INTRO_OUTCOMES.helped)}' and ${table.outcomeResults} <@ array[${toSqlLiterals(Object.values(INTRO_RESULTS))}]::text[])`,
     ),
     check(
       "intro_request_snapshot_lengths",

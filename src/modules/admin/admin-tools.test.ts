@@ -957,7 +957,6 @@ describe("the admin tools", () => {
         { days: 30, posts: 2, activeMembers: 2 },
       ]);
       expect(health.invites).toMatchObject({ accepted: 0, pending: 1, sent: 1, acceptedPercent: 0 });
-      expect(health.intros).toEqual({ asked: 0, introduced: 0, declined: 0, helped: 0 });
     });
 
     it("shows no acceptance rate before any invite", async () => {

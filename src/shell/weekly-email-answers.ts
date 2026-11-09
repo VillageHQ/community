@@ -114,7 +114,8 @@ export async function answerItem(
   }
   try {
     const outcome = await carryOut(database, environment, row.memberId, item, action, words.trim());
-    if (outcome === ANSWER_OUTCOMES.gone) await releaseItemAction(database, weeklyEmailId, itemNumber);
+    // Only a real answer keeps the item's record. "Gone" may change, and "already" was done in the app.
+    if (outcome !== ANSWER_OUTCOMES.done) await releaseItemAction(database, weeklyEmailId, itemNumber);
     return { outcome, item, action, message: null };
   } catch (error) {
     await releaseItemAction(database, weeklyEmailId, itemNumber);

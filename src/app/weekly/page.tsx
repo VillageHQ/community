@@ -81,7 +81,11 @@ export default modulePage(PLATFORM_MANIFEST, async function WeeklyAnswerPage({ s
           <>
             <h1 className="type-h1">{question.title}</h1>
             <p className="type-lead mt-4 text-foreground-soft">{page.item.title}</p>
-            {result && result !== ANSWER_OUTCOMES.done ? (
+            {result === ANSWER_OUTCOMES.already ? (
+              <Alert variant="info" className="mt-6">
+                You&apos;d already done this in the app, so nothing changed.
+              </Alert>
+            ) : result && result !== ANSWER_OUTCOMES.done ? (
               <Alert variant="destructive" className="mt-6">
                 {PROBLEMS[result] ?? "That didn't work. Try again from the app."}
               </Alert>
