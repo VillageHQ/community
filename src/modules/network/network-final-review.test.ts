@@ -9,7 +9,7 @@ import { NETWORK_ERROR_CODES, NETWORK_STAGES, networkStatusSchema } from "@/modu
 import { saveVillageGroup } from "@/modules/network/service-settings";
 import { saveVillageKeys } from "@/platform/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
-import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
+import { FAKE_VILLAGE_KEYS, readFetchedUrl, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
 import { POST as postLinkReset } from "@/app/api/admin/village/links/reset/route";
@@ -19,13 +19,14 @@ import { POST as postLinkedin } from "@/app/api/network/linkedin/route";
 import { POST as postPaths, maxDuration as pathsMaxDuration } from "@/app/api/network/paths/route";
 import { POST as postSearch, maxDuration as searchMaxDuration } from "@/app/api/network/search/route";
 import { POST as postStatus } from "@/app/api/network/status/route";
+import { POST as postSyncToken } from "@/app/api/network/sync-token/route";
 
 const APP_URL = "http://localhost:3000";
 const SEARCH_PATH = "/v2/people/search";
 const PATHS_PATH = "/v2/people/paths";
 const LEAVE_PATH = "/v2/groups/leave";
 const TOKEN_PATH = "/v2/auth/tokens";
-const USER_PATH = "/v2/user/me";
+const USER_PATH = "/v2/user/status";
 const MILLISECONDS_PER_SECOND = 1000;
 
 type Member = Awaited<ReturnType<typeof createSignedInMember>>;
@@ -74,7 +75,7 @@ describe("the final review fixes", () => {
     const member = await createConsentedMember(slug);
     await readStatus(member);
     village.state.linkedMembers.set((await readNetwork(member)).villageExternalId, {
-      isSynced: true,
+      status: "ready",
     });
     expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.ready);
     return member;
@@ -143,7 +144,7 @@ describe("the final review fixes", () => {
       expect(await readUsageCount(member)).toBe(1);
     });
 
-    it("doesn't read an HTML 404 from /me as an unlinked member", async () => {
+    it("doesn't read an HTML 404 from the status as an unlinked member", async () => {
       const member = await createJoinedMember("spender");
       village.state.htmlFailureStatusByPath.set(USER_PATH, 404);
 
@@ -223,7 +224,7 @@ describe("the final review fixes", () => {
       const member = await createConsentedMember("wrong-account");
       await readStatus(member);
       village.state.linkedMembers.set((await readNetwork(member)).villageExternalId, {
-        isSynced: true,
+        status: "ready",
         email: "wrong@elsewhere.test",
       });
       expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.linkMismatch);
@@ -233,9 +234,11 @@ describe("the final review fixes", () => {
       expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.needsConsent);
       await postConsent(jsonRequest(member, { acknowledged: true }));
 
-      const status = await readStatus(member);
-      expect(status.stage).toBe(NETWORK_STAGES.needsSync);
-      expect(status.sync?.externalId).toBe((await readNetwork(member)).villageExternalId);
+      expect((await readStatus(member)).stage).toBe(NETWORK_STAGES.needsSync);
+      await postSyncToken(jsonRequest(member, {}));
+      expect(village.readRequests(TOKEN_PATH).at(-1)?.body).toMatchObject({
+        external_user_id: (await readNetwork(member)).villageExternalId,
+      });
     });
 
     it("calls nothing on Village's side", async () => {
@@ -331,7 +334,7 @@ describe("the final review fixes", () => {
       const realFetch = globalThis.fetch;
       let isFirstSearch = true;
       vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
-        if (String(input).endsWith(SEARCH_PATH) && isFirstSearch) {
+        if (readFetchedUrl(input).endsWith(SEARCH_PATH) && isFirstSearch) {
           isFirstSearch = false;
           return Response.json({ error: { type: "authentication_error" } }, { status: 401 });
         }
@@ -363,7 +366,7 @@ describe("the final review fixes", () => {
       const realFetch = globalThis.fetch;
       vi.useFakeTimers({ toFake: ["Date"] });
       vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
-        const isUserCall = String(input).endsWith(USER_PATH);
+        const isUserCall = readFetchedUrl(input).endsWith(USER_PATH);
         const response = await realFetch(input, init);
         if (isUserCall) vi.advanceTimersByTime(seconds * MILLISECONDS_PER_SECOND);
         return response;

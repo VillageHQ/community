@@ -9,7 +9,7 @@ import { isReclaimedEmail } from "../../platform/auth/reclaimed-email.ts";
 import { isActiveMember, isBanActive, isBanInEffect } from "../../platform/auth/member-status.ts";
 import { toContainsPattern } from "../members/reads-directory.ts";
 import { toAvatarUrl } from "../members/service-profile.ts";
-import { toLinkedinUrl } from "../members/contract-linkedin.ts";
+import { linkedinUrl } from "@villagehq/sdk";
 import { readVillageStatus } from "../network/contract-village-status.ts";
 import {
   ADMIN_PAGE_SIZES,
@@ -118,7 +118,7 @@ function toAdminMember(row: MemberRow) {
     isInVillageGroup: row.groupJoinedAt !== null,
     hasStaleVillageMembership: row.staleGroupExternalId !== null,
     villageLeaveOutcome: row.villageLeaveOutcome,
-    linkedinUrl: row.linkedinSlug ? toLinkedinUrl(row.linkedinSlug) : null,
+    linkedinUrl: row.linkedinSlug ? linkedinUrl(row.linkedinSlug) : null,
     isLinkedinConfirmed: Boolean(row.linkedinSlug) && row.linkedinSlug === row.linkedinConfirmedSlug,
   };
 }

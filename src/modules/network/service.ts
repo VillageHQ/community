@@ -2,6 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 
+import { isNetworkReady, isVillageError, linkedinUrl, personName } from "@villagehq/sdk";
 import { and, eq, isNotNull, or, sql } from "drizzle-orm";
 
 import { user } from "../../platform/database/auth-schema.ts";
@@ -15,26 +16,23 @@ import { isActiveMember } from "../../platform/auth/member-status.ts";
 import {
   createVillageGroup,
   createVillageSession,
-  isVillageErrorStatus,
   joinVillageGroup,
   leaveVillageGroup,
+  mintVillageToken,
   NETWORK_SOURCE,
   readVillageAppPublicKey,
   readVillagePaths,
   readVillageUser,
   searchVillageNetwork,
-  VILLAGE_FAILURE_TYPES,
-  VILLAGE_LEAVE_OUTCOMES,
-  VILLAGE_NOT_FOUND_STATUS,
-  VILLAGE_UNAUTHORIZED_STATUS,
-  VillageApiError,
+  VillageGatewayError,
+  type VillageConnection,
   type VillagePaths,
   type VillageSession,
   villagePathsSchema,
 } from "../../platform/village/client.ts";
 import { cleanVillageText } from "./rules-connector-reason.ts";
 import { CREDIT_CALL_KINDS, readDailyLookupsLeft, withCreditCall } from "../../platform/village/credit-ledger.ts";
-import { readLinkedinSlug, toLinkedinUrl } from "../members/contract-linkedin.ts";
+import { readLinkedinSlug } from "../members/contract-linkedin.ts";
 import {
   describeMemberPaths,
   readConnectors,
@@ -56,7 +54,7 @@ import {
 import { deleteVillageGroup, readVillageGroup, saveVillageGroup } from "./service-settings.ts";
 import { readVillageKeys, saveVillageKeys, type VillageKeys } from "../../platform/village/settings.ts";
 import { readReachableMembers } from "./reads-reachable-members.ts";
-import { resolveVillageApiUrl, resolveVillageSdkUrl } from "../../platform/village/urls.ts";
+import { resolveVillageApiUrl, resolveVillageAppUrl } from "../../platform/village/urls.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import type { SessionMember, RequestContext } from "../../platform/http/request-context.ts";
 import { isAdminMember } from "../../platform/auth/roles.ts";
@@ -66,14 +64,11 @@ const PATH_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const UNPROCESSABLE_STATUS = 422;
+const BAD_REQUEST_STATUS = 400;
 const INTERNAL_ERROR_STATUS = 500;
 const SERVICE_UNAVAILABLE_STATUS = 503;
 const GATEWAY_TIMEOUT_STATUS = 504;
-const SEARCH_CUT_OFF_TYPES: ReadonlySet<string> = new Set([
-  VILLAGE_FAILURE_TYPES.timedOut,
-  VILLAGE_FAILURE_TYPES.invalidResponse,
-  VILLAGE_FAILURE_TYPES.unreadableError,
-]);
+const SYNC_STAGES: ReadonlySet<NetworkStage> = new Set([NETWORK_STAGES.needsSync, NETWORK_STAGES.syncing]);
 
 type MemberNetworkRow = typeof memberNetwork.$inferSelect;
 
@@ -92,11 +87,9 @@ async function connectMember(
   if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
 
   const network = await ensureMemberNetwork(database, member.id);
-  const session = createVillageSession(
-    { apiUrl: resolveVillageApiUrl(environment), secretKey: keys.secretKey, deadlineAtMs },
-    { externalId: network.villageExternalId, email: member.email },
-  );
-  return { session, network };
+  const villageConnection: VillageConnection = { apiUrl: resolveVillageApiUrl(environment), secretKey: keys.secretKey, deadlineAtMs };
+  const identity = { externalId: network.villageExternalId, email: member.email };
+  return { session: createVillageSession(villageConnection, identity), villageConnection, identity, network };
 }
 
 function linkMismatchError(member: SessionMember) {
@@ -148,10 +141,9 @@ async function requireTrustedVillageUser(
   network: MemberNetworkRow,
   session: VillageSession,
 ) {
-  const villageUser = await readVillageUser(session);
-  if (!villageUser) throw notLinkedError();
-  if (!(await confirmVillageLink(context, network, villageUser.email))) throw linkMismatchError(context.member);
-  return villageUser;
+  const { email } = await readVillageUser(session);
+  if (email === null) throw notLinkedError();
+  if (!(await confirmVillageLink(context, network, email))) throw linkMismatchError(context.member);
 }
 
 async function requireVillageKeys(database: Database) {
@@ -182,54 +174,69 @@ async function markVillageLinked(database: Database, memberId: string) {
   await database.update(memberNetwork).set({ villageLinkedAt: new Date() }).where(eq(memberNetwork.userId, memberId));
 }
 
-export async function advanceNetwork(context: RequestContext): Promise<NetworkStatus> {
+type ConnectedMember = Awaited<ReturnType<typeof connectMember>>;
+type NetworkProgress = { status: NetworkStatus; connected: ConnectedMember | null };
+
+async function readNetworkProgress(context: RequestContext): Promise<NetworkProgress> {
   const { database, environment, member } = context;
+  const atStage = (stage: NetworkStage) => ({ status: describeStage(context, stage), connected: null });
 
   const keys = await readVillageKeys(database);
-  if (!keys) return describeStage(context, NETWORK_STAGES.notConfigured);
-  if (!(await isMemberEmailTrusted(database, member))) {
-    return describeStage(context, NETWORK_STAGES.needsEmailConfirmation);
-  }
+  if (!keys) return atStage(NETWORK_STAGES.notConfigured);
+  if (!(await isMemberEmailTrusted(database, member))) return atStage(NETWORK_STAGES.needsEmailConfirmation);
 
   const memberRow = await ensureMemberNetwork(database, member.id);
-  if (!memberRow.linkedinSlug) return describeStage(context, NETWORK_STAGES.needsLinkedin);
+  if (!memberRow.linkedinSlug) return atStage(NETWORK_STAGES.needsLinkedin);
 
   const group = await readVillageGroup(database);
-  if (!group && !isAdminMember(member)) return describeStage(context, NETWORK_STAGES.awaitingGroup);
-  if (group && !memberRow.sharingConsentedAt) {
-    return describeStage(context, NETWORK_STAGES.needsConsent);
-  }
+  if (!group && !isAdminMember(member)) return atStage(NETWORK_STAGES.awaitingGroup);
+  if (group && !memberRow.sharingConsentedAt) return atStage(NETWORK_STAGES.needsConsent);
 
-  const { session, network } = await connectMember(context, keys);
+  const connected = await connectMember(context, keys);
+  const { session, network } = connected;
   const villageUser = await readVillageUser(session);
-  if (villageUser && !network.villageLinkedAt) await markVillageLinked(database, member.id);
-  const sync = {
-    publicKey: keys.publicKey,
-    externalId: network.villageExternalId,
-    sdkUrl: resolveVillageSdkUrl(environment),
-  };
-  if (!villageUser) return { ...describeStage(context, NETWORK_STAGES.needsSync), sync };
-  if (!(await confirmVillageLink(context, network, villageUser.email))) {
-    return describeStage(context, NETWORK_STAGES.linkMismatch);
-  }
-  if (!villageUser.isSyncComplete) return { ...describeStage(context, NETWORK_STAGES.syncing), sync };
+  const atSyncStage = (stage: NetworkStage) => ({
+    status: { ...describeStage(context, stage), sync: { appUrl: resolveVillageAppUrl(environment) } },
+    connected,
+  });
+  if (villageUser.email === null) return atSyncStage(NETWORK_STAGES.needsSync);
+  if (!network.villageLinkedAt) await markVillageLinked(database, member.id);
+  if (!(await confirmVillageLink(context, network, villageUser.email))) return atStage(NETWORK_STAGES.linkMismatch);
+  if (villageUser.status === "not_connected") return atSyncStage(NETWORK_STAGES.needsSync);
+  if (!isNetworkReady(villageUser)) return atSyncStage(NETWORK_STAGES.syncing);
 
-  if (!group) return describeStage(context, NETWORK_STAGES.needsGroupCreation);
-  if (network.groupJoinedAt) return describeStage(context, NETWORK_STAGES.ready);
+  if (!group) return atStage(NETWORK_STAGES.needsGroupCreation);
+  if (network.groupJoinedAt) return atStage(NETWORK_STAGES.ready);
 
   await joinVillageGroup(session, group.inviteLink);
   await database
     .update(memberNetwork)
     .set({ groupJoinedAt: new Date() })
     .where(eq(memberNetwork.userId, member.id));
-  return describeStage(context, NETWORK_STAGES.ready);
+  return atStage(NETWORK_STAGES.ready);
+}
+
+export async function advanceNetwork(context: RequestContext): Promise<NetworkStatus> {
+  return (await readNetworkProgress(context)).status;
+}
+
+export async function mintSyncToken(context: RequestContext) {
+  const { status, connected } = await readNetworkProgress(context);
+  if (!connected || !SYNC_STAGES.has(status.stage)) {
+    throw new RequestError(
+      CONFLICT_STATUS,
+      NETWORK_ERROR_CODES.notReady,
+      "Your network doesn't need a sync right now. Reload this page to see the next step.",
+    );
+  }
+  return { token: await mintVillageToken(connected.villageConnection, connected.identity) };
 }
 
 async function readAppPublicKeyOrExplain(session: VillageSession) {
   try {
     return await readVillageAppPublicKey(session);
   } catch (error) {
-    if (!isVillageErrorStatus(error, VILLAGE_UNAUTHORIZED_STATUS)) throw error;
+    if (!isVillageError(error, "unauthorized")) throw error;
     throw new RequestError(
       UNPROCESSABLE_STATUS,
       NETWORK_ERROR_CODES.keysRejected,
@@ -269,10 +276,10 @@ export async function createCommunityGroup(context: RequestContext, name: string
   const keys = await requireVillageKeys(database);
   const { session, network } = await connectMember(context, keys);
   const villageUser = await readVillageUser(session);
-  if (villageUser && !(await confirmVillageLink(context, network, villageUser.email))) {
+  if (villageUser.email !== null && !(await confirmVillageLink(context, network, villageUser.email))) {
     throw linkMismatchError(member);
   }
-  if (!villageUser?.isSyncComplete) {
+  if (villageUser.email === null || !isNetworkReady(villageUser)) {
     throw new RequestError(
       CONFLICT_STATUS,
       NETWORK_ERROR_CODES.notReady,
@@ -296,7 +303,8 @@ export async function readVillageGroupReadiness(context: RequestContext) {
   const keys = await readVillageKeys(context.database);
   if (!keys) return null;
   const { session } = await connectMember(context, keys);
-  return readVillageUser(session);
+  const villageUser = await readVillageUser(session);
+  return { isSynced: villageUser.email !== null && isNetworkReady(villageUser) };
 }
 
 async function readMemberSlugs(database: Database, ownSlug: string | null) {
@@ -320,9 +328,17 @@ async function requireJoinedMember({ database, member }: RequestContext) {
   );
 }
 
+function isUnreadableAnswer(error: unknown) {
+  if (!(error instanceof VillageGatewayError)) return false;
+  return error.answeredStatus < BAD_REQUEST_STATUS || error.answeredStatus >= INTERNAL_ERROR_STATUS;
+}
+
+function isSearchCutOff(error: unknown) {
+  return isVillageError(error, "timeout") || isVillageError(error, "invalid_response") || isUnreadableAnswer(error);
+}
+
 function toSearchCutOffError(error: unknown) {
-  if (!(error instanceof VillageApiError)) return error;
-  if (error.status < INTERNAL_ERROR_STATUS || !SEARCH_CUT_OFF_TYPES.has(error.type)) return error;
+  if (!isSearchCutOff(error)) return error;
   return new RequestError(
     GATEWAY_TIMEOUT_STATUS,
     NETWORK_ERROR_CODES.searchCutOff,
@@ -362,7 +378,7 @@ export async function searchMemberNetwork(
   const reachableMembers = await readReachableMembers(database, peopleSlugs, member.id);
   const describedPeople = people.map((person) => {
     const linkedinSlug = readLinkedinSlug(person.linkedin_url);
-    const fullName = person.full_name || [person.first_name, person.last_name].filter(Boolean).join(" ");
+    const fullName = personName(person);
     const member = readTrustedMember(fullName, linkedinSlug, reachableMembers);
     return {
       fullName,
@@ -396,19 +412,22 @@ async function readCachedPaths(database: Database, userId: string, linkedinSlug:
   return paths.person ? paths : undefined;
 }
 
-async function fetchVillagePathsOrNull(
+function isPersonKnown(villagePaths: VillagePaths | null) {
+  return villagePaths !== null;
+}
+
+function fetchVillagePathsOrNull(
   context: RequestContext,
   session: VillageSession,
   linkedinSlug: string,
 ) {
-  try {
-    return await withCreditCall(context.database, context.member.id, CREDIT_CALL_KINDS.path, () =>
-      readVillagePaths(session, toLinkedinUrl(linkedinSlug)),
-    );
-  } catch (error) {
-    if (isVillageErrorStatus(error, VILLAGE_NOT_FOUND_STATUS)) return null;
-    throw error;
-  }
+  return withCreditCall(
+    context.database,
+    context.member.id,
+    CREDIT_CALL_KINDS.path,
+    () => readVillagePaths(session, linkedinUrl(linkedinSlug)),
+    isPersonKnown,
+  );
 }
 
 async function readPathsFacts(
@@ -601,19 +620,19 @@ export async function leaveCommunityGroup(context: RequestContext) {
   }
 
   const { session, network } = await connectMember(context, keys);
-  const villageUser = await readVillageUser(session);
-  if (!villageUser) throw leaveNotConfirmedError();
-  if (!(await confirmVillageLink(context, network, villageUser.email))) throw linkMismatchError(context.member);
+  const { email } = await readVillageUser(session);
+  if (email === null) throw leaveNotConfirmedError();
+  if (!(await confirmVillageLink(context, network, email))) throw linkMismatchError(context.member);
 
   const outcome = await leaveVillageGroup(session, group.id);
-  if (outcome === VILLAGE_LEAVE_OUTCOMES.adminBlocked) {
+  if (outcome === "admin_blocked") {
     throw new RequestError(
       CONFLICT_STATUS,
       NETWORK_ERROR_CODES.groupAdminCannotLeave,
       "You created this group, so Village won't let you leave while other members are in it. Village requires every other member to leave first.",
     );
   }
-  if (outcome === VILLAGE_LEAVE_OUTCOMES.notMember && !(await readVillageUser(session))) {
+  if (outcome === "not_member" && (await readVillageUser(session)).email === null) {
     throw leaveNotConfirmedError();
   }
   await clearMemberFromGroup(database, member.id);

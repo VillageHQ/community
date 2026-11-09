@@ -179,12 +179,12 @@ describe("intro requests", () => {
     village = await startFakeVillageServer();
     resend = await startFakeResendServer();
     process.env.VILLAGE_API_URL = village.url;
-    process.env.VILLAGE_SDK_URL = "https://sdk.village.test";
+    process.env.VILLAGE_APP_URL = "https://app.village.test";
   });
 
   afterAll(async () => {
     delete process.env.VILLAGE_API_URL;
-    delete process.env.VILLAGE_SDK_URL;
+    delete process.env.VILLAGE_APP_URL;
     await village.stop();
     await resend.stop();
     await database.$client.end();
@@ -209,7 +209,7 @@ describe("intro requests", () => {
     ];
     for (const [member, slug] of memberSlugs) {
       const externalId = await joinMemberToGroup(database, member.userId, slug);
-      village.state.linkedMembers.set(externalId, { isSynced: true, email: member.email });
+      village.state.linkedMembers.set(externalId, { status: "ready", email: member.email });
     }
     await nameMember(database, amara.userId, "Amara Osei");
     await nameMember(database, jonas.userId, "Jonas Lindqvist");

@@ -17,7 +17,7 @@ import { isBlockedBy } from "@/modules/members/service-blocks";
 import { isCardFilledIn, readMemberProfile } from "@/modules/members/service-profile";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
-import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
+import { linkedinUrl } from "@villagehq/sdk";
 import { isAdminMember } from "@/platform/auth/roles";
 
 import { BlockMemberButton } from "@/modules/members/components/block-member-button";
@@ -108,7 +108,7 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
         {profile.linkedinSlug || profile.website ? (
           <div className="mt-5 flex flex-wrap gap-2">
             {profile.linkedinSlug ? (
-              <ExternalButton href={toLinkedinUrl(profile.linkedinSlug)} icon={<Link2 aria-hidden="true" />}>
+              <ExternalButton href={linkedinUrl(profile.linkedinSlug)} icon={<Link2 aria-hidden="true" />}>
                 LinkedIn
               </ExternalButton>
             ) : null}

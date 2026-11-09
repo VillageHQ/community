@@ -53,14 +53,13 @@ const networkStageSchema = z.enum([
 export const networkStatusSchema = z.object({
   stage: networkStageSchema,
   isAdmin: z.boolean(),
-  sync: z
-    .object({ publicKey: z.string(), externalId: z.string(), sdkUrl: z.string() })
-    .nullable(),
+  sync: z.object({ appUrl: z.string() }).nullable(),
 });
 
 export type NetworkStatus = z.infer<typeof networkStatusSchema>;
 export type NetworkStage = NetworkStatus["stage"];
-export type VillageSyncConfig = NonNullable<NetworkStatus["sync"]>;
+
+export const syncTokenSchema = z.object({ token: z.string() });
 
 export const networkSearchResultSchema = z.object({
   people: z.array(

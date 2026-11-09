@@ -16,6 +16,6 @@ export default modulePage(membersManifest, async function LandingPage() {
   if ((await resolveOnboardingStep(database, member)) !== ONBOARDING_STEPS.done) redirect(ROUTES.welcome);
   if (!isAdminMember(member)) redirect(ROUTES.feed);
 
-  const { isComplete } = await readSetupProgress(database, process.env);
+  const { isComplete } = await readSetupProgress(database);
   redirect(isComplete ? ROUTES.feed : ROUTES.admin);
 });

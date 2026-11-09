@@ -84,7 +84,7 @@ export const NEXT_STEPS: Record<NetworkProgress, NetworkStepCopy> = {
 const JOIN_STEPS = [
   { title: "Add your LinkedIn", description: "So members recognize you in their intro paths." },
   { title: "Read the deal and share", description: "You decide. Nothing is shared until you say yes." },
-  { title: "Sync with Village", description: "Connect your Village account in a popup." },
+  { title: "Sync with Village", description: "Connect your accounts in Village's sync window." },
   { title: "Search the network", description: "Find people and see who can introduce you." },
 ];
 

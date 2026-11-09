@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { GroupLeaveOutcome } from "@villagehq/sdk";
 import { eq } from "drizzle-orm";
 
 import { memberRemoval, memberNetwork } from "../members/schema.ts";
@@ -7,7 +8,7 @@ import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { GROUP_DEPARTURE_OUTCOMES, type GroupDepartureOutcome } from "./contract.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
-import { createVillageSession, leaveVillageGroup, readVillageUser, VILLAGE_LEAVE_OUTCOMES } from "../../platform/village/client.ts";
+import { createVillageSession, leaveVillageGroup, readVillageUser } from "../../platform/village/client.ts";
 import { clearMemberFromGroup } from "./service.ts";
 import { type RequestContext } from "../../platform/http/request-context.ts";
 import { readVillageGroup, type VillageGroup } from "./service-settings.ts";
@@ -16,10 +17,10 @@ import { resolveVillageApiUrl } from "../../platform/village/urls.ts";
 
 const DEPARTURE_DEADLINE_MS = 20_000;
 
-const DEPARTURE_FROM_VILLAGE_OUTCOME = {
-  [VILLAGE_LEAVE_OUTCOMES.left]: GROUP_DEPARTURE_OUTCOMES.left,
-  [VILLAGE_LEAVE_OUTCOMES.notMember]: GROUP_DEPARTURE_OUTCOMES.left,
-  [VILLAGE_LEAVE_OUTCOMES.adminBlocked]: GROUP_DEPARTURE_OUTCOMES.creatorRefused,
+const DEPARTURE_FROM_VILLAGE_OUTCOME: Record<GroupLeaveOutcome, GroupDepartureOutcome> = {
+  left: GROUP_DEPARTURE_OUTCOMES.left,
+  not_member: GROUP_DEPARTURE_OUTCOMES.left,
+  admin_blocked: GROUP_DEPARTURE_OUTCOMES.creatorRefused,
 };
 
 type DepartingMember = { memberId: string; email: string };
@@ -43,8 +44,8 @@ async function leaveAs(attempt: DepartureAttempt): Promise<GroupDepartureOutcome
     { apiUrl: resolveVillageApiUrl(context.environment), secretKey: keys.secretKey, deadlineAtMs: Date.now() + DEPARTURE_DEADLINE_MS },
     { externalId, email },
   );
-  const villageUser = await readVillageUser(session);
-  if (!villageUser || !isOwnVillageAccount(villageUser.email, attempt)) return GROUP_DEPARTURE_OUTCOMES.failed;
+  const { email: villageEmail } = await readVillageUser(session);
+  if (villageEmail === null || !isOwnVillageAccount(villageEmail, attempt)) return GROUP_DEPARTURE_OUTCOMES.failed;
   return DEPARTURE_FROM_VILLAGE_OUTCOME[await leaveVillageGroup(session, group.id)];
 }
 

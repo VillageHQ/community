@@ -5,6 +5,10 @@ const FAKE_REQUEST_ID = "req_fake";
 const FAKE_TIMESTAMP = "2026-01-01T00:00:00.000Z";
 const LINKEDIN_PERSON_URL_PATTERN = /linkedin\.com\/in\/[^/?#\s]+/i;
 
+export function readFetchedUrl(input: RequestInfo | URL) {
+  return input instanceof Request ? input.url : String(input);
+}
+
 export const FAKE_VILLAGE_KEYS = { publicKey: "pk_fake", secretKey: "sk_fake_never_expose" };
 
 type RecordedRequest = {
@@ -15,6 +19,8 @@ type RecordedRequest = {
 };
 
 type FakeFailure = { status: number; type: string };
+type FakeNetworkStatus = "not_connected" | "syncing" | "ready" | "needs_attention";
+type FakeVillageUser = { status: FakeNetworkStatus; email?: string };
 type FakeRelationship = { first_name: string; last_name: string; linkedin_url: string; headline?: string };
 type FakeScoreMeta = { title: string; description: string };
 type FakePath = {
@@ -32,7 +38,7 @@ type FakePerson = { full_name: string; linkedin_url: string; headline?: string }
 
 type FakeVillageState = {
   requests: RecordedRequest[];
-  linkedMembers: Map<string, { isSynced: boolean; email?: string }>;
+  linkedMembers: Map<string, FakeVillageUser>;
   mintedEmails: Map<string, string>;
   unparsableBodyPaths: Set<string>;
   leftMembers: Set<string>;
@@ -168,6 +174,29 @@ function toVillageSearchPerson({ full_name, linkedin_url, headline }: FakePerson
   };
 }
 
+const INTEGRATION_STATUSES: Record<FakeNetworkStatus, string | null> = {
+  not_connected: null,
+  syncing: "syncing",
+  ready: "synced",
+  needs_attention: "needs_reauth",
+};
+
+const UNLINKED_USER_STATUS = { status: "not_connected", email: null, integrations: [], network_updated_at: null };
+
+function toVillageUserStatus(state: FakeVillageState, externalId: string, linked: FakeVillageUser | undefined) {
+  if (!linked) return UNLINKED_USER_STATUS;
+  const integrationStatus = INTEGRATION_STATUSES[linked.status];
+  const hasNetwork = linked.status === "ready" || linked.status === "needs_attention";
+  return {
+    status: linked.status,
+    email: linked.email ?? state.mintedEmails.get(externalId) ?? null,
+    integrations: integrationStatus
+      ? [{ id: 1, type: "linkedin", status: integrationStatus, account: null, last_synced_at: hasNetwork ? FAKE_TIMESTAMP : null }]
+      : [],
+    network_updated_at: hasNetwork ? FAKE_TIMESTAMP : null,
+  };
+}
+
 const DEFAULT_FAKE_TARGET: FakeTarget = { first_name: "Target", last_name: "Person", full_name: "Target Person" };
 
 function toVillagePaths({ summary, paths, target = DEFAULT_FAKE_TARGET }: FakePaths) {
@@ -218,21 +247,12 @@ function respondToAuthenticated(
     return respondWithInvalidField(response, "prompt");
   }
   const linked = state.linkedMembers.get(externalId);
+  if (path === "/v2/user/status") return respondWithData(response, 200, toVillageUserStatus(state, externalId, linked));
   if (path === "/v2/people/search" && !linked) {
     return respondWithError(response, 403, "authorization_error");
   }
   if (!linked) return respondWithError(response, 404, "not_found");
 
-  if (path === "/v2/user/me") {
-    return respondWithData(response, 200, {
-      id: externalId,
-      email: linked.email ?? state.mintedEmails.get(externalId) ?? "",
-      name: "Fake Member",
-      created_at: FAKE_TIMESTAMP,
-      is_sync_complete: linked.isSynced,
-      is_active: true,
-    });
-  }
   if (path === "/v2/groups" && method === "GET") {
     return respondWithData(response, 200, {
       groups: [{ id: "group-1", name: "Group", logo: null, invite_link: state.inviteLink, is_admin: true }],

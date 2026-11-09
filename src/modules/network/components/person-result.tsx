@@ -5,7 +5,7 @@ import { ChevronRight, ExternalLink } from "lucide-react";
 
 import { CommunityMemberBadge } from "@/components/community-member-badge";
 import { Avatar } from "@/components/ui/avatar";
-import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
+import { linkedinUrl } from "@villagehq/sdk";
 import type { NetworkPaths, NetworkPerson } from "@/modules/network/contract";
 
 import { networkPathsQuery } from "@/modules/network/queries";
@@ -110,7 +110,7 @@ export function PersonResult({ person, isSelected, panelId, onSelect }: PersonRe
         </span>
       </button>
       <a
-        href={toLinkedinUrl(linkedinSlug)}
+        href={linkedinUrl(linkedinSlug)}
         target="_blank"
         rel="noreferrer"
         aria-label={`${fullName} on LinkedIn (opens in a new tab)`}

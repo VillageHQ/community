@@ -51,14 +51,12 @@ export const VILLAGE_APP_SHAPE = {
   metadata: SUCCESS_METADATA,
 };
 
-export const VILLAGE_USER_SHAPE = {
+export const VILLAGE_USER_STATUS_SHAPE = {
   data: {
-    id: "string",
-    email: "string",
-    name: "string",
-    created_at: "string",
-    is_sync_complete: "boolean",
-    is_active: "boolean",
+    status: "string",
+    email: "string|null",
+    integrations: [{ id: "number", type: "string", status: "string", account: "string|null", last_synced_at: "string|null" }],
+    network_updated_at: "string|null",
   },
   metadata: SUCCESS_METADATA,
 };

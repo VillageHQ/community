@@ -57,9 +57,28 @@ export function KeysForm({ savedPublicKey, hasSavedKeys, keyStatus = VILLAGE_KEY
   return (
     <form action={formAction} className="grid gap-5">
       {notice ? <Alert>{notice}</Alert> : null}
+      <ol className="grid list-decimal gap-2 pl-5 text-foreground-soft">
+        <li>
+          Open <ExternalTextLink href={VILLAGE_PLATFORM_LINKS.home}>Village&apos;s platform</ExternalTextLink> and choose{" "}
+          <strong className="font-bold text-foreground">New developer account</strong>. You sign in with Google. If you
+          already have one, choose <strong className="font-bold text-foreground">Login</strong>.
+        </li>
+        <li>
+          Follow Village&apos;s <ExternalTextLink href={VILLAGE_PLATFORM_LINKS.checklist}>checklist</ExternalTextLink>. It
+          asks for a payment method before your app can go live.
+        </li>
+        <li>
+          Open <ExternalTextLink href={VILLAGE_PLATFORM_LINKS.appSettings}>App Settings</ExternalTextLink>. Set{" "}
+          <strong className="font-bold text-foreground">Title</strong> to your community&apos;s name, because members see
+          it in the sync window.
+        </li>
+        <li>
+          Open <ExternalTextLink href={VILLAGE_PLATFORM_LINKS.apiKeys}>API Keys</ExternalTextLink> and copy the public and
+          secret keys into the fields below.
+        </li>
+      </ol>
       <p className="text-foreground-soft">
-        Open <ExternalTextLink href={VILLAGE_PLATFORM_LINKS.apiKeys}>API Keys in Village</ExternalTextLink> and copy both
-        keys here. We check them with Village before saving.
+        We check them with Village before saving.
         {hasSavedKeys ? " Keys are saved. The secret key never leaves this server." : ""}
       </p>
       <FormError message={state.errorMessage} />

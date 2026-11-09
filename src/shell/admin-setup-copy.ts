@@ -7,12 +7,6 @@ export const SETUP_STEP_COPY: Record<SetupStepId, { title: string; todo: string;
     done: "Your name, logo and color are set.",
     manageLabel: "Edit",
   },
-  [SETUP_STEPS.domain]: {
-    title: "Register your domain",
-    todo: "Tell Village the address of this site.",
-    done: "You confirmed you added this site's address in Village.",
-    manageLabel: "Review",
-  },
   [SETUP_STEPS.keys]: {
     title: "Add your Village keys",
     todo: "They connect this community to Village.",

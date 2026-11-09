@@ -1,17 +1,12 @@
-import { eq } from "drizzle-orm";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { communityBranding } from "@/platform/branding/schema";
-import { INSTANCE_SETTING_KEYS, instanceSettings } from "@/platform/settings/schema";
-import { readSetupProgress, SETUP_STEPS } from "@/shell/admin-setup";
 import { DEFAULT_BRANDING, readBranding } from "@/platform/branding/branding";
 import { MAXIMUM_LOGO_BYTES } from "@/platform/branding/logo-rules";
-import { readConfirmedVillageDomain } from "@/modules/network/service-settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";
 
 import { POST as postBranding } from "@/app/api/admin/branding/route";
-import { POST as postDomain } from "@/app/api/admin/setup/domain/route";
 import { DELETE as deleteLogoRoute, GET as getLogo, POST as postLogo } from "@/app/api/branding/logo/route";
 
 const APP_URL = "http://localhost:3000";
@@ -65,7 +60,6 @@ describe("branding", () => {
 
   beforeEach(async () => {
     await database.delete(communityBranding);
-    await database.delete(instanceSettings).where(eq(instanceSettings.key, INSTANCE_SETTING_KEYS.villageDomainConfirmed));
   });
 
   afterEach(() => {
@@ -264,35 +258,6 @@ describe("branding", () => {
       const response = await getLogo(new Request(LOGO_URL, { headers: { "If-None-Match": entityTag } }));
 
       expect(response.status).toBe(NOT_MODIFIED_STATUS);
-    });
-  });
-
-  describe("confirming the domain", () => {
-    it("records the current hostname", async () => {
-      const response = await postDomain(jsonRequest(admin, { confirmed: true }));
-
-      expect(response.status).toBe(OK_STATUS);
-      expect(await readConfirmedVillageDomain(database)).toBe("localhost");
-    });
-
-    it("reopens the step when the site moves to another domain", async () => {
-      await postDomain(jsonRequest(admin, { confirmed: true }));
-
-      const domainIsDone = async (appUrl: string) => {
-        const { steps } = await readSetupProgress(database, { APP_URL: appUrl });
-        return steps.find(({ id }) => id === SETUP_STEPS.domain)?.isDone;
-      };
-
-      expect(await domainIsDone(APP_URL)).toBe(true);
-      expect(await domainIsDone("https://community.example.test")).toBe(false);
-    });
-
-    it("needs the confirmation", async () => {
-      expect((await postDomain(jsonRequest(admin, {}))).status).toBe(UNPROCESSABLE_STATUS);
-    });
-
-    it("refuses a member who isn't an admin", async () => {
-      expect((await postDomain(jsonRequest(member, { confirmed: true }))).status).toBe(FORBIDDEN_STATUS);
     });
   });
 });

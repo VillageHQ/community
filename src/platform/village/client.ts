@@ -1,98 +1,116 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
+import { isVillageError, VillageError, type CallOptions, type Village, type VillageRequestEvent } from "@villagehq/sdk";
+import { createVillageApp, type VillageApp } from "@villagehq/sdk/server";
 import { z } from "zod";
 
-import { dropReusableToken, withReusableToken } from "./reusable-tokens.ts";
-
-const DEFAULT_TIMEOUT_MS = 15_000;
-const PATHS_TIMEOUT_MS = 60_000;
-const SEARCH_TIMEOUT_MS = 120_000;
-const BAD_REQUEST_STATUS = 400;
-const UNAUTHORIZED_STATUS = 401;
-const NOT_FOUND_STATUS = 404;
-const CONFLICT_STATUS = 409;
-const UNREACHABLE_STATUS = 503;
-const TIMED_OUT_STATUS = 504;
-const UNREACHABLE_TYPE = "unreachable";
-const TIMEOUT_ERROR_NAME = "TimeoutError";
-const NO_STATUSES: readonly number[] = [];
-
-export const VILLAGE_FAILURE_TYPES = {
-  timedOut: "timed_out",
-  invalidResponse: "invalid_response",
-  unreadableError: "unreadable_error",
-} as const;
-
-export const NETWORK_NOT_SYNCED_TYPE = "network_not_synced";
+export const VILLAGE_TIMEOUTS_MS = { default: 15_000, paths: 60_000, search: 120_000 } as const;
 export const NETWORK_SOURCE = "network";
-export const VILLAGE_NOT_FOUND_STATUS = NOT_FOUND_STATUS;
-export const VILLAGE_UNAUTHORIZED_STATUS = UNAUTHORIZED_STATUS;
-export const VILLAGE_LEAVE_OUTCOMES = {
-  left: "left",
-  notMember: "not_member",
-  adminBlocked: "admin_blocked",
-} as const;
 
-export class VillageApiError extends Error {
-  readonly status: number;
-  readonly type: string;
-  readonly isVillageErrorResponse: boolean;
+const MAXIMUM_VILLAGE_APPS = 10;
+const BAD_REQUEST_STATUS = 400;
+const LEAVE_OPERATION = "groups.leave";
+const JSON_CONTENT_TYPE = "json";
 
-  constructor(status: number, type: string, isVillageErrorResponse = false) {
-    super(`Village responded ${status} (${type}).`);
-    this.status = status;
-    this.type = type;
-    this.isVillageErrorResponse = isVillageErrorResponse;
+const villageApps = new Map<string, VillageApp>();
+
+export type VillageConnection = { apiUrl: string | undefined; secretKey: string; deadlineAtMs: number };
+export type VillageIdentity = { externalId: string; email: string };
+export type VillageSession = { village: Village; deadlineAtMs: number };
+
+// TODO(@villagehq/sdk): a VillageError doesn't say whether Village wrote the answer or a proxy in front of it did.
+// people.paths reads a proxy's HTML 404 as an unknown person, and groups.leave reads it as "not a member".
+// Until the SDK tells them apart, any answer that isn't JSON fails here, with no status for the SDK to misread.
+export class VillageGatewayError extends VillageError {
+  readonly answeredStatus: number;
+
+  constructor(answeredStatus: number) {
+    super({ code: "server", message: `Village's address answered ${answeredStatus} with something other than JSON.` });
+    this.answeredStatus = answeredStatus;
   }
 }
 
-export function isVillageErrorStatus(error: unknown, status: number) {
-  return error instanceof VillageApiError && error.isVillageErrorResponse && error.status === status;
+async function fetchVillageJson(request: Request) {
+  const response = await fetch(request);
+  if (response.headers.get("content-type")?.includes(JSON_CONTENT_TYPE)) return response;
+  await response.body?.cancel();
+  throw new VillageGatewayError(response.status);
 }
 
-type VillageTarget = { apiUrl: string; deadlineAtMs: number };
-type VillageConnection = VillageTarget & { secretKey: string };
-type VillageIdentity = { externalId: string; email: string };
+// TODO(@villagehq/sdk): groups.leave turns a 400 into the admin_blocked outcome, but onRequest still reports it as an error.
+function isLeaveOutcome({ operation, status }: VillageRequestEvent) {
+  return operation === LEAVE_OPERATION && status === BAD_REQUEST_STATUS;
+}
 
-export type VillageSession = {
-  target: VillageTarget;
-  withToken: <Result>(call: (token: string) => Promise<Result>) => Promise<Result>;
-};
+function logVillageFailure(event: VillageRequestEvent) {
+  const { operation, durationMs, requestId, error } = event;
+  if (!error || error.isExpected || isLeaveOutcome(event)) return;
+  const status = error instanceof VillageGatewayError ? error.answeredStatus : event.status;
+  console.error(
+    JSON.stringify({ level: "error", scope: "village", operation, status, code: error.code, durationMs, requestId, traceId: error.traceId }),
+  );
+}
 
-type VillageRequest<Schema extends z.ZodType> = {
-  path: string;
-  method: "GET" | "POST";
-  body?: unknown;
-  schema: Schema;
-  headers?: Record<string, string>;
-  timeoutMs?: number;
-  expectedErrorStatuses?: readonly number[];
-};
+function readVillageApp({ apiUrl, secretKey }: VillageConnection) {
+  const key = createHash("sha256").update(`${apiUrl}\n${secretKey}`).digest("hex");
+  const cached = villageApps.get(key);
+  if (cached) return cached;
 
-const errorBodySchema = z.object({
-  error: z.union([z.string(), z.object({ type: z.string(), trace_id: z.string().optional() })]),
-});
+  const oldestKey = villageApps.keys().next().value;
+  if (villageApps.size >= MAXIMUM_VILLAGE_APPS && oldestKey) villageApps.delete(oldestKey);
+  const villageApp = createVillageApp({ secretKey, apiUrl, fetch: fetchVillageJson, onRequest: logVillageFailure });
+  villageApps.set(key, villageApp);
+  return villageApp;
+}
 
-const tokenBodySchema = z.object({ data: z.object({ token: z.string() }) });
-const appBodySchema = z.object({ data: z.object({ public_key: z.string() }) });
-const userBodySchema = z.object({
-  data: z.object({ email: z.string(), is_sync_complete: z.boolean() }),
-});
-const groupBodySchema = z.object({ data: z.object({ id: z.string(), invite_link: z.string() }) });
-const ignoredBodySchema = z.unknown();
+export function createVillageSession(connection: VillageConnection, { externalId, email }: VillageIdentity): VillageSession {
+  return { village: readVillageApp(connection).as({ id: externalId, email }), deadlineAtMs: connection.deadlineAtMs };
+}
 
-const searchBodySchema = z.object({
-  data: z.array(
-    z.object({
-      first_name: z.string().nullish(),
-      last_name: z.string().nullish(),
-      full_name: z.string().nullish(),
-      linkedin_url: z.string().nullish(),
-      headline: z.string().nullish(),
-    }),
-  ),
-  metadata: z.object({ source: z.string().optional() }).optional(),
-});
+export function withinDeadline({ deadlineAtMs }: Pick<VillageSession, "deadlineAtMs">, usualTimeoutMs: number = VILLAGE_TIMEOUTS_MS.default): CallOptions {
+  const remainingMs = deadlineAtMs - Date.now();
+  if (remainingMs <= 0) throw new VillageError({ code: "timeout", message: "No time was left to call Village." });
+  return { timeoutMs: Math.min(usualTimeoutMs, remainingMs) };
+}
+
+export function isVillageErrorResponse(error: unknown): error is VillageError {
+  if (!isVillageError(error) || error instanceof VillageGatewayError) return false;
+  return error.status !== null && error.status >= BAD_REQUEST_STATUS;
+}
+
+export async function mintVillageToken(connection: VillageConnection, { externalId, email }: VillageIdentity) {
+  const { token } = await readVillageApp(connection).tokens.create({ id: externalId, email }, withinDeadline(connection));
+  return token;
+}
+
+export async function readVillageAppPublicKey(session: VillageSession) {
+  const { public_key } = await session.village.app.get(withinDeadline(session));
+  return public_key;
+}
+
+export function readVillageUser(session: VillageSession) {
+  return session.village.user.get(withinDeadline(session));
+}
+
+export async function createVillageGroup(session: VillageSession, name: string) {
+  const { id, invite_link } = await session.village.groups.create(name, withinDeadline(session));
+  return { id, inviteLink: invite_link };
+}
+
+export function joinVillageGroup(session: VillageSession, inviteLink: string) {
+  return session.village.groups.join(inviteLink, withinDeadline(session));
+}
+
+export function leaveVillageGroup(session: VillageSession, groupId: string) {
+  return session.village.groups.leave(groupId, withinDeadline(session));
+}
+
+export async function searchVillageNetwork(session: VillageSession, prompt: string) {
+  const { results, response } = await session.village.people.search(prompt, withinDeadline(session, VILLAGE_TIMEOUTS_MS.search));
+  return { people: results, source: response.metadata.source };
+}
 
 const pathProfileSchema = z.object({
   first_name: z.string().nullish(),
@@ -132,209 +150,10 @@ export const villagePathsSchema = z.object({
 
 export type VillagePaths = z.infer<typeof villagePathsSchema>;
 
-const pathsBodySchema = z.object({ data: villagePathsSchema });
-
-async function readVillageError(response: Response) {
-  const parsed = errorBodySchema.safeParse(await response.json().catch(() => null));
-  if (!parsed.success) {
-    return { type: VILLAGE_FAILURE_TYPES.unreadableError, isVillageError: false };
-  }
-  const { error } = parsed.data;
-  if (typeof error === "string") return { type: error, isVillageError: true };
-  return { type: error.type, traceId: error.trace_id, isVillageError: true };
-}
-
-function logVillageFailure(path: string, status: number, type: string, traceId?: string) {
-  console.error(JSON.stringify({ level: "error", scope: "village", path, status, type, traceId }));
-}
-
-function throwTimedOut(path: string): never {
-  logVillageFailure(path, TIMED_OUT_STATUS, VILLAGE_FAILURE_TYPES.timedOut);
-  throw new VillageApiError(TIMED_OUT_STATUS, VILLAGE_FAILURE_TYPES.timedOut);
-}
-
-async function fetchVillage({ apiUrl, deadlineAtMs }: VillageTarget, request: VillageRequest<z.ZodType>) {
-  const remainingMs = deadlineAtMs - Date.now();
-  if (remainingMs <= 0) throwTimedOut(request.path);
-
-  try {
-    return await fetch(`${apiUrl}${request.path}`, {
-      method: request.method,
-      headers: { "Content-Type": "application/json", ...request.headers },
-      body: request.body === undefined ? undefined : JSON.stringify(request.body),
-      signal: AbortSignal.timeout(Math.min(request.timeoutMs ?? DEFAULT_TIMEOUT_MS, remainingMs)),
-      cache: "no-store",
-    });
-  } catch (error) {
-    if (error instanceof Error && error.name === TIMEOUT_ERROR_NAME) throwTimedOut(request.path);
-    logVillageFailure(request.path, UNREACHABLE_STATUS, UNREACHABLE_TYPE);
-    throw new VillageApiError(UNREACHABLE_STATUS, UNREACHABLE_TYPE);
-  }
-}
-
-async function requestVillage<Schema extends z.ZodType>(
-  target: VillageTarget,
-  request: VillageRequest<Schema>,
-): Promise<z.infer<Schema>> {
-  const response = await fetchVillage(target, request);
-
-  if (!response.ok) {
-    const { type, traceId, isVillageError } = await readVillageError(response);
-    const expectedStatuses = request.expectedErrorStatuses ?? NO_STATUSES;
-    if (!expectedStatuses.includes(response.status)) {
-      logVillageFailure(request.path, response.status, type, traceId);
-    }
-    throw new VillageApiError(
-      response.status,
-      type,
-      isVillageError && response.status >= BAD_REQUEST_STATUS,
-    );
-  }
-
-  const parsed = request.schema.safeParse(await response.json().catch(() => null));
-  if (!parsed.success) {
-    logVillageFailure(request.path, response.status, VILLAGE_FAILURE_TYPES.invalidResponse);
-    throw new VillageApiError(UNREACHABLE_STATUS, VILLAGE_FAILURE_TYPES.invalidResponse);
-  }
-  return parsed.data;
-}
-
-async function mintVillageToken(connection: VillageConnection, identity: VillageIdentity) {
-  const { data } = await requestVillage(connection, {
-    path: "/v2/auth/tokens",
-    method: "POST",
-    headers: { "secret-key": connection.secretKey },
-    body: { external_user_id: identity.externalId, email: identity.email },
-    schema: tokenBodySchema,
-  });
-  return data.token;
-}
-
-export function createVillageSession(
-  connection: VillageConnection,
-  identity: VillageIdentity,
-): VillageSession {
-  const identityParts = [
-    connection.apiUrl,
-    connection.secretKey,
-    identity.externalId,
-    identity.email,
-  ];
-  const readToken = () =>
-    withReusableToken(identityParts, () => mintVillageToken(connection, identity));
-
-  return {
-    target: { apiUrl: connection.apiUrl, deadlineAtMs: connection.deadlineAtMs },
-    withToken: async (call) => {
-      const token = await readToken();
-      try {
-        return await call(token);
-      } catch (error) {
-        if (!isVillageErrorStatus(error, UNAUTHORIZED_STATUS)) throw error;
-        dropReusableToken(identityParts);
-        return call(await readToken());
-      }
-    },
-  };
-}
-
-function requestAsMember<Schema extends z.ZodType>(
-  session: VillageSession,
-  request: VillageRequest<Schema>,
-) {
-  return session.withToken((token) =>
-    requestVillage(session.target, {
-      ...request,
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  );
-}
-
-export async function readVillageAppPublicKey(session: VillageSession) {
-  const { data } = await requestAsMember(session, {
-    path: "/v2/app",
-    method: "GET",
-    schema: appBodySchema,
-  });
-  return data.public_key;
-}
-
-export async function readVillageUser(session: VillageSession) {
-  try {
-    const { data } = await requestAsMember(session, {
-      path: "/v2/user/me",
-      method: "GET",
-      schema: userBodySchema,
-      expectedErrorStatuses: [NOT_FOUND_STATUS],
-    });
-    return { email: data.email, isSyncComplete: data.is_sync_complete };
-  } catch (error) {
-    if (isVillageErrorStatus(error, NOT_FOUND_STATUS)) return null;
-    throw error;
-  }
-}
-
-export async function createVillageGroup(session: VillageSession, name: string) {
-  const { data } = await requestAsMember(session, {
-    path: "/v2/groups",
-    method: "POST",
-    body: { name },
-    schema: groupBodySchema,
-  });
-  return { id: data.id, inviteLink: data.invite_link };
-}
-
-export async function joinVillageGroup(session: VillageSession, inviteLink: string) {
-  try {
-    await requestAsMember(session, {
-      path: "/v2/groups/join",
-      method: "POST",
-      body: { group_invite_link: inviteLink },
-      schema: ignoredBodySchema,
-      expectedErrorStatuses: [CONFLICT_STATUS],
-    });
-  } catch (error) {
-    if (isVillageErrorStatus(error, CONFLICT_STATUS)) return;
-    throw error;
-  }
-}
-
-export async function searchVillageNetwork(session: VillageSession, prompt: string) {
-  const { data, metadata } = await requestAsMember(session, {
-    path: "/v2/people/search",
-    method: "POST",
-    body: { prompt, scope: "network" },
-    schema: searchBodySchema,
-    timeoutMs: SEARCH_TIMEOUT_MS,
-  });
-  return { people: data, source: metadata?.source };
-}
-
 export async function readVillagePaths(session: VillageSession, linkedinUrl: string) {
-  const { data } = await requestAsMember(session, {
-    path: "/v2/people/paths",
-    method: "POST",
-    body: { linkedin_url: linkedinUrl },
-    schema: pathsBodySchema,
-    timeoutMs: PATHS_TIMEOUT_MS,
-    expectedErrorStatuses: [NOT_FOUND_STATUS, CONFLICT_STATUS],
-  });
-  return data;
-}
-
-export async function leaveVillageGroup(session: VillageSession, groupId: string) {
-  try {
-    await requestAsMember(session, {
-      path: "/v2/groups/leave",
-      method: "POST",
-      body: { group_id: groupId },
-      schema: ignoredBodySchema,
-      expectedErrorStatuses: [BAD_REQUEST_STATUS, NOT_FOUND_STATUS],
-    });
-    return VILLAGE_LEAVE_OUTCOMES.left;
-  } catch (error) {
-    if (isVillageErrorStatus(error, NOT_FOUND_STATUS)) return VILLAGE_LEAVE_OUTCOMES.notMember;
-    if (isVillageErrorStatus(error, BAD_REQUEST_STATUS)) return VILLAGE_LEAVE_OUTCOMES.adminBlocked;
-    throw error;
-  }
+  const villagePaths = await session.village.people.paths(linkedinUrl, withinDeadline(session, VILLAGE_TIMEOUTS_MS.paths));
+  if (villagePaths === null) return null;
+  const parsed = villagePathsSchema.safeParse(villagePaths);
+  if (parsed.success) return parsed.data;
+  throw new VillageError({ code: "invalid_response", status: 200, message: "Village's paths weren't in the expected shape." });
 }

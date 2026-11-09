@@ -9,7 +9,7 @@ import { NETWORK_ERROR_CODES, NETWORK_STAGES, networkPathsSchema, networkStatusS
 import { deleteVillageGroup, readVillageGroup, saveVillageGroup } from "@/modules/network/service-settings";
 import { saveVillageKeys } from "@/platform/village/settings";
 import { clearDatabase, createTestDatabase } from "@/test/database";
-import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "@/test/fake-village-server";
+import { FAKE_VILLAGE_KEYS, readFetchedUrl, startFakeVillageServer } from "@/test/fake-village-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 
 import { POST as postGroup } from "@/app/api/admin/village/group/route";
@@ -31,7 +31,7 @@ const LEAVE_PATH = "/v2/groups/leave";
 const TOKEN_PATH = "/v2/auth/tokens";
 const SEARCH_PATH = "/v2/people/search";
 const PATHS_PATH = "/v2/people/paths";
-const USER_PATH = "/v2/user/me";
+const USER_PATH = "/v2/user/status";
 const TARGET_SLUG = "target-person";
 const TARGET_URL = `https://www.linkedin.com/in/${TARGET_SLUG}`;
 const SLOW_PATHS_DELAY_MS = 15_500;
@@ -84,10 +84,10 @@ describe("member network safeguards", () => {
     return member;
   }
 
-  async function linkMember(member: Member, email?: string, isSynced = true) {
+  async function linkMember(member: Member, email?: string) {
     await readStatus(member);
     const { villageExternalId } = await readNetwork(member);
-    village.state.linkedMembers.set(villageExternalId, { isSynced, email });
+    village.state.linkedMembers.set(villageExternalId, { status: "ready", email });
     return villageExternalId;
   }
 
@@ -169,7 +169,7 @@ describe("member network safeguards", () => {
         const member = await createJoinedMember("was-fine");
         const { villageExternalId } = await readNetwork(member);
         village.state.linkedMembers.set(villageExternalId, {
-          isSynced: true,
+          status: "ready",
           email: OTHER_PERSON_EMAIL,
         });
         return member;
@@ -190,7 +190,7 @@ describe("member network safeguards", () => {
         await readPaths(member);
         const { villageExternalId } = await readNetwork(member);
         village.state.linkedMembers.set(villageExternalId, {
-          isSynced: true,
+          status: "ready",
           email: OTHER_PERSON_EMAIL,
         });
 
@@ -279,7 +279,7 @@ describe("member network safeguards", () => {
           const member = await createApprovedMember();
           const { villageExternalId } = await readNetwork(member);
           village.state.linkedMembers.set(villageExternalId, {
-            isSynced: true,
+            status: "ready",
             email: "third@elsewhere.test",
           });
 
@@ -310,7 +310,7 @@ describe("member network safeguards", () => {
       const realFetch = globalThis.fetch;
       vi.spyOn(console, "error").mockImplementation(() => undefined);
       vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
-        if (String(input).endsWith(path)) throw error;
+        if (readFetchedUrl(input).endsWith(path)) throw error;
         return realFetch(input, init);
       });
     }
@@ -417,7 +417,7 @@ describe("member network safeguards", () => {
       const realFetch = globalThis.fetch;
       vi.spyOn(console, "error").mockImplementation(() => undefined);
       vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
-        if (String(input).endsWith(SEARCH_PATH)) {
+        if (readFetchedUrl(input).endsWith(SEARCH_PATH)) {
           throw new DOMException("Timed out", "TimeoutError");
         }
         return realFetch(input, init);

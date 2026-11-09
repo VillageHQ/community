@@ -274,7 +274,7 @@ describe("admin invites", () => {
   describe("the admin checklist", () => {
     it("marks the invite step done once an invite is out", async () => {
       const readStep = async () => {
-        const { steps } = await readSetupProgress(database, { APP_URL });
+        const { steps } = await readSetupProgress(database);
         return steps.find(({ id }) => id === SETUP_STEPS.invite)?.isDone;
       };
 
@@ -287,7 +287,7 @@ describe("admin invites", () => {
       const issued = await createInviteAs(admin);
       await postRevoke(jsonRequest(admin, { inviteId: issued.invite.id }));
 
-      const { steps } = await readSetupProgress(database, { APP_URL });
+      const { steps } = await readSetupProgress(database);
 
       expect(steps.find(({ id }) => id === SETUP_STEPS.invite)?.isDone).toBe(false);
     });

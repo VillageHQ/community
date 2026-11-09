@@ -1,6 +1,7 @@
+import { linkedinUrl } from "@villagehq/sdk";
 import { describe, expect, it } from "vitest";
 
-import { readLinkedinSlug, toLinkedinUrl } from "./contract-linkedin";
+import { readLinkedinSlug } from "./contract-linkedin";
 
 describe("readLinkedinSlug", () => {
   describe("with a profile URL", () => {
@@ -10,8 +11,8 @@ describe("readLinkedinSlug", () => {
       ["linkedin.com/in/jane-doe?trk=share", "jane-doe"],
       ["  https://br.linkedin.com/in/JANE-doe#about  ", "jane-doe"],
       ["https://www.linkedin.com/in/jos%C3%A9", "josé"],
-    ])("reads %s as %s", (linkedinUrl, slug) => {
-      expect(readLinkedinSlug(linkedinUrl)).toBe(slug);
+    ])("reads %s as %s", (profileUrl, slug) => {
+      expect(readLinkedinSlug(profileUrl)).toBe(slug);
     });
   });
 
@@ -24,18 +25,20 @@ describe("readLinkedinSlug", () => {
       ["https://linkedin.com.evil.test/in/jane-doe"],
       ["https://evil-linkedin.com/in/jane-doe"],
       ["javascript:alert(1)//linkedin.com/in/jane-doe"],
-    ])("returns null for %s", (linkedinUrl) => {
-      expect(readLinkedinSlug(linkedinUrl)).toBeNull();
+      ["https://www.linkedin.com/in/jane%0Adoe"],
+      ["https://www.linkedin.com/in/%20"],
+    ])("returns null for %s", (profileUrl) => {
+      expect(readLinkedinSlug(profileUrl)).toBeNull();
     });
   });
 });
 
-describe("toLinkedinUrl", () => {
+describe("linkedinUrl", () => {
   it("round-trips a slug that needs encoding", () => {
-    expect(readLinkedinSlug(toLinkedinUrl("josé"))).toBe("josé");
+    expect(readLinkedinSlug(linkedinUrl("josé"))).toBe("josé");
   });
 
   it("keeps a hostile slug inside the profile path", () => {
-    expect(new URL(toLinkedinUrl("../../evil?x=1")).pathname).toBe("/in/..%2F..%2Fevil%3Fx%3D1");
+    expect(new URL(linkedinUrl("../../evil?x=1")).pathname).toBe("/in/..%2F..%2Fevil%3Fx%3D1");
   });
 });

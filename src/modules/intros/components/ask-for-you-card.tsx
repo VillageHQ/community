@@ -14,7 +14,7 @@ import { formatShortDate } from "@/platform/text/format-date";
 import { INTRO_ACTIONS, INTRO_LIMITS, INTRO_STATES, type Intro } from "@/modules/intros/contract";
 import { composeForwardableBlurb } from "@/modules/intros/copy";
 import { reportIntroNoteRequest } from "@/modules/intros/queries";
-import { toLinkedinUrl } from "@/modules/members/contract-linkedin";
+import { linkedinUrl } from "@villagehq/sdk";
 
 import {
   IntroCardFrame,
@@ -33,7 +33,7 @@ function TargetLink({ intro }: { intro: Intro }) {
   const { name, linkedinSlug } = intro.target;
   return (
     <a
-      href={toLinkedinUrl(linkedinSlug)}
+      href={linkedinUrl(linkedinSlug)}
       target="_blank"
       rel="noreferrer"
       className="inline-flex items-center gap-1 font-bold text-brand-emphasis underline underline-offset-3 hover:no-underline"

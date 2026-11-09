@@ -1,18 +1,19 @@
+import { isVillageError } from "@villagehq/sdk";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   createVillageGroup,
   createVillageSession,
+  isVillageErrorResponse,
   joinVillageGroup,
   leaveVillageGroup,
   readVillageAppPublicKey,
   readVillagePaths,
   readVillageUser,
   searchVillageNetwork,
-  VillageApiError,
-  VILLAGE_LEAVE_OUTCOMES,
+  VillageGatewayError,
 } from "../platform/village/client.ts";
-import { FAKE_VILLAGE_KEYS, startFakeVillageServer } from "./fake-village-server.ts";
+import { FAKE_VILLAGE_KEYS, readFetchedUrl, startFakeVillageServer } from "./fake-village-server.ts";
 import {
   type ResponseShape,
   VILLAGE_APP_SHAPE,
@@ -25,12 +26,13 @@ import {
   VILLAGE_RATE_LIMIT_ERROR_SHAPE,
   VILLAGE_SEARCH_SHAPE,
   VILLAGE_TOKEN_SHAPE,
-  VILLAGE_USER_SHAPE,
+  VILLAGE_USER_STATUS_SHAPE,
   VILLAGE_VALIDATION_ERROR_SHAPE,
 } from "./village-recorded-responses.ts";
 
 const MEMBER = { externalId: "member-1", email: "member@example.com" };
 const TARGET_URL = "https://linkedin.com/in/target-person";
+const TOKEN_PATH = "/v2/auth/tokens";
 const ONE_MINUTE_MS = 60_000;
 
 function readValueType(value: unknown) {
@@ -68,25 +70,31 @@ const FILLERS: Record<string, unknown> = { string: "text", number: 1, boolean: t
 describe("the recorded Village responses", () => {
   afterAll(() => vi.unstubAllGlobals());
 
-  function createTestSession() {
-    const session = createVillageSession(
+  function answerWith(answer: () => Response) {
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) =>
+      readFetchedUrl(input).endsWith(TOKEN_PATH) ? Response.json(fillShape(VILLAGE_TOKEN_SHAPE)) : answer(),
+    );
+    return createVillageSession(
       { apiUrl: "https://village.test", secretKey: "secret", deadlineAtMs: Date.now() + ONE_MINUTE_MS },
       MEMBER,
     );
-    return { ...session, withToken: <Result>(call: (token: string) => Promise<Result>) => call("token") };
   }
 
   function session(shape: ResponseShape) {
-    vi.stubGlobal("fetch", async () => Response.json(fillShape(shape)));
-    return createTestSession();
+    return answerWith(() => Response.json(fillShape(shape)));
   }
 
   it("parse into the app's public key", async () => {
     await expect(readVillageAppPublicKey(session(VILLAGE_APP_SHAPE))).resolves.toBe("text");
   });
 
-  it("parse into the linked user", async () => {
-    await expect(readVillageUser(session(VILLAGE_USER_SHAPE))).resolves.toEqual({ email: "text", isSyncComplete: true });
+  it("parse into the member's Village status", async () => {
+    await expect(readVillageUser(session(VILLAGE_USER_STATUS_SHAPE))).resolves.toEqual({
+      status: "text",
+      email: "text",
+      integrations: [{ id: 1, type: "text", status: "text", account: "text", last_synced_at: "text" }],
+      network_updated_at: "text",
+    });
   });
 
   it("parse into the created group", async () => {
@@ -98,39 +106,54 @@ describe("the recorded Village responses", () => {
 
   it("parse a join and a leave", async () => {
     await expect(joinVillageGroup(session(VILLAGE_GROUP_CHANGE_SHAPE), "link")).resolves.toBeUndefined();
-    await expect(leaveVillageGroup(session(VILLAGE_GROUP_CHANGE_SHAPE), "group")).resolves.toBe(VILLAGE_LEAVE_OUTCOMES.left);
+    await expect(leaveVillageGroup(session(VILLAGE_GROUP_CHANGE_SHAPE), "group")).resolves.toBe("left");
   });
 
   it("parse into searched people and their source", async () => {
     const { people, source } = await searchVillageNetwork(session(VILLAGE_SEARCH_SHAPE), "founders");
 
     expect(source).toBe("text");
-    expect(people).toEqual([
-      { first_name: "text", last_name: "text", full_name: "text", linkedin_url: "text", headline: "text" },
-    ]);
+    expect(people).toEqual([expect.objectContaining({ first_name: "text", last_name: "text", full_name: "text", linkedin_url: "text", headline: "text" })]);
   });
 
   it("parse into paths with an introducer and a starter", async () => {
     const paths = await readVillagePaths(session(VILLAGE_PATHS_SHAPE), TARGET_URL);
 
-    expect(paths.person?.full_name).toBe("text");
-    expect(paths.paths[0]?.introducer?.profile.linkedin_url).toBe("text");
-    expect(paths.paths[0]?.starters[0]?.is_current_user).toBe(true);
-    expect(paths.paths[0]?.starters[0]?.score_meta?.[0]?.description).toBe("text");
+    expect(paths?.person?.full_name).toBe("text");
+    expect(paths?.paths[0]?.introducer?.profile.linkedin_url).toBe("text");
+    expect(paths?.paths[0]?.starters[0]?.is_current_user).toBe(true);
+    expect(paths?.paths[0]?.starters[0]?.score_meta?.[0]?.description).toBe("text");
   });
 
   describe.each([
-    { name: "the error object", shape: VILLAGE_ERROR_SHAPE, status: 404, type: "text" },
-    { name: "the validation error object", shape: VILLAGE_VALIDATION_ERROR_SHAPE, status: 422, type: "text" },
-    { name: "the flat credits error", shape: VILLAGE_CREDITS_ERROR_SHAPE, status: 402, type: "text" },
-    { name: "the flat rate limit error", shape: VILLAGE_RATE_LIMIT_ERROR_SHAPE, status: 429, type: "text" },
-  ])("with $name", ({ shape, status, type }) => {
-    it("surfaces Village's type", async () => {
-      vi.stubGlobal("fetch", async () => Response.json(fillShape(shape), { status }));
-      const error = await searchVillageNetwork(createTestSession(), "founders").catch((failure: unknown) => failure);
+    { name: "the error object", shape: VILLAGE_ERROR_SHAPE, status: 404, code: "not_found" },
+    { name: "the validation error object", shape: VILLAGE_VALIDATION_ERROR_SHAPE, status: 422, code: "validation" },
+    { name: "the flat credits error", shape: VILLAGE_CREDITS_ERROR_SHAPE, status: 402, code: "out_of_credits" },
+    { name: "the flat rate limit error", shape: VILLAGE_RATE_LIMIT_ERROR_SHAPE, status: 429, code: "rate_limited" },
+  ])("with $name", ({ shape, status, code }) => {
+    it("surfaces Village's answer as its error code", async () => {
+      const village = answerWith(() => Response.json(fillShape(shape), { status }));
+      const error = await searchVillageNetwork(village, "founders").catch((failure: unknown) => failure);
 
-      expect(error).toBeInstanceOf(VillageApiError);
-      expect(error).toMatchObject({ status, type, isVillageErrorResponse: true });
+      expect(isVillageError(error)).toBe(true);
+      expect(error).toMatchObject({ status, code });
+      expect(isVillageErrorResponse(error)).toBe(true);
+    });
+  });
+
+  describe("with a page from a proxy instead of Village", () => {
+    it.each([404, 502])("doesn't count a %i as Village's answer", async (status) => {
+      const village = answerWith(() => new Response("<html>Bad gateway</html>", { status, headers: { "Content-Type": "text/html" } }));
+      const error = await searchVillageNetwork(village, "founders").catch((failure: unknown) => failure);
+
+      expect(error).toBeInstanceOf(VillageGatewayError);
+      expect(isVillageErrorResponse(error)).toBe(false);
+    });
+
+    it("doesn't read a 404 for paths as an unknown person", async () => {
+      const village = answerWith(() => new Response("<html>Not found</html>", { status: 404, headers: { "Content-Type": "text/html" } }));
+
+      await expect(readVillagePaths(village, TARGET_URL)).rejects.toBeInstanceOf(VillageGatewayError);
     });
   });
 });
@@ -145,7 +168,7 @@ describe("the fake Village server", () => {
   afterAll(() => village.stop());
   beforeEach(() => {
     village.reset();
-    village.state.linkedMembers.set(MEMBER.externalId, { isSynced: true });
+    village.state.linkedMembers.set(MEMBER.externalId, { status: "ready" });
   });
 
   async function callFake(path: string, init: { method?: string; body?: object; bearer?: string; secretKey?: string } = {}) {
@@ -168,9 +191,9 @@ describe("the fake Village server", () => {
     ["a wrong secret key", () => callFake("/v2/auth/tokens", { method: "POST", body: validMint, secretKey: "wrong" }), 401, VILLAGE_ERROR_SHAPE],
     ["a mint with no email", () => callFake("/v2/auth/tokens", { method: "POST", body: { external_user_id: "someone" }, secretKey: FAKE_VILLAGE_KEYS.secretKey }), 422, VILLAGE_VALIDATION_ERROR_SHAPE],
     ["the app", () => callFake("/v2/app"), 200, VILLAGE_APP_SHAPE],
-    ["the linked user", () => callFake("/v2/user/me"), 200, VILLAGE_USER_SHAPE],
-    ["an unlinked user", () => callFake("/v2/user/me", { bearer: unlinkedBearer }), 404, VILLAGE_ERROR_SHAPE],
-    ["a bad bearer token", () => callFake("/v2/user/me", { bearer: "not-a-token" }), 401, VILLAGE_ERROR_SHAPE],
+    ["the linked user's status", () => callFake("/v2/user/status"), 200, VILLAGE_USER_STATUS_SHAPE],
+    ["an unlinked user's status", () => callFake("/v2/user/status", { bearer: unlinkedBearer }), 200, VILLAGE_USER_STATUS_SHAPE],
+    ["a bad bearer token", () => callFake("/v2/user/status", { bearer: "not-a-token" }), 401, VILLAGE_ERROR_SHAPE],
     ["the group list", () => callFake("/v2/groups"), 200, VILLAGE_GROUPS_SHAPE],
     ["a created group", () => callFake("/v2/groups", { method: "POST", body: { name: "Group" } }), 201, VILLAGE_CREATED_GROUP_SHAPE],
     ["a join", () => callFake("/v2/groups/join", { method: "POST", body: { group_invite_link: "link" } }), 200, VILLAGE_GROUP_CHANGE_SHAPE],

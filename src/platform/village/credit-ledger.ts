@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 
 import type { Database } from "../database/client.ts";
 import { memberDailyUsage } from "./schema.ts";
-import { VillageApiError } from "./client.ts";
+import { isVillageErrorResponse } from "./client.ts";
 import { clearVillageOutOfCredits, readDailyLookupLimit } from "./settings.ts";
 
 const DATE_LENGTH = "YYYY-MM-DD".length;
@@ -63,15 +63,14 @@ export async function readDailyLookupsLeft(database: Database, userId: string) {
   return Math.max(limit - (usage?.callCount ?? 0), 0);
 }
 
-function wasNotDebited(error: unknown) {
-  return error instanceof VillageApiError && error.isVillageErrorResponse;
-}
+const ALWAYS_CHARGED = () => true;
 
 export async function withCreditCall<Result>(
   database: Database,
   userId: string,
   kind: CreditCallKind,
   spendCredits: () => Promise<Result>,
+  wasCharged: (result: Result) => boolean = ALWAYS_CHARGED,
 ) {
   const usageDate = readUsageDate();
   const limit = await readDailyLookupLimit(database);
@@ -79,10 +78,14 @@ export async function withCreditCall<Result>(
 
   try {
     const result = await spendCredits();
+    if (!wasCharged(result)) {
+      await releaseCreditCall(database, userId, usageDate, kind);
+      return result;
+    }
     await clearVillageOutOfCredits(database);
     return result;
   } catch (error) {
-    if (wasNotDebited(error)) await releaseCreditCall(database, userId, usageDate, kind);
+    if (isVillageErrorResponse(error)) await releaseCreditCall(database, userId, usageDate, kind);
     throw error;
   }
 }

@@ -1,13 +1,9 @@
-const VILLAGE_TOKEN_KEY = "village.token";
-const IDENTIFIED_MEMBER_KEY = "community.village-member";
+const LEGACY_VILLAGE_TOKEN_KEY = "village.token";
+const LEGACY_IDENTIFIED_MEMBER_KEY = "community.village-member";
 
+// The old Village script kept a member token on this site. Clearing it on sign-out keeps a shared browser clean.
 export function clearVillageBrowserSession() {
-  document.cookie = `${VILLAGE_TOKEN_KEY}=; Max-Age=0; path=/`;
-  sessionStorage.removeItem(VILLAGE_TOKEN_KEY);
-  localStorage.removeItem(IDENTIFIED_MEMBER_KEY);
-}
-
-export function claimVillageBrowserSession(externalId: string) {
-  if (localStorage.getItem(IDENTIFIED_MEMBER_KEY) !== externalId) clearVillageBrowserSession();
-  localStorage.setItem(IDENTIFIED_MEMBER_KEY, externalId);
+  document.cookie = `${LEGACY_VILLAGE_TOKEN_KEY}=; Max-Age=0; path=/`;
+  sessionStorage.removeItem(LEGACY_VILLAGE_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_IDENTIFIED_MEMBER_KEY);
 }
