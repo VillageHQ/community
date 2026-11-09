@@ -73,6 +73,28 @@ describe("reading a CSV", () => {
     expect(toSafeCell("@SUM(A1)")).toBe("SUM(A1)");
   });
 
+  it("reads a semicolon file even when a quoted cell holds a comma", () => {
+    const { people, problems } = parseInvitesCsv('"Lovelace, Ada";ada@example.com;Engines\n"Hopper, Grace";grace@example.com;Navy');
+
+    expect(problems).toEqual([]);
+    expect(people.map(({ name, email }) => [name, email])).toEqual([
+      ["Lovelace, Ada", "ada@example.com"],
+      ["Hopper, Grace", "grace@example.com"],
+    ]);
+  });
+
+  it("numbers lines in a file that ends lines with a carriage return alone", () => {
+    const { people } = parseInvitesCsv("name,email\rAda,ada@example.com\rBob,bob@example.com");
+
+    expect(people.map(({ line }) => line)).toEqual([2, 3]);
+  });
+
+  it("names the line where a quote mark never closes", () => {
+    const { problems } = parseInvitesCsv('name,email\nAda,ada@example.com\n"Bob,bob@example.com\nCy,cy@example.com');
+
+    expect(problems[0]).toMatchObject({ line: 3, why: expect.stringContaining("never closes") });
+  });
+
   it("refuses more than 20,000 rows", () => {
     const rows = ["email", ...Array.from({ length: 20_001 }, (_, index) => `p${index}@example.com`)].join("\n");
 

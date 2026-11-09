@@ -101,15 +101,28 @@ type CsvRow = { cells: string[]; line: number };
 
 // RFC 4180: quoted cells, doubled quotes, commas and line breaks inside quotes, CRLF or LF, a leading byte order mark.
 // A file saved in a semicolon locale is read with semicolons.
-export function parseCsvRows(text: string): CsvRow[] {
+// Separators outside quotes on the first line decide: a quoted "Lovelace, Ada" must not make a semicolon file comma-separated.
+function detectDelimiter(source: string) {
+  let commas = 0;
+  let semicolons = 0;
+  let isQuoted = false;
+  for (const character of source) {
+    if (character === '"') isQuoted = !isQuoted;
+    else if (!isQuoted && (character === "\n" || character === "\r")) break;
+    else if (!isQuoted && character === ",") commas += 1;
+    else if (!isQuoted && character === ";") semicolons += 1;
+  }
+  return semicolons > commas ? ";" : ",";
+}
+
+export function parseCsvRows(text: string): { rows: CsvRow[]; unclosedQuoteLine: number | null } {
   const source = text.replace(BYTE_ORDER_MARK, "");
-  const firstLineEnd = source.indexOf("\n");
-  const firstLine = firstLineEnd === -1 ? source : source.slice(0, firstLineEnd);
-  const delimiter = firstLine.includes(",") || !firstLine.includes(";") ? "," : ";";
+  const delimiter = detectDelimiter(source);
   const rows: CsvRow[] = [];
   let cells: string[] = [];
   let cell = "";
   let isQuoted = false;
+  let quoteLine = 1;
   let line = 1;
   let rowLine = 1;
 
@@ -122,15 +135,18 @@ export function parseCsvRows(text: string): CsvRow[] {
 
   for (let index = 0; index < source.length; index += 1) {
     const character = source[index];
-    if (character === "\n") line += 1;
+    // A line ends at LF, CRLF, or a CR on its own (old Mac exports).
+    if (character === "\n" || (character === "\r" && source[index + 1] !== "\n")) line += 1;
     if (isQuoted) {
       if (character === '"' && source[index + 1] === '"') {
         cell += '"';
         index += 1;
       } else if (character === '"') isQuoted = false;
       else cell += character;
-    } else if (character === '"' && cell === "") isQuoted = true;
-    else if (character === delimiter) {
+    } else if (character === '"' && cell === "") {
+      isQuoted = true;
+      quoteLine = line;
+    } else if (character === delimiter) {
       cells.push(cell);
       cell = "";
     } else if (character === "\n" || character === "\r") {
@@ -143,7 +159,7 @@ export function parseCsvRows(text: string): CsvRow[] {
     } else cell += character;
   }
   endRow();
-  return rows;
+  return { rows, unclosedQuoteLine: isQuoted ? quoteLine : null };
 }
 
 const CSV_HEADERS = {
@@ -169,7 +185,10 @@ function readColumns(header: string[]) {
 // Columns name, email, company, cohort in any order under a header row; without one, in that order.
 export function parseInvitesCsv(text: string): ParsedBulkInvites {
   const collector = new PeopleCollector();
-  const rows = parseCsvRows(text);
+  const { rows, unclosedQuoteLine } = parseCsvRows(text);
+  if (unclosedQuoteLine !== null) {
+    collector.reject(unclosedQuoteLine, "", "A quote mark opens here and never closes, so the rest of the file was read as one cell. Fix it and upload again.");
+  }
   const [firstRow] = rows;
   if (!firstRow) {
     collector.reject(1, "", "The file is empty.");
