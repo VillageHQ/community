@@ -1,0 +1,3 @@
+ALTER TABLE "intro_request" ADD COLUMN "outcome_results" text[];--> statement-breakpoint
+ALTER TABLE "member_profile" ADD COLUMN "credit_in_reports" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "intro_request" ADD CONSTRAINT "intro_request_outcome_results" CHECK ("intro_request"."outcome_results" is null or ("intro_request"."outcome" = 'helped' and "intro_request"."outcome_results" <@ array['customer', 'hire', 'investor']::text[]));
