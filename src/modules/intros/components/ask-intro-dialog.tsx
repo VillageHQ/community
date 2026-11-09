@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { INTRO_LIMITS, type Intro } from "@/modules/intros/contract";
-import { composeStarterNote, readIntroPromise, readNoteSharingLine } from "@/modules/intros/copy";
+import { composeStarterNote, readConsentPromise, readIntroPromise, readNoteSharingLine } from "@/modules/intros/copy";
 import { createIntroRequest, INTRO_QUERY_KEYS } from "@/modules/intros/queries";
 import { ROUTES } from "@/platform/http/routes";
 import type { Connector, NetworkPaths } from "@/modules/network/contract";
@@ -76,14 +76,14 @@ function SentConfirmation({ introducerFirst, targetFirst, introId }: { introduce
         <CircleCheck className="size-8" />
       </span>
       <Dialog.Title tabIndex={-1} className="type-h2">
-        Your ask is on its way
+        Your intro request is on its way
       </Dialog.Title>
       <p className="type-body text-foreground-soft">
-        {introducerFirst} reads your note first. {targetFirst} hears nothing unless they say yes.
+        {introducerFirst} reads your note first. {targetFirst} hears nothing unless they say yes. {readConsentPromise(targetFirst)}
       </p>
       <div className="mt-2 flex w-full flex-col gap-2">
         <Button asChild size="lg">
-          <Link href={`${ROUTES.intros}/${introId}`}>See your ask</Link>
+          <Link href={`${ROUTES.intros}/${introId}`}>See your intro request</Link>
         </Button>
         <Dialog.Close asChild>
           <Button type="button" variant="quiet" size="lg">

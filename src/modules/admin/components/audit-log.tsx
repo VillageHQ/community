@@ -71,6 +71,7 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.moduleTurnedOff]: ({ detail }) => `turned off ${detail}`,
   [AUDIT_ACTIONS.askRemoved]: ({ target, detail }) => `removed an ask by ${target}: "${detail}"`,
   [AUDIT_ACTIONS.domainConfirmed]: ({ detail }) => `confirmed the domain ${detail} in Village`,
+  [AUDIT_ACTIONS.introAsksStopped]: () => "asked this community to stop sending them intro asks",
 };
 
 function readReplyClause(removedReplyCount: number) {

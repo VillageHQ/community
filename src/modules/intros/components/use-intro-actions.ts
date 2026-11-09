@@ -4,12 +4,15 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import type { IntroTransitionBody } from "@/modules/intros/contract";
-import { INTRO_QUERY_KEYS, markIntrosSeenRequest, transitionIntroRequest } from "@/modules/intros/queries";
+import { INTRO_QUERY_KEYS, issuedConsentQuery, markIntrosSeenRequest, transitionIntroRequest } from "@/modules/intros/queries";
 
 export function useIntroTransition() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: IntroTransitionBody) => transitionIntroRequest(body),
+    onSuccess: ({ id, consentIssue }) => {
+      if (consentIssue) queryClient.setQueryData(issuedConsentQuery(id).queryKey, consentIssue);
+    },
     onSettled: () =>
       Promise.all(
         Object.values(INTRO_QUERY_KEYS).map((queryKey) => queryClient.invalidateQueries({ queryKey: [queryKey] })),

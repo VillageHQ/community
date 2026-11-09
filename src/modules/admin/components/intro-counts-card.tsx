@@ -1,27 +1,27 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { INTRO_STATES, type IntroState } from "@/modules/intros/contract";
+import type { readIntroCommunityCounts } from "@/modules/intros/reads";
 
-const STATE_LABELS: Record<IntroState, string> = {
-  [INTRO_STATES.requested]: "Waiting for an answer",
-  [INTRO_STATES.accepted]: "Said yes",
-  [INTRO_STATES.completed]: "Introduced",
-  [INTRO_STATES.declined]: "Declined",
-  [INTRO_STATES.withdrawn]: "Withdrawn",
-  [INTRO_STATES.expired]: "Expired",
-};
+type IntroCommunityCounts = Awaited<ReturnType<typeof readIntroCommunityCounts>>;
 
-export function IntroCountsCard({ counts }: { counts: { state: IntroState; count: number }[] }) {
+const COUNT_LABELS: { key: keyof IntroCommunityCounts; label: string }[] = [
+  { key: "asked", label: "Asked" },
+  { key: "introduced", label: "Introduced" },
+  { key: "declined", label: "Declined" },
+  { key: "helped", label: "Helped" },
+];
+
+export function IntroCountsCard({ counts }: { counts: IntroCommunityCounts }) {
   return (
     <Card className="grid gap-4">
       <div className="grid gap-1.5">
         <CardTitle>Intros</CardTitle>
-        <CardDescription>Counts only. Who asked whom, and what they wrote, stays between the two members.</CardDescription>
+        <CardDescription>Totals only. Who asked whom, what they wrote and who said no stays private.</CardDescription>
       </div>
-      <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-        {counts.map(({ state, count }) => (
-          <div key={state} className="rounded-field bg-muted px-4 py-3">
-            <dt className="type-small text-foreground-soft">{STATE_LABELS[state]}</dt>
-            <dd className="type-h3">{count}</dd>
+      <dl className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        {COUNT_LABELS.map(({ key, label }) => (
+          <div key={key} className="rounded-field bg-muted px-4 py-3">
+            <dt className="type-small text-foreground-soft">{label}</dt>
+            <dd className="type-h3">{counts[key]}</dd>
           </div>
         ))}
       </dl>

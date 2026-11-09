@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { LogoTile } from "@/components/logo-tile";
 import { MAIN_CONTENT_ID } from "@/components/skip-link";
+import { SourceCodeLink } from "@/components/source-code-link";
 import { NetworkByVillage } from "@/components/village-mark";
 import type { CommunityLogo } from "@/platform/branding/branding";
 
@@ -16,6 +17,7 @@ export function CenteredPage({ name, logo, children }: CenteredPageProps) {
       </div>
       <div className="w-full max-w-[640px] rounded-panel bg-card shadow-panel">{children}</div>
       <NetworkByVillage />
+      <SourceCodeLink />
     </main>
   );
 }

@@ -351,7 +351,7 @@ describe("admin invites", () => {
       const issued = issuedInviteSchema.parse(await response.json());
 
       expect(response.status).toBe(CREATED_STATUS);
-      expect(issued.invite.emailStatus).toBe(INVITE_EMAIL_STATUSES.failed);
+      expect(issued.invite.emailStatus).toBe(INVITE_EMAIL_STATUSES.retrying);
       expect((await readInviteByToken(database, readToken(issued.link)))?.state).toBe(INVITE_STATES.pending);
     });
 
@@ -362,7 +362,7 @@ describe("admin invites", () => {
 
       const issued = await createInviteAs(admin);
 
-      expect(issued.invite.emailStatus).toBe(INVITE_EMAIL_STATUSES.failed);
+      expect(issued.invite.emailStatus).toBe(INVITE_EMAIL_STATUSES.retrying);
       expect((await readRow(issued.invite.id)).acceptedAt).toBeNull();
     });
 

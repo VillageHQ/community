@@ -7,7 +7,7 @@ const SEND_TIMEOUT_MS = 8_000;
 export type ResendConfig = { apiKey: string; fromAddress: string; apiUrl: string };
 
 type OutgoingEmail = {
-  to: string;
+  to: string | readonly string[];
   subject: string;
   html: string;
   text: string;
@@ -32,7 +32,7 @@ export async function sendResendEmail({ apiKey, fromAddress, apiUrl }: ResendCon
     },
     body: JSON.stringify({
       from: fromAddress,
-      to: [email.to],
+      to: [email.to].flat(),
       subject: email.subject,
       html: email.html,
       text: email.text,

@@ -34,11 +34,14 @@ export function readRetryDelay(attempts: number) {
 // pushes next_attempt_at forward, so a row is never claimed twice while it is being sent.
 async function claimDueEmails(database: Database, onlyId: string | null) {
   const claimTimeout = sql.raw(`interval '${CLAIM_TIMEOUT_MS / 1000} seconds'`);
-  const onlyThisRow = onlyId ? sql`and id = ${onlyId}` : sql``;
+  // One named row is tried now even inside its backoff, unless another sender holds it.
+  const isDue = onlyId
+    ? sql`id = ${onlyId} and (status = 'pending' or (status = 'sending' and next_attempt_at <= now()))`
+    : sql`status in ('pending', 'sending') and next_attempt_at <= now()`;
   const result = await database.execute<{ id: string }>(sql`
     with due as (
       select id from email_outbox
-      where status in ('pending', 'sending') and next_attempt_at <= now() ${onlyThisRow}
+      where ${isDue}
       order by next_attempt_at
       limit ${BATCH_SIZE}
       for update skip locked
@@ -148,7 +151,9 @@ export async function sendQueuedEmailNow(database: Database, environment: Enviro
   if (!id) return false;
   try {
     const { sent } = await sendClaimed(database, environment, id);
-    return sent > 0;
+    if (sent > 0) return true;
+    const [row] = await database.select({ status: emailOutbox.status }).from(emailOutbox).where(eq(emailOutbox.id, id));
+    return row?.status === OUTBOX_STATUSES.sent;
   } catch (error) {
     logError("email-outbox", error);
     return false;

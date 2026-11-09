@@ -71,7 +71,7 @@ describe("a connector", () => {
 
       expect(screen.queryByRole("button", { name: /Ask Jonas/ })).toBeNull();
       expect(screen.getByText("You asked. Waiting on Jonas.")).toBeTruthy();
-      expect(screen.getByRole("link", { name: /See your ask/ }).getAttribute("href")).toBe(`/intros/${INTRO_ID}`);
+      expect(screen.getByRole("link", { name: /See your intro request/ }).getAttribute("href")).toBe(`/intros/${INTRO_ID}`);
     });
   });
 
@@ -110,9 +110,14 @@ describe("a connector", () => {
               note: "note",
               reason: REASON,
               declineReason: null,
+              declineKind: null,
               hasUpdate: false,
               createdAt: "2026-11-05T10:00:00.000Z",
               acceptedAt: null,
+              askedTargetAt: null,
+              targetAgreedAt: null,
+              outcome: null,
+              isOutcomeDue: false,
               closedAt: null,
               expiresAt: "2026-11-19T10:00:00.000Z",
               target: { name: "Clara Bergström", headline: null, linkedinSlug: "clara-bergstrom" },
@@ -139,10 +144,10 @@ describe("a connector", () => {
       expect(within(dialog).getByText(/Jonas reads your note first. Clara hears nothing unless they say yes./)).toBeTruthy();
     });
 
-    it("warns the note may reach the target", () => {
+    it("says what the target sees, and that they decide too", () => {
       const dialog = openDialog();
 
-      expect(within(dialog).getByText(/If Jonas says yes, they may pass your note on to Clara/)).toBeTruthy();
+      expect(within(dialog).getByText(/If Jonas says yes, Clara sees your name, your role and your note, then decides/)).toBeTruthy();
     });
 
     it("asks for a reason when the starter is left untouched", () => {
@@ -167,7 +172,7 @@ describe("a connector", () => {
         connectorSlug: "jonas-lindqvist",
         note: "We sell freight tools.",
       });
-      await waitFor(() => expect(screen.getByRole("heading", { name: "Your ask is on its way" })).toBeTruthy());
+      await waitFor(() => expect(screen.getByRole("heading", { name: "Your intro request is on its way" })).toBeTruthy());
     });
   });
 });

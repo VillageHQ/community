@@ -22,6 +22,7 @@ export type QueuedEmail = {
   subject: string;
   html: string;
   text: string;
+  dedupeKey?: string;
 };
 
 // An optional email (one with a topic) goes only to a member who left that topic on, at an
@@ -76,7 +77,11 @@ export async function queueEmail(connection: DatabaseOrTransaction, environment:
       subject: email.subject,
       html: email.html,
       text: email.text,
+      dedupeKey: email.dedupeKey ?? null,
     })
+    .onConflictDoNothing({ target: emailOutbox.dedupeKey })
     .returning({ id: emailOutbox.id });
-  return queued?.id ?? null;
+  if (queued || !email.dedupeKey) return queued?.id ?? null;
+  const [earlier] = await connection.select({ id: emailOutbox.id }).from(emailOutbox).where(eq(emailOutbox.dedupeKey, email.dedupeKey));
+  return earlier?.id ?? null;
 }

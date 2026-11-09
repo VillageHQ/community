@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 import { user } from "@/platform/database/auth-schema";
 import { createRequestContext } from "@/platform/http/request-context";
-import { createInvite } from "@/modules/members/service-invites";
+import { createInvite, readInvites, revokeInvite } from "@/modules/members/service-invites";
 import { sendMessage } from "@/modules/messages/service";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
@@ -78,7 +78,7 @@ describe("reliable email", () => {
       const context = createRequestContext(database, readEnvironment(UNREACHABLE_URL), { id: adminId, email: "priya@example.com", role: "admin" });
 
       const issued = await createInvite(context, "amara@example.com");
-      expect(issued.invite.emailStatus).toBe("failed");
+      expect(issued.invite.emailStatus).toBe("retrying");
       expect((await readRows()).map(({ status }) => status)).toEqual([OUTBOX_STATUSES.pending]);
 
       await makeDue();
@@ -91,6 +91,23 @@ describe("reliable email", () => {
       expect(row?.status).toBe(OUTBOX_STATUSES.sent);
       expect(resend.state.emails[0]?.idempotencyKey).toBe(row?.id);
       expect(row?.html).toBe("");
+    });
+
+    it("shows the invite's live email status, and stops a revoked invite's queued email", async () => {
+      const adminId = await seedMember(database, { name: "Priya Raman" });
+      await database.update(user).set({ role: "admin" }).where(eq(user.id, adminId));
+      const admin = { id: adminId, email: "priya@example.com", role: "admin" };
+      const downContext = createRequestContext(database, readEnvironment(UNREACHABLE_URL), admin);
+      const kept = await createInvite(downContext, "kept@example.com");
+      const revoked = await createInvite(downContext, "revoked@example.com");
+      await revokeInvite(downContext, revoked.invite.id);
+
+      await makeDue();
+      await sendDueEmails(database, readEnvironment());
+
+      expect(readBodies().map(({ to }) => to)).toEqual([["kept@example.com"]]);
+      const { invites } = await readInvites(database, 1);
+      expect(invites.find(({ id }) => id === kept.invite.id)?.emailStatus).toBe("sent");
     });
 
     it("sends each email once when two senders run at once", async () => {
@@ -149,7 +166,7 @@ describe("reliable email", () => {
       const memberId = await seedMember(database, { name: "Amara" });
       await setEmailTopic(database, { memberId, topic: EMAIL_TOPICS.intros }, false);
 
-      expect(await queueTo(memberId, EMAIL_KINDS.introAccepted)).toBeNull();
+      expect(await queueTo(memberId, EMAIL_KINDS.introUpdate)).toBeNull();
       expect(await queueTo(memberId, EMAIL_KINDS.directMessage)).not.toBeNull();
       expect(await queueTo(memberId, EMAIL_KINDS.passwordReset)).not.toBeNull();
     });

@@ -69,7 +69,7 @@
         <a class="button button-inverse button-hero" href="#deploy">Set up yours<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
         <a class="button button-ghost button-hero" href="#first-visit">Try a founder's first visit</a>
       </div>
-      <p class="hero-note">Free, MIT licensed software. You run your own copy, and the one-click setup needs no code.</p>
+      <p class="hero-note">Free, open-source software (AGPL-3.0). You run your own copy, and the one-click setup needs no code.</p>
     </div>
 
     <div class="constellation" aria-hidden="true">
@@ -107,7 +107,7 @@
         <li><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></span><div><h3>Members</h3><p>A directory of everyone in the community, with the profile each person fills in.</p></div></li>
         <li><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-message-circle"/></svg></span><div><h3>Messages</h3><p>One-to-one conversations between two members.</p></div></li>
         <li><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-waypoints"/></svg></span><div><h3>Network</h3><p>Each member searches their own network plus the relationships other members share, through Village. It isn't a search of everyone in the world.</p></div></li>
-        <li><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-handshake"/></svg></span><div><h3>Intros</h3><p>A member asks a fellow member for an intro with a short note. That person says yes or passes.</p></div></li>
+        <li><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-handshake"/></svg></span><div><h3>Intros</h3><p>A member asks a fellow member for an intro with a short note. That member says yes or passes, then the person they would meet says yes or no thanks.</p></div></li>
       </ul>
     </div>
   </div>
@@ -127,7 +127,7 @@
           <button class="tour-tab" type="button" role="tab" id="tour-tab-join" aria-controls="tour-panel-join" aria-selected="true" data-tour-tab><span class="tour-number">1</span>Join</button>
           <button class="tour-tab" type="button" role="tab" id="tour-tab-feed" aria-controls="tour-panel-feed" aria-selected="false" tabindex="-1" data-tour-tab><span class="tour-number">2</span>Feed</button>
           <button class="tour-tab" type="button" role="tab" id="tour-tab-network" aria-controls="tour-panel-network" aria-selected="false" tabindex="-1" data-tour-tab><span class="tour-number">3</span>Find a way in</button>
-          <button class="tour-tab" type="button" role="tab" id="tour-tab-ask" aria-controls="tour-panel-ask" aria-selected="false" tabindex="-1" data-tour-tab><span class="tour-number">4</span>Ask</button>
+          <button class="tour-tab" type="button" role="tab" id="tour-tab-ask" aria-controls="tour-panel-ask" aria-selected="false" tabindex="-1" data-tour-tab><span class="tour-number">4</span>Get an intro</button>
         </div>
         <fieldset class="swatches">
           <legend>Try your color</legend>
@@ -278,17 +278,17 @@
                 <p>Would you be open to introducing me to Clara? Here's why I'd like to meet them:</p>
                 <p>Tidewell is piloting with two Nordic carriers and Clara runs procurement at Corvane. Twenty minutes would tell us if we fit.</p>
               </div>
-              <p class="frame-fine"><svg class="icon icon-tiny" aria-hidden="true"><use href="#i-lock"/></svg>Jonas reads your note first. Clara hears nothing unless they say yes. If Jonas says yes, they may pass your note on to Clara.</p>
+              <p class="frame-fine"><svg class="icon icon-tiny" aria-hidden="true"><use href="#i-lock"/></svg>Jonas reads your note first. Clara hears nothing unless they say yes. If Jonas says yes, Clara sees your name, your role and your note, then decides.</p>
               <button class="tour-button tour-button-primary tour-button-block" type="button" data-ask-send>Send to Jonas<svg class="icon icon-small" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
             </div>
             <div class="ask-card" data-ask-sent hidden>
               <span class="sent-icon"><svg class="icon icon-large" aria-hidden="true"><use href="#i-circle-check"/></svg></span>
-              <h3 class="frame-title frame-title-small" tabindex="-1" data-ask-sent-title>Your ask is on its way</h3>
+              <h3 class="frame-title frame-title-small" tabindex="-1" data-ask-sent-title>Your intro request is on its way</h3>
               <p class="frame-lede">Here's what happens next.</p>
               <ol class="next-steps">
-                <li><b>Jonas says yes or passes.</b> He can say no as freely as yes. If he does nothing, the ask closes by itself after 14 days.</li>
-                <li><b>On a yes, Jonas sends the note himself.</b> The app hands him a ready-made note. It has no email address for Clara and never contacts her.</li>
-                <li><b>Jonas marks it as introduced.</b> You both see where the ask stands in Intros.</li>
+                <li><b>Jonas says yes or passes.</b> He can say no as freely as yes. If he does nothing, the intro request closes by itself after 14 days.</li>
+                <li><b>On a yes, Jonas asks Clara.</b> He forwards a private link, and Clara says yes or no thanks on one page, with no account.</li>
+                <li><b>Only after both say yes, one message joins you.</b> If either says no, you just see that it isn't happening, not who said it.</li>
               </ol>
               <button class="tour-button tour-button-soft" type="button" data-tour-restart><svg class="icon icon-small" aria-hidden="true"><use href="#i-rotate-ccw"/></svg>Start again</button>
             </div>
@@ -386,7 +386,7 @@
       <li class="cost-card cost-card-free">
         <h3>The software</h3>
         <p class="cost-figure">Free</p>
-        <p>MIT licensed. No seat fee and no contract.</p>
+        <p>Open source under AGPL-3.0. No seat fee and no contract.</p>
       </li>
       <li class="cost-card">
         <h3>Hosting and database</h3>
@@ -451,8 +451,8 @@
     <ul class="answer-grid">
       <li><h3>Can admins read direct messages?</h3><p>Not in the app. No page, route or role reaches them. An admin sees a copy of a message only when the person who received it reports it.</p></li>
       <li class="answer-limit"><h3>The limit you should know</h3><p>Messages aren't end-to-end encrypted. Anyone with access to your database can read them, backups included. Tell your members who runs it.</p></li>
-      <li><h3>Who sees an intro ask?</h3><p>Only the person asking and the person asked. Admins see counts, plus a copy of a note if the person asked reports it.</p></li>
-      <li><h3>Does anyone get contacted without a yes?</h3><p>The app never contacts the person being introduced. The member who knows them decides, then sends the note themselves.</p></li>
+      <li><h3>Who sees an intro request?</h3><p>The person asking and the person asked. If that member says yes, the person they would meet sees the note too. Admins see counts, plus a copy of a note if the person asked reports it.</p></li>
+      <li><h3>Does anyone get contacted without a yes?</h3><p>No. The member who knows them decides first. On a yes, the person being introduced gets a private link to say yes or no thanks. Nobody is introduced until they say yes too.</p></li>
       <li><h3>Who can get in?</h3><p>Only people you invite. Public sign-up is closed. Each link is personal, works once and lasts 14 days. Network search stays off until the member's email is confirmed.</p></li>
       <li class="answer-limit"><h3>Your network is in it too</h3><p>Creating the group shares your own Village network with every current and future member. Decide that before you click.</p></li>
     </ul>
@@ -481,7 +481,7 @@
       <div>
         <h3>What running your own copy means</h3>
         <ul class="own-list">
-          <li><b>The code is yours to keep.</b> It's MIT licensed, and it runs on your host's account.</li>
+          <li><b>The code is yours to keep.</b> It's open source under AGPL-3.0, and it runs on your host's account.</li>
           <li><b>You choose when to update.</b> Updates aren't automatic. We fix the latest code, but we can't patch your copy for you.</li>
           <li><b>Village is optional.</b> Only network search and intros need it. Your feed, members and messages run without it.</li>
           <li><b>Help comes through GitHub.</b> There's no managed plan or support contract. Open an issue there.</li>
@@ -536,7 +536,7 @@
     </p>
     <nav class="footer-links" aria-label="Footer">
       <a href="https://github.com/VillageHQ/community">GitHub</a>
-      <a href="https://github.com/VillageHQ/community/blob/main/LICENSE">MIT license</a>
+      <a href="https://github.com/VillageHQ/community/blob/main/LICENSE">AGPL-3.0 licence</a>
       <a href="https://github.com/VillageHQ/community/blob/main/SECURITY.md">Security</a>
       <a href="https://github.com/VillageHQ/community/issues">Issues</a>
       <a href="https://village.ai">Village</a>

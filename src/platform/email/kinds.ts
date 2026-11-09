@@ -10,7 +10,7 @@ export const EMAIL_KINDS = {
   emailConfirmation: "email_confirmation",
   passwordReset: "password_reset",
   introAsked: "intro_asked",
-  introAccepted: "intro_accepted",
+  introUpdate: "intro_update",
   introDeclined: "intro_declined",
   directMessage: "direct_message",
 } as const;
@@ -22,7 +22,7 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.emailConfirmation]: null,
   [EMAIL_KINDS.passwordReset]: null,
   [EMAIL_KINDS.introAsked]: EMAIL_TOPICS.intros,
-  [EMAIL_KINDS.introAccepted]: EMAIL_TOPICS.intros,
+  [EMAIL_KINDS.introUpdate]: EMAIL_TOPICS.intros,
   [EMAIL_KINDS.introDeclined]: EMAIL_TOPICS.intros,
   [EMAIL_KINDS.directMessage]: EMAIL_TOPICS.messages,
 };

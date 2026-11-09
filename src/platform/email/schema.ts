@@ -27,6 +27,8 @@ export const emailOutbox = pgTable(
     lastError: text("last_error"),
     createdAt: emailTimestamp("created_at").notNull().defaultNow(),
     finishedAt: emailTimestamp("finished_at"),
+    // Optional. A second queue call with the same key finds the first row instead of adding one.
+    dedupeKey: text("dedupe_key").unique(),
   },
   (table) => [
     index("email_outbox_due_idx").on(table.nextAttemptAt).where(sql`${table.status} in ('pending', 'sending')`),
