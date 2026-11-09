@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { LogoTile } from "@/components/logo-tile";
 import { MAIN_CONTENT_ID } from "@/components/skip-link";
+import { SourceCodeLink } from "@/components/source-code-link";
 import { NetworkByVillage } from "@/components/village-mark";
 import type { NavigationBadgeCounts, ShellNavigationItem } from "./navigation-rules";
 
@@ -39,8 +40,9 @@ export function AppShell({ community, member, navigation, badges, isNetworkOn, c
           <SidebarNavigation items={navigation} isAdmin={member.isAdmin} badges={badges} />
           <div className="mt-auto flex flex-col gap-3 pt-6">
             <SidebarUserMenu member={member} />
-            <div className="px-3">
+            <div className="flex flex-col gap-1 px-3">
               <NetworkByVillage />
+              <SourceCodeLink />
             </div>
           </div>
         </div>

@@ -9,7 +9,7 @@ A private home for a VC fund's founders, ready to deploy without writing code. T
 - An account on a host: [Vercel](https://vercel.com/signup) or [DigitalOcean](https://www.digitalocean.com). Hosting and database costs are theirs.
 - A [Village developer account](https://village.ai/platform), which you can create during setup with Google. Only network search and intros need it. Your community spends your Village app's credits.
 
-No terminal, no code. It's MIT licensed, and you run your own copy.
+No terminal, no code. It's open source under the AGPL-3.0 licence, and you run your own copy.
 
 ## Deploy
 
@@ -302,4 +302,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE)
+[AGPL-3.0](LICENSE). If you change the code and run it for others, the licence asks you to share your changes with them: set `NEXT_PUBLIC_SOURCE_CODE_URL` to your copy's source, and the "Source code" link in the app points there.
