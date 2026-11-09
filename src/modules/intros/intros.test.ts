@@ -6,20 +6,24 @@ import { introRequest } from "@/modules/intros/schema";
 import { memberBlock, memberNetwork } from "@/modules/members/schema";
 import { memberPathResult } from "@/modules/network/schema";
 import {
+  CONSENT_ANSWERS,
   INTRO_ACTIONS,
   INTRO_ERROR_CODES,
   INTRO_LIFETIME_DAYS,
   INTRO_LIMITS,
   INTRO_ROLES,
   INTRO_STATES,
+  TARGET_ANSWER_MINIMUM_DAYS,
   introBoardSchema,
   introCountsSchema,
   introSchema,
+  introWithConsentIssueSchema,
+  type ConsentAnswer,
   type Intro,
 } from "@/modules/intros/contract";
 import { ASKED_EMAIL_COOLDOWN_MS } from "@/modules/intros/email";
 import { INTRO_MAXIMUM_PER_MINUTE } from "@/modules/intros/limits";
-import { readIntroStateCounts } from "@/modules/intros/reads";
+import { readIntroCommunityCounts } from "@/modules/intros/reads";
 import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
 import { NETWORK_ERROR_CODES, networkPathsSchema, networkSearchResultSchema } from "@/modules/network/contract";
 import { saveVillageGroup } from "@/modules/network/service-settings";
@@ -44,6 +48,7 @@ import { POST as postCreate } from "@/app/api/intros/create/route";
 import { POST as postDetail } from "@/app/api/intros/detail/route";
 import { POST as postBoard } from "@/app/api/intros/route";
 import { POST as postSeen } from "@/app/api/intros/seen/route";
+import { POST as postAnswer } from "@/app/api/intros/consent/answer/route";
 import { POST as postTransition } from "@/app/api/intros/transition/route";
 
 const APP_URL = "http://localhost:3000";
@@ -771,22 +776,29 @@ describe("intro requests", () => {
       intro = await createIntro();
     });
 
-    it("walks from requested to accepted to completed", async () => {
-      const accepted = introSchema.parse(await (await transition(jonas, intro.id, INTRO_ACTIONS.accept)).json());
+    it("walks from requested through the target's yes to completed", async () => {
+      const accepted = introWithConsentIssueSchema.parse(await (await transition(jonas, intro.id, INTRO_ACTIONS.accept)).json());
+      await answerAsTarget(accepted.consentIssue?.token ?? "", CONSENT_ANSWERS.yes);
       const completed = introSchema.parse(await (await transition(jonas, intro.id, INTRO_ACTIONS.complete)).json());
 
-      expect(accepted.state).toBe(INTRO_STATES.accepted);
-      expect(accepted.acceptedAt).not.toBeNull();
+      expect(accepted.state).toBe(INTRO_STATES.askingTarget);
+      expect(accepted.askedTargetAt).not.toBeNull();
       expect(completed.state).toBe(INTRO_STATES.completed);
       expect(completed.closedAt).not.toBeNull();
     });
 
-    it("gives the introducer a fresh clock after accepting", async () => {
+    it("leaves the target at least a week to answer a late yes", async () => {
       await makeIntroOverdueSoon(intro.id);
 
       const accepted = introSchema.parse(await (await transition(jonas, intro.id, INTRO_ACTIONS.accept)).json());
 
-      expect(new Date(accepted.expiresAt).getTime()).toBeGreaterThan(Date.now() + (INTRO_LIFETIME_DAYS - 1) * MILLISECONDS_PER_DAY);
+      expect(new Date(accepted.expiresAt).getTime()).toBeGreaterThan(Date.now() + (TARGET_ANSWER_MINIMUM_DAYS - 1) * MILLISECONDS_PER_DAY);
+    });
+
+    it("keeps the original deadline after an early yes", async () => {
+      const accepted = introSchema.parse(await (await transition(jonas, intro.id, INTRO_ACTIONS.accept)).json());
+
+      expect(accepted.expiresAt).toBe(intro.expiresAt);
     });
 
     describe("a decline reason", () => {
@@ -849,11 +861,29 @@ describe("intro requests", () => {
         expect(await readState(intro.id)).toBe(INTRO_STATES.requested);
       });
 
-      it("refuses to withdraw after an accept", async () => {
+      it("refuses to complete an ask the target hasn't answered", async () => {
         await transition(jonas, intro.id, INTRO_ACTIONS.accept);
 
+        expect((await transition(jonas, intro.id, INTRO_ACTIONS.complete)).status).toBe(CONFLICT_STATUS);
+        expect(await readState(intro.id)).toBe(INTRO_STATES.askingTarget);
+      });
+
+      it("refuses to withdraw after the target said yes", async () => {
+        const accepted = introWithConsentIssueSchema.parse(await (await transition(jonas, intro.id, INTRO_ACTIONS.accept)).json());
+        await answerAsTarget(accepted.consentIssue?.token ?? "", CONSENT_ANSWERS.yes);
+
         expect((await transition(amara, intro.id, INTRO_ACTIONS.withdraw)).status).toBe(CONFLICT_STATUS);
-        expect(await readState(intro.id)).toBe(INTRO_STATES.accepted);
+        expect(await readState(intro.id)).toBe(INTRO_STATES.targetAgreed);
+      });
+
+      it("refuses to complete a declined ask", async () => {
+        await transition(jonas, intro.id, INTRO_ACTIONS.decline);
+
+        expect((await transition(jonas, intro.id, INTRO_ACTIONS.complete)).status).toBe(CONFLICT_STATUS);
+      });
+
+      it("refuses the requester completing their own ask", async () => {
+        expect((await transition(amara, intro.id, INTRO_ACTIONS.complete)).status).toBe(NOT_FOUND_STATUS);
       });
 
       it("refuses to accept after a withdraw", async () => {
@@ -882,34 +912,30 @@ describe("intro requests", () => {
     });
 
     describe("under concurrency", () => {
-      it("applies exactly one of a simultaneous accept and withdraw", async () => {
-        const [accept, withdraw] = await Promise.all([
-          transition(jonas, intro.id, INTRO_ACTIONS.accept),
-          transition(amara, intro.id, INTRO_ACTIONS.withdraw),
-        ]);
+      it("ends withdrawn with no live link after a simultaneous accept and withdraw", async () => {
+        await Promise.all([transition(jonas, intro.id, INTRO_ACTIONS.accept), transition(amara, intro.id, INTRO_ACTIONS.withdraw)]);
 
-        const statuses = [accept.status, withdraw.status].toSorted();
-        const state = await readState(intro.id);
+        const [row] = await database.select().from(introRequest).where(eq(introRequest.id, intro.id));
 
-        expect(statuses).toEqual([OK_STATUS, CONFLICT_STATUS]);
-        expect(state).toBe(accept.status === OK_STATUS ? INTRO_STATES.accepted : INTRO_STATES.withdrawn);
+        expect(row?.state).toBe(INTRO_STATES.withdrawn);
       });
 
-      it("applies exactly one of a simultaneous accept and decline", async () => {
+      it("ends declined with no live link after a simultaneous accept and decline", async () => {
         await Promise.all([transition(jonas, intro.id, INTRO_ACTIONS.accept), transition(jonas, intro.id, INTRO_ACTIONS.decline)]);
 
         const [row] = await database.select().from(introRequest).where(eq(introRequest.id, intro.id));
 
-        expect(row?.state === INTRO_STATES.accepted ? row.closedAt : row?.acceptedAt).toBeNull();
+        expect(row?.state).toBe(INTRO_STATES.declined);
       });
 
-      it("sends one email when accept is double-clicked", async () => {
+      it("emails nobody when accept is double-clicked, because a connector's yes isn't news yet", async () => {
         configureResend();
 
         const responses = await Promise.all(Array.from({ length: CONCURRENT_ASKS }, () => transition(jonas, intro.id, INTRO_ACTIONS.accept)));
 
         expect(responses.every(({ status }) => status === OK_STATUS)).toBe(true);
-        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(1), EVENTUALLY);
+        await new Promise((resolve) => setTimeout(resolve, EMAIL_SETTLE_MS));
+        expect(resend.state.emails).toEqual([]);
       });
     });
 
@@ -944,8 +970,8 @@ describe("intro requests", () => {
       });
     });
 
-    it("expires an accepted ask that's never marked as introduced", async () => {
-      await transition(jonas, intro.id, INTRO_ACTIONS.accept);
+    it("expires an old accepted ask that's never marked as introduced", async () => {
+      await makeOldAccepted(intro.id);
       await makeIntroOverdue(database, intro.id);
 
       const [expired] = (await readBoard(amara)).yourAsks;
@@ -990,8 +1016,8 @@ describe("intro requests", () => {
         expect(await (await call(postDetail, amara, { introId: intro.id })).text()).toBe(before);
       });
 
-      it("stops an accepted ask too, and the requester still sees the yes", async () => {
-        await transition(jonas, intro.id, INTRO_ACTIONS.accept);
+      it("stops an old accepted ask too, and the requester still sees the yes", async () => {
+        await makeOldAccepted(intro.id);
         await block(jonas, amara);
 
         expect((await transition(jonas, intro.id, INTRO_ACTIONS.complete)).status).toBe(NOT_FOUND_STATUS);
@@ -1024,8 +1050,8 @@ describe("intro requests", () => {
         expect((await transition(jonas, intro.id, INTRO_ACTIONS.accept)).status).toBe(CONFLICT_STATUS);
       });
 
-      it("stops an accepted ask reaching the blocked introducer", async () => {
-        await transition(jonas, intro.id, INTRO_ACTIONS.accept);
+      it("stops an old accepted ask reaching the blocked introducer", async () => {
+        await makeOldAccepted(intro.id);
 
         await block(amara, jonas);
 
@@ -1067,7 +1093,7 @@ describe("intro requests", () => {
     });
 
     it("refuses to finish an ask once the requester left", async () => {
-      await transition(jonas, intro.id, INTRO_ACTIONS.accept);
+      await makeOldAccepted(intro.id);
       await leave(amara);
 
       expect((await transition(jonas, intro.id, INTRO_ACTIONS.complete)).status).toBe(CONFLICT_STATUS);
@@ -1101,7 +1127,7 @@ describe("intro requests", () => {
 
       expect(board.asksForYou).toEqual([]);
       expect(board.yourAsks).toEqual([]);
-      expect(board.counts).toEqual({ waitingOnYou: 0, updates: 0 });
+      expect(board.counts).toEqual({ waitingOnYou: 0, updates: 0, outcomesDue: 0 });
     });
 
     it("refuses a non-participant's move", async () => {
@@ -1114,12 +1140,11 @@ describe("intro requests", () => {
       expect((await transition(admin, intro.id, INTRO_ACTIONS.accept)).status).toBe(NOT_FOUND_STATUS);
     });
 
-    it("gives admins counts by state and nothing else", async () => {
-      const counts = await readIntroStateCounts(database);
+    it("gives admins four totals and nothing else", async () => {
+      const counts = await readIntroCommunityCounts(database);
 
-      expect(counts.find(({ state }) => state === INTRO_STATES.requested)?.count).toBe(1);
+      expect(counts).toEqual({ asked: 1, introduced: 0, declined: 0, helped: 0 });
       expect(JSON.stringify(counts)).not.toContain(NOTE);
-      expect(Object.keys(counts[0] ?? {}).toSorted()).toEqual(["count", "state"]);
     });
 
     it("hides a banned requester's ask from the introducer until the ban ends", async () => {
@@ -1136,19 +1161,29 @@ describe("intro requests", () => {
   });
 
   describe("the badge counts", () => {
-    it("counts asks waiting on the introducer until they're answered and finished", async () => {
+    it("counts asks waiting on the introducer, not the ones waiting on the target", async () => {
       const intro = await createIntro();
 
       expect((await readCounts(jonas)).waitingOnYou).toBe(1);
-      await transition(jonas, intro.id, INTRO_ACTIONS.accept);
+      const accepted = introWithConsentIssueSchema.parse(await (await transition(jonas, intro.id, INTRO_ACTIONS.accept)).json());
+      expect((await readCounts(jonas)).waitingOnYou).toBe(0);
+      await answerAsTarget(accepted.consentIssue?.token ?? "", CONSENT_ANSWERS.yes);
       expect((await readCounts(jonas)).waitingOnYou).toBe(1);
       await transition(jonas, intro.id, INTRO_ACTIONS.complete);
       expect((await readCounts(jonas)).waitingOnYou).toBe(0);
     });
 
+    it("gives the requester no news when the connector says yes", async () => {
+      const intro = await createIntro();
+
+      await transition(jonas, intro.id, INTRO_ACTIONS.accept);
+
+      expect((await readCounts(amara)).updates).toBe(0);
+    });
+
     it("counts news for the requester until they've seen it", async () => {
       const intro = await createIntro();
-      await transition(jonas, intro.id, INTRO_ACTIONS.accept);
+      await transition(jonas, intro.id, INTRO_ACTIONS.decline);
 
       expect((await readCounts(amara)).updates).toBe(1);
       await call(postSeen, amara, { introId: null });
@@ -1158,8 +1193,8 @@ describe("intro requests", () => {
     it("marks only the ask that was opened", async () => {
       const first = await createIntro();
       const second = await createIntro(amara, { connectorSlug: NOOR_SLUG });
-      await transition(jonas, first.id, INTRO_ACTIONS.accept);
-      await transition(noor, second.id, INTRO_ACTIONS.accept);
+      await transition(jonas, first.id, INTRO_ACTIONS.decline);
+      await transition(noor, second.id, INTRO_ACTIONS.decline);
 
       await call(postSeen, amara, { introId: first.id });
 
@@ -1168,7 +1203,7 @@ describe("intro requests", () => {
 
     it("doesn't let a member clear someone else's news", async () => {
       const intro = await createIntro();
-      await transition(jonas, intro.id, INTRO_ACTIONS.accept);
+      await transition(jonas, intro.id, INTRO_ACTIONS.decline);
 
       await call(postSeen, bystander, { introId: intro.id });
 
@@ -1202,17 +1237,16 @@ describe("intro requests", () => {
       expect(bodies).not.toContain("Corvane");
     });
 
-    it("emails the requester on accept and on decline, without any reason", async () => {
-      const accepted = await createIntro();
+    it("emails the requester on a decline, without any reason or name", async () => {
       const declined = await createIntro(amara, { connectorSlug: NOOR_SLUG });
       configureResend();
 
-      await transition(jonas, accepted.id, INTRO_ACTIONS.accept);
       await transition(noor, declined.id, INTRO_ACTIONS.decline, { reason: "Private thoughts" });
 
-      await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2), EVENTUALLY);
+      await vi.waitFor(() => expect(resend.state.emails).toHaveLength(1), EVENTUALLY);
       expect(readEmailBodies()).toContain(amara.email);
       expect(readEmailBodies()).not.toContain("Private thoughts");
+      expect(readEmailBodies()).not.toContain("Noor");
     });
 
     describe("cooling down new-ask emails", () => {
@@ -1267,7 +1301,7 @@ describe("intro requests", () => {
     it("sends nothing for withdraw or mark as introduced", async () => {
       const first = await createIntro();
       const second = await createIntro(amara, { connectorSlug: NOOR_SLUG });
-      await transition(noor, second.id, INTRO_ACTIONS.accept);
+      await makeOldAccepted(second.id);
       configureResend();
 
       await transition(amara, first.id, INTRO_ACTIONS.withdraw);
@@ -1296,6 +1330,15 @@ describe("intro requests", () => {
       expect((await readCounts(jonas)).waitingOnYou).toBe(1);
     });
   });
+
+  async function answerAsTarget(token: string, answer: ConsentAnswer) {
+    const response = await call(postAnswer, null, { token, answer });
+    expect(response.status).toBe(OK_STATUS);
+  }
+
+  async function makeOldAccepted(introId: string) {
+    await database.update(introRequest).set({ state: INTRO_STATES.accepted, acceptedAt: new Date() }).where(eq(introRequest.id, introId));
+  }
 
   async function makeIntroOverdueSoon(introId: string) {
     await database

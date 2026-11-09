@@ -32,6 +32,7 @@ export const AUDIT_ACTIONS = {
   moduleTurnedOn: "module_turned_on",
   moduleTurnedOff: "module_turned_off",
   askRemoved: "ask_removed",
+  introAsksStopped: "intro_asks_stopped",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
