@@ -10,8 +10,6 @@ import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { readResendConfig } from "@/platform/email/resend";
 import { readFeedPage } from "@/modules/feed/reads";
-import { readWaitingIntros } from "@/modules/intros/reads";
-import { readNewMembers } from "@/modules/members/reads-directory";
 import { describeEmailConfirmation } from "@/modules/members/contract-email-confirmation-copy";
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { isCardFilledIn, readAvatarUrl, readMemberProfile } from "@/modules/members/service-profile";
@@ -24,14 +22,12 @@ import { readNetworkProgress } from "@/modules/network/reads-progress";
 
 import { Feed } from "@/modules/feed/components/feed";
 import { feedQuery } from "@/modules/feed/queries";
-import { NewThisWeekCard } from "@/modules/members/components/new-this-week-card";
-import { NextStepCard } from "@/shell/next-step-card";
-import { WaitingOnYouCard } from "@/modules/intros/components/waiting-on-you-card";
 import { membersManifest } from "@/modules/members/manifest";
 import { feedManifest } from "@/modules/feed/manifest";
-import { introsManifest } from "@/modules/intros/manifest";
 import { networkManifest } from "@/modules/network/manifest";
 import { readEnabledIds } from "@/shell/enabled-modules";
+import { isTodayEmpty, readTodayItems, type TodayItems } from "@/shell/today";
+import { TodayList } from "@/shell/today-list";
 import { isModuleEnabled } from "@/platform/modules/enablement";
 import { modulePage } from "@/platform/modules/module-page";
 
@@ -40,12 +36,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: isFeedOn ? PAGE_TITLES.feed : PAGE_TITLES.home };
 }
 
-function readWeekSentence(newCount: number) {
-  if (newCount === 0) return "Here's what's happening.";
-  return newCount === 1 ? "1 new member joined this week." : `${newCount} new members joined this week.`;
+function readWeekSentence(today: TodayItems) {
+  return isTodayEmpty(today) ? "Nothing needs you this week." : "Here's what needs you this week.";
 }
 
-export default modulePage(membersManifest, async function FeedPage() {
+export default modulePage(membersManifest, async function HomePage() {
   const member = await requireMember();
   const database = getDatabase();
   if ((await resolveOnboardingStep(database, member)) !== ONBOARDING_STEPS.done) redirect(ROUTES.welcome);
@@ -53,17 +48,15 @@ export default modulePage(membersManifest, async function FeedPage() {
   const isAdmin = isAdminMember(member);
   const enabledIds = await readEnabledIds(database);
   const isFeedOn = enabledIds.has(feedManifest.id);
-  const [community, networkProgress, setupProgress, { newCount, newMembers }, profile, avatarUrl, feedPage, waitingIntros] =
-    await Promise.all([
-      readBrandingForPage(),
-      enabledIds.has(networkManifest.id) ? readNetworkProgress(database, member) : null,
-      isAdmin ? readSetupProgress(database) : null,
-      readNewMembers(database, member.id),
-      readMemberProfile(database, member.id),
-      readAvatarUrl(database, member.id),
-      isFeedOn ? readFeedPage(database, member, null) : null,
-      enabledIds.has(introsManifest.id) ? readWaitingIntros(database, member.id) : [],
-    ]);
+  const [community, networkProgress, setupProgress, profile, avatarUrl, feedPage, today] = await Promise.all([
+    readBrandingForPage(),
+    enabledIds.has(networkManifest.id) ? readNetworkProgress(database, member) : null,
+    isAdmin ? readSetupProgress(database) : null,
+    readMemberProfile(database, member.id),
+    readAvatarUrl(database, member.id),
+    isFeedOn ? readFeedPage(database, member, null) : null,
+    readTodayItems(database, member.id, enabledIds),
+  ]);
 
   const nextSteps = selectNextSteps({
     setupProgress,
@@ -76,18 +69,14 @@ export default modulePage(membersManifest, async function FeedPage() {
     ),
   });
 
-  const greeting = <PageHeader title={`Good to see you, ${readFirstName(member.name)}.`} description={readWeekSentence(newCount)} />;
+  const greeting = <PageHeader title={`Good to see you, ${readFirstName(member.name)}.`} description={readWeekSentence(today)} />;
 
   if (!feedPage) {
     return (
       <>
         {greeting}
-        <div className="grid max-w-[640px] gap-5">
-          {waitingIntros.length > 0 ? <WaitingOnYouCard intros={waitingIntros} /> : null}
-          {nextSteps.map((nextStep) => (
-            <NextStepCard key={nextStep.title} nextStep={nextStep} />
-          ))}
-          <NewThisWeekCard newMembers={newMembers} />
+        <div className="max-w-[640px]">
+          <TodayList today={today} nextSteps={nextSteps} />
         </div>
       </>
     );
@@ -96,40 +85,19 @@ export default modulePage(membersManifest, async function FeedPage() {
   const queryClient = new QueryClient();
   queryClient.setQueryData(feedQuery().queryKey, { pages: [feedPage], pageParams: [null] });
 
+  // With the feed on, the week comes first on a phone and sits beside the feed on a wide screen.
   return (
     <>
       {greeting}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_296px] lg:gap-7">
-        <div className="grid gap-5">
-          {nextSteps
-            .filter(({ isUrgent }) => isUrgent)
-            .map((nextStep) => (
-              <div key={nextStep.title} className="lg:hidden">
-                <NextStepCard nextStep={nextStep} />
-              </div>
-            ))}
-          {waitingIntros.length > 0 ? (
-            <div className="lg:hidden">
-              <WaitingOnYouCard intros={waitingIntros} />
-            </div>
-          ) : null}
+        <aside aria-label="For you" className="lg:sticky lg:top-9 lg:order-2">
+          <TodayList today={today} nextSteps={nextSteps} />
+        </aside>
+        <div className="grid gap-5 lg:order-1">
           <HydrationBoundary state={dehydrate(queryClient)}>
             <Feed viewer={{ id: member.id, name: member.name, avatarUrl, isAdmin }} />
           </HydrationBoundary>
         </div>
-        <aside aria-label="For you" className="grid gap-5 lg:sticky lg:top-9">
-          {waitingIntros.length > 0 ? (
-            <div className="max-lg:hidden">
-              <WaitingOnYouCard intros={waitingIntros} />
-            </div>
-          ) : null}
-          {nextSteps.map((nextStep) => (
-            <div key={nextStep.title} className={nextStep.isUrgent ? "max-lg:hidden" : undefined}>
-              <NextStepCard nextStep={nextStep} />
-            </div>
-          ))}
-          <NewThisWeekCard newMembers={newMembers} />
-        </aside>
       </div>
     </>
   );

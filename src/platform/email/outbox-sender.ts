@@ -92,7 +92,7 @@ async function scheduleRetry(database: Database, email: ClaimedEmail, error: unk
 
 async function composeEmail(database: Database, environment: Environment, email: ClaimedEmail) {
   const topic = readEmailTopic(email.kind);
-  const base = { to: email.toEmail, subject: email.subject, idempotencyKey: email.id };
+  const base = { to: email.toEmail, subject: email.subject, idempotencyKey: email.id, replyTo: email.replyTo };
   if (!topic || !email.memberId) return { ...base, html: email.html, text: email.text };
 
   const { headers, htmlFooter, textFooter } = await buildUnsubscribeParts(database, environment, { memberId: email.memberId, topic });

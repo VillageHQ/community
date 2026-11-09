@@ -9,7 +9,7 @@ export const feedManifest = {
   label: "Feed",
   description: "Members post updates, reply and react on the home page.",
   icon: House,
-  isOnByDefault: true,
+  isOnByDefault: false,
   needsVillage: false,
   requires: [],
   navigation: [{ label: "Feed", href: ROUTES.feed, icon: House, section: NAVIGATION_SECTIONS.primary }],

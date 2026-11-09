@@ -22,6 +22,7 @@ export type QueuedEmail = {
   subject: string;
   html: string;
   text: string;
+  replyTo?: string | null;
   dedupeKey?: string;
 };
 
@@ -78,6 +79,7 @@ export async function queueEmail(connection: DatabaseOrTransaction, environment:
       subject: email.subject,
       html: email.html,
       text: email.text,
+      replyTo: email.replyTo ?? null,
       dedupeKey: email.dedupeKey ?? null,
     })
     .onConflictDoNothing({ target: emailOutbox.dedupeKey })

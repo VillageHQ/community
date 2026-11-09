@@ -14,6 +14,7 @@ export const ROUTES = {
   welcome: "/welcome",
   confirmEmail: "/confirm-email",
   unsubscribe: "/unsubscribe",
+  weeklyAnswer: "/weekly",
   messages: "/messages",
   intros: "/intros",
   introConsent: "/meet",
@@ -28,6 +29,7 @@ export const ROUTES = {
   adminCredits: "/admin/credits",
   adminFeatures: "/admin/features",
   adminSettings: "/admin/settings",
+  adminWeeklyEmail: "/admin/weekly-email",
 } as const;
 
 export const AUTH_BASE_PATH = "/api/auth";
@@ -37,6 +39,10 @@ export const API_ROUTES = {
   jobsTick: "/api/jobs/tick",
   emailUnsubscribe: "/api/email/unsubscribe",
   emailPreferences: "/api/email/preferences",
+  weeklyAnswer: "/api/email/weekly-answer",
+  adminWeeklyEmail: "/api/admin/weekly-email",
+  adminWeeklyEmailSchedule: "/api/admin/weekly-email/schedule",
+  adminWeeklyEmailTest: "/api/admin/weekly-email/test",
   resendWebhook: "/api/email/resend-webhook",
   recoverAdmin: "/api/recover-admin",
   branding: "/api/admin/branding",

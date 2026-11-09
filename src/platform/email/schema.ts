@@ -21,6 +21,8 @@ export const emailOutbox = pgTable(
     subject: text("subject").notNull(),
     html: text("html").notNull(),
     text: text("text").notNull(),
+    // Optional. Where a reply goes, when the app reads replies to this email.
+    replyTo: text("reply_to"),
     status: text("status").notNull().default("pending"),
     attempts: integer("attempts").notNull().default(0),
     nextAttemptAt: emailTimestamp("next_attempt_at").notNull().defaultNow(),

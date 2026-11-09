@@ -58,6 +58,7 @@ describe("the slots in the app", () => {
 
   describe("the home page title", () => {
     it("says Feed with the feed on", async () => {
+      await saveModuleState(database, feedManifest, true);
       const { generateMetadata } = await import("./page");
 
       expect((await generateMetadata()).title).toBe(PAGE_TITLES.feed);

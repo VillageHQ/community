@@ -33,6 +33,8 @@ import { POST as postPostPin } from "@/app/api/feed/posts/pin/route";
 import { POST as postPostReaction } from "@/app/api/feed/posts/reaction/route";
 import { POST as postPostCreate } from "@/app/api/feed/posts/route";
 import { POST as postFeedPage } from "@/app/api/feed/route";
+import { saveModuleState } from "@/platform/modules/enablement";
+import { feedManifest } from "@/modules/feed/manifest";
 
 const APP_URL = "http://localhost:3000";
 const OK_STATUS = 200;
@@ -87,6 +89,8 @@ describe("the feed", () => {
 
   beforeAll(async () => {
     await clearDatabase(database);
+    // The feed starts off for a new community. These tests are about a community that has it on.
+    await saveModuleState(database, feedManifest, true);
     author = await createSignedInMember(database);
     other = await createSignedInMember(database);
     admin = await createSignedInMember(database, "admin");

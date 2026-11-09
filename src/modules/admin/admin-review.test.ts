@@ -58,6 +58,8 @@ import { POST as postReportDismiss } from "@/app/api/admin/reports/dismiss/route
 import { POST as postReportList } from "@/app/api/admin/reports/list/route";
 import { POST as postVillageKeys } from "@/app/api/admin/village/keys/route";
 import { POST as postLinkReset } from "@/app/api/admin/village/links/reset/route";
+import { saveModuleState } from "@/platform/modules/enablement";
+import { feedManifest } from "@/modules/feed/manifest";
 
 const APP_URL = "http://localhost:3000";
 const OK_STATUS = 200;
@@ -143,6 +145,8 @@ describe("the review fixes", () => {
 
   beforeEach(async () => {
     await clearDatabase(database);
+    // The feed starts off for a new community. These tests are about a community that has it on.
+    await saveModuleState(database, feedManifest, true);
     await database.delete(communityBranding);
     village.reset();
     admin = await createSignedInMember(database, "admin");

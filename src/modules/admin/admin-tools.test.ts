@@ -76,6 +76,8 @@ import { POST as postVillageGroup } from "@/app/api/admin/village/group/route";
 import { POST as postVillageKeys } from "@/app/api/admin/village/keys/route";
 import { POST as postVillageLinkReset } from "@/app/api/admin/village/links/reset/route";
 import { POST as postVillageLinks } from "@/app/api/admin/village/links/route";
+import { saveModuleState } from "@/platform/modules/enablement";
+import { feedManifest } from "@/modules/feed/manifest";
 
 const APP_URL = "http://localhost:3000";
 const OK_STATUS = 200;
@@ -150,6 +152,8 @@ describe("the admin tools", () => {
 
   beforeEach(async () => {
     await clearDatabase(database);
+    // The feed starts off for a new community. These tests are about a community that has it on.
+    await saveModuleState(database, feedManifest, true);
     admin = await createSignedInMember(database, "admin");
     member = await createSignedInMember(database);
     await nameMember(database, admin.userId, "Ada Admin");
