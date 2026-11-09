@@ -5,7 +5,7 @@ import { verifySignInLink } from "@/platform/auth/sign-in-link-verify";
 import { getDatabase } from "@/platform/database/client";
 import { readResendConfig } from "@/platform/email/resend";
 import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/platform/http/body-limit";
-import { readRateLimitClientKey } from "@/platform/http/client-ip";
+import { readTrustedClientIp } from "@/platform/http/client-ip";
 import { hasTrustedOrigin } from "@/platform/http/member-route";
 import { readJsonBody } from "@/platform/http/read-json-body";
 import { platformRoutes } from "@/platform/modules/platform-routes";
@@ -35,18 +35,21 @@ export const POST = platformRoutes.open(
 
     const database = getDatabase();
     await pruneExpiredRateLimits(database);
-    // Only failed tries count: a sign-in gives its slot back, so members sharing one bucket (no trusted IP
-    // header) don't lock each other out, while token guesses sent all at once stay capped.
-    const rateLimitKey = `${RATE_LIMIT_KEY_PREFIX}|${readRateLimitClientKey(request, process.env)}`;
-    const { isLimited } = await recordFailedAttempt(database, rateLimitKey);
-    if (isLimited) return respond("Too many tries. Wait a minute and try again.", TOO_MANY_REQUESTS_STATUS);
+    // Failed tries are counted per IP, and only when the host names a trusted IP header: one shared bucket
+    // would let anyone block every member's link, as for password sign-in. A token is 32 random characters,
+    // so guessing one is hopeless either way. A sign-in gives its slot back.
+    const clientIp = readTrustedClientIp(request, process.env);
+    const rateLimitKey = clientIp ? `${RATE_LIMIT_KEY_PREFIX}|${clientIp}` : null;
+    if (rateLimitKey && (await recordFailedAttempt(database, rateLimitKey)).isLimited) {
+      return respond("Too many tries. Wait a minute and try again.", TOO_MANY_REQUESTS_STATUS);
+    }
 
     const body = bodySchema.safeParse(await readJsonBody(request));
     if (!body.success) return respond(UNUSABLE_MESSAGE, GONE_STATUS);
 
     const result = await verifySignInLink(database, await getAuth(), request, body.data.token);
     if (!result.isSignedIn) return respond(UNUSABLE_MESSAGE, GONE_STATUS);
-    await releaseAttempt(database, rateLimitKey);
+    if (rateLimitKey) await releaseAttempt(database, rateLimitKey);
 
     const headers = new Headers({ "Cache-Control": "no-store" });
     for (const cookie of result.setCookies) headers.append("Set-Cookie", cookie);

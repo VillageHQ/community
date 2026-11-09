@@ -1,6 +1,6 @@
 import { hashPassword } from "better-auth/crypto";
 import { eq, like } from "drizzle-orm";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { account, session, user, verification } from "@/platform/database/auth-schema";
 import { emailOutbox } from "@/platform/email/schema";
@@ -59,6 +59,10 @@ describe("signing in by emailed link", () => {
   afterAll(async () => {
     vi.unstubAllEnvs();
     await resend.stop();
+  });
+
+  afterEach(() => {
+    vi.stubEnv("CLIENT_IP_HEADER", "");
   });
 
   beforeEach(async () => {
@@ -146,6 +150,20 @@ describe("signing in by emailed link", () => {
     await settle();
 
     expect(resend.state.emails).toHaveLength(2);
+  });
+
+  it("limits wrong links per trusted IP, and nobody can block everyone's link when the IP is unknown", async () => {
+    const { token } = await requestLink();
+    const wrongToken = "x".repeat(32);
+
+    for (let attempt = 0; attempt < 11; attempt += 1) expect((await confirm(wrongToken)).status).toBe(410);
+    expect((await confirm(token)).status).toBe(200);
+
+    vi.stubEnv("CLIENT_IP_HEADER", "x-real-ip");
+    const second = await requestLink();
+    for (let attempt = 0; attempt < 10; attempt += 1) await confirm(wrongToken, { "x-real-ip": "10.0.0.9" });
+    expect((await confirm(second.token, { "x-real-ip": "10.0.0.9" })).status).toBe(429);
+    expect((await confirm(second.token, { "x-real-ip": "10.0.0.10" })).status).toBe(200);
   });
 
   it("confirms the email, and tells the member when an unconfirmed password was removed", async () => {
