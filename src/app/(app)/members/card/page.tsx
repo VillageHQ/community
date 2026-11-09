@@ -10,8 +10,10 @@ import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readMemberProfile } from "@/modules/members/service-profile";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
+import { hasPassword } from "@/platform/auth/password-setup";
 
 import { CardForm } from "@/modules/members/components/card-form";
+import { PasswordCard } from "@/modules/members/components/password-card";
 import { membersManifest } from "@/modules/members/manifest";
 import { LeaveGroupCard } from "@/modules/network/components/leave-group-card";
 import { networkManifest } from "@/modules/network/manifest";
@@ -75,7 +77,11 @@ export default modulePage(membersManifest, async function EditCardPage() {
 
   const isNetworkOn = await isModuleEnabled(database, networkManifest);
   const showsLeaveCard = !isNetworkOn && (await readIsInVillageGroup(database, member.id));
-  const [emailSettings, fillIn] = await Promise.all([readEmailSettings(database, member.id), readFillIn(database, member.id)]);
+  const [emailSettings, fillIn, memberHasPassword] = await Promise.all([
+    readEmailSettings(database, member.id),
+    readFillIn(database, member.id),
+    hasPassword(database, member.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-[720px]">
@@ -113,6 +119,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
           fillNowButton={isNetworkOn ? <FillInNowButton /> : null}
         />
       ) : null}
+      <PasswordCard hasPassword={memberHasPassword} isLinkOn={readResendConfig(process.env) !== null} />
       <EmailPreferencesCard settings={emailSettings} />
       {isNetworkOn ? <VillageDisclosure isFillInOn={fillIn?.state.isAllowed === true} /> : null}
       {showsLeaveCard ? <LeaveGroupCard /> : null}

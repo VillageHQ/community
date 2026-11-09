@@ -5,6 +5,7 @@ Core. Always on. Other modules build on it, and it never imports them.
 - `schema.ts`: profiles, tags, avatars, invites and `member_network`. That table also holds Village columns, because LinkedIn lives on it and splitting it needs a data migration.
 - `service-profile.ts`, `reads-directory.ts`: the member card and the directory.
 - `service-invites.ts`, `service-email-confirmation.ts`: issuing and accepting invites, and confirming an email.
+- `contract-bulk-invites.ts`, `service-bulk-invites.ts`: inviting many people from a pasted list or a CSV. Parsing drops leading formula characters; a CSV the admin downloads goes through `toCsv`.
 - `service-admin.ts`: what an admin does to one member: confirm an email, confirm or clear a LinkedIn claim.
 - `service-blocks.ts`, `contract-blocks.ts`: blocks. Whoever calls `setMemberBlocked` passes the effects that run in the same transaction.
 - `slots.tsx`: `MemberConversationSlot`. Messages fills it, so members never imports messages.

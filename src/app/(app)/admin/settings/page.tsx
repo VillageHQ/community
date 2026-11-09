@@ -32,6 +32,7 @@ import { modulePage } from "@/platform/modules/module-page";
 const EMAIL_ON_EFFECTS = [
   { text: "Invites go out by email, and you can still copy the link." },
   { text: "New members confirm their own email from a link we send." },
+  { text: "Members can sign in with a link we email them, or with their password." },
   { text: "Introducers and requesters get a short email about intro requests.", moduleId: introsManifest.id },
   { text: "An introducer can have us email the person being introduced a private link to say yes or no.", moduleId: introsManifest.id },
   { text: "Members get an email for a new direct message, at most one per conversation every 15 minutes.", moduleId: messagesManifest.id },
@@ -46,6 +47,7 @@ const RESEND_URL = "https://resend.com";
 const EMAIL_OFF_EFFECTS = [
   { text: "You copy each invite link and send it yourself." },
   { text: "You confirm each new member by hand in Members." },
+  { text: "Members sign in with their password only. Sign-in links need email." },
   { text: "They can't use network search until you do.", moduleId: networkManifest.id },
   { text: "Intro requests only show up as a badge in the app.", moduleId: introsManifest.id },
   { text: "Introducers send the yes-or-no link to the person being introduced themselves.", moduleId: introsManifest.id },

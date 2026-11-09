@@ -8,7 +8,8 @@ import { isFirstAdminClaimed } from "@/platform/auth/first-admin";
 import { parseReturnPath, RETURN_PATH_PARAM } from "@/platform/http/return-path";
 import { ADMIN_CREATED_PARAM, ROUTES } from "@/platform/http/routes";
 
-import { SignInForm } from "./sign-in-form";
+import { SignInChoice } from "./sign-in-form";
+import { readResendConfig } from "@/platform/email/resend";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { PLATFORM_MANIFEST } from "@/platform/modules/platform-manifest";
 import { modulePage } from "@/platform/modules/module-page";
@@ -45,7 +46,7 @@ export default modulePage(PLATFORM_MANIFEST, async function SignInPage({ searchP
           </p>
         ) : null}
         <div className="mt-7 rounded-panel bg-card p-5 shadow-panel sm:p-7">
-          <SignInForm returnPath={returnPath} />
+          <SignInChoice returnPath={returnPath} isLinkOn={!isAdminJustCreated && readResendConfig(process.env) !== null} />
         </div>
       </div>
     </SplitLayout>
