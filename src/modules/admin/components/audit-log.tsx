@@ -75,6 +75,8 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.askAllowanceChanged]: ({ detail }) => `set the weekly ask allowance to ${detail} per member`,
   [AUDIT_ACTIONS.domainConfirmed]: ({ detail }) => `confirmed the domain ${detail} in Village`,
   [AUDIT_ACTIONS.introAsksStopped]: () => "asked this community to stop sending them intro asks",
+  [AUDIT_ACTIONS.partnerReportSent]: ({ detail }) => `emailed the partner report to ${detail}`,
+  [AUDIT_ACTIONS.partnerReportMarkedShared]: () => "marked the partner report as shared",
 };
 
 function readReplyClause(removedReplyCount: number) {

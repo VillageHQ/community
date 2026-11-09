@@ -1,6 +1,6 @@
 {
-  "id": "ef56478e-5680-4610-bac9-2da24c7408da",
-  "prevId": "8a26869b-018e-428a-9c4b-de208da377c7",
+  "id": "67890599-e450-436f-828f-b8010c2fd5a2",
+  "prevId": "d3f5022c-dc96-4535-8523-94a200e9fbdc",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2508,6 +2508,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "outcome_results": {
+          "name": "outcome_results",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": false
+        },
         "outcome_email_at": {
           "name": "outcome_email_at",
           "type": "timestamp (3) with time zone",
@@ -2681,6 +2687,10 @@
         "intro_request_outcome_known": {
           "name": "intro_request_outcome_known",
           "value": "\"intro_request\".\"outcome\" is null or (\"intro_request\".\"state\" = 'completed' and \"intro_request\".\"outcome\" in ('helped', 'not_yet', 'not_helped'))"
+        },
+        "intro_request_outcome_results": {
+          "name": "intro_request_outcome_results",
+          "value": "\"intro_request\".\"outcome_results\" is null or (\"intro_request\".\"outcome\" = 'helped' and \"intro_request\".\"outcome_results\" <@ array['customer', 'hire', 'investor']::text[])"
         },
         "intro_request_snapshot_lengths": {
           "name": "intro_request_snapshot_lengths",
@@ -3188,6 +3198,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "credit_in_reports": {
+          "name": "credit_in_reports",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "card_step_done_at": {
           "name": "card_step_done_at",

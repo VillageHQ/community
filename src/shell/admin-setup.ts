@@ -4,6 +4,7 @@ import { hasOpenOrAcceptedInvite } from "../modules/members/service-invites.ts";
 import { SETUP_STEPS, type SetupStepId } from "./admin-setup-steps.ts";
 import { readVillageGroup } from "../modules/network/service-settings.ts";
 import { readVillageKeys } from "../platform/village/settings.ts";
+import { readPartnerReportSettings } from "../modules/admin/reads-partner-report.ts";
 
 import { adminManifest } from "../modules/admin/manifest.ts";
 import { membersManifest } from "../modules/members/manifest.ts";
@@ -18,6 +19,7 @@ export type SetupFacts = {
   hasKeys: boolean;
   hasGroup: boolean;
   hasInvite: boolean;
+  hasSharedReport: boolean;
 };
 
 const SETUP_STEP_OWNERS: Record<SetupStepId, ModuleManifest> = {
@@ -25,6 +27,7 @@ const SETUP_STEP_OWNERS: Record<SetupStepId, ModuleManifest> = {
   [SETUP_STEPS.keys]: networkManifest,
   [SETUP_STEPS.group]: networkManifest,
   [SETUP_STEPS.invite]: membersManifest,
+  [SETUP_STEPS.report]: adminManifest,
 };
 
 const SETUP_STEP_ORDER: SetupStepId[] = [
@@ -32,6 +35,7 @@ const SETUP_STEP_ORDER: SetupStepId[] = [
   SETUP_STEPS.keys,
   SETUP_STEPS.group,
   SETUP_STEPS.invite,
+  SETUP_STEPS.report,
 ];
 
 const SETUP_STEP_COMPLETION: Record<SetupStepId, (facts: SetupFacts) => boolean> = {
@@ -39,6 +43,7 @@ const SETUP_STEP_COMPLETION: Record<SetupStepId, (facts: SetupFacts) => boolean>
   [SETUP_STEPS.keys]: ({ hasKeys }) => hasKeys,
   [SETUP_STEPS.group]: ({ hasGroup }) => hasGroup,
   [SETUP_STEPS.invite]: ({ hasInvite }) => hasInvite,
+  [SETUP_STEPS.report]: ({ hasSharedReport }) => hasSharedReport,
 };
 
 export const SETUP_STEP_NAMES: Record<SetupStepId, string> = {
@@ -46,6 +51,7 @@ export const SETUP_STEP_NAMES: Record<SetupStepId, string> = {
   [SETUP_STEPS.keys]: "add your Village keys",
   [SETUP_STEPS.group]: "create the group",
   [SETUP_STEPS.invite]: "invite your first members",
+  [SETUP_STEPS.report]: "send your first partner report",
 };
 
 export function describeSetupProgress(facts: SetupFacts, stepIds: readonly SetupStepId[] = SETUP_STEP_ORDER) {
@@ -71,11 +77,12 @@ export function parseSetupStep(value: unknown, stepIds: readonly SetupStepId[] =
 export async function readSetupProgress(database: Database) {
   const enabledIds = await readEnabledIds(database);
   const isNetworkOn = enabledIds.has(networkManifest.id);
-  const [branding, keys, group, hasInvite] = await Promise.all([
+  const [branding, keys, group, hasInvite, reportSettings] = await Promise.all([
     readBranding(database),
     isNetworkOn ? readVillageKeys(database) : null,
     isNetworkOn ? readVillageGroup(database) : null,
     hasOpenOrAcceptedInvite(database),
+    readPartnerReportSettings(database),
   ]);
   return describeSetupProgress(
     {
@@ -83,6 +90,7 @@ export async function readSetupProgress(database: Database) {
       hasKeys: Boolean(keys),
       hasGroup: Boolean(group),
       hasInvite,
+      hasSharedReport: reportSettings.sharedAt !== null,
     },
     SETUP_STEP_ORDER.filter((stepId) => enabledIds.has(SETUP_STEP_OWNERS[stepId].id)),
   );

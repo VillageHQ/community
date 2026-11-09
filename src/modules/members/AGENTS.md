@@ -8,6 +8,7 @@ Core. Always on. Other modules build on it, and it never imports them.
 - `contract-bulk-invites.ts`, `service-bulk-invites.ts`: inviting many people from a pasted list or a CSV. Parsing drops leading formula characters; a CSV the admin downloads goes through `toCsv`.
 - `service-admin.ts`: what an admin does to one member: confirm an email, confirm or clear a LinkedIn claim.
 - `service-blocks.ts`, `contract-blocks.ts`: blocks. Whoever calls `setMemberBlocked` passes the effects that run in the same transaction.
+- `service-report-credit.ts`: the member's "credit me in reports" switch. Off by default.
 - `slots.tsx`: `MemberConversationSlot`. Messages fills it, so members never imports messages.
 - `service-linkedin.ts`: claiming a LinkedIn profile, and whether a member's email is trusted.
 - `service-onboarding.ts`: onboarding state. `src/shell/onboarding.ts` decides the next step, because that needs network.

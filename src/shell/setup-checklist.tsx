@@ -21,6 +21,7 @@ import { BRAND_NAME_INPUT_ID } from "@/modules/admin/components/brand-fields";
 import { GroupForm } from "@/modules/network/components/group-form";
 import { KeysForm } from "@/modules/network/components/keys-form";
 import { InviteStep } from "@/modules/members/components/invite-step";
+import { ReportStep } from "@/modules/admin/components/report-step";
 
 function readStepState(isDone: boolean, isOpen: boolean): StepState {
   if (isOpen) return STEP_STATES.current;
@@ -90,6 +91,7 @@ const STEP_BODIES: Partial<Record<SetupStepId, (facts: StepBodyFacts) => ReactNo
     />
   ),
   [SETUP_STEPS.invite]: ({ isEmailConfigured }) => <InviteStep isEmailConfigured={isEmailConfigured} />,
+  [SETUP_STEPS.report]: ({ isDone }) => <ReportStep isDone={isDone} />,
 };
 
 export function AdminBrandCard({ branding, isCurrentStep }: { branding: Branding; isCurrentStep: boolean }) {

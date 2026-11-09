@@ -35,6 +35,8 @@ export const AUDIT_ACTIONS = {
   askAnswerRemoved: "ask_answer_removed",
   askAllowanceChanged: "ask_allowance_changed",
   introAsksStopped: "intro_asks_stopped",
+  partnerReportSent: "partner_report_sent",
+  partnerReportMarkedShared: "partner_report_marked_shared",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
