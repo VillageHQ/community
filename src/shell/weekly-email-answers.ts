@@ -70,28 +70,31 @@ export async function readAnswerTarget(database: Database, weeklyEmailId: string
   return { outcome: null, row, item } as const;
 }
 
-async function carryOut(database: Database, environment: Environment, memberId: string, item: WeeklyEmailItem, action: string, words: string) {
+type CarriedOut = typeof ANSWER_OUTCOMES.done | typeof ANSWER_OUTCOMES.already | typeof ANSWER_OUTCOMES.gone;
+
+async function carryOut(database: Database, environment: Environment, memberId: string, item: WeeklyEmailItem, action: string, words: string): Promise<CarriedOut> {
   const member = await readRecipient(database, memberId);
-  if (!member) return false;
+  if (!member) return ANSWER_OUTCOMES.gone;
   const enabledIds = await readEnabledIds(database);
   const context = createRequestContext(database, environment, { id: member.id, email: member.email, role: member.role });
 
   if (item.kind === WEEKLY_ITEM_KINDS.ask) {
-    if (!enabledIds.has(asksManifest.id) || !(await isAskStillHelpable(database, member.id, item.ref))) return false;
+    if (!enabledIds.has(asksManifest.id) || !(await isAskStillHelpable(database, member.id, item.ref))) return ANSWER_OUTCOMES.gone;
     if (action === REPLY_CODES.skip) {
       await skipAsk(database, member.id, item.ref);
-      return true;
+      return ANSWER_OUTCOMES.done;
     }
     const parsed = offerHelpBodySchema.safeParse({ askId: item.ref, note: words.slice(0, ASK_LIMITS.noteLength) });
     const body = parsed.success ? parsed.data : offerHelpBodySchema.parse({ askId: item.ref, note: DEFAULT_HELP_NOTE });
-    await offerHelp(context, body, sendOfferAsMessage);
-    return true;
+    // Offered already, in the app: nothing new happens, and the answer says so.
+    const { wasAlreadyOffered } = await offerHelp(context, body, sendOfferAsMessage);
+    return wasAlreadyOffered ? ANSWER_OUTCOMES.already : ANSWER_OUTCOMES.done;
   }
 
-  if (!enabledIds.has(introsManifest.id)) return false;
+  if (!enabledIds.has(introsManifest.id)) return ANSWER_OUTCOMES.gone;
   const move = action === REPLY_CODES.yes ? { introId: item.ref, action: INTRO_ACTIONS.accept } : { introId: item.ref, action: INTRO_ACTIONS.decline };
   await transitionIntro(context, introTransitionBodySchema.parse(move));
-  return true;
+  return ANSWER_OUTCOMES.done;
 }
 
 // Answers one item once. The claim is written first, so a second answer, by link or reply, finds it
@@ -110,9 +113,9 @@ export async function answerItem(
     return { outcome: ANSWER_OUTCOMES.already, item, action: earlier?.action ?? action, message: null };
   }
   try {
-    if (await carryOut(database, environment, row.memberId, item, action, words.trim())) return { outcome: ANSWER_OUTCOMES.done, item, action, message: null };
-    await releaseItemAction(database, weeklyEmailId, itemNumber);
-    return { outcome: ANSWER_OUTCOMES.gone, item, action, message: null };
+    const outcome = await carryOut(database, environment, row.memberId, item, action, words.trim());
+    if (outcome === ANSWER_OUTCOMES.gone) await releaseItemAction(database, weeklyEmailId, itemNumber);
+    return { outcome, item, action, message: null };
   } catch (error) {
     await releaseItemAction(database, weeklyEmailId, itemNumber);
     if (error instanceof RequestError) return { outcome: ANSWER_OUTCOMES.gone, item, action, message: error.message };

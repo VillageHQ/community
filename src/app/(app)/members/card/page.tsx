@@ -28,7 +28,9 @@ import { messagesManifest } from "@/modules/messages/manifest";
 import { EmailPreferencesCard } from "@/shell/email-preferences-card";
 import { readEnabledIds } from "@/shell/enabled-modules";
 
+// A topic with no module is always offered: the weekly email works whatever is on.
 const TOPIC_MODULES = [
+  { topic: EMAIL_TOPICS.weekly, moduleId: null },
   { topic: EMAIL_TOPICS.intros, moduleId: introsManifest.id },
   { topic: EMAIL_TOPICS.messages, moduleId: messagesManifest.id },
 ];
@@ -36,7 +38,7 @@ const TOPIC_MODULES = [
 async function readEmailSettings(database: ReturnType<typeof getDatabase>, memberId: string) {
   if (!readResendConfig(process.env)) return [];
   const [enabledIds, optedOut] = await Promise.all([readEnabledIds(database), readOptedOutTopics(database, memberId)]);
-  return TOPIC_MODULES.filter(({ moduleId }) => enabledIds.has(moduleId)).map(({ topic }) => ({ topic, isOn: !optedOut.has(topic) }));
+  return TOPIC_MODULES.filter(({ moduleId }) => moduleId === null || enabledIds.has(moduleId)).map(({ topic }) => ({ topic, isOn: !optedOut.has(topic) }));
 }
 
 export const metadata: Metadata = { title: PAGE_TITLES.editCard };

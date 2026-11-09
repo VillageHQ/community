@@ -17,11 +17,18 @@ export type ActionSource = (typeof ACTION_SOURCES)[keyof typeof ACTION_SOURCES];
 // Claims this member's row for the week. Null means another run already did, so this one stops.
 export async function claimWeeklyEmail(
   connection: DatabaseOrTransaction,
-  { id, memberId, weekKey, status, items }: { id?: string; memberId: string; weekKey: string; status: WeeklyEmailStatus; items: WeeklyEmailItem[] },
+  {
+    id,
+    memberId,
+    weekKey,
+    status,
+    items,
+    createdAt,
+  }: { id?: string; memberId: string; weekKey: string; status: WeeklyEmailStatus; items: WeeklyEmailItem[]; createdAt?: Date },
 ) {
   const [claimed] = await connection
     .insert(weeklyEmail)
-    .values({ id, memberId, weekKey, status, items })
+    .values({ id, memberId, weekKey, status, items, createdAt })
     .onConflictDoNothing({ target: [weeklyEmail.memberId, weeklyEmail.weekKey] })
     .returning({ id: weeklyEmail.id });
   return claimed?.id ?? null;
@@ -44,8 +51,8 @@ export async function readItemAction(connection: DatabaseOrTransaction, weeklyEm
   return row ?? null;
 }
 
-// True for the first answer to an item. Call it in the transaction that carries the answer out,
-// so a failed answer leaves the item open and two answers at once can't both land.
+// True for the first answer to an item, so two answers at once can't both land. The answer itself
+// runs in the module's own transaction afterwards; if it fails, `releaseItemAction` opens the item again.
 export async function claimItemAction(
   connection: DatabaseOrTransaction,
   { weeklyEmailId, itemNumber, action, via }: { weeklyEmailId: string; itemNumber: number; action: string; via: ActionSource },

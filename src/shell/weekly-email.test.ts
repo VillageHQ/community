@@ -252,14 +252,20 @@ describe("the Today home and the weekly email", () => {
       expect((await runWeeklyEmails(database, environment(), { now })).queued).toBe(1);
     });
 
-    it("never sends twice in six days when the admin moves the day", async () => {
-      await seedCommunity();
+    it("never sends twice in six days when the admin moves the day, then keeps to the new day", async () => {
+      const { hana } = await seedCommunity();
       await runWeeklyEmails(database, environment(), { now });
       await database.insert(instanceSettings).values({ key: "weekly_email_weekday", value: String((now.getUTCDay() + 1) % 7) });
 
       const moved = await runWeeklyEmails(database, environment(), { now: new Date(now.getTime() + DAY_MS) });
+      const dayBefore = await runWeeklyEmails(database, environment(), { now: new Date(now.getTime() + 7 * DAY_MS) });
+      const newDay = await runWeeklyEmails(database, environment(), { now: new Date(now.getTime() + 8 * DAY_MS) });
 
       expect(moved.queued).toBe(0);
+      expect(dayBefore.queued).toBe(0);
+      expect(newDay.queued).toBe(1);
+      const sent = await database.select({ createdAt: weeklyEmail.createdAt }).from(weeklyEmail).where(eq(weeklyEmail.memberId, hana));
+      expect(sent.map(({ createdAt }) => createdAt.getUTCDay()).toSorted()).toEqual([now.getUTCDay(), (now.getUTCDay() + 1) % 7].toSorted());
     });
   });
 
@@ -277,6 +283,30 @@ describe("the Today home and the weekly email", () => {
       expect(repeat.results).toEqual([{ code: "HELP 1", outcome: "already" }]);
       const offers = await database.select({ note: askOffer.note }).from(askOffer).where(eq(askOffer.askId, askId));
       expect(offers).toEqual([{ note: HELP_NOTE }]);
+    });
+
+    it("reads the reply's words from Resend when the event carries none, as Resend sends it", async () => {
+      const { hana, askId } = await seedCommunity();
+      await runWeeklyEmails(database, environment(), { now });
+      resend.state.receivedText = `HELP 1
+${HELP_NOTE}`;
+
+      const response = await postResendWebhook(
+        webhookRequest({ type: "email.received", data: { email_id: "received-2", from: await readEmail(hana), to: [await readReplyTo(hana)] } }),
+      );
+
+      expect(await response.json()).toMatchObject({ results: [{ code: "HELP 1", outcome: "done" }] });
+      expect(await database.select({ note: askOffer.note }).from(askOffer).where(eq(askOffer.askId, askId))).toEqual([{ note: HELP_NOTE }]);
+    });
+
+    it("says nothing changed when the member already offered help in the app", async () => {
+      const { hana, askId } = await seedCommunity();
+      await runWeeklyEmails(database, environment(), { now });
+      await database.insert(askOffer).values({ askId, helperId: hana, note: "Offered in the app." });
+
+      const result = await reply(await readEmail(hana), await readReplyTo(hana), "HELP 1");
+
+      expect(result.results).toEqual([{ code: "HELP 1", outcome: "already" }]);
     });
 
     it("ignores a reply from another address", async () => {

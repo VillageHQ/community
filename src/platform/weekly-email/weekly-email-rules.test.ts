@@ -20,6 +20,12 @@ describe("the weekly schedule", () => {
     expect(readNextSend(new Date("2026-03-28T12:00:00Z"), london)?.at.toISOString()).toBe("2026-03-29T08:00:00.000Z");
   });
 
+  it("sends right after the gap on a day the clocks skip the set hour", () => {
+    const newYork = { weekday: 0, hour: 2, timeZone: "America/New_York" };
+    expect(readNextSend(new Date("2027-03-13T12:00:00Z"), newYork)?.at.toISOString()).toBe("2027-03-14T07:00:00.000Z");
+    expect(readCurrentWeek(new Date("2027-03-14T08:00:00Z"), newYork)?.weekKey).toBe("2027-03-14");
+  });
+
   it("falls back to Thursday 09:00 UTC, one field at a time", () => {
     expect(parseWeeklySchedule(new Map())).toEqual(thursdayNine);
     expect(parseWeeklySchedule(new Map([["weekly_email_hour", "17"], ["weekly_email_time_zone", "Not/AZone"]]))).toEqual({ ...thursdayNine, hour: 17 });

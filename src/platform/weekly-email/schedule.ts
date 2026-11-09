@@ -86,9 +86,15 @@ export function readLocalParts(moment: Date, timeZone: string) {
 const STEP_MS = 15 * 60_000;
 const STEPS_IN_EIGHT_DAYS = (8 * 24 * 60 * 60_000) / STEP_MS;
 
-function isScheduledMoment(moment: Date, { weekday, hour, timeZone }: WeeklySchedule) {
+function isAtOrAfterSendTime(moment: Date, { weekday, hour, timeZone }: WeeklySchedule) {
   const local = readLocalParts(moment, timeZone);
-  return local.weekday === weekday && local.hour === hour && local.minute === 0;
+  return local.weekday === weekday && local.hour >= hour;
+}
+
+// The first instant of the set day at or after the set hour. On a day the clocks skip that hour,
+// that is the first time after the gap; on a day they repeat it, only its first pass counts.
+function isScheduledMoment(moment: Date, schedule: WeeklySchedule) {
+  return isAtOrAfterSendTime(moment, schedule) && !isAtOrAfterSendTime(new Date(moment.getTime() - STEP_MS), schedule);
 }
 
 export type WeeklyMoment = { weekKey: string; at: Date };

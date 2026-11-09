@@ -72,7 +72,7 @@ export default modulePage(PLATFORM_MANIFEST, async function WeeklyAnswerPage({ s
             <h1 className="type-h1">{result === ANSWER_OUTCOMES.done ? "Done" : "Already answered"}</h1>
             <p className="type-lead mt-4 text-foreground-soft">{page.item.title}</p>
             <Alert variant="success" className="mt-6">
-              {result === ANSWER_OUTCOMES.done || page.earlier.action === page.link.action
+              {result === ANSWER_OUTCOMES.done || (!result && page.earlier.action === page.link.action)
                 ? (QUESTIONS[page.earlier.action]?.done ?? "Done.")
                 : `You already answered this one ${page.earlier.via === "reply" ? "by email" : "from a link"}, so nothing changed.`}
             </Alert>

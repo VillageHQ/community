@@ -31,7 +31,9 @@ import { ITEM_ACTIONS, renderWeeklyEmail, type ItemLinks } from "./weekly-email-
 
 const MEMBERS_PER_BATCH = 50;
 const DAY_MS = 24 * 60 * 60_000;
-// Moving the day mid-week makes a new week name. This gap stops that sending a second email.
+// Moving the day, or a late catch-up, makes a week whose moment is close to the last email. An
+// email sent less than this before the week's moment counts for that week too, so nobody gets two
+// in a few days, and the next week lands back on the set day.
 const MINIMUM_GAP_MS = 6 * DAY_MS;
 const TEST_WEEK_PREFIX = "test:";
 
@@ -83,7 +85,7 @@ function compose(environment: Environment, { recipient, items, numbered, links, 
 // one transaction, so a crash leaves either both or neither, and the next run knows which.
 async function queueWeeklyEmailFor(database: Database, environment: Environment, recipient: Recipient, week: WeeklyMoment, enabledIds: ReadonlySet<string>, branding: Branding, now: Date) {
   const items = await readTodayItems(database, recipient.id, enabledIds, now);
-  const base = { memberId: recipient.id, weekKey: week.weekKey };
+  const base = { memberId: recipient.id, weekKey: week.weekKey, createdAt: now };
   if (!needsMemberThisWeek(items)) {
     await claimWeeklyEmail(database, { ...base, status: WEEKLY_EMAIL_STATUSES.empty, items: [] });
     return WEEKLY_EMAIL_STATUSES.empty;
@@ -108,6 +110,7 @@ async function queueWeeklyEmailFor(database: Database, environment: Environment,
 }
 
 function readDueMembers(database: Database, week: WeeklyMoment, now: Date, skippedIds: readonly string[]) {
+  // `now` only decides who is active; the gap is measured from the week's own moment.
   const thisWeek = new QueryBuilder()
     .select({ id: weeklyEmail.id })
     .from(weeklyEmail)
@@ -119,7 +122,7 @@ function readDueMembers(database: Database, week: WeeklyMoment, now: Date, skipp
       and(
         eq(weeklyEmail.memberId, user.id),
         eq(weeklyEmail.status, WEEKLY_EMAIL_STATUSES.queued),
-        gt(weeklyEmail.createdAt, new Date(now.getTime() - MINIMUM_GAP_MS)),
+        gt(weeklyEmail.createdAt, new Date(week.at.getTime() - MINIMUM_GAP_MS)),
       ),
     );
   const switchedOff = new QueryBuilder()
