@@ -349,8 +349,10 @@ export async function acceptInvite(database: Database, token: string, { name, pa
         .update(invite)
         .set({ acceptedAt: now })
         .where(and(eq(invite.tokenHash, tokenHash), OPEN_INVITE, gt(invite.expiresAt, now)))
-        .returning({ id: invite.id, email: invite.email });
+        .returning({ id: invite.id, email: invite.email, emailOutboxId: invite.emailOutboxId });
       if (!claimed) return null;
+      // Accepted from the copied link: a still-queued invite email would only carry a used link.
+      await cancelInviteEmail(transaction, claimed);
 
       const [created] = await transaction
         .insert(user)

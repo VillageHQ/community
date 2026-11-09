@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 import { user } from "@/platform/database/auth-schema";
 import { createRequestContext } from "@/platform/http/request-context";
-import { createInvite, readInvites, revokeInvite } from "@/modules/members/service-invites";
+import { acceptInvite, createInvite, readInvites, revokeInvite } from "@/modules/members/service-invites";
 import { sendMessage } from "@/modules/messages/service";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
@@ -108,6 +108,27 @@ describe("reliable email", () => {
       expect(readBodies().map(({ to }) => to)).toEqual([["kept@example.com"]]);
       const { invites } = await readInvites(database, 1);
       expect(invites.find(({ id }) => id === kept.invite.id)?.emailStatus).toBe("sent");
+    });
+
+    it("never sends an invite email once its link was used, or after a revoke during a failing try", async () => {
+      const adminId = await seedMember(database, { name: "Priya Raman" });
+      await database.update(user).set({ role: "admin" }).where(eq(user.id, adminId));
+      const downContext = createRequestContext(database, readEnvironment(UNREACHABLE_URL), { id: adminId, email: "priya@example.com", role: "admin" });
+      const accepted = await createInvite(downContext, "accepted@example.com");
+      const inFlight = await createInvite(downContext, "in-flight@example.com");
+      await acceptInvite(database, accepted.link.split("/").at(-1) ?? "", {
+        name: "Ama Mensah",
+        password: "a-long-enough-password",
+      });
+      // As if a sender had claimed it and its try was still hanging when the admin revoked.
+      await database.update(emailOutbox).set({ status: OUTBOX_STATUSES.sending }).where(eq(emailOutbox.toEmail, "in-flight@example.com"));
+      await revokeInvite(downContext, inFlight.invite.id);
+
+      await makeDue();
+      await sendDueEmails(database, readEnvironment());
+
+      expect(readBodies()).toEqual([]);
+      expect((await readRows()).map(({ status }) => status)).toEqual([OUTBOX_STATUSES.skipped, OUTBOX_STATUSES.skipped]);
     });
 
     it("sends each email once when two senders run at once", async () => {

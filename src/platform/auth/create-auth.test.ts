@@ -104,6 +104,14 @@ describe("createAuth", () => {
       expect(statuses.at(-1)).toBe(429);
     });
 
+    it("caps wrong passwords sent all at once", async () => {
+      const responses = await Promise.all(Array.from({ length: 20 }, () => attemptSignIn(auth)));
+      const statuses = responses.map(({ status }) => status);
+
+      expect(statuses.filter((status) => status === 401)).toHaveLength(SIGN_INS_PER_EMAIL_PER_MINUTE);
+      expect(statuses.filter((status) => status === 429)).toHaveLength(20 - SIGN_INS_PER_EMAIL_PER_MINUTE);
+    });
+
     it("doesn't lock another member out when no client IP header is set", async () => {
       const member = { email: "member@example.com", password: "the-members-own-password" };
       await database.insert(user).values({ id: "other-member", name: "Other", email: member.email, emailVerified: true, role: "user" });

@@ -2,7 +2,7 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { z } from "zod";
 
 import type { Database } from "../database/client.ts";
-import { hasTooManyFailedAttempts, recordFailedAttempt } from "../rate-limit/attempt-rate-limit.ts";
+import { recordFailedAttempt, releaseAttempt } from "../rate-limit/attempt-rate-limit.ts";
 import { nameSchema } from "./member-name.ts";
 
 const UPDATE_USER_PATH = "/update-user";
@@ -55,12 +55,16 @@ function readSignInKey(path: string, body: unknown) {
 
 // Failed sign-ins are counted per account, so one person's wrong passwords can't lock anyone
 // else out. Better Auth adds its own per-IP limit when a trusted IP header is set (see create-auth).
+// Each try takes a slot before the password is checked, and a successful one gives it back, so
+// guesses sent all at once are capped too.
 export function createAuthGuards(database: Database) {
   return createAuthMiddleware(async (context) => {
     if (isRefusedPath(context.path)) throw new APIError("NOT_FOUND");
     rejectUnsafeName(context.path, context.body);
     const signInKey = readSignInKey(context.path, context.body);
-    if (signInKey && (await hasTooManyFailedAttempts(database, signInKey, MAXIMUM_FAILED_SIGN_INS_PER_EMAIL_PER_MINUTE))) {
+    if (!signInKey) return;
+    const { isLimited } = await recordFailedAttempt(database, signInKey, MAXIMUM_FAILED_SIGN_INS_PER_EMAIL_PER_MINUTE);
+    if (isLimited) {
       throw new APIError("TOO_MANY_REQUESTS", { message: "Too many tries for this account. Wait a minute, then try again." });
     }
   });
@@ -69,6 +73,6 @@ export function createAuthGuards(database: Database) {
 export function createAuthAfterHooks(database: Database) {
   return createAuthMiddleware(async (context) => {
     const signInKey = readSignInKey(context.path, context.body);
-    if (signInKey && context.context.returned instanceof APIError) await recordFailedAttempt(database, signInKey);
+    if (signInKey && !(context.context.returned instanceof APIError)) await releaseAttempt(database, signInKey);
   });
 }

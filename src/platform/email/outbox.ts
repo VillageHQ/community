@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import { readBranding } from "../branding/branding.ts";
 import type { Database, DatabaseOrTransaction } from "../database/client.ts";
@@ -53,13 +53,14 @@ export async function readEmailBranding(database: Database, environment: Environ
 export type EmailBranding = Awaited<ReturnType<typeof readBranding>>;
 
 // Stops a queued email that no longer makes sense, like the invite it carries being revoked.
-// One already being sent can't be stopped.
+// A try already in flight may still go out, but a failed one is never retried: the sender
+// only reschedules a row it still holds as "sending".
 export async function cancelQueuedEmail(connection: DatabaseOrTransaction, id: string | null) {
   if (!id) return;
   await connection
     .update(emailOutbox)
     .set({ status: OUTBOX_STATUSES.skipped, finishedAt: new Date(), html: "", text: "" })
-    .where(and(eq(emailOutbox.id, id), eq(emailOutbox.status, OUTBOX_STATUSES.pending)));
+    .where(and(eq(emailOutbox.id, id), inArray(emailOutbox.status, [OUTBOX_STATUSES.pending, OUTBOX_STATUSES.sending])));
 }
 
 // Call this inside the transaction that makes the change the email is about. It returns the row
