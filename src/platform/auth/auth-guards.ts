@@ -14,6 +14,7 @@ const NULL_BYTE = "\0";
 const NULL_BYTE_MESSAGE = "This name has a character we can't save.";
 const REFUSED_PATHS: ReadonlySet<string> = new Set(["/verify-email", "/reset-password/:token"]);
 const ADMIN_PATH_PREFIX = "/admin/";
+const SIGN_IN_LINK_PATH = "/sign-in/magic-link";
 
 // Anything else under /admin/ can act as a member, or leak what could: impersonation, setting
 // a password, listing session tokens. Fail closed, so an upgrade can't add a route unnoticed.
@@ -25,8 +26,11 @@ const ALLOWED_ADMIN_PATHS: ReadonlySet<string> = new Set([
   "/admin/list-users",
 ]);
 
-function isRefusedPath(path: string) {
+type AuthGuardOptions = { isEmailOn: boolean };
+
+function isRefusedPath(path: string, { isEmailOn }: AuthGuardOptions) {
   if (REFUSED_PATHS.has(path)) return true;
+  if (path === SIGN_IN_LINK_PATH && !isEmailOn) return true;
   return path.startsWith(ADMIN_PATH_PREFIX) && !ALLOWED_ADMIN_PATHS.has(path);
 }
 
@@ -57,9 +61,9 @@ function readSignInKey(path: string, body: unknown) {
 // else out. Better Auth adds its own per-IP limit when a trusted IP header is set (see create-auth).
 // Each try takes a slot before the password is checked, and a successful one gives it back, so
 // guesses sent all at once are capped too.
-export function createAuthGuards(database: Database) {
+export function createAuthGuards(database: Database, options: AuthGuardOptions) {
   return createAuthMiddleware(async (context) => {
-    if (isRefusedPath(context.path)) throw new APIError("NOT_FOUND");
+    if (isRefusedPath(context.path, options)) throw new APIError("NOT_FOUND");
     rejectUnsafeName(context.path, context.body);
     const signInKey = readSignInKey(context.path, context.body);
     if (!signInKey) return;

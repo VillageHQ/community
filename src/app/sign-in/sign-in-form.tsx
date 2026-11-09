@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, type Ref } from "react";
+import { useActionState, useState, type Ref } from "react";
 
 import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { useFocusOnFailure } from "@/components/use-focus-on-failure";
 import { authClient } from "@/platform/auth/auth-client";
 import { ROUTES } from "@/platform/http/routes";
+
+import { SignInLinkForm } from "./sign-in-link-form";
 
 type SignInState = { errorMessage: string | null; email: string };
 
@@ -77,5 +79,30 @@ export function SignInForm({ returnPath = ROUTES.landing }: { returnPath?: strin
         <Link href={ROUTES.forgotPassword}>Forgot your password?</Link>
       </Button>
     </form>
+  );
+}
+
+// With email on, the emailed link comes first and the password form waits behind a button.
+export function SignInChoice({ returnPath, isLinkOn }: { returnPath?: string | null; isLinkOn: boolean }) {
+  const [isPasswordShown, setIsPasswordShown] = useState(false);
+  if (!isLinkOn || isPasswordShown) {
+    return (
+      <div className="grid gap-5">
+        <SignInForm returnPath={returnPath} />
+        {isLinkOn ? (
+          <Button type="button" variant="quiet" className="justify-self-center" onClick={() => setIsPasswordShown(false)}>
+            Email me a sign-in link instead
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+  return (
+    <div className="grid gap-5">
+      <SignInLinkForm />
+      <Button type="button" variant="quiet" className="justify-self-center" onClick={() => setIsPasswordShown(true)}>
+        Sign in with a password instead
+      </Button>
+    </div>
   );
 }

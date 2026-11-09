@@ -117,7 +117,14 @@
     {
       "idx": 16,
       "version": "7",
-      "when": 1794242803372,
+      "when": 1794242283993,
+      "tag": "0016_invite_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794245074021,
       "tag": "0017_today_weekly",
       "breakpoints": true
     }
