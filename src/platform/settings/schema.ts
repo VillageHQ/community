@@ -15,4 +15,5 @@ export const INSTANCE_SETTING_KEYS = {
   villageGroupInviteLink: "village_group_invite_link",
   dailyLookupLimit: "daily_lookup_limit",
   villageOutOfCreditsAt: "village_out_of_credits_at",
+  jobsTickSecret: "jobs_tick_secret",
 } as const;

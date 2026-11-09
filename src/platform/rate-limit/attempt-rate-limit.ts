@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { sql } from "drizzle-orm";
+import { and, eq, gt, lte, sql } from "drizzle-orm";
 
 import { rateLimit } from "../database/auth-schema.ts";
 import type { Database } from "../database/client.ts";
@@ -25,4 +25,18 @@ export async function recordFailedAttempt(database: Database, key: string, maxim
     .returning({ count: rateLimit.count });
 
   return { isLimited: (attempts?.count ?? 0) > maximumAttempts };
+}
+
+// Gives back an attempt counted up front, once it turned out not to be a failure. Counting
+// before the check and refunding after caps guesses sent all at once, which a read-then-record
+// limit lets through.
+export async function releaseAttempt(database: Database, key: string) {
+  const inWindow = and(eq(rateLimit.key, key), gt(rateLimit.lastRequest, Date.now() - WINDOW_MS));
+  const [released] = await database
+    .update(rateLimit)
+    .set({ count: sql`${rateLimit.count} - 1` })
+    .where(and(inWindow, gt(rateLimit.count, 1)))
+    .returning({ id: rateLimit.id });
+  // The last one counted leaves nothing behind.
+  if (!released) await database.delete(rateLimit).where(and(eq(rateLimit.key, key), lte(rateLimit.count, 1)));
 }

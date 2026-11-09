@@ -4,7 +4,10 @@ import { user, verification } from "../database/auth-schema.ts";
 import type { Database } from "../database/client.ts";
 import { readBranding } from "../branding/branding.ts";
 import { renderSignInLinkEmail, SIGN_IN_LINK_LIFETIME_SECONDS } from "../email/sign-in-link-email.ts";
-import { readResendConfig, sendResendEmail } from "../email/resend.ts";
+import { EMAIL_KINDS } from "../email/kinds.ts";
+import { queueEmail } from "../email/outbox.ts";
+import { sendQueuedEmailNow } from "../email/outbox-sender.ts";
+import { readResendConfig } from "../email/resend.ts";
 import type { Environment } from "../environment.ts";
 import { resolveAppUrl } from "../http/app-url.ts";
 import { ROUTES } from "../http/routes.ts";
@@ -20,7 +23,6 @@ export { SIGN_IN_LINK_LIFETIME_SECONDS };
 export const SIGN_IN_LINK_IDENTIFIER_PREFIX = "magic-link:";
 const MAXIMUM_LINKS_PER_EMAIL_PER_MINUTE = 2;
 const MAXIMUM_LIVE_LINKS_PER_EMAIL = 5;
-const IDEMPOTENCY_TOKEN_PREFIX_LENGTH = 16;
 
 export function toSignInLinkUrl(environment: Environment, token: string) {
   return `${resolveAppUrl(environment)}${ROUTES.signInLink}?token=${encodeURIComponent(token)}`;
@@ -43,7 +45,7 @@ async function countLiveLinks(database: Database, email: string) {
 // Who gets a link: an active member with a real address. Everyone else gets the same answer and no email.
 async function readLinkRecipient(database: Database, email: string) {
   const [member] = await database
-    .select({ email: user.email, banned: user.banned, banExpires: user.banExpires })
+    .select({ id: user.id, email: user.email, banned: user.banned, banExpires: user.banExpires })
     .from(user)
     .where(eq(user.email, email));
   if (!member || isBanActive(member) || isReclaimedEmail(member.email)) return null;
@@ -63,11 +65,13 @@ async function sendSignInLink(database: Database, environment: Environment, { em
   if ((await countLiveLinks(database, normalizedEmail)) > MAXIMUM_LIVE_LINKS_PER_EMAIL) return;
 
   const { name: communityName, accentColor } = await readBranding(database);
-  await sendResendEmail(config, {
+  const queuedId = await queueEmail(database, environment, {
+    kind: EMAIL_KINDS.signInLink,
     to: recipient.email,
-    idempotencyKey: `sign-in-link-${token.slice(0, IDEMPOTENCY_TOKEN_PREFIX_LENGTH)}`,
+    memberId: recipient.id,
     ...renderSignInLinkEmail({ link: toSignInLinkUrl(environment, token), communityName, accentColor }),
   });
+  await sendQueuedEmailNow(database, environment, queuedId);
 }
 
 export async function sendSignInLinkSafely(database: Database, environment: Environment, request: { email: string; token: string }) {
@@ -78,7 +82,8 @@ export async function sendSignInLinkSafely(database: Database, environment: Envi
   }
 }
 
-// Runs after the response, so a known and an unknown email answer the same, in the same time.
+// Queuing waits until after the response, as the password reset does, so a known and an unknown email answer
+// the same, in the same time. Once queued, the outbox keeps the email until it goes out.
 export function createSignInLinkSender(database: Database, environment: Environment) {
   return async ({ email, token }: { email: string; token: string }) => {
     runAfterResponse(() => sendSignInLinkSafely(database, environment, { email, token }));

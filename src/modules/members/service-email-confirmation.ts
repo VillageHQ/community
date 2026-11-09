@@ -5,10 +5,13 @@ import { randomUUID } from "node:crypto";
 import { and, eq, gt } from "drizzle-orm";
 
 import { user, verification } from "../../platform/database/auth-schema.ts";
-import type { Database } from "../../platform/database/client.ts";
+import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
 import { readBranding } from "../../platform/branding/branding.ts";
-import { readResendConfig, sendResendEmail } from "../../platform/email/resend.ts";
+import { EMAIL_KINDS } from "../../platform/email/kinds.ts";
+import { queueEmail } from "../../platform/email/outbox.ts";
+import { sendQueuedEmailNow } from "../../platform/email/outbox-sender.ts";
+import { readResendConfig } from "../../platform/email/resend.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
 import { ROUTES } from "../../platform/http/routes.ts";
@@ -22,7 +25,6 @@ import { createInviteToken, hashInviteToken, isInviteTokenShape } from "./servic
 
 const CONFIRMATION_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
 const CONFIRMATION_IDENTIFIER_PREFIX = "email-confirmation";
-const IDEMPOTENCY_TOKEN_PREFIX_LENGTH = 16;
 const FORBIDDEN_STATUS = 403;
 const GONE_STATUS = 410;
 
@@ -32,7 +34,7 @@ export function toConfirmationIdentifier(memberId: string) {
   return `${CONFIRMATION_IDENTIFIER_PREFIX}:${memberId}`;
 }
 
-async function issueConfirmationToken(database: Database, memberId: string) {
+async function issueConfirmationToken(database: DatabaseOrTransaction, memberId: string) {
   const token = createInviteToken();
   await database.insert(verification).values({
     id: randomUUID(),
@@ -43,20 +45,23 @@ async function issueConfirmationToken(database: Database, memberId: string) {
   return token;
 }
 
+// The token and its email are saved together, so a link can't exist without an email on its way.
 export async function sendEmailConfirmation(database: Database, environment: Environment, account: ConfirmedAccount) {
-  const config = readResendConfig(environment);
-  if (!config) return false;
+  if (!readResendConfig(environment)) return false;
 
   try {
-    const token = await issueConfirmationToken(database, account.id);
-    const link = `${resolveAppUrl(environment)}${ROUTES.confirmEmail}?token=${token}`;
     const { name: communityName, accentColor } = await readBranding(database);
-    await sendResendEmail(config, {
-      to: account.email,
-      idempotencyKey: `confirm-${token.slice(0, IDEMPOTENCY_TOKEN_PREFIX_LENGTH)}`,
-      ...renderConfirmationEmail({ link, memberName: account.name, communityName, accentColor }),
+    const queuedId = await database.transaction(async (transaction) => {
+      const token = await issueConfirmationToken(transaction, account.id);
+      const link = `${resolveAppUrl(environment)}${ROUTES.confirmEmail}?token=${token}`;
+      return queueEmail(transaction, environment, {
+        kind: EMAIL_KINDS.emailConfirmation,
+        to: account.email,
+        memberId: account.id,
+        ...renderConfirmationEmail({ link, memberName: account.name, communityName, accentColor }),
+      });
     });
-    return true;
+    return await sendQueuedEmailNow(database, environment, queuedId);
   } catch (error) {
     logError("email-confirmation", error);
     return false;

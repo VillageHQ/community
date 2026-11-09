@@ -15,6 +15,8 @@ import { APP_VERSION } from "@/platform/app-version";
 import { readBranding } from "@/platform/branding/branding";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readResendConfig, type ResendConfig } from "@/platform/email/resend";
+import { readGivenUpEmails, type GivenUpEmail } from "@/platform/email/outbox-reads";
+import { Alert } from "@/components/ui/alert";
 import { ROUTES } from "@/platform/http/routes";
 import { requireAdmin } from "@/platform/auth/session";
 
@@ -22,6 +24,7 @@ import { AdminSection } from "@/shell/admin-section";
 import { AdminBrandCard, SetupChecklist } from "@/shell/setup-checklist";
 import { adminManifest } from "@/modules/admin/manifest";
 import { introsManifest } from "@/modules/intros/manifest";
+import { messagesManifest } from "@/modules/messages/manifest";
 import { networkManifest } from "@/modules/network/manifest";
 import { readEnabledIds } from "@/shell/enabled-modules";
 import { modulePage } from "@/platform/modules/module-page";
@@ -32,6 +35,9 @@ const EMAIL_ON_EFFECTS = [
   { text: "Members can sign in with a link we email them, or with their password." },
   { text: "Introducers and requesters get a short email about intro requests.", moduleId: introsManifest.id },
   { text: "An introducer can have us email the person being introduced a private link to say yes or no.", moduleId: introsManifest.id },
+  { text: "Members get an email for a new direct message, at most one per conversation every 15 minutes.", moduleId: messagesManifest.id },
+  { text: "Members can turn off intro and message emails from their card or from any of those emails." },
+  { text: "An email that fails is tried again for about five hours. If it still fails, you see it here." },
 ];
 
 const RESEND_URL = "https://resend.com";
@@ -95,7 +101,31 @@ function EmailOff({ enabledIds }: { enabledIds: ReadonlySet<string> }) {
   );
 }
 
-function EmailCard({ config, enabledIds }: { config: ResendConfig | null; enabledIds: ReadonlySet<string> }) {
+type GivenUp = { total: number; recent: GivenUpEmail[] };
+
+// The sender retries each email for about five hours, then gives up. The admin hears about it here.
+function GivenUpNotice({ givenUp }: { givenUp: GivenUp }) {
+  if (givenUp.total === 0) return null;
+  const count = givenUp.total === 1 ? "1 email" : `${givenUp.total} emails`;
+  return (
+    <Alert variant="destructive">
+      <div className="grid gap-2">
+        <p className="font-bold">{count} couldn&apos;t be sent this week</p>
+        <p>We tried each one for about five hours. Check your Resend key and domain, then send again from where it started, like Resend on an invite.</p>
+        <ul className="type-small grid gap-1">
+          {givenUp.recent.map(({ id, toEmail, subject, lastError }) => (
+            <li key={id} className="wrap-anywhere">
+              {subject} to {toEmail}
+              {lastError ? ` (${lastError})` : ""}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Alert>
+  );
+}
+
+function EmailCard({ config, enabledIds, givenUp }: { config: ResendConfig | null; enabledIds: ReadonlySet<string>; givenUp: GivenUp }) {
   const tag = config ? (
     <Tag tone="sage">
       <Mail aria-hidden="true" />
@@ -109,6 +139,7 @@ function EmailCard({ config, enabledIds }: { config: ResendConfig | null; enable
   );
   return (
     <SettingCard title="Email" tag={tag}>
+      <GivenUpNotice givenUp={givenUp} />
       {config ? <EmailOn fromAddress={config.fromAddress} enabledIds={enabledIds} /> : <EmailOff enabledIds={enabledIds} />}
     </SettingCard>
   );
@@ -153,7 +184,12 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
   const admin = await requireAdmin();
   const { step } = await searchParams;
   const database = getDatabase();
-  const [progress, branding, enabledIds] = await Promise.all([readSetupProgress(database), readBranding(database), readEnabledIds(database)]);
+  const [progress, branding, enabledIds, givenUp] = await Promise.all([
+    readSetupProgress(database),
+    readBranding(database),
+    readEnabledIds(database),
+    readGivenUpEmails(database),
+  ]);
   const keyState = await readVillageKeyState(database);
 
   return (
@@ -161,7 +197,7 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_312px]">
         <div className="grid gap-5">
           <SetupChecklist database={database} admin={admin} progress={progress} openStepId={parseSetupStep(step, progress.steps.map(({ id }) => id))} basePath={ROUTES.adminSettings} />
-          <EmailCard config={readResendConfig(process.env)} enabledIds={enabledIds} />
+          <EmailCard config={readResendConfig(process.env)} enabledIds={enabledIds} givenUp={givenUp} />
           <VillageSecretCard status={keyState.status} isNetworkOn={enabledIds.has(networkManifest.id)} />
           <VersionCard />
         </div>

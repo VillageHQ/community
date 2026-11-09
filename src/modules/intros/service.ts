@@ -10,7 +10,6 @@ import { memberBlock } from "../members/schema.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
-import { runAfterResponse } from "../../platform/observability/after-response.ts";
 import { readAskableConnectors } from "../network/service.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import { type RequestContext } from "../../platform/http/request-context.ts";
@@ -30,7 +29,9 @@ import {
   type IntroOutcomeBody,
   type IntroTransitionBody,
 } from "./contract.ts";
-import { deliverIntroEmail, INTRO_EMAIL_EVENTS, type IntroEmailEvent } from "./email.ts";
+import { INTRO_EMAIL_EVENTS, queueIntroEmail, type IntroEmailEvent } from "./email.ts";
+import { readEmailBranding } from "../../platform/email/outbox.ts";
+import { sendQueuedEmailsSoon } from "../../platform/email/outbox-sender.ts";
 import { sendConsentAskEmail } from "./email-target.ts";
 import { enforceIntroLimit, INTRO_LIMIT_KINDS } from "./limits.ts";
 import {
@@ -60,20 +61,6 @@ async function isBlockedBy(context: RequestContext, blockerId: string, blockedId
     .from(memberBlock)
     .where(and(eq(memberBlock.blockerId, blockerId), eq(memberBlock.blockedId, blockedId)));
   return block !== undefined;
-}
-
-function sendIntroEmail(context: RequestContext, intro: Intro, event: IntroEmailEvent) {
-  runAfterResponse(async () => {
-    await deliverIntroEmail(context.database, context.environment, {
-      introId: intro.id,
-      event,
-      requesterId: intro.requester.id,
-      introducerId: intro.introducer.id,
-      requesterName: intro.requester.name,
-      introducerName: intro.introducer.name,
-      targetName: intro.target.name,
-    });
-  });
 }
 
 async function readRequiredIntro(context: RequestContext, introId: string) {
@@ -134,26 +121,30 @@ export async function createIntroRequest(context: RequestContext, body: CreateIn
 
   await expireDueIntros(database, member.id);
   const createdAt = new Date();
-  const [created] = await database
-    .insert(introRequest)
-    .values({
-      ...asked,
-      requesterId: member.id,
-      targetLinkedinSlug: body.targetSlug,
-      note: body.note,
-      isWithheld,
-      createdAt,
-      expiresAt: readIntroDeadline(createdAt),
-    })
-    .onConflictDoNothing()
-    .returning({ id: introRequest.id });
+  const branding = isWithheld ? null : await readEmailBranding(database, context.environment);
+  const created = await database.transaction(async (transaction) => {
+    const [inserted] = await transaction
+      .insert(introRequest)
+      .values({
+        ...asked,
+        requesterId: member.id,
+        targetLinkedinSlug: body.targetSlug,
+        note: body.note,
+        isWithheld,
+        createdAt,
+        expiresAt: readIntroDeadline(createdAt),
+      })
+      .onConflictDoNothing()
+      .returning({ id: introRequest.id });
+    if (inserted) await queueIntroEmail(transaction, context.environment, branding, inserted.id, INTRO_EMAIL_EVENTS.asked);
+    return inserted;
+  });
   if (!created) {
     throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.duplicate, "You already have an open intro request with this person for this intro.");
   }
 
-  const intro = await readRequiredIntro(context, created.id);
-  if (!isWithheld) sendIntroEmail(context, intro, INTRO_EMAIL_EVENTS.asked);
-  return intro;
+  if (branding) sendQueuedEmailsSoon(database, context.environment);
+  return readRequiredIntro(context, created.id);
 }
 
 const ACTION_EMAILS: Partial<Record<IntroAction, IntroEmailEvent>> = {
@@ -198,6 +189,8 @@ export async function transitionIntro(context: RequestContext, body: IntroTransi
   const now = new Date();
   const isRequesterActing = actor === INTRO_ROLES.requester;
   const actorColumn = isRequesterActing ? introRequest.requesterId : introRequest.introducerId;
+  const emailEvent = ACTION_EMAILS[body.action];
+  const branding = emailEvent ? await readEmailBranding(database, environment) : null;
   const applied = await database.transaction(async (transaction) => {
     const [moved] = await transaction
     .update(introRequest)
@@ -214,13 +207,13 @@ export async function transitionIntro(context: RequestContext, body: IntroTransi
     )
     .returning({ id: introRequest.id });
     if (moved && issued) await saveConsentLink(transaction, moved.id, issued.tokenHash);
+    if (moved && emailEvent) await queueIntroEmail(transaction, environment, branding, moved.id, emailEvent);
     return moved;
   });
 
   const current = await readRequiredIntro(context, body.introId);
   if (applied) {
-    const emailEvent = ACTION_EMAILS[body.action];
-    if (emailEvent) sendIntroEmail(context, current, emailEvent);
+    if (branding) sendQueuedEmailsSoon(database, environment);
     return { ...current, consentIssue: issued?.consentIssue ?? null };
   }
   const landedState = actor === INTRO_ROLES.requester ? REQUESTER_STATES[nextState] : nextState;

@@ -9,7 +9,7 @@ import { readRateLimitClientKey } from "@/platform/http/client-ip";
 import { hasTrustedOrigin } from "@/platform/http/member-route";
 import { readJsonBody } from "@/platform/http/read-json-body";
 import { platformRoutes } from "@/platform/modules/platform-routes";
-import { recordFailedAttempt } from "@/platform/rate-limit/attempt-rate-limit";
+import { recordFailedAttempt, releaseAttempt } from "@/platform/rate-limit/attempt-rate-limit";
 import { pruneExpiredRateLimits } from "@/platform/rate-limit/rate-limit-pruning";
 
 const FORBIDDEN_STATUS = 403;
@@ -35,8 +35,10 @@ export const POST = platformRoutes.open(
 
     const database = getDatabase();
     await pruneExpiredRateLimits(database);
-    const clientKey = readRateLimitClientKey(request, process.env);
-    const { isLimited } = await recordFailedAttempt(database, `${RATE_LIMIT_KEY_PREFIX}|${clientKey}`);
+    // Only failed tries count: a sign-in gives its slot back, so members sharing one bucket (no trusted IP
+    // header) don't lock each other out, while token guesses sent all at once stay capped.
+    const rateLimitKey = `${RATE_LIMIT_KEY_PREFIX}|${readRateLimitClientKey(request, process.env)}`;
+    const { isLimited } = await recordFailedAttempt(database, rateLimitKey);
     if (isLimited) return respond("Too many tries. Wait a minute and try again.", TOO_MANY_REQUESTS_STATUS);
 
     const body = bodySchema.safeParse(await readJsonBody(request));
@@ -44,6 +46,7 @@ export const POST = platformRoutes.open(
 
     const result = await verifySignInLink(database, await getAuth(), request, body.data.token);
     if (!result.isSignedIn) return respond(UNUSABLE_MESSAGE, GONE_STATUS);
+    await releaseAttempt(database, rateLimitKey);
 
     const headers = new Headers({ "Cache-Control": "no-store" });
     for (const cookie of result.setCookies) headers.append("Set-Cookie", cookie);

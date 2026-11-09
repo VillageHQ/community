@@ -5,6 +5,7 @@ import { INVITE_EMAIL_STATUSES } from "./contract-invite-state.ts";
 import { MAXIMUM_AVATAR_BYTES } from "./contract-avatar.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import { bytea } from "../../platform/database/bytea.ts";
+import { emailOutbox } from "../../platform/email/schema.ts";
 
 const MILLISECOND_PRECISION = 3;
 
@@ -25,6 +26,8 @@ export const invite = pgTable(
     acceptedUserId: text("accepted_user_id").references(() => user.id, { onDelete: "set null" }),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     emailStatus: text("email_status").notNull().default(INVITE_EMAIL_STATUSES.notSent),
+    // The invite's latest queued email. Its outbox status is what the admin sees.
+    emailOutboxId: uuid("email_outbox_id").references(() => emailOutbox.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

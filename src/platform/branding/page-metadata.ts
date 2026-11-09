@@ -18,6 +18,7 @@ export const PAGE_TITLES = {
   welcome: "Welcome",
   join: "Your invite",
   confirmEmail: "Confirm your email",
+  unsubscribe: "Email settings",
   adminMembers: "Members admin",
   adminReports: "Reports",
   adminAuditLog: "Audit log",

@@ -34,6 +34,8 @@ services:
       DATABASE_URL: postgres://community:${POSTGRES_PASSWORD}@postgres:5432/community
       # Caddyfile overwrites this header on every request. Only Caddy can reach the app.
       CLIENT_IP_HEADER: x-real-ip
+      # The app calls its own jobs endpoint every minute: email retries and expiring old intro asks.
+      JOBS_SELF_TICK: "true"
     expose:
       - "3000"
     healthcheck:

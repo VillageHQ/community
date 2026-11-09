@@ -63,14 +63,16 @@ export function hasBothParticipantsJoined(database: Database) {
   );
 }
 
-export async function expireDueIntros(database: Database, memberId: string) {
+// With a member, expires only their asks, at read time. Without one (the timed sweep), every
+// due ask, so admin counts are right even when nobody opens the page. Each write still checks state.
+export async function expireDueIntros(database: Database, memberId: string | null) {
   const now = new Date();
   await database
     .update(introRequest)
     .set({ state: INTRO_STATES.expired, closedAt: now, requesterHasUpdate: true, ...CLOSES_CONSENT })
     .where(
       and(
-        or(eq(introRequest.requesterId, memberId), eq(introRequest.introducerId, memberId)),
+        memberId === null ? undefined : or(eq(introRequest.requesterId, memberId), eq(introRequest.introducerId, memberId)),
         inArray(introRequest.state, readStatesLeadingTo(INTRO_STATES.expired)),
         or(
           lte(introRequest.expiresAt, now),

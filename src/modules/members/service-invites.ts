@@ -9,7 +9,6 @@ import { account, user } from "../../platform/database/auth-schema.ts";
 import type { Database, DatabaseOrTransaction, Transaction } from "../../platform/database/client.ts";
 import { invite, memberProfile } from "./schema.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
-import { readBranding } from "../../platform/branding/branding.ts";
 import { ROUTES } from "../../platform/http/routes.ts";
 import { AUDIT_ACTIONS, type AuditAction } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
@@ -19,8 +18,13 @@ import { secretsMatch } from "../../platform/secrets/secrets-match.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import { type RequestContext } from "../../platform/http/request-context.ts";
 import { INVITE_ERROR_CODES, INVITE_FILTERS, type InviteFilter, type InviteSummary } from "./contract-invites.ts";
-import { deliverInviteEmail } from "./email-invites.ts";
+import { renderInviteEmail } from "./email-invites.ts";
+import { EMAIL_KINDS } from "../../platform/email/kinds.ts";
+import { cancelQueuedEmail, OUTBOX_STATUSES, queueEmail, readEmailBranding, type EmailBranding } from "../../platform/email/outbox.ts";
+import { emailOutbox } from "../../platform/email/schema.ts";
+import { sendQueuedEmailNow } from "../../platform/email/outbox-sender.ts";
 import {
+  INVITE_EMAIL_STATUSES,
   INVITE_STATES,
   parseInviteEmailStatus,
   readInviteExpiry,
@@ -74,16 +78,45 @@ export function toInviteLink(environment: RequestContext["environment"], token: 
   return `${resolveAppUrl(environment)}${ROUTES.join}/${token}`;
 }
 
-export async function issueInvite(context: RequestContext, row: InviteRow, token: string, message: string) {
+// Call inside the transaction that creates or renews the invite, so the email can't be lost.
+// Takes the branding read before the transaction (readEmailBranding); null means email is off.
+// A renewed invite's older email still waiting in the queue carries a dead link, so it is stopped.
+export async function queueInviteEmail(transaction: Transaction, { environment }: RequestContext, branding: EmailBranding | null, row: InviteRow, token: string) {
+  await cancelQueuedEmail(transaction, row.emailOutboxId);
+  const link = toInviteLink(environment, token);
+  const queuedId = branding
+    ? await queueEmail(transaction, environment, {
+        kind: EMAIL_KINDS.invite,
+        to: row.email,
+        memberId: null,
+        ...renderInviteEmail({ link, inviterName: row.invitedByName, communityName: branding.name, accentColor: branding.accentColor }),
+      })
+    : null;
+  await transaction.update(invite).set({ emailOutboxId: queuedId }).where(eq(invite.id, row.id));
+  return queuedId;
+}
+
+export function cancelInviteEmail(transaction: Transaction, row: Pick<InviteRow, "emailOutboxId">) {
+  return cancelQueuedEmail(transaction, row.emailOutboxId);
+}
+
+// The stored status is the first try. Once an email is queued, its outbox row tells the rest.
+function readLiveEmailStatus(stored: string, outboxStatus: string | null) {
+  if (outboxStatus === OUTBOX_STATUSES.sent) return INVITE_EMAIL_STATUSES.sent;
+  if (outboxStatus === OUTBOX_STATUSES.failed) return INVITE_EMAIL_STATUSES.failed;
+  if (outboxStatus === OUTBOX_STATUSES.pending || outboxStatus === OUTBOX_STATUSES.sending) return INVITE_EMAIL_STATUSES.retrying;
+  return stored;
+}
+
+// Tries the queued email at once, so the admin sees whether it went out. A failed try stays
+// queued, and the timed sender keeps trying.
+export async function issueInvite(context: RequestContext, row: InviteRow, token: string, message: string, queuedEmailId: string | null) {
   const { database, environment } = context;
   const link = toInviteLink(environment, token);
-  const { name: communityName, accentColor } = await readBranding(database);
-  const emailStatus = await deliverInviteEmail(
-    { to: row.email, link, inviterName: row.invitedByName, communityName, accentColor },
-    environment,
-  );
+  const isSent = queuedEmailId !== null && (await sendQueuedEmailNow(database, environment, queuedEmailId));
+  const emailStatus = queuedEmailId === null ? INVITE_EMAIL_STATUSES.notSent : isSent ? INVITE_EMAIL_STATUSES.sent : INVITE_EMAIL_STATUSES.retrying;
   await database.update(invite).set({ emailStatus }).where(eq(invite.id, row.id));
-  return { invite: toInviteSummary({ ...row, emailStatus }), link, message };
+  return { invite: toInviteSummary({ ...row, emailStatus, emailOutboxId: queuedEmailId }), link, message };
 }
 
 async function rotateInvite(connection: DatabaseOrTransaction, context: RequestContext, inviteId: string) {
@@ -133,6 +166,7 @@ export async function createInvite(context: RequestContext, email: string) {
   const { database, member } = context;
   const inviter = await readInviter(context);
   const token = createInviteToken();
+  const branding = await readEmailBranding(database, context.environment);
   const issued = await withAdminTransaction(database, member.id, async (transaction) => {
     await requireNoMemberWithEmail(transaction, email);
     const [created] = await transaction
@@ -148,22 +182,25 @@ export async function createInvite(context: RequestContext, email: string) {
       .returning();
     if (created) {
       await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteCreated, email);
-      return { row: created, token, message: "Invite created." };
+      const queuedEmailId = await queueInviteEmail(transaction, context, branding, created, token);
+      return { row: created, token, message: "Invite created.", queuedEmailId };
     }
     const { rotated, token: renewedToken } = await renewExpiredInvite(transaction, context, email);
     await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteResent, email);
-    return { row: rotated, token: renewedToken, message: "Invite renewed." };
+    const queuedEmailId = await queueInviteEmail(transaction, context, branding, rotated, renewedToken);
+    return { row: rotated, token: renewedToken, message: "Invite renewed.", queuedEmailId };
   });
-  return issueInvite(context, issued.row, issued.token, issued.message);
+  return issueInvite(context, issued.row, issued.token, issued.message, issued.queuedEmailId);
 }
 
 export async function resendInvite(context: RequestContext, inviteId: string) {
-  const { rotated, token } = await withAdminTransaction(context.database, context.member.id, async (transaction) => {
+  const branding = await readEmailBranding(context.database, context.environment);
+  const { rotated, token, queuedEmailId } = await withAdminTransaction(context.database, context.member.id, async (transaction) => {
     const result = await rotateInvite(transaction, context, inviteId);
     await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteResent, result.rotated.email);
-    return result;
+    return { ...result, queuedEmailId: await queueInviteEmail(transaction, context, branding, result.rotated, result.token) };
   });
-  return issueInvite(context, rotated, token, "New link ready. The old link no longer works.");
+  return issueInvite(context, rotated, token, "New link ready. The old link no longer works.", queuedEmailId);
 }
 
 export async function revokeInvite(context: RequestContext, inviteId: string) {
@@ -174,6 +211,7 @@ export async function revokeInvite(context: RequestContext, inviteId: string) {
       .where(and(eq(invite.id, inviteId), OPEN_INVITE))
       .returning();
     if (!row) throw inviteChangedError();
+    await cancelInviteEmail(transaction, row);
     await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteRevoked, row.email);
     return row;
   });
@@ -214,8 +252,9 @@ export async function readInvites(database: Database, requestedPage: number, fil
   const pageCount = Math.max(1, Math.ceil(matchCount / INVITE_PAGE_SIZE));
   const page = Math.min(requestedPage, pageCount);
   const invites = await database
-    .select()
+    .select({ row: invite, outboxStatus: emailOutbox.status })
     .from(invite)
+    .leftJoin(emailOutbox, eq(emailOutbox.id, invite.emailOutboxId))
     .where(INVITE_FILTER_CONDITIONS[filter](now))
     .orderBy(
       asc(isNotNull(invite.revokedAt)),
@@ -226,7 +265,13 @@ export async function readInvites(database: Database, requestedPage: number, fil
     )
     .limit(INVITE_PAGE_SIZE)
     .offset((page - 1) * INVITE_PAGE_SIZE);
-  return { invites: invites.map(toInviteSummary), page, pageCount, matchCount, counts };
+  return {
+    invites: invites.map(({ row, outboxStatus }) => toInviteSummary({ ...row, emailStatus: readLiveEmailStatus(row.emailStatus, outboxStatus) })),
+    page,
+    pageCount,
+    matchCount,
+    counts,
+  };
 }
 
 export async function hasOpenOrAcceptedInvite(database: Database) {
@@ -307,8 +352,10 @@ export async function acceptInvite(database: Database, token: string, { name, pa
         .update(invite)
         .set({ acceptedAt: now })
         .where(and(eq(invite.tokenHash, tokenHash), OPEN_INVITE, gt(invite.expiresAt, now)))
-        .returning({ id: invite.id, email: invite.email, company: invite.company });
+        .returning({ id: invite.id, email: invite.email, company: invite.company, emailOutboxId: invite.emailOutboxId });
       if (!claimed) return null;
+      // Accepted from the copied link: a still-queued invite email would only carry a used link.
+      await cancelInviteEmail(transaction, claimed);
 
       const [created] = await transaction
         .insert(user)
