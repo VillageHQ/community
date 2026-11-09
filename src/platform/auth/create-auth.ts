@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins/admin";
+import { magicLink } from "better-auth/plugins/magic-link";
 
 import * as authSchema from "../database/auth-schema.ts";
 import type { Database } from "../database/client.ts";
@@ -13,8 +14,10 @@ import type { Environment } from "../environment.ts";
 import { PASSWORD_RESET_LIFETIME_SECONDS, recordPasswordReset, sendResetEmailSafely } from "./password-recovery.ts";
 import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "./password-policy.ts";
 import { AUTH_BASE_PATH } from "../http/routes.ts";
+import { createSignInLinkSender, SIGN_IN_LINK_LIFETIME_SECONDS } from "./sign-in-link.ts";
 
 const PASSWORD_RESET_RATE_LIMIT = { window: 60, max: 5 };
+const SIGN_IN_LINK_RATE_LIMIT = { window: 60, max: 5 };
 
 function createResetEmailSender(database: Database, environment: Environment) {
   if (!readResendConfig(environment)) return undefined;
@@ -46,12 +49,24 @@ export function createAuth(secret: string, database: Database, environment: Envi
       customRules: {
         "/request-password-reset": PASSWORD_RESET_RATE_LIMIT,
         "/reset-password": PASSWORD_RESET_RATE_LIMIT,
+        "/sign-in/magic-link": SIGN_IN_LINK_RATE_LIMIT,
       },
     },
     advanced: {
       ipAddress: { ipAddressHeaders: resolveClientIpHeaders(environment) },
     },
-    hooks: { before: createAuthGuards() },
-    plugins: [admin()],
+    hooks: { before: createAuthGuards({ isEmailOn: readResendConfig(environment) !== null }) },
+    plugins: [
+      admin(),
+      // Members only: no sign-up, the token is stored hashed and used once. The emailed link opens our confirm
+      // page, and only its POST route reaches the verify endpoint (see auth-endpoints.ts).
+      magicLink({
+        sendMagicLink: createSignInLinkSender(database, environment),
+        expiresIn: SIGN_IN_LINK_LIFETIME_SECONDS,
+        disableSignUp: true,
+        storeToken: "hashed",
+        rateLimit: SIGN_IN_LINK_RATE_LIMIT,
+      }),
+    ],
   });
 }

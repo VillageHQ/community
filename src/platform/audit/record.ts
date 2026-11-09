@@ -23,3 +23,10 @@ export async function recordAdminAction(connection: DatabaseOrTransaction, actor
   const actorName = await readActorName(connection, actorId);
   await connection.insert(adminAuditEntry).values({ ...facts, actorId, actorName });
 }
+
+// Many entries by one admin in one insert, for bulk work like a list of invites.
+export async function recordAdminActions(connection: DatabaseOrTransaction, actorId: string, entries: AuditFacts[]) {
+  if (entries.length === 0) return;
+  const actorName = await readActorName(connection, actorId);
+  await connection.insert(adminAuditEntry).values(entries.map((facts) => ({ ...facts, actorId, actorName })));
+}

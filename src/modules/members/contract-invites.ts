@@ -134,3 +134,5 @@ export const waitingMemberSchema = z.object({
 export type WaitingMember = z.infer<typeof waitingMemberSchema>;
 
 export const waitingMembersSchema = z.object({ members: z.array(waitingMemberSchema), waitingCount: z.number() });
+
+export const addPasswordBodySchema = z.object({ password: acceptFieldsBodySchema.shape.password });

@@ -13,6 +13,10 @@ export const invite = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     email: text("email").notNull(),
+    // From a bulk list or CSV: the join form starts with the name, and the company goes on the new member's card.
+    inviteeName: text("invitee_name"),
+    company: text("company"),
+    cohort: text("cohort"),
     tokenHash: text("token_hash").notNull().unique(),
     invitedByUserId: text("invited_by_user_id").references(() => user.id, { onDelete: "set null" }),
     invitedByName: text("invited_by_name").notNull(),

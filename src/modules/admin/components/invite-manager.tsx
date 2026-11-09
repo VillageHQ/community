@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import type { IssuedInvite } from "@/modules/members/contract-invites";
 
+import { BulkInviteForm } from "@/modules/members/components/shared/bulk-invite-form";
 import { InviteForm } from "@/modules/members/components/shared/invite-form";
 import { InviteList } from "./invite-list";
 import { LinkedinClaimCard } from "@/modules/members/components/shared/linkedin-claim-card";
@@ -35,6 +36,13 @@ export function InviteManager({ isEmailConfigured, viewerId, initialSearch }: In
           issued={issued?.from === ISSUED_FROM.form ? issued.invite : null}
           onIssued={(invite) => setIssued({ from: ISSUED_FROM.form, invite })}
         />
+      </Card>
+      <Card className="grid gap-4 sm:rounded-panel sm:p-7">
+        <div className="grid gap-1.5">
+          <CardTitle>Invite many people</CardTitle>
+          <CardDescription>Each person gets their own invite. We name anyone we skip and every line we can&apos;t read.</CardDescription>
+        </div>
+        <BulkInviteForm isEmailConfigured={isEmailConfigured} />
       </Card>
       <InviteList
         isEmailConfigured={isEmailConfigured}

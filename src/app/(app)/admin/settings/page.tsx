@@ -29,6 +29,7 @@ import { modulePage } from "@/platform/modules/module-page";
 const EMAIL_ON_EFFECTS = [
   { text: "Invites go out by email, and you can still copy the link." },
   { text: "New members confirm their own email from a link we send." },
+  { text: "Members can sign in with a link we email them, or with their password." },
   { text: "Introducers and requesters get a short email about intro asks.", moduleId: introsManifest.id },
 ];
 
@@ -37,6 +38,7 @@ const RESEND_URL = "https://resend.com";
 const EMAIL_OFF_EFFECTS = [
   { text: "You copy each invite link and send it yourself." },
   { text: "You confirm each new member by hand in Members." },
+  { text: "Members sign in with their password only. Sign-in links need email." },
   { text: "They can't use network search until you do.", moduleId: networkManifest.id },
   { text: "Intro asks only show up as a badge in the app.", moduleId: introsManifest.id },
 ];

@@ -3,6 +3,7 @@ export const ADMIN_CREATED_PARAM = "adminCreated";
 export const ROUTES = {
   feed: "/",
   signIn: "/sign-in",
+  signInLink: "/sign-in/link",
   signInAsNewAdmin: `/sign-in?${ADMIN_CREATED_PARAM}=true`,
   signUp: "/sign-up",
   forgotPassword: "/forgot-password",
@@ -33,6 +34,8 @@ export const AUTH_BASE_PATH = "/api/auth";
 export const API_ROUTES = {
   setup: "/api/setup",
   recoverAdmin: "/api/recover-admin",
+  signInLink: "/api/sign-in-link",
+  profilePassword: "/api/profile/password",
   branding: "/api/admin/branding",
   brandingLogo: "/api/branding/logo",
   networkStatus: "/api/network/status",
@@ -48,6 +51,7 @@ export const API_ROUTES = {
   inviteRevoke: "/api/admin/invites/revoke",
   inviteReclaim: "/api/admin/invites/reclaim",
   inviteAccept: "/api/invites/accept",
+  inviteBulk: "/api/admin/invites/bulk",
   waitingMembers: "/api/admin/members/waiting",
   memberConfirm: "/api/admin/members/confirm",
   memberClearLinkedin: "/api/admin/members/clear-linkedin",
