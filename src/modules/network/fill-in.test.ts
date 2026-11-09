@@ -235,4 +235,21 @@ describe("profile fill-in", () => {
     expect(responses.map(({ status }) => status).toSorted()).toEqual([200, 409]);
     expect(village.readRequests(BY_EMAIL_PATH)).toHaveLength(2);
   });
+
+  it("keeps a member's hides when fill-in is turned off and on again", async () => {
+    await recordTermsBasis();
+    await runFillIn(database, process.env);
+    await postVisibility(post(member, { field: FILL_IN_FIELDS.company, isHidden: true }));
+
+    await postFillInBasis(post(admin, { basis: "off" }));
+    const [kept] = await database.select().from(memberFillIn).where(eq(memberFillIn.userId, member.userId));
+    expect(kept).toMatchObject({ field: "company", value: "" });
+    await recordTermsBasis();
+    await makeLookupStale(member.userId);
+    village.state.profilesByUrl.set("https://www.linkedin.com/in/riley-example", createFakeProfile());
+    await runFillIn(database, process.env);
+
+    const profile = await readMemberProfile(database, member.userId);
+    expect(profile?.shown).toMatchObject({ title: "Head of Partnerships", company: null });
+  });
 });

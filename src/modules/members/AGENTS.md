@@ -20,6 +20,6 @@ Rules:
 - Never store an invite token. Store its hash, and compare in constant time.
 - Every admin change writes the audit log in the same transaction, through `withAdminTransaction`.
 - Filled-in lines never go into `member_profile`. The member's own words always win (`readShownCard`), and a filled-in face or logo shows only without an uploaded photo.
-- The fill-in gate is `isLookupAllowed`: no basis, nobody; "Don't look me up" always wins, and deletes the lines. `saveFilledProfile` checks it again under the row lock.
+- The fill-in gate is `isLookupAllowed`: no basis, nobody; "Don't look me up" always wins, and deletes the lines (a hidden line keeps its hide, with no words). `saveFilledProfile` checks it again under the row lock.
 - A refresh never touches `hidden_at`, so a hidden line stays hidden.
 - Tests are next to the code. They run against real route handlers and a real database.

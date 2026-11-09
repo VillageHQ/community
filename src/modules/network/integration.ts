@@ -6,12 +6,15 @@ import { networkManifest } from "./manifest";
 import { FILL_IN_JOB_NAME, FILL_IN_LEASE_MS, runFillIn } from "./service-fill-in";
 
 const HOUR_MS = 60 * 60_000;
-// The fill-in runs once a night, in the hour after 02:00 UTC. The job is checked every hour, so a
-// server that was asleep at 02:00 simply waits for the next night.
-const NIGHTLY_HOUR_UTC = 2;
+// The fill-in runs at night, from 02:00 to 05:59 UTC, checked every hour. A run finds only members
+// who are due, so the later hours cost nothing once the first has run, and an admin's run just
+// before 02:00 can't make the night skip.
+const NIGHT_STARTS_UTC = 2;
+const NIGHT_ENDS_UTC = 6;
 
 export function isFillInHour(now = new Date()) {
-  return now.getUTCHours() === NIGHTLY_HOUR_UTC;
+  const hour = now.getUTCHours();
+  return hour >= NIGHT_STARTS_UTC && hour < NIGHT_ENDS_UTC;
 }
 
 export const networkModule: ModuleIntegration = {

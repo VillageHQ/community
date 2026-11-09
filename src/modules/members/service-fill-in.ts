@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, isNull, lt, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, lt, ne, notInArray, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { linkedinUrl as linkedinProfileUrl } from "@villagehq/sdk";
 
@@ -43,6 +43,14 @@ export async function readFillInSettings(database: DatabaseOrTransaction): Promi
   return { basis, termsDate: basis === FILL_IN_BASES.terms ? (settings.get(INSTANCE_SETTING_KEYS.fillInTermsDate) ?? null) : null };
 }
 
+// Removes what public profiles said, for one member or everyone. A hidden line keeps only its hide,
+// with no words, so it stays hidden if the member is ever filled in again.
+async function removeFilledLines(transaction: DatabaseOrTransaction, memberId: string | null) {
+  const ofMember = memberId ? eq(memberFillIn.userId, memberId) : undefined;
+  await transaction.delete(memberFillIn).where(and(ofMember, isNull(memberFillIn.hiddenAt)));
+  await transaction.update(memberFillIn).set({ value: "" }).where(and(ofMember, isNotNull(memberFillIn.hiddenAt)));
+}
+
 // Call inside the admin's audited transaction. Turning fill-in off also removes every filled-in
 // line, so nothing from public profiles stays on a card without a basis to show it.
 export async function saveFillInSettings(transaction: DatabaseOrTransaction, body: FillInBasisBody) {
@@ -50,7 +58,7 @@ export async function saveFillInSettings(transaction: DatabaseOrTransaction, bod
     await transaction
       .delete(instanceSettings)
       .where(inArray(instanceSettings.key, [INSTANCE_SETTING_KEYS.fillInBasis, INSTANCE_SETTING_KEYS.fillInTermsDate]));
-    await transaction.delete(memberFillIn);
+    await removeFilledLines(transaction, null);
     return;
   }
   await saveSettings(transaction, {
@@ -98,7 +106,7 @@ export async function saveLookupChoice(database: Database, memberId: string, all
   const choice = allowsLookup ? { consentedAt: now, refusedAt: null } : { consentedAt: null, refusedAt: now };
   await database.transaction(async (transaction) => {
     await transaction.insert(memberLookup).values({ userId: memberId, ...choice }).onConflictDoUpdate({ target: memberLookup.userId, set: choice });
-    if (!allowsLookup) await transaction.delete(memberFillIn).where(eq(memberFillIn.userId, memberId));
+    if (!allowsLookup) await removeFilledLines(transaction, memberId);
   });
 }
 
@@ -213,7 +221,7 @@ export async function setFillInHidden(database: Database, memberId: string, fiel
 }
 
 export async function readFilledLines(database: Database, memberId: string): Promise<FilledLine[]> {
-  const rows = await database.select().from(memberFillIn).where(eq(memberFillIn.userId, memberId));
+  const rows = await database.select().from(memberFillIn).where(and(eq(memberFillIn.userId, memberId), ne(memberFillIn.value, "")));
   const order = (field: string) => FILL_IN_FIELD_VALUES.indexOf(field as FillInField);
   return rows.toSorted((first, second) => order(first.field) - order(second.field)).map(({ field, value, filledAt, hiddenAt }) => ({ field: field as FillInField, value, filledAt: filledAt.toISOString(), isHidden: hiddenAt !== null }));
 }
@@ -227,7 +235,7 @@ export async function readShownFillIn(database: Database, memberId: string) {
   const rows = await database
     .select({ field: memberFillIn.field, value: memberFillIn.value, filledAt: memberFillIn.filledAt, hiddenAt: memberFillIn.hiddenAt })
     .from(memberFillIn)
-    .where(eq(memberFillIn.userId, memberId));
+    .where(and(eq(memberFillIn.userId, memberId), ne(memberFillIn.value, "")));
   const hidesHeadline = rows.some(({ field, hiddenAt }) => hiddenAt !== null && (field === FILL_IN_FIELDS.title || field === FILL_IN_FIELDS.company));
   const shown = rows.filter(({ field, hiddenAt }) => hiddenAt === null && !(hidesHeadline && field === FILL_IN_FIELDS.headline));
   return new Map(shown.map(({ field, value, filledAt }) => [field as FillInField, { value, filledAt }]));
