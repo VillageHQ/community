@@ -1,14 +1,8 @@
 import { pickOnAccent } from "../../platform/design/accent.ts";
 import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
-import { readResendConfig, sendResendEmail } from "../../platform/email/resend.ts";
-import type { Environment } from "../../platform/environment.ts";
-import { logError } from "../../platform/observability/route-logging.ts";
-import { INVITE_EMAIL_STATUSES, INVITE_LIFETIME_DAYS } from "./contract-invite-state.ts";
-
-const IDEMPOTENCY_TOKEN_PREFIX_LENGTH = 16;
+import { INVITE_LIFETIME_DAYS } from "./contract-invite-state.ts";
 
 type InviteEmailFacts = {
-  to: string;
   link: string;
   inviterName: string;
   communityName: string;
@@ -51,19 +45,4 @@ export function renderConfirmationEmail({ link, memberName, communityName, accen
   ].join("");
   const text = `${opening}\n\nConfirm my email: ${link}\n\n${warning}`;
   return { subject, html, text };
-}
-
-export async function deliverInviteEmail(facts: InviteEmailFacts, environment: Environment) {
-  const config = readResendConfig(environment);
-  if (!config) return INVITE_EMAIL_STATUSES.notSent;
-
-  const token = new URL(facts.link).pathname.split("/").at(-1) ?? "";
-  const idempotencyKey = `invite-${token.slice(0, IDEMPOTENCY_TOKEN_PREFIX_LENGTH)}`;
-  try {
-    await sendResendEmail(config, { to: facts.to, idempotencyKey, ...renderInviteEmail(facts) });
-    return INVITE_EMAIL_STATUSES.sent;
-  } catch (error) {
-    logError("invite-email", error);
-    return INVITE_EMAIL_STATUSES.failed;
-  }
 }

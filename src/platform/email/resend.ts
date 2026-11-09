@@ -6,7 +6,14 @@ const SEND_TIMEOUT_MS = 8_000;
 
 export type ResendConfig = { apiKey: string; fromAddress: string; apiUrl: string };
 
-type OutgoingEmail = { to: string | readonly string[]; subject: string; html: string; text: string; idempotencyKey: string };
+type OutgoingEmail = {
+  to: string | readonly string[];
+  subject: string;
+  html: string;
+  text: string;
+  idempotencyKey: string;
+  headers?: Readonly<Record<string, string>>;
+};
 
 export function readResendConfig(environment: Environment): ResendConfig | null {
   const apiKey = environment.RESEND_API_KEY?.trim();
@@ -29,6 +36,7 @@ export async function sendResendEmail({ apiKey, fromAddress, apiUrl }: ResendCon
       subject: email.subject,
       html: email.html,
       text: email.text,
+      ...(email.headers ? { headers: email.headers } : {}),
     }),
     signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
   });

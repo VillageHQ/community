@@ -12,7 +12,10 @@ import { resolveAppUrl } from "../http/app-url.ts";
 import { readBranding } from "../branding/branding.ts";
 import { recordFailedAttempt } from "../rate-limit/attempt-rate-limit.ts";
 import { PASSWORD_RESET_LIFETIME_SECONDS, renderPasswordResetEmail } from "../email/password-reset-email.ts";
-import { readResendConfig, sendResendEmail } from "../email/resend.ts";
+import { EMAIL_KINDS } from "../email/kinds.ts";
+import { queueEmail } from "../email/outbox.ts";
+import { sendQueuedEmailNow } from "../email/outbox-sender.ts";
+import { readResendConfig } from "../email/resend.ts";
 import type { Environment } from "../environment.ts";
 import { isReclaimedEmail } from "./reclaimed-email.ts";
 import { isActiveMember, isBanActive } from "./member-status.ts";
@@ -20,7 +23,6 @@ import { logError } from "../observability/route-logging.ts";
 import { ROUTES } from "../http/routes.ts";
 
 const CREDENTIAL_PROVIDER_ID = "credential";
-const IDEMPOTENCY_TOKEN_PREFIX_LENGTH = 16;
 const MAXIMUM_RESET_EMAILS_PER_MINUTE = 3;
 
 export { PASSWORD_RESET_LIFETIME_SECONDS };
@@ -41,11 +43,13 @@ async function sendResetEmail(database: Database, environment: Environment, { me
 
   const { name: communityName, accentColor } = await readBranding(database);
   const link = `${resolveAppUrl(environment)}${ROUTES.resetPassword}?token=${encodeURIComponent(token)}`;
-  await sendResendEmail(config, {
+  const queuedId = await queueEmail(database, environment, {
+    kind: EMAIL_KINDS.passwordReset,
     to: member.email,
-    idempotencyKey: `password-reset-${token.slice(0, IDEMPOTENCY_TOKEN_PREFIX_LENGTH)}`,
+    memberId,
     ...renderPasswordResetEmail({ link, communityName, accentColor }),
   });
+  await sendQueuedEmailNow(database, environment, queuedId);
 }
 
 export async function sendResetEmailSafely(database: Database, environment: Environment, request: ResetRequest) {

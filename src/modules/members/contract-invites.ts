@@ -71,6 +71,7 @@ const inviteStateSchema = z.enum([
 const inviteEmailStatusSchema = z.enum([
   INVITE_EMAIL_STATUSES.notSent,
   INVITE_EMAIL_STATUSES.sent,
+  INVITE_EMAIL_STATUSES.retrying,
   INVITE_EMAIL_STATUSES.failed,
 ]);
 

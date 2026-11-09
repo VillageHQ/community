@@ -2,16 +2,18 @@ import { and, eq, gt, notExists } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { user } from "../../platform/database/auth-schema.ts";
-import type { Database } from "../../platform/database/client.ts";
+import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
 import { introRequest } from "./schema.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
-import { readBranding } from "../../platform/branding/branding.ts";
 import { pickOnAccent } from "../../platform/design/accent.ts";
 import { readFirstName } from "../../platform/design/avatar-identity.ts";
 import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
-import { readResendConfig, sendResendEmail } from "../../platform/email/resend.ts";
+import { EMAIL_KINDS, type EmailKind } from "../../platform/email/kinds.ts";
+import { queueEmail, readEmailBranding, type EmailBranding } from "../../platform/email/outbox.ts";
+import { sendQueuedEmailNow } from "../../platform/email/outbox-sender.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
+import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import { ROUTES } from "../../platform/http/routes.ts";
 
 export const ASKED_EMAIL_COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -96,6 +98,17 @@ const RECIPIENT_BY_EVENT: Record<IntroEmailEvent, keyof IntroEmailParticipants> 
 
 type IntroEmailParticipants = { requesterId: string; introducerId: string };
 
+const KIND_BY_EVENT: Record<IntroEmailEvent, EmailKind> = {
+  [INTRO_EMAIL_EVENTS.asked]: EMAIL_KINDS.introAsked,
+  [INTRO_EMAIL_EVENTS.declined]: EMAIL_KINDS.introDeclined,
+  [INTRO_EMAIL_EVENTS.targetAgreed]: EMAIL_KINDS.introUpdate,
+  [INTRO_EMAIL_EVENTS.targetDeclined]: EMAIL_KINDS.introUpdate,
+  [INTRO_EMAIL_EVENTS.joinNeeded]: EMAIL_KINDS.introUpdate,
+  [INTRO_EMAIL_EVENTS.joined]: EMAIL_KINDS.introUpdate,
+  [INTRO_EMAIL_EVENTS.outcomeAsked]: EMAIL_KINDS.introUpdate,
+  [INTRO_EMAIL_EVENTS.outcomeReminder]: EMAIL_KINDS.introUpdate,
+};
+
 export type IntroEmailFacts = IntroEmailParticipants & IntroEmailNames & { introId: string; event: IntroEmailEvent };
 
 export function renderIntroEmail(event: IntroEmailEvent, names: IntroEmailNames, link: string, accentColor: string) {
@@ -116,7 +129,7 @@ export function renderIntroEmail(event: IntroEmailEvent, names: IntroEmailNames,
 
 const recentAsk = alias(introRequest, "recent_ask");
 
-async function claimAskedEmail(database: Database, { introId, requesterId, introducerId }: IntroEmailFacts) {
+async function claimAskedEmail(database: DatabaseOrTransaction, introId: string, { requesterId, introducerId }: IntroEmailParticipants) {
   const now = new Date();
   const recentlyEmailed = database
     .select({ id: recentAsk.id })
@@ -136,28 +149,56 @@ async function claimAskedEmail(database: Database, { introId, requesterId, intro
   return claimed.length > 0;
 }
 
-// Resolves true only when Resend took the email. Failures are logged, never thrown.
+// Call inside the transaction that makes the move. The cooldown stamp and the queued email are
+// saved together, so an ask is never marked emailed without an email on its way. One email per
+// intro and event: a repeat finds the row already queued.
+export async function queueIntroEmail(
+  transaction: DatabaseOrTransaction,
+  environment: Environment,
+  branding: EmailBranding | null,
+  introId: string,
+  event: IntroEmailEvent,
+) {
+  if (!branding) return null;
+
+  const [intro] = await transaction
+    .select({
+      requesterId: introRequest.requesterId,
+      introducerId: introRequest.introducerId,
+      introducerName: introRequest.introducerName,
+      targetName: introRequest.targetName,
+      requesterName: user.name,
+    })
+    .from(introRequest)
+    .innerJoin(user, eq(user.id, introRequest.requesterId))
+    .where(eq(introRequest.id, introId));
+  if (!intro) return null;
+  if (event === INTRO_EMAIL_EVENTS.asked && !(await claimAskedEmail(transaction, introId, intro))) return null;
+
+  const recipientId = intro[RECIPIENT_BY_EVENT[event]];
+  const [recipient] = await transaction.select({ email: user.email }).from(user).where(eq(user.id, recipientId));
+  if (!recipient) return null;
+
+  const link = `${resolveAppUrl(environment)}${ROUTES.intros}/${introId}`;
+  const names = { requesterName: removeBidiControls(intro.requesterName), introducerName: intro.introducerName, targetName: intro.targetName };
+  return queueEmail(transaction, environment, {
+    kind: KIND_BY_EVENT[event],
+    to: recipient.email,
+    memberId: recipientId,
+    dedupeKey: `intro-${event}-${introId}`,
+    ...renderIntroEmail(event, names, link, branding.accentColor),
+  });
+}
+
+// For moves that happen outside a member's request (a target's answer, the outcome emails).
+// Resolves true once the email has gone out. A failed try stays queued, and the timed sender
+// keeps trying it. Failures are logged, never thrown.
 export async function deliverIntroEmail(database: Database, environment: Environment, facts: IntroEmailFacts) {
-  const config = readResendConfig(environment);
-  if (!config) return false;
-
   try {
-    if (facts.event === INTRO_EMAIL_EVENTS.asked && !(await claimAskedEmail(database, facts))) return false;
-
-    const [recipient] = await database
-      .select({ email: user.email })
-      .from(user)
-      .where(eq(user.id, facts[RECIPIENT_BY_EVENT[facts.event]]));
-    if (!recipient) return false;
-
-    const { accentColor } = await readBranding(database);
-    const link = `${resolveAppUrl(environment)}${ROUTES.intros}/${facts.introId}`;
-    await sendResendEmail(config, {
-      to: recipient.email,
-      idempotencyKey: `intro-${facts.event}-${facts.introId}`,
-      ...renderIntroEmail(facts.event, facts, link, accentColor),
-    });
-    return true;
+    const branding = await readEmailBranding(database, environment);
+    if (!branding) return false;
+    const queuedId = await database.transaction((transaction) => queueIntroEmail(transaction, environment, branding, facts.introId, facts.event));
+    return await sendQueuedEmailNow(database, environment, queuedId);
   } catch (error) {
     logError("intro-email", error);
     return false;

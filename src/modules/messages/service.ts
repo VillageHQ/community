@@ -13,6 +13,10 @@ import { readPeerId, toConversationPair } from "./rules-conversation-pair.ts";
 import { MESSAGE_ERROR_CODES, type MarkReadBody, type SendMessageBody } from "./contract.ts";
 import { isConversationParticipant, isMessageVisibleTo, readMessageForViewer } from "./reads.ts";
 import { enforceMessagingLimit, MESSAGING_KINDS } from "./limits.ts";
+import { queueMessageEmail } from "./email.ts";
+import { readEmailBranding, type EmailBranding } from "../../platform/email/outbox.ts";
+import { sendQueuedEmailsSoon } from "../../platform/email/outbox-sender.ts";
+import type { Environment } from "../../platform/environment.ts";
 
 const FORBIDDEN_STATUS = 403;
 const NOT_FOUND_STATUS = 404;
@@ -117,10 +121,12 @@ function peerUnavailableError() {
   return new RequestError(CONFLICT_STATUS, MESSAGE_ERROR_CODES.peerUnavailable, "This member isn't available right now.");
 }
 
-async function insertMessage(transaction: Transaction, memberId: string, { conversationId, clientKey, body }: SendMessageBody) {
+type Sender = { environment: Environment; branding: EmailBranding | null; memberId: string };
+
+async function insertMessage(transaction: Transaction, { environment, branding, memberId }: Sender, { conversationId, clientKey, body }: SendMessageBody) {
   const target = await lockConversation(transaction, conversationId, memberId);
   const racedMessageId = await readOwnMessageIdByKey(transaction, { conversationId, clientKey }, memberId);
-  if (racedMessageId) return racedMessageId;
+  if (racedMessageId) return { messageId: racedMessageId, isEmailQueued: false };
 
   const peerId = readPeerId(target, memberId);
   const { isBlockedByMe, isBlockedByPeer } = await readBlockDirections(transaction, memberId, peerId);
@@ -142,7 +148,8 @@ async function insertMessage(transaction: Transaction, memberId: string, { conve
     })
     .returning({ id: directMessage.id });
   if (!created) throw conversationGoneError();
-  return created.id;
+  const queuedEmailId = isBlockedByPeer ? null : await queueMessageEmail(transaction, environment, branding, { conversationId, senderId: memberId, recipientId: peerId });
+  return { messageId: created.id, isEmailQueued: queuedEmailId !== null };
 }
 
 async function readRequiredMessage(database: Database, viewerId: string, messageId: string) {
@@ -151,12 +158,14 @@ async function readRequiredMessage(database: Database, viewerId: string, message
   return message;
 }
 
-export async function sendMessage({ database, member }: RequestContext, body: SendMessageBody) {
+export async function sendMessage({ database, environment, member }: RequestContext, body: SendMessageBody) {
   const alreadySentId = await readOwnMessageIdByKey(database, body, member.id);
   if (alreadySentId) return readRequiredMessage(database, member.id, alreadySentId);
 
   await enforceMessagingLimit(database, member.id, MESSAGING_KINDS.send);
-  const messageId = await database.transaction((transaction) => insertMessage(transaction, member.id, body));
+  const sender = { environment, branding: await readEmailBranding(database, environment), memberId: member.id };
+  const { messageId, isEmailQueued } = await database.transaction((transaction) => insertMessage(transaction, sender, body));
+  if (isEmailQueued) sendQueuedEmailsSoon(database, environment);
   return readRequiredMessage(database, member.id, messageId);
 }
 

@@ -65,6 +65,10 @@ The person opens the link, chooses a name and password, and lands in a short fir
 
 **Email is optional:** To send invites and intro notices by email, [add two settings on your host](#changing-a-setting-on-your-host): `RESEND_API_KEY`, the key from your [Resend](https://resend.com) account, and `RESEND_FROM_ADDRESS`, a sender on a domain you verified there. The deploy buttons don't ask for these. **Admin**, **Settings** shows whether email is on and what that changes.
 
+**How email is sent:** Each email is saved in the database together with the change that causes it, then sent right away. If Resend is down, it's tried again for about five hours, and nothing is sent twice. An email that still fails shows up in **Admin**, **Settings**. Intro and message emails carry a one-click unsubscribe, and members can turn them off on their card. To stop email to addresses that bounce or mark you as spam, add a Resend webhook for `email.bounced` and `email.complained` pointing at `/api/email/resend-webhook`, and set `RESEND_WEBHOOK_SECRET` to its signing secret.
+
+**Timed jobs:** Retries and expiring old intro asks run every minute. Your own server with `install.sh` does this by itself. On other hosts, have a scheduler call `POST /api/jobs/tick` every minute with `Authorization: Bearer <JOBS_TICK_SECRET>` (on Vercel, a Cron Job with `CRON_SECRET` set works), or set `JOBS_SELF_TICK=true` if the app runs as one long-lived server. Without either, emails still go out right away; only the retries wait for the next request that sends email.
+
 ## Running your community
 
 Everything lives in **Admin**.
@@ -213,7 +217,7 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 | Your own server, with `install.sh` | `x-real-ip` | Tested: Caddy overwrites a client-sent value, and only Caddy can reach the app. |
 | Anywhere else | None by default | Set `CLIENT_IP_HEADER` only if your proxy overwrites that header and clients can't reach the app directly. |
 
-With no trusted header, all clients share one bucket per path. That can't be spoofed, but one abuser can throttle sign-in for everyone, at 3 attempts per 10 seconds. Once a live test shows DigitalOcean replaces a client-sent `do-connecting-ip`, set `CLIENT_IP_HEADER=do-connecting-ip`.
+With no trusted header, sign-in is limited per account instead: 5 wrong passwords in a minute pause that one account, and nobody else. Other paths, like password-reset requests, share one bucket per path, which can't be spoofed. Once a live test shows DigitalOcean replaces a client-sent `do-connecting-ip`, set `CLIENT_IP_HEADER=do-connecting-ip`.
 
 ### Environment variables
 
@@ -230,6 +234,9 @@ With no trusted header, all clients share one bucket per path. That can't be spo
 | `RESEND_FROM_ADDRESS` | No | The sender for those emails, like `Northwind <hello@example.com>`. |
 | `RESEND_API_URL` | No | Resend API origin. Defaults to production. Tests point it at a fake server. |
 | `CLIENT_IP_HEADER` | No | Header your proxy overwrites with the client IP. Overrides the platform default. |
+| `RESEND_WEBHOOK_SECRET` | No | Signing secret of your Resend webhook. Bounced and complaining addresses stop getting optional email. |
+| `JOBS_TICK_SECRET` | No | Lets a scheduler call `/api/jobs/tick`. 32+ random characters. `CRON_SECRET` works too. |
+| `JOBS_SELF_TICK` | No | `true` makes a long-running server run its own timed jobs every minute. The `install.sh` server sets it. |
 | `DATABASE_CA_CERT` | No | PEM CA used to verify database TLS. Escaped `\n` is accepted. |
 | `DATABASE_TLS_ALLOW_UNVERIFIED` | No | `true` encrypts without verifying when no CA is available. No template sets it. |
 | `MIGRATE_ON_PREVIEW` | No | `true` runs migrations on Vercel previews. |

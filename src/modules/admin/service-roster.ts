@@ -30,7 +30,8 @@ import { requireCurrentAdmin } from "../../platform/audit/admin-transaction.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
 import { resolveOpenReportsAgainstMember } from "./service-report-resolution.ts";
 import { randomUUID } from "node:crypto";
-import { inviteChangedError, issueInvite, OPEN_INVITE, readInviter } from "../members/service-invites.ts";
+import { cancelInviteEmail, inviteChangedError, issueInvite, OPEN_INVITE, queueInviteEmail, readInviter } from "../members/service-invites.ts";
+import { readEmailBranding } from "../../platform/email/outbox.ts";
 import { staleGroupAfterLinkClears } from "../network/service.ts";
 import { INVITE_ERROR_CODES } from "../members/contract-invites.ts";
 import { toConfirmationIdentifier } from "../members/service-email-confirmation.ts";
@@ -202,6 +203,7 @@ export async function reclaimInvite(context: RequestContext, inviteId: string) {
   const { database, member } = context;
   const inviter = await readInviter(context);
   const token = createInviteToken();
+  const branding = await readEmailBranding(context.database, context.environment);
   const now = new Date();
 
   const replacement = await withAdminRosterLock(database, member.id, async (transaction) => {
@@ -266,7 +268,7 @@ export async function reclaimInvite(context: RequestContext, inviteId: string) {
       targetName: claimant.name,
       detail: email,
     });
-    return { created, claimant, email, claimedUserId };
+    return { created, claimant, email, claimedUserId, queuedEmailId: await queueInviteEmail(transaction, context, branding, created, token) };
   });
 
   const outcome = await leaveGroupOnBehalf(context, {
@@ -276,13 +278,14 @@ export async function reclaimInvite(context: RequestContext, inviteId: string) {
   });
   const lockedMessage = "We locked that account and made a new invite.";
   const message = outcome ? `${lockedMessage} ${DEPARTURE_SENTENCES[outcome](replacement.claimant.name)}` : lockedMessage;
-  return issueInvite(context, replacement.created, token, message);
+  return issueInvite(context, replacement.created, token, message, replacement.queuedEmailId);
 }
 
 export async function reinviteRemovedMember(context: RequestContext, memberId: string) {
   const { database, member } = context;
   const inviter = await readInviter(context);
   const token = createInviteToken();
+  const branding = await readEmailBranding(context.database, context.environment);
   const reinvited = await withAdminRosterLock(database, member.id, async (transaction) => {
     const [target] = await transaction
       .select({ id: user.id, name: user.name, email: user.email, banned: user.banned, banExpires: user.banExpires })
@@ -298,7 +301,12 @@ export async function reinviteRemovedMember(context: RequestContext, memberId: s
       .where(eq(user.id, target.id));
     await transaction.delete(verification).where(eq(verification.identifier, toConfirmationIdentifier(target.id)));
     await transaction.update(memberNetwork).set({ linkedinSlug: null, linkedinConfirmedSlug: null }).where(eq(memberNetwork.userId, target.id));
-    await transaction.update(invite).set({ revokedAt: new Date() }).where(and(eq(invite.email, target.email), OPEN_INVITE));
+    const revoked = await transaction
+      .update(invite)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(invite.email, target.email), OPEN_INVITE))
+      .returning({ emailOutboxId: invite.emailOutboxId });
+    for (const row of revoked) await cancelInviteEmail(transaction, row);
     const [created] = await transaction
       .insert(invite)
       .values({
@@ -311,10 +319,10 @@ export async function reinviteRemovedMember(context: RequestContext, memberId: s
       .returning();
     if (!created) throw inviteChangedError();
     await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.memberReinvited, targetMemberId: target.id, targetName: target.name, detail: target.email });
-    return { created, target };
+    return { created, target, queuedEmailId: await queueInviteEmail(transaction, context, branding, created, token) };
   });
   const outcome = await leaveGroupOnBehalf(context, { memberId, memberName: reinvited.target.name, email: reinvited.target.email });
   const madeMessage = "We made a new invite. It creates a new account, and the old one can't come back.";
   const message = outcome ? `${madeMessage} ${DEPARTURE_SENTENCES[outcome](reinvited.target.name)}` : madeMessage;
-  return issueInvite(context, reinvited.created, token, message);
+  return issueInvite(context, reinvited.created, token, message, reinvited.queuedEmailId);
 }

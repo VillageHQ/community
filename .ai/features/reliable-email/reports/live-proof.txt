@@ -1,0 +1,22 @@
+1. setup first admin: 201
+   admin sign-in: 200
+2. tick without the secret: 401
+3. invite while Resend is down: {"status":201,"emailStatus":"failed"}
+   emails Resend accepted so far: 0
+4. Resend back up; waiting 65 s for the first retry: ...
+   two ticks at once: [{"outcomes":{"email-outbox":"busy","email-outbox-pruning":"ran","intro-expiry":"ran"}},{"outcomes":{"email-outbox":"ran","email-outbox-pruning":"not_due","intro-expiry":"not_due"}}]
+   a third tick: {"outcomes":{"email-outbox":"not_due","email-outbox-pruning":"not_due","intro-expiry":"not_due"}}
+   emails Resend got: [{"to":["sam@example.com"],"subject":"Ada Admin invited you to Your community","isRepeat":false,"idempotencyKey":"366ac833-5934-4778-b3fb-e0df761b9387"}]
+5. member accepts the invite: 201
+6. member sends "Hi Ada, quick question": 200
+6. member sends "And one more thing": 200
+   DM emails sent for two messages: [{"to":["ada@example.com"],"subject":"Sam Lee sent you a message","headers":{"List-Unsubscribe":"<http://localhost:55421/api/email/unsubscribe?token=<redacted>>","List-Unsubscribe-Post":"List-Unsubscribe=One-Click"}}]
+   message text in the email?: false
+UNSUBSCRIBE_PAGE=http://localhost:55421/unsubscribe?token=<redacted>
+7. one-click unsubscribe from a mail app: {"status":200,"body":{"unsubscribed":true}}
+   tampered token: 400
+8. bounce webhook, bad signature: 401
+   bounce webhook, signed: {"received":true}
+9. six wrong passwords for Sam (no client IP header): [401,401,401,401,401,429]
+   Ada signs in right after: 200
+   Sam with the right password, still paused: 429

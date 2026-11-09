@@ -9,6 +9,8 @@ const DELIVERY_SENTENCES: Record<InviteEmailStatus, (email: string) => string> =
   [INVITE_EMAIL_STATUSES.sent]: (email) => `We emailed ${email}. You can also share this link yourself.`,
   [INVITE_EMAIL_STATUSES.failed]: (email) =>
     `We couldn't send the email, but the invite is safe. Copy this link and send it to ${email}.`,
+  [INVITE_EMAIL_STATUSES.retrying]: (email) =>
+    `The email to ${email} didn't go out yet. We'll keep trying for a few hours, or copy this link and send it yourself.`,
   [INVITE_EMAIL_STATUSES.notSent]: (email) => `Copy this link and send it to ${email}.`,
 };
 

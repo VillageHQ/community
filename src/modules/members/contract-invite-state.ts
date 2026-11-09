@@ -7,7 +7,7 @@ export const INVITE_STATES = {
 
 export type InviteState = (typeof INVITE_STATES)[keyof typeof INVITE_STATES];
 
-export const INVITE_EMAIL_STATUSES = { notSent: "not_sent", sent: "sent", failed: "failed" } as const;
+export const INVITE_EMAIL_STATUSES = { notSent: "not_sent", sent: "sent", retrying: "retrying", failed: "failed" } as const;
 
 export type InviteEmailStatus = (typeof INVITE_EMAIL_STATUSES)[keyof typeof INVITE_EMAIL_STATUSES];
 
