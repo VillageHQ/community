@@ -646,6 +646,36 @@ describe("double opt-in intros", () => {
         expect(JSON.stringify(joining)).toContain("freight");
       });
 
+      it("gives every email about the yes its own idempotency key, so Resend sends them all", async () => {
+        configureResend();
+        const { intro, token } = await askAndReachTarget();
+        await emailTarget(intro.id, token);
+        resend.reset();
+
+        await answer(token);
+
+        await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThanOrEqual(2), EVENTUALLY);
+        await new Promise((resolve) => setTimeout(resolve, EMAIL_SETTLE_MS));
+        const keys = resend.state.emails.map(({ idempotencyKey }) => String(idempotencyKey));
+        expect(new Set(keys).size).toBe(keys.length);
+      });
+
+      it("keeps the address of an earlier email that went out when a later one fails", async () => {
+        configureResend();
+        const { intro, token } = await askAndReachTarget();
+        await emailTarget(intro.id, token);
+        const longAgo = new Date(Date.now() - 2 * MILLISECONDS_PER_DAY);
+        await database.update(introRequest).set({ consentEmailAt: longAgo }).where(eq(introRequest.id, intro.id));
+        resend.state.failureStatus = SERVER_ERROR_STATUS;
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+        expect((await emailTarget(intro.id, token, "clara.second@outside.test")).status).toBe(BAD_GATEWAY_STATUS);
+
+        const row = await readRow(intro.id);
+        expect(row.targetEmail).toBe(TARGET_EMAIL);
+        expect(row.consentEmailAt?.getTime()).toBe(longAgo.getTime());
+      });
+
       it("deletes the address once they're joined", async () => {
         configureResend();
         const { intro, token } = await askAndReachTarget();

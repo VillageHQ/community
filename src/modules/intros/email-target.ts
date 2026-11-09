@@ -82,7 +82,8 @@ export async function sendJoiningEmail(database: Database, environment: Environm
   const { name: communityName } = await readBranding(database);
   await sendResendEmail(config, {
     to: [intro.targetEmail, requester.email],
-    idempotencyKey: `intro-joined-${intro.id}`,
+    // Not "intro-joined-…": that key belongs to the connector's notice for the same event, and Resend refuses a reused key.
+    idempotencyKey: `intro-joining-${intro.id}`,
     ...renderJoiningEmail({
       requesterName,
       introducerName: intro.introducerName,

@@ -281,6 +281,11 @@ export async function emailConsentLink(context: RequestContext, { introId, token
   const tokenHash = readLiveConsentHash(token) ?? "";
   const now = new Date();
   const emailedBefore = new Date(now.getTime() - CONSENT_EMAIL_COOLDOWN_MS);
+  const [previous] = await database
+    .select({ targetEmail: introRequest.targetEmail, consentEmailAt: introRequest.consentEmailAt })
+    .from(introRequest)
+    .where(eq(introRequest.id, introId));
+  const isStillPrevious = previous?.consentEmailAt ? eq(introRequest.consentEmailAt, previous.consentEmailAt) : isNull(introRequest.consentEmailAt);
   const [claimed] = await database
     .update(introRequest)
     .set({ targetEmail, consentEmailAt: now })
@@ -288,6 +293,7 @@ export async function emailConsentLink(context: RequestContext, { introId, token
       and(
         eq(introRequest.id, introId),
         isConsentTokenLive(database, tokenHash, now),
+        isStillPrevious,
         or(isNull(introRequest.consentEmailAt), lte(introRequest.consentEmailAt, emailedBefore)),
       ),
     )
@@ -305,10 +311,11 @@ export async function emailConsentLink(context: RequestContext, { introId, token
   } catch (error) {
     logError("intro-consent-email", error);
     // Undo only our own claim, and only while the intro still waits on the target: if they answered in the meantime
-    // (through a forwarded link), their saved address and state stay as they are.
+    // (through a forwarded link), their saved address and state stay as they are. An earlier email that did go out
+    // keeps its address, so a later yes can still join them by email.
     await database
       .update(introRequest)
-      .set({ targetEmail: null, consentEmailAt: null })
+      .set({ targetEmail: previous?.targetEmail ?? null, consentEmailAt: previous?.consentEmailAt ?? null })
       .where(and(eq(introRequest.id, introId), eq(introRequest.state, INTRO_STATES.askingTarget), eq(introRequest.consentEmailAt, now)));
     throw new RequestError(BAD_GATEWAY_STATUS, INTRO_ERROR_CODES.targetEmailFailed, "We couldn't send that email. Copy the note and send it yourself.");
   }
