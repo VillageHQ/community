@@ -18,9 +18,9 @@ export function ReportTable({ section, headings }: { section: ReportSection; hea
                 <span className="sr-only">Measure</span>
               </th>
               {headings.map(({ label, range }) => (
-                <th key={label} scope="col" className="px-1.5 py-2 text-right align-bottom font-bold text-foreground">
+                <th key={label} scope="col" className="px-1.5 py-2 text-right align-bottom leading-tight font-bold text-foreground">
                   {label}
-                  <span className="block font-normal text-foreground-soft">{range}</span>
+                  {range ? <span className="hidden font-normal text-foreground-soft sm:block">{range}</span> : null}
                 </th>
               ))}
             </tr>
@@ -28,8 +28,8 @@ export function ReportTable({ section, headings }: { section: ReportSection; hea
           <tbody>
             {section.rows.map(({ label, note, values, isStrong }) => (
               <tr key={label} className="border-t border-border">
-                <th scope="row" className={`px-1 py-2.5 align-top ${isStrong ? "font-bold" : "font-normal"}`}>
-                  <span className="block wrap-anywhere">{label}</span>
+                <th scope="row" className={`min-w-32 px-1 py-2.5 align-top ${isStrong ? "font-bold" : "font-normal"}`}>
+                  <span className="block break-words">{label}</span>
                   {note ? <span className="type-small block text-foreground-soft">{note}</span> : null}
                 </th>
                 {values.map((value, index) => (
