@@ -24,3 +24,4 @@ Rules:
 - "Stop all asks" saves an HMAC of the target's LinkedIn slug, keyed with the app's auth secret (`opt-out.ts`), in `intro_opt_out`, nothing else, and audits it without a name. A slug is public, so a plain hash could be reversed by guessing. If the auth secret changes, earlier stop-all choices are forgotten.
 - The target's email is optional, typed by the connector, used only with Resend, and cleared when the ask leaves `asking_target` or `target_agreed`. Nothing here spends Village credits to find an address.
 - Admins see four totals: asked, introduced, declined, helped.
+- An intro ask uses the shared weekly allowance (passed in by the route) and a connector gets at most 10 a week. "I know someone" on an ask makes a helper-offered intro (`is_connector_offer`) that starts at `asking_target` and counts toward neither.

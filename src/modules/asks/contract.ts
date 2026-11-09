@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { feedTextSchema } from "../../platform/text/text-schema.ts";
 import { readLinkedinSlug } from "../members/contract-linkedin.ts";
+import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
 
 export const ASKS_PAGE = "/asks";
 export const ASKS_PAGE_TITLE = "Asks";
@@ -78,6 +79,8 @@ const answerSchema = feedTextSchema("your answer", ASK_LIMITS.answerLength);
 const askKindSchema = z.enum(ASK_KINDS);
 const LINKEDIN_PROFILE_PREFIX = "https://www.linkedin.com/in/";
 const LINKEDIN_INPUT_LENGTH = 300;
+// A LinkedIn profile name: letters, digits, hyphens and underscores. Anything else is junk or a spoof.
+const PROFILE_NAME_PATTERN = /^[\p{L}\p{N}_-]{2,100}$/u;
 
 // A pasted LinkedIn link, or a bare profile name. Blank means the ask names nobody.
 export const linkedinTargetSchema = z
@@ -89,7 +92,7 @@ export const linkedinTargetSchema = z
   .transform((value, context) => {
     if (!value) return null;
     const slug = readLinkedinSlug(value.includes("/") ? value : `${LINKEDIN_PROFILE_PREFIX}${value}`);
-    if (!slug) {
+    if (!slug || !PROFILE_NAME_PATTERN.test(slug)) {
       context.addIssue({ code: "custom", message: "Paste their LinkedIn link, like https://www.linkedin.com/in/their-name." });
       return z.NEVER;
     }
@@ -116,7 +119,7 @@ export const knowSomeoneBodySchema = z.object({
   askId: z.uuid(),
   note: offerNoteSchema,
   targetLinkedin: linkedinTargetSchema,
-  targetName: z.string().trim().max(ASK_LIMITS.personNameLength).nullable().default(null),
+  targetName: z.string().overwrite(removeNullBytes).overwrite(removeBidiControls).trim().max(ASK_LIMITS.personNameLength).nullable().default(null),
 });
 export const askHelperBodySchema = z.object({ askId: z.uuid(), helperId: z.string().min(1).max(200), note: offerNoteSchema });
 export const allowanceBodySchema = z.object({

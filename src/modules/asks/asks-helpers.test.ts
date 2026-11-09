@@ -234,9 +234,22 @@ describe("asks that reach helpers", () => {
       expect((await post(amara, { title: "Need help with freight pricing for Europe" })).helperCount).toBe(1);
     });
 
-    it("refuses a link that isn't a LinkedIn profile", async () => {
-      const response = await call(postCreate, amara, { title: FREIGHT_ASK, category: ASK_CATEGORIES.intro, targetLinkedin: "https://example.com/somebody" });
-      expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    it("refuses a link that isn't a LinkedIn profile, and junk typed as a profile name", async () => {
+      for (const targetLinkedin of ["https://example.com/somebody", "javascript:alert(1)", "a b c", "‮evil", "clara%22onmouseover%3Dalert(1)"]) {
+        const response = await call(postCreate, amara, { title: FREIGHT_ASK, category: ASK_CATEGORIES.intro, targetLinkedin });
+        expect(response.status).toBe(UNPROCESSABLE_STATUS);
+      }
+      expect((await post(amara, { targetLinkedin: TARGET_SLUG })).id).toBeTruthy();
+    });
+
+    it("posts the ask when every helper it finds is blocked", async () => {
+      await setCanHelpWith(noor, "Gardening");
+      await block(amara, jonas);
+
+      const { helperCount } = await post(amara);
+
+      expect(helperCount).toBe(0);
+      expect(await readHelperEmails()).toEqual([]);
     });
 
     it("emails nobody about an update, and doesn't use the allowance", async () => {
@@ -269,6 +282,16 @@ describe("asks that reach helpers", () => {
         isConnectorOffer: true,
       });
       expect((await readOwn(amara)).asks[0]?.offers.map(({ helper }) => helper.id)).toEqual([noor.userId]);
+    });
+
+    it("cleans the person's name instead of failing on hidden characters", async () => {
+      const { id: askId } = await post(amara);
+
+      const response = await call(postKnowSomeone, noor, { askId, note: "Hi", targetLinkedin: "pat-lee", targetName: "Pat  ‮Lee" });
+
+      expect(response.status).toBe(OK_STATUS);
+      const [intro] = await database.select({ targetName: introRequest.targetName }).from(introRequest);
+      expect(intro?.targetName).toBe("Pat Lee");
     });
 
     it("uses the person the ask names when the helper leaves the fields blank", async () => {

@@ -99,9 +99,11 @@ async function saveHelpers(transaction: Transaction, environment: Environment, b
     .from(user)
     .where(and(inArray(user.id, drafts.map(({ helperId }) => helperId)), isActiveMember(), hasNoBlockBetween(routed.authorId, user.id)));
   const emails = new Map(reachable.map(({ id, email }) => [id, email]));
+  const kept = drafts.filter(({ helperId }) => emails.has(helperId));
+  if (kept.length === 0) return 0;
   const saved = await transaction
     .insert(askHelper)
-    .values(drafts.filter(({ helperId }) => emails.has(helperId)).map((draft) => ({ askId: routed.id, ...draft })))
+    .values(kept.map((draft) => ({ askId: routed.id, ...draft })))
     .onConflictDoNothing()
     .returning({ helperId: askHelper.helperId, why: askHelper.why });
   if (!branding) return saved.length;
