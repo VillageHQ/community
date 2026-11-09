@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient, useSuspenseQuery, type QueryClient } from "@tanstack/react-query";
-import { CircleAlert, MailCheck, MailPlus } from "lucide-react";
+import { CircleAlert, Clock, MailCheck, MailPlus } from "lucide-react";
 import Link from "next/link";
 import { useDeferredValue, useState, type ComponentProps } from "react";
 
@@ -99,6 +99,12 @@ function InviteRow({ invite, isEmailConfigured, issued, onIssued }: InviteRowPro
               <Tag>
                 <MailCheck aria-hidden="true" />
                 Emailed
+              </Tag>
+            ) : null}
+            {state === INVITE_STATES.pending && emailStatus === INVITE_EMAIL_STATUSES.retrying ? (
+              <Tag tone="gold">
+                <Clock aria-hidden="true" />
+                Email retrying
               </Tag>
             ) : null}
             {state === INVITE_STATES.pending && emailStatus === INVITE_EMAIL_STATUSES.failed ? (

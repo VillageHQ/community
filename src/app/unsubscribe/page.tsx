@@ -8,7 +8,7 @@ import { getDatabase } from "@/platform/database/client";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { EMAIL_TOPIC_LABELS } from "@/platform/email/kinds";
-import { UNSUBSCRIBE_PAGE_FIELD, readUnsubscribeToken } from "@/platform/email/unsubscribe";
+import { UNSUBSCRIBE_PAGE_FIELD, readOptedOutTopics, readUnsubscribeToken } from "@/platform/email/unsubscribe";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { PLATFORM_MANIFEST } from "@/platform/modules/platform-manifest";
 import { modulePage } from "@/platform/modules/module-page";
@@ -30,9 +30,11 @@ function BadLink() {
 
 // Opening the link changes nothing: some mail scanners open every link. Only the button does.
 export default modulePage(PLATFORM_MANIFEST, async function UnsubscribePage({ searchParams }: UnsubscribePageProps) {
-  const { token = "", done } = await searchParams;
-  const [community, target] = await Promise.all([readBrandingForPage(), readUnsubscribeToken(getDatabase(), process.env, token)]);
+  const { token = "" } = await searchParams;
+  const database = getDatabase();
+  const [community, target] = await Promise.all([readBrandingForPage(), readUnsubscribeToken(database, process.env, token)]);
   const topic = target ? EMAIL_TOPIC_LABELS[target.topic] : null;
+  const done = target ? (await readOptedOutTopics(database, target.memberId)).has(target.topic) : false;
 
   return (
     <SplitLayout community={community} note={<CommunityNote community={community}>You choose what lands in your inbox.</CommunityNote>}>

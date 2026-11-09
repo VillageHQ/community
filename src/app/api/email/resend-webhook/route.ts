@@ -14,6 +14,9 @@ export const POST = platformRoutes.open("resend-webhook", async (request: Reques
   const secret = readResendWebhookSecret(process.env);
   if (!secret) return Response.json({ message: "Set RESEND_WEBHOOK_SECRET to turn this on." }, { status: NOT_FOUND_STATUS });
 
+  if (Number(request.headers.get("content-length") ?? 0) > MAXIMUM_BODY_BYTES) {
+    return Response.json({ message: "Too large." }, { status: PAYLOAD_TOO_LARGE_STATUS });
+  }
   const body = await request.text();
   if (Buffer.byteLength(body) > MAXIMUM_BODY_BYTES) return Response.json({ message: "Too large." }, { status: PAYLOAD_TOO_LARGE_STATUS });
   const signed = {

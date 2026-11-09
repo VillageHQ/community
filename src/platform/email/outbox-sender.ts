@@ -15,7 +15,8 @@ const MINUTE_MS = 60_000;
 // The wait after each failed try. After the last one the email is given up and the admin sees it.
 const RETRY_DELAYS_MS = [1, 5, 15, 60, 180].map((minutes) => minutes * MINUTE_MS);
 // A claimed row that is still "sending" after this was dropped by a crash, so it is due again.
-const CLAIM_TIMEOUT_MS = 2 * MINUTE_MS;
+// It must outlast a whole batch of slow sends (20 × the 8-second timeout).
+const CLAIM_TIMEOUT_MS = 5 * MINUTE_MS;
 const BATCH_SIZE = 20;
 const MAXIMUM_ERROR_LENGTH = 300;
 const FINISHED_RETENTION_MS = 30 * 24 * 60 * MINUTE_MS;

@@ -51,6 +51,16 @@ export async function readEmailBranding(database: Database, environment: Environ
 
 export type EmailBranding = Awaited<ReturnType<typeof readBranding>>;
 
+// Stops a queued email that no longer makes sense, like the invite it carries being revoked.
+// One already being sent can't be stopped.
+export async function cancelQueuedEmail(connection: DatabaseOrTransaction, id: string | null) {
+  if (!id) return;
+  await connection
+    .update(emailOutbox)
+    .set({ status: OUTBOX_STATUSES.skipped, finishedAt: new Date(), html: "", text: "" })
+    .where(and(eq(emailOutbox.id, id), eq(emailOutbox.status, OUTBOX_STATUSES.pending)));
+}
+
 // Call this inside the transaction that makes the change the email is about. It returns the row
 // id, or null when email is off or the person doesn't want this kind.
 export async function queueEmail(connection: DatabaseOrTransaction, environment: Environment, email: QueuedEmail) {

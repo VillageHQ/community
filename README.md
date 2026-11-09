@@ -215,7 +215,7 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 | Your own server, with `install.sh` | `x-real-ip` | Tested: Caddy overwrites a client-sent value, and only Caddy can reach the app. |
 | Anywhere else | None by default | Set `CLIENT_IP_HEADER` only if your proxy overwrites that header and clients can't reach the app directly. |
 
-With no trusted header, sign-in and password-reset requests are limited per account instead: 5 wrong passwords in a minute pause that one account, and nobody else. Other paths share one bucket per path, which can't be spoofed. Once a live test shows DigitalOcean replaces a client-sent `do-connecting-ip`, set `CLIENT_IP_HEADER=do-connecting-ip`.
+With no trusted header, sign-in is limited per account instead: 5 wrong passwords in a minute pause that one account, and nobody else. Other paths, like password-reset requests, share one bucket per path, which can't be spoofed. Once a live test shows DigitalOcean replaces a client-sent `do-connecting-ip`, set `CLIENT_IP_HEADER=do-connecting-ip`.
 
 ### Environment variables
 

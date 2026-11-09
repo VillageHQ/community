@@ -30,7 +30,7 @@ import { requireCurrentAdmin } from "../../platform/audit/admin-transaction.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
 import { resolveOpenReportsAgainstMember } from "./service-report-resolution.ts";
 import { randomUUID } from "node:crypto";
-import { inviteChangedError, issueInvite, OPEN_INVITE, queueInviteEmail, readInviter } from "../members/service-invites.ts";
+import { cancelInviteEmail, inviteChangedError, issueInvite, OPEN_INVITE, queueInviteEmail, readInviter } from "../members/service-invites.ts";
 import { readEmailBranding } from "../../platform/email/outbox.ts";
 import { staleGroupAfterLinkClears } from "../network/service.ts";
 import { INVITE_ERROR_CODES } from "../members/contract-invites.ts";
@@ -301,7 +301,12 @@ export async function reinviteRemovedMember(context: RequestContext, memberId: s
       .where(eq(user.id, target.id));
     await transaction.delete(verification).where(eq(verification.identifier, toConfirmationIdentifier(target.id)));
     await transaction.update(memberNetwork).set({ linkedinSlug: null, linkedinConfirmedSlug: null }).where(eq(memberNetwork.userId, target.id));
-    await transaction.update(invite).set({ revokedAt: new Date() }).where(and(eq(invite.email, target.email), OPEN_INVITE));
+    const revoked = await transaction
+      .update(invite)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(invite.email, target.email), OPEN_INVITE))
+      .returning({ emailOutboxId: invite.emailOutboxId });
+    for (const row of revoked) await cancelInviteEmail(transaction, row);
     const [created] = await transaction
       .insert(invite)
       .values({

@@ -99,13 +99,6 @@
       "when": 1793904058999,
       "tag": "0013_asks",
       "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1794230798755,
-      "tag": "0015_reliable_email",
-      "breakpoints": true
     }
   ]
 }

@@ -26,6 +26,5 @@ export const POST = platformRoutes.open("email-unsubscribe", async (request: Req
 
   const page = new URL(ROUTES.unsubscribe, url.origin);
   page.searchParams.set("token", token);
-  page.searchParams.set("done", "1");
   return Response.redirect(page, SEE_OTHER_STATUS);
 });

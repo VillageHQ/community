@@ -19,10 +19,10 @@ const PASSWORD_RESET_RATE_LIMIT = { window: 60, max: 5 };
 type RateLimitRule = { window: number; max: number };
 
 // With no trusted IP header, Better Auth puts every client in one bucket per path, so a few
-// wrong passwords from anyone would lock everyone out. There, these paths use only their
-// per-account limits: sign-in in the auth guards, reset emails in password-recovery.
-function perIpOnlyWhenKnown(environment: Environment, rule?: RateLimitRule) {
-  return (request: Request, current: RateLimitRule) => (readTrustedClientIp(request, environment) ? (rule ?? current) : false);
+// wrong passwords from anyone would lock everyone out. There, sign-in uses only its per-account
+// limit in the auth guards.
+function perIpOnlyWhenKnown(environment: Environment) {
+  return (request: Request, current: RateLimitRule) => (readTrustedClientIp(request, environment) ? current : false);
 }
 
 // Queuing waits until after the response, so its timing can't tell whether an address has an
@@ -56,7 +56,7 @@ export function createAuth(secret: string, database: Database, environment: Envi
       storage: "database",
       customRules: {
         "/sign-in/email": perIpOnlyWhenKnown(environment),
-        "/request-password-reset": perIpOnlyWhenKnown(environment, PASSWORD_RESET_RATE_LIMIT),
+        "/request-password-reset": PASSWORD_RESET_RATE_LIMIT,
         "/reset-password": PASSWORD_RESET_RATE_LIMIT,
       },
     },
