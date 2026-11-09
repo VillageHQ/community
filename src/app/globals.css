@@ -361,3 +361,25 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Printing keeps only the page itself: the partner report prints as a plain document. */
+@media print {
+  [data-slot="sidebar"],
+  [data-slot="phone-top-bar"],
+  [data-slot="tab-bar"],
+  [data-print="hide"] {
+    display: none !important;
+  }
+  [data-slot="app-shell"] {
+    display: block;
+    min-height: 0;
+  }
+  main {
+    padding: 0 !important;
+  }
+  [data-slot="card"] {
+    box-shadow: none;
+    border: 1px solid #c9d3d1;
+    break-inside: avoid;
+  }
+}

@@ -31,7 +31,7 @@ const ADMIN_TABS: AdminTab[] = [
     badgeDescription: (count) => `${count} open ${count === 1 ? "report" : "reports"}`,
   },
   { label: "Audit log", href: ROUTES.adminAuditLog, readBadge: () => 0, badgeDescription: () => "" },
-  { label: "Health", href: ROUTES.adminHealth, readBadge: () => 0, badgeDescription: () => "" },
+  { label: "Partner report", href: ROUTES.adminReport, readBadge: () => 0, badgeDescription: () => "" },
   {
     label: "Credits",
     href: ROUTES.adminCredits,
@@ -47,7 +47,7 @@ export function AdminTabs({ facts }: { facts: AdminTabFacts }) {
   const visibleTabs = ADMIN_TABS.filter(({ href }) => !facts.hiddenTabHrefs.includes(href));
   const tabs = facts.isSetupComplete ? visibleTabs : [SETUP_TAB, ...visibleTabs];
   return (
-    <nav aria-label="Admin sections" className="mb-5 flex flex-wrap gap-2 lg:mb-6">
+    <nav aria-label="Admin sections" data-print="hide" className="mb-5 flex flex-wrap gap-2 lg:mb-6">
       {tabs.map(({ label, href, readBadge, badgeDescription }) => {
         const count = readBadge(facts);
         return (

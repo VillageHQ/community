@@ -24,6 +24,8 @@ import { readOptedOutTopics } from "@/platform/email/unsubscribe";
 import { introsManifest } from "@/modules/intros/manifest";
 import { messagesManifest } from "@/modules/messages/manifest";
 import { EmailPreferencesCard } from "@/shell/email-preferences-card";
+import { ReportCreditCard } from "@/modules/members/components/report-credit-card";
+import { readReportCredit } from "@/modules/members/service-report-credit";
 import { readEnabledIds } from "@/shell/enabled-modules";
 
 const TOPIC_MODULES = [
@@ -48,6 +50,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
   const isNetworkOn = await isModuleEnabled(database, networkManifest);
   const showsLeaveCard = !isNetworkOn && (await readIsInVillageGroup(database, member.id));
   const emailSettings = await readEmailSettings(database, member.id);
+  const [isIntrosOn, isReportCreditOn] = await Promise.all([isModuleEnabled(database, introsManifest), readReportCredit(database, member.id)]);
 
   return (
     <div className="mx-auto max-w-[720px]">
@@ -67,6 +70,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
         <CardForm profile={profile} />
       </div>
       <EmailPreferencesCard settings={emailSettings} />
+      {isIntrosOn ? <ReportCreditCard isOn={isReportCreditOn} /> : null}
       {showsLeaveCard ? <LeaveGroupCard /> : null}
     </div>
   );
