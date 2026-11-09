@@ -110,7 +110,7 @@ export default modulePage(membersManifest, async function JoinPage({ params }: {
         {session ? (
           <SignOutToAccept signedInName={session.user.name} path={`${ROUTES.join}/${token}`} />
         ) : (
-          <AcceptForm token={token} email={invite.email} />
+          <AcceptForm token={token} email={invite.email} suggestedName={invite.inviteeName} />
         )}
       </div>
       <p className="type-small mt-4 text-muted-foreground">

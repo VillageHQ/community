@@ -1,6 +1,6 @@
 {
-  "id": "8dc8e040-117f-4a3f-98db-01fe5b20cb72",
-  "prevId": "04b25fd2-74a9-4b8e-92d2-3a085da7d39f",
+  "id": "ef56478e-5680-4610-bac9-2da24c7408da",
+  "prevId": "8a26869b-018e-428a-9c4b-de208da377c7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2705,6 +2705,24 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "invitee_name": {
+          "name": "invitee_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "company": {
+          "name": "company",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cohort": {
+          "name": "cohort",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "token_hash": {
           "name": "token_hash",

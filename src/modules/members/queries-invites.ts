@@ -1,7 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { inviteListSchema, issuedInviteSchema, waitingMembersSchema, type InviteFilter } from "@/modules/members/contract-invites";
+import { bulkInviteResultSchema, type BulkInviteFormat } from "@/modules/members/contract-bulk-invites";
 import { API_ROUTES } from "@/platform/http/routes";
+import { readResponseMessage } from "@/platform/http/read-response-message";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { postRequest } from "@/platform/http/post-request";
 
@@ -49,4 +51,17 @@ export function confirmLinkedinRequest(memberId: string) {
 
 export function clearLinkedinRequest(linkedinUrl: string) {
   return postRequest(API_ROUTES.memberClearLinkedin, { linkedinUrl }, acknowledgedResponseSchema);
+}
+
+const BULK_FAILURE_MESSAGE = "We couldn't read that list. Try again.";
+
+export async function createBulkInvitesRequest(format: BulkInviteFormat, body: string | Blob) {
+  let response: Response;
+  try {
+    response = await fetch(`${API_ROUTES.inviteBulk}?format=${format}`, { method: "POST", headers: { "Content-Type": "text/plain; charset=utf-8" }, body });
+  } catch {
+    throw new Error("We couldn't reach the server. Check your connection and try again.");
+  }
+  if (!response.ok) throw new Error(await readResponseMessage(response, BULK_FAILURE_MESSAGE));
+  return bulkInviteResultSchema.parse(await response.json());
 }

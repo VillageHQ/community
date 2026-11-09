@@ -39,6 +39,7 @@ export const nextConfig = {
     { source: "/meet/:token", headers: SECRET_LINK_HEADERS },
     { source: "/confirm-email", headers: SECRET_LINK_HEADERS },
     { source: "/reset-password", headers: SECRET_LINK_HEADERS },
+    { source: "/sign-in/link", headers: SECRET_LINK_HEADERS },
   ],
   redirects: async () => [
     { source: "/admin/village", destination: "/admin", permanent: false },

@@ -115,9 +115,16 @@
       "breakpoints": true
     },
     {
+      "idx": 16,
+      "version": "7",
+      "when": 1794242283993,
+      "tag": "0016_invite_details",
+      "breakpoints": true
+    },
+    {
       "idx": 20,
       "version": "7",
-      "when": 1794242803348,
+      "when": 1794244641033,
       "tag": "0020_asks_helpers",
       "breakpoints": true
     }

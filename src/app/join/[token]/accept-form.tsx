@@ -32,10 +32,10 @@ async function submitAccept(token: string, formData: FormData): Promise<AcceptSt
   }
 }
 
-export function AcceptForm({ token, email }: { token: string; email: string }) {
+export function AcceptForm({ token, email, suggestedName = null }: { token: string; email: string; suggestedName?: string | null }) {
   const [state, formAction, isPending] = useActionState(
     (_previousState: AcceptState, formData: FormData) => submitAccept(token, formData),
-    INITIAL_STATE,
+    { ...INITIAL_STATE, name: suggestedName ?? "" },
   );
   const nameRef = useFocusOnFailure(state);
 
