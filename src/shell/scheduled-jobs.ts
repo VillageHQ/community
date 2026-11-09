@@ -18,5 +18,6 @@ const SHELL_JOBS: readonly ScheduledJob[] = [
 export async function readScheduledJobs(database: Database): Promise<ScheduledJob[]> {
   const enabledIds = await readEnabledIds(database);
   const moduleJobs = MODULES.flatMap(({ manifest, jobs }) => (jobs && enabledIds.has(manifest.id) ? jobs : []));
-  return [...PLATFORM_JOBS, ...SHELL_JOBS, ...moduleJobs];
+  // The weekly email runs before the outbox sender, so what it queues goes out in the same tick.
+  return [...SHELL_JOBS, ...PLATFORM_JOBS, ...moduleJobs];
 }

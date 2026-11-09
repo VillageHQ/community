@@ -1,0 +1,12 @@
+## Reply 1: HELP 1 with a note, from Hana's own address (Resend's event has no body, so the app reads it from Resend's received-email API)
+200 {"routed":true,"reason":null,"results":[{"code":"HELP 1","outcome":"done"}]}
+## Reply 2: the same reply again
+200 {"routed":true,"reason":null,"results":[{"code":"HELP 1","outcome":"already"}]}
+## Reply 3: someone else sends HELP 1 to the same address
+200 {"routed":true,"reason":"sender_does_not_match","results":[]}
+## Offers on the ask now
+   helper    |                       note                       
+-------------+--------------------------------------------------
+ Hana Okafor | Happy to introduce you to two fintech investors.
+(1 row)
+

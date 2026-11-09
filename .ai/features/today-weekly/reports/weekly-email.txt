@@ -1,0 +1,30 @@
+To: hana@example.com
+Reply-To: reply+d9e71c5774c94616a5d932ea4e3c6315-6a6f292408622896f617@reply.example.com
+Subject: This week in Northwind Founders: 2 things for you
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+
+Hi Hana, here's what needs you this week.
+
+Asks you could help with
+1. “Looking for a fintech investor for our seed round” from Alex Moreno.
+   Why you: you said you can help with fintech.
+   I can help: http://localhost:55441/weekly?token=<signed>
+   Not for me: http://localhost:55441/weekly?token=<signed>
+
+Intros waiting for your yes
+2. Rae Lindqvist asks you to introduce them to Jo Rivera.
+   “Jo built the design team I want to build.”
+   Yes, introduce: http://localhost:55441/weekly?token=<signed>
+   No thanks: http://localhost:55441/weekly?token=<signed>
+
+Your asks
+- “Beta users in logistics”: 1 offer. http://localhost:55441/asks
+
+New this week
+- 1 new member joined. Say hi. http://localhost:55441/members
+
+Or just reply: put a code on the first line, like HELP 1, one per line. HELP, SKIP, YES and NO work. Words under HELP go to the asker.
+
+That's everything this week. Open Northwind Founders: http://localhost:55441
+
+Don't want these emails? Turn them off: http://localhost:55441/unsubscribe?token=<signed>

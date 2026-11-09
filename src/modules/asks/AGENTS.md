@@ -10,7 +10,9 @@ Members post what they need, and others step in. Toggleable, off by default, and
 - `reads.ts`: the board, your own asks, the badge count and the reportable copy, with the visibility rules.
 - `limits.ts`: posting rate limits.
 - `rules-state.ts`: open, expired and renewal rules. `rules-time.ts`: age words. `rules-board-url.ts`: the board's URL. All pure.
-- `queries.ts`: client requests. `components/`: the UI.
+- `queries.ts`: client requests. `components/`: the UI. `components/shared/`: the Today cards (asks you could help with, your asks).
+- `reads-could-help.ts`, `rules-help-match.ts`: open asks whose words meet a member's "can help with" words or tags (plain word overlap). The Today page and the weekly email read them.
+- `schema-skip.ts`, `service-skip.ts`, `contract-today.ts`: `ask_skip`, a member's "not for me", which only hides an ask from their Today page and weekly email.
 
 Rules:
 

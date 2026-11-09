@@ -1,6 +1,6 @@
 # Feed
 
-Posts, replies, reactions and pins. Toggleable. `/` stays a home page, so it doesn't belong to this module.
+Posts, replies, reactions and pins. Toggleable, off by default for a new community (migration 0017 kept it on for communities that already had members). `/` stays a home page, so it doesn't belong to this module.
 
 - `schema.ts`: posts, comments, reactions and `moderation_record`, the copy kept when an admin or member deletes content.
 - `service.ts`: create, edit, delete, pin, react. Admin calls `deleteMemberContent` and the `*Within` deletes from inside its own transactions.
