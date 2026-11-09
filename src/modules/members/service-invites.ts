@@ -74,7 +74,7 @@ function recordInviteAction(transaction: Transaction, { member }: RequestContext
   return recordAdminAction(transaction, member.id, { action, targetName: email });
 }
 
-function toInviteLink(environment: RequestContext["environment"], token: string) {
+export function toInviteLink(environment: RequestContext["environment"], token: string) {
   return `${resolveAppUrl(environment)}${ROUTES.join}/${token}`;
 }
 
@@ -285,6 +285,7 @@ export async function hasOpenOrAcceptedInvite(database: Database) {
 export type InviteLookup = {
   id: string;
   email: string;
+  inviteeName: string | null;
   state: InviteState;
   inviter: { id: string | null; name: string; title: string | null } | null;
 };
@@ -297,6 +298,7 @@ export async function readInviteByToken(database: Database, token: string): Prom
     .select({
       id: invite.id,
       email: invite.email,
+      inviteeName: invite.inviteeName,
       tokenHash: invite.tokenHash,
       acceptedAt: invite.acceptedAt,
       revokedAt: invite.revokedAt,
@@ -314,6 +316,7 @@ export async function readInviteByToken(database: Database, token: string): Prom
   return {
     id: row.id,
     email: row.email,
+    inviteeName: row.inviteeName,
     state: readInviteState(row),
     inviter: row.inviterId ? { id: row.inviterId, name: row.inviterName, title: row.inviterTitle } : null,
   };
@@ -349,7 +352,7 @@ export async function acceptInvite(database: Database, token: string, { name, pa
         .update(invite)
         .set({ acceptedAt: now })
         .where(and(eq(invite.tokenHash, tokenHash), OPEN_INVITE, gt(invite.expiresAt, now)))
-        .returning({ id: invite.id, email: invite.email, emailOutboxId: invite.emailOutboxId });
+        .returning({ id: invite.id, email: invite.email, company: invite.company, emailOutboxId: invite.emailOutboxId });
       if (!claimed) return null;
       // Accepted from the copied link: a still-queued invite email would only carry a used link.
       await cancelInviteEmail(transaction, claimed);
@@ -368,7 +371,7 @@ export async function acceptInvite(database: Database, token: string, { name, pa
         providerId: CREDENTIAL_PROVIDER_ID,
         password: passwordHash,
       });
-      await transaction.insert(memberProfile).values({ userId });
+      await transaction.insert(memberProfile).values({ userId, company: claimed.company });
       await transaction.update(invite).set({ acceptedUserId: userId }).where(eq(invite.id, claimed.id));
       return { userId, email: claimed.email };
     });

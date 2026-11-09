@@ -10,8 +10,10 @@ import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readMemberProfile } from "@/modules/members/service-profile";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
+import { hasPassword } from "@/platform/auth/password-setup";
 
 import { CardForm } from "@/modules/members/components/card-form";
+import { PasswordCard } from "@/modules/members/components/password-card";
 import { membersManifest } from "@/modules/members/manifest";
 import { LeaveGroupCard } from "@/modules/network/components/leave-group-card";
 import { networkManifest } from "@/modules/network/manifest";
@@ -49,6 +51,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
 
   const isNetworkOn = await isModuleEnabled(database, networkManifest);
   const showsLeaveCard = !isNetworkOn && (await readIsInVillageGroup(database, member.id));
+  const memberHasPassword = await hasPassword(database, member.id);
   const emailSettings = await readEmailSettings(database, member.id);
   const [isIntrosOn, isReportCreditOn] = await Promise.all([isModuleEnabled(database, introsManifest), readReportCredit(database, member.id)]);
 
@@ -69,6 +72,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
       <div className="rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
         <CardForm profile={profile} />
       </div>
+      <PasswordCard hasPassword={memberHasPassword} isLinkOn={readResendConfig(process.env) !== null} />
       <EmailPreferencesCard settings={emailSettings} />
       {isIntrosOn ? <ReportCreditCard isOn={isReportCreditOn} /> : null}
       {showsLeaveCard ? <LeaveGroupCard /> : null}
