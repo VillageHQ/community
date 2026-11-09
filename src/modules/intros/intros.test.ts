@@ -23,7 +23,7 @@ import {
 } from "@/modules/intros/contract";
 import { ASKED_EMAIL_COOLDOWN_MS } from "@/modules/intros/email";
 import { INTRO_MAXIMUM_PER_MINUTE } from "@/modules/intros/limits";
-import { readIntroCommunityCounts } from "@/modules/intros/reads";
+import { readIntroReport } from "@/modules/intros/reads-report";
 import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
 import { NETWORK_ERROR_CODES, networkPathsSchema, networkSearchResultSchema } from "@/modules/network/contract";
 import { saveVillageGroup } from "@/modules/network/service-settings";
@@ -1140,11 +1140,11 @@ describe("intro requests", () => {
       expect((await transition(admin, intro.id, INTRO_ACTIONS.accept)).status).toBe(NOT_FOUND_STATUS);
     });
 
-    it("gives admins four totals and nothing else", async () => {
-      const counts = await readIntroCommunityCounts(database);
+    it("gives admins totals and nothing private", async () => {
+      const report = await readIntroReport(database, { from: null, to: null });
 
-      expect(counts).toEqual({ asked: 1, introduced: 0, declined: 0, helped: 0 });
-      expect(JSON.stringify(counts)).not.toContain(NOTE);
+      expect(report).toMatchObject({ asked: 1, open: 1, introduced: 0, declined: 0, helped: 0 });
+      expect(JSON.stringify(report)).not.toContain(NOTE);
     });
 
     it("hides a banned requester's ask from the introducer until the ban ends", async () => {

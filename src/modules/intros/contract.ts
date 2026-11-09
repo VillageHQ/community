@@ -102,6 +102,11 @@ export const INTRO_OUTCOMES = { helped: "helped", notYet: "not_yet", notHelped: 
 
 export type IntroOutcome = (typeof INTRO_OUTCOMES)[keyof typeof INTRO_OUTCOMES];
 
+// What came of an intro that helped, ticked by the requester with their answer. Admins only ever see totals.
+export const INTRO_RESULTS = { customer: "customer", hire: "hire", investor: "investor" } as const;
+
+export type IntroResult = (typeof INTRO_RESULTS)[keyof typeof INTRO_RESULTS];
+
 export const CONSENT_ANSWERS = { yes: "yes", noThanks: "no_thanks", stopAllAsks: "stop_all_asks" } as const;
 
 export type ConsentAnswer = (typeof CONSENT_ANSWERS)[keyof typeof CONSENT_ANSWERS];
@@ -155,7 +160,13 @@ export const introTransitionBodySchema = z.discriminatedUnion("action", [
   }),
 ]);
 
-export const introOutcomeBodySchema = z.object({ introId: z.uuid(), outcome: z.enum(INTRO_OUTCOMES) });
+export const introOutcomeBodySchema = z
+  .object({
+    introId: z.uuid(),
+    outcome: z.enum(INTRO_OUTCOMES),
+    results: z.array(z.enum(INTRO_RESULTS)).max(Object.keys(INTRO_RESULTS).length).default([]),
+  })
+  .transform(({ results, ...body }) => ({ ...body, results: body.outcome === INTRO_OUTCOMES.helped ? [...new Set(results)] : [] }));
 
 export const consentAnswerBodySchema = z.object({
   token: z.string().max(CONSENT_TOKEN_MAXIMUM_LENGTH),
@@ -224,6 +235,7 @@ export type IntroPerson = z.infer<typeof introPersonSchema>;
 export type CreateIntroBody = z.infer<typeof createIntroBodySchema>;
 export type IntroTransitionBody = z.infer<typeof introTransitionBodySchema>;
 export type IntroOutcomeBody = z.infer<typeof introOutcomeBodySchema>;
+export type IntroOutcomeRequest = z.input<typeof introOutcomeBodySchema>;
 export type ConsentAnswerBody = z.infer<typeof consentAnswerBodySchema>;
 export type ConsentEmailBody = z.infer<typeof consentEmailBodySchema>;
 export type ConsentIssue = z.infer<typeof consentIssueSchema>;

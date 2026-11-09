@@ -50,6 +50,8 @@ export const memberProfile = pgTable("member_profile", {
   canHelpWith: text("can_help_with"),
   needs: text("needs"),
   website: text("website"),
+  // Off by default. On, the member's name may appear among the top connectors in the admin's partner report.
+  creditInReports: boolean("credit_in_reports").notNull().default(false),
   cardStepDoneAt: timestamp("card_step_done_at", { withTimezone: true }),
   onboardingCompletedAt: timestamp("onboarding_completed_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

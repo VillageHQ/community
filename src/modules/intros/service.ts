@@ -315,7 +315,7 @@ export async function emailConsentLink(context: RequestContext, { introId, token
   return { message: `We emailed ${intro.target.name}.` };
 }
 
-export async function recordIntroOutcome(context: RequestContext, { introId, outcome }: IntroOutcomeBody) {
+export async function recordIntroOutcome(context: RequestContext, { introId, outcome, results }: IntroOutcomeBody) {
   const { database, member } = context;
   await enforceIntroLimit(database, member.id, INTRO_LIMIT_KINDS.respond);
   const intro = await readRequiredIntro(context, introId);
@@ -324,7 +324,7 @@ export async function recordIntroOutcome(context: RequestContext, { introId, out
   const now = new Date();
   const [applied] = await database
     .update(introRequest)
-    .set({ outcome, outcomeAnsweredAt: now })
+    .set({ outcome, outcomeResults: results.length > 0 ? results : null, outcomeAnsweredAt: now })
     .where(and(eq(introRequest.id, introId), isOutcomeDueForRequester(member.id, now)))
     .returning({ id: introRequest.id });
   const current = await readRequiredIntro(context, introId);

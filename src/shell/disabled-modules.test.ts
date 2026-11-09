@@ -70,7 +70,7 @@ describe("the shell with modules off", () => {
     it("asks for no Village setup", async () => {
       const { steps } = await readSetupProgress(database);
 
-      expect(steps.map(({ id }) => id)).toEqual([SETUP_STEPS.brand, SETUP_STEPS.invite]);
+      expect(steps.map(({ id }) => id)).toEqual([SETUP_STEPS.brand, SETUP_STEPS.invite, SETUP_STEPS.report]);
     });
 
     describe("a request for a Village setup step", () => {
