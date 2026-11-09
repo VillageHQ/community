@@ -12,6 +12,7 @@ import { saveSettings } from "../../platform/settings/store.ts";
 import { memberFillIn, memberLookup, memberNetwork } from "./schema.ts";
 import {
   FILL_IN_BASES,
+  FILL_IN_FIELD_VALUES,
   FILL_IN_FIELDS,
   FILL_IN_REFRESH_DAYS,
   LOOKUP_STATUSES,
@@ -210,8 +211,9 @@ export async function setFillInHidden(database: Database, memberId: string, fiel
 }
 
 export async function readFilledLines(database: Database, memberId: string): Promise<FilledLine[]> {
-  const rows = await database.select().from(memberFillIn).where(eq(memberFillIn.userId, memberId)).orderBy(memberFillIn.field);
-  return rows.map(({ field, value, filledAt, hiddenAt }) => ({ field: field as FillInField, value, filledAt: filledAt.toISOString(), isHidden: hiddenAt !== null }));
+  const rows = await database.select().from(memberFillIn).where(eq(memberFillIn.userId, memberId));
+  const order = (field: string) => FILL_IN_FIELD_VALUES.indexOf(field as FillInField);
+  return rows.toSorted((first, second) => order(first.field) - order(second.field)).map(({ field, value, filledAt, hiddenAt }) => ({ field: field as FillInField, value, filledAt: filledAt.toISOString(), isHidden: hiddenAt !== null }));
 }
 
 export type ShownFillIn = { value: string; filledAt: Date };

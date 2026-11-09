@@ -75,7 +75,9 @@ function FilledLineRow({ line, isReplaced }: { line: FilledLine; isReplaced: boo
             {FILL_IN_SOURCE_LABEL}, {formatLongDate(line.filledAt)}
           </span>
           {line.isHidden ? <Tag>Hidden from your card</Tag> : null}
-          {!line.isHidden && isReplaced ? <span className="type-small text-foreground-soft">Your own words are shown instead.</span> : null}
+          {!line.isHidden && isReplaced ? (
+            <span className="type-small text-foreground-soft">{IMAGE_FIELDS.has(line.field) ? "Another picture is shown instead." : "Your own words are shown instead."}</span>
+          ) : null}
         </div>
         <Button
           type="button"
