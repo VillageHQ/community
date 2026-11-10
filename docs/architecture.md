@@ -113,6 +113,8 @@ Some placements aren't obvious:
 | `member_removal` | `members/schema.ts` | Feed and network read it. |
 | `admin_audit_entry` | `platform/audit/schema.ts` | Every module records admin actions. |
 | `member_daily_usage`, daily limit | `platform/village/` | The credit ledger applies to anything that spends Village credits. |
+| `village_monthly_usage`, monthly cap, its warning emails | `platform/village/` | The cap applies to every paid call, including the nightly fill-in. |
+| `member_lookup`, `member_fill_in` | `members/schema.ts` | The card reads them whatever else is on. Network makes the Village calls and saves through members. |
 | Reclaim and reinvite | `admin/service-roster.ts` | They hold the roster lock and call group departure. |
 | Reports | `admin/service-reports.ts` | Feature routes like `/api/feed/report` call it. |
 | Credit usage | `network/reads-credits.ts` | It only reads Village usage. |
@@ -209,7 +211,7 @@ Three things deliberately keep working:
 - **Leaving Village.** Turning network off doesn't take anyone out of the Village group. `/api/network/leave` stays open with `staysOpenWhenOff`, the only route allowed to use it, and a member still in the group gets a leave card on their own card page.
 - **Departure on removal.** Removing a member still tries to take them out of the group, and the admin keeps the group row for any member still in it.
 
-`/` always renders. It shows the member's week (`shell/today.ts`): asks they could help with, intros waiting on them, their own asks, new members and next steps, ending with "That's everything this week". With the feed on, the feed sits beside it; with the feed off, the nav gets a "Home" entry. The feed starts off for a new community. Migration 0017 stored `on` for every community that already had members, so they kept it.
+`/` always renders. It shows the member's week (`shell/today.ts`): asks they could help with, intros waiting on them, their own asks, new members and next steps, ending with "That's everything this week". With the feed on, the feed sits beside it; with the feed off, the nav gets a "Home" entry. The feed starts off for a new community. Migration 0021 stored `on` for every community that already had members, so they kept it.
 
 ## The features screen
 

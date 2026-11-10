@@ -36,7 +36,9 @@ const EMAIL_ON_EFFECTS = [
   { text: "Introducers and requesters get a short email about intro requests.", moduleId: introsManifest.id },
   { text: "An introducer can have us email the person being introduced a private link to say yes or no.", moduleId: introsManifest.id },
   { text: "Members get an email for a new direct message, at most one per conversation every 15 minutes.", moduleId: messagesManifest.id },
-  { text: "Members can turn off intro and message emails from their card or from any of those emails." },
+  { text: "Admins get an email when the community reaches 80% and 100% of its monthly Village credits.", moduleId: networkManifest.id },
+  { text: "You can remind members who haven't connected their network, at most once a month each.", moduleId: networkManifest.id },
+  { text: "Members can turn off intro, message and reminder emails from their card or from any of those emails." },
   { text: "An email that fails is tried again for about five hours. If it still fails, you see it here." },
 ];
 

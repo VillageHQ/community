@@ -33,7 +33,7 @@ never shows), new admin analytics.
 - **"Could help with, and why."** Until the asks-helpers build lands, an ask counts as one you could help with when
   it is open, not yours, you haven't offered or skipped it, and its words share a word with your "can help with"
   line or your tags. "Why" names the overlap: "You said you can help with hiring."
-- **The feed rule.** Migration 0017 stores `module_state:feed = on` when the database already has at least one
+- **The feed rule.** Migration 0021 (first numbered 0017) stores `module_state:feed = on` when the database already has at least one
   member and no stored feed choice. A brand new install has no members when it migrates, so it gets no row and the
   feed's new default, off, applies. A stored choice, on or off, is never touched.
 - **One per week.** The week is named by the local date of its scheduled moment. A member gets at most one weekly
@@ -57,7 +57,7 @@ never shows), new admin analytics.
   both use it. `src/shell/weekly-email*.ts`: compose, the weekly job, preview, and acting on an item.
 - Routes: `/weekly/[token]` confirm page and `POST /api/email/weekly/act` (platform), inbound handling in
   `POST /api/email/resend-webhook`, `/admin/weekly-email` and `/api/admin/weekly-email/*` (admin).
-- Migration 0017.
+- Migration 0021 (first numbered 0017).
 
 ## Journeys and tests
 

@@ -11,7 +11,8 @@ import { Tag } from "@/components/ui/tag";
 import { getDatabase } from "@/platform/database/client";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readFirstName } from "@/platform/design/avatar-identity";
-import { formatMonthAndYear } from "@/platform/text/format-date";
+import { formatLongDate, formatMonthAndYear } from "@/platform/text/format-date";
+import { FILL_IN_SOURCE_LABEL } from "@/modules/members/contract-fill-in";
 import { readExternalHost } from "@/modules/members/rules-external-url";
 import { isBlockedBy } from "@/modules/members/service-blocks";
 import { isCardFilledIn, readMemberProfile } from "@/modules/members/service-profile";
@@ -63,7 +64,8 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
 
   const isOwnProfile = viewer.id === profile.id;
   const isBlockedByViewer = !isOwnProfile && (await isBlockedBy(database, viewer.id, profile.id));
-  const roleLine = [profile.title, profile.company].filter(Boolean).join(", ");
+  const { shown } = profile;
+  const roleLine = [shown.title, shown.company].filter(Boolean).join(", ");
 
   return (
     <div className="mx-auto grid max-w-[820px] gap-5">
@@ -77,14 +79,28 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
       </div>
       <header className="rounded-card bg-accent p-card-phone sm:rounded-panel sm:p-8">
         <div className="flex flex-wrap items-center gap-5">
-          <Avatar stableId={profile.id} name={profile.name} imageUrl={profile.avatarUrl} sizePx={PROFILE_AVATAR_SIZE_PX} />
+          <Avatar stableId={profile.id} name={profile.name} imageUrl={shown.imageUrl} sizePx={PROFILE_AVATAR_SIZE_PX} />
           <div className="min-w-0 flex-[1_1_240px]">
             <h1 className="type-h1">{profile.name}</h1>
             {roleLine ? <p className="type-lead mt-1 text-foreground-soft">{roleLine}</p> : null}
-            {profile.location ? (
+            {shown.location ? (
               <p className="type-small mt-1 flex items-center gap-1.5 text-foreground-soft">
                 <MapPin aria-hidden="true" className="size-icon-small shrink-0" />
-                {profile.location}
+                {shown.location}
+              </p>
+            ) : null}
+            {shown.headline ? <p className="type-small mt-1 text-foreground-soft">{shown.headline}</p> : null}
+            {shown.filledAt ? (
+              <p className="type-small mt-2 text-muted-foreground">
+                {FILL_IN_SOURCE_LABEL}, {formatLongDate(shown.filledAt)}
+                {isOwnProfile ? (
+                  <>
+                    {" · "}
+                    <Link href={ROUTES.editCard} className="underline underline-offset-3">
+                      Hide a line
+                    </Link>
+                  </>
+                ) : null}
               </p>
             ) : null}
           </div>
@@ -138,7 +154,7 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
         </Card>
       ) : null}
 
-      {isCardFilledIn(profile) ? null : (
+      {isCardFilledIn({ ...profile, title: shown.title, company: shown.company }) ? null : (
         <Card>
           <CardTitle>{isOwnProfile ? "Your card is still empty" : `${readFirstName(profile.name)} is still settling in`}</CardTitle>
           <p className="type-lead mt-2 text-foreground-soft">

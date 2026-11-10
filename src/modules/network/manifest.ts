@@ -17,6 +17,6 @@ export const networkManifest = {
   adminTabs: [{ label: "Credits", href: ROUTES.adminCredits }],
   paths: {
     pages: [ROUTES.network, ROUTES.adminCredits],
-    api: ["/api/network", "/api/admin/village", API_ROUTES.dailyLimit],
+    api: ["/api/network", "/api/admin/village", API_ROUTES.dailyLimit, API_ROUTES.monthlyCap],
   },
 } satisfies ToggleableManifest;

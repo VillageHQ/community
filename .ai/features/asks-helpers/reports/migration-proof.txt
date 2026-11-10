@@ -1,0 +1,11 @@
+Migration 0020 on two made-up databases (Postgres 17 in Docker):
+
+1. A new community (no members when the migration runs):
+   select key, value from instance_settings where key like 'module_state%'
+   -> (no rows)   Asks follows its default, which is now on.
+
+2. An existing community (migrations 0000 to 0015 applied, one member added, then 0020):
+   select key, value from instance_settings where key like 'module_state%'
+   -> module_state:asks | off   It keeps the state it had.
+
+Tests: src/modules/asks/asks-helpers.test.ts 22 passed; asks, intros and admin suites 887 passed.

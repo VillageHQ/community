@@ -7,23 +7,28 @@ import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts"
 import { recordAdminAction } from "../../platform/audit/record.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { user } from "../../platform/database/auth-schema.ts";
-import type { Transaction } from "../../platform/database/client.ts";
+import type { DatabaseOrTransaction, Transaction } from "../../platform/database/client.ts";
 import type { RequestContext, SessionMember } from "../../platform/http/request-context.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import type { MemberRemoval } from "../../platform/modules/integration.ts";
 import { logAdminAction } from "../../platform/observability/route-logging.ts";
+import { saveSettings } from "../../platform/settings/store.ts";
 import {
+  ASK_ALLOWANCE_SETTING,
   ASK_ERROR_CODES,
+  ASK_KINDS,
   ASK_LIMITS,
   ASK_STATES,
+  composeAnswerReportBody,
   composeAskReportBody,
+  type AnswerAskBody,
   type CloseAskBody,
   type CreateAskBody,
   type OfferHelpBody,
 } from "./contract.ts";
 import { hasNoBlockBetween, readOpenAskCount } from "./reads.ts";
 import { canRenewAsk, readAskState } from "./rules-state.ts";
-import { ask, askOffer } from "./schema.ts";
+import { ask, askAnswer, askHelper, askOffer } from "./schema.ts";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
@@ -50,11 +55,21 @@ async function assertRoomForAnotherOpenAsk(transaction: Transaction, memberId: s
   if ((await readOpenAskCount(transaction, memberId, now)) >= ASK_LIMITS.openPerMember) throw openLimitError();
 }
 
-export async function createAsk({ database, member }: RequestContext, { title, detail, category }: CreateAskBody) {
+// Checks the weekly allowance inside the posting transaction, after the member row lock. It lives in the shell,
+// because intro asks share it and this module can't read intros.
+export type AllowanceCheck = (transaction: Transaction, memberId: string) => Promise<void>;
+
+export async function createAsk({ database, member }: RequestContext, body: CreateAskBody, assertAllowance: AllowanceCheck) {
+  const { title, detail, category, kind } = body;
+  const isAsk = kind === ASK_KINDS.ask;
   return database.transaction(async (transaction) => {
     await lockMemberAsks(transaction, member.id);
     await assertRoomForAnotherOpenAsk(transaction, member.id, new Date());
-    const [created] = await transaction.insert(ask).values({ authorId: member.id, title, detail, category }).returning({ id: ask.id });
+    if (isAsk) await assertAllowance(transaction, member.id);
+    const [created] = await transaction
+      .insert(ask)
+      .values({ authorId: member.id, title, detail, category, kind, targetSlug: isAsk ? body.targetLinkedin : null })
+      .returning({ id: ask.id });
     if (!created) throw askGoneError();
     return created;
   });
@@ -62,15 +77,68 @@ export async function createAsk({ database, member }: RequestContext, { title, d
 
 async function lockAskForOffer(transaction: Transaction, askId: string, helperId: string) {
   const [target] = await transaction
-    .select({ authorId: ask.authorId, title: ask.title, listedAt: ask.listedAt, closedAt: ask.closedAt })
+    .select({ authorId: ask.authorId, title: ask.title, kind: ask.kind, listedAt: ask.listedAt, closedAt: ask.closedAt })
     .from(ask)
     .innerJoin(user, eq(user.id, ask.authorId))
     .where(and(eq(ask.id, askId), isActiveMember(), hasNoBlockBetween(helperId, ask.authorId)))
     .for("share", { of: ask });
   if (!target) throw askGoneError();
   if (target.authorId === helperId) throw new RequestError(UNPROCESSABLE_STATUS, ASK_ERROR_CODES.ownAsk, "This is your own ask.");
+  if (target.kind !== ASK_KINDS.ask) throw new RequestError(UNPROCESSABLE_STATUS, ASK_ERROR_CODES.notAnAsk, "This is an update, so it doesn't need help.");
   if (readAskState(target, new Date()) !== ASK_STATES.open) throw askClosedError();
   return target;
+}
+
+// "I've done this myself": one public answer per member under an open ask. A second try finds the first.
+export async function answerAsk({ database, member }: RequestContext, { askId, body }: AnswerAskBody) {
+  return database.transaction(async (transaction) => {
+    await lockAskForOffer(transaction, askId, member.id);
+    const [created] = await transaction.insert(askAnswer).values({ askId, authorId: member.id, body }).onConflictDoNothing().returning({ id: askAnswer.id });
+    if (created) return { id: created.id, wasAlreadyAnswered: false };
+    const [earlier] = await transaction
+      .select({ id: askAnswer.id })
+      .from(askAnswer)
+      .where(and(eq(askAnswer.askId, askId), eq(askAnswer.authorId, member.id)));
+    if (!earlier) throw askGoneError();
+    return { id: earlier.id, wasAlreadyAnswered: true };
+  });
+}
+
+// The ask a helper is acting on, as that helper may see it: open, an ask, not their own, no block either way.
+export async function readAskForHelper(connection: DatabaseOrTransaction, askId: string, helperId: string) {
+  const [target] = await connection
+    .select({
+      authorId: ask.authorId,
+      title: ask.title,
+      kind: ask.kind,
+      targetSlug: ask.targetSlug,
+      targetName: ask.targetName,
+      listedAt: ask.listedAt,
+      closedAt: ask.closedAt,
+    })
+    .from(ask)
+    .innerJoin(user, eq(user.id, ask.authorId))
+    .where(and(eq(ask.id, askId), isActiveMember(), hasNoBlockBetween(helperId, ask.authorId)));
+  if (!target) throw askGoneError();
+  if (target.authorId === helperId) throw new RequestError(UNPROCESSABLE_STATUS, ASK_ERROR_CODES.ownAsk, "This is your own ask.");
+  if (target.kind !== ASK_KINDS.ask) throw new RequestError(UNPROCESSABLE_STATUS, ASK_ERROR_CODES.notAnAsk, "This is an update, so it doesn't need help.");
+  if (readAskState(target, new Date()) !== ASK_STATES.open) throw askClosedError();
+  return target;
+}
+
+// A path helper on the author's own open ask, so the author can ask them for the intro.
+export async function readPathHelperForAuthor(connection: DatabaseOrTransaction, authorId: string, askId: string, helperId: string) {
+  const [target] = await connection
+    .select({ targetSlug: ask.targetSlug, connectorSlug: askHelper.connectorSlug, listedAt: ask.listedAt, closedAt: ask.closedAt })
+    .from(askHelper)
+    .innerJoin(ask, eq(ask.id, askHelper.askId))
+    .innerJoin(user, eq(user.id, askHelper.helperId))
+    .where(and(eq(askHelper.askId, askId), eq(askHelper.helperId, helperId), eq(ask.authorId, authorId), isActiveMember(), hasNoBlockBetween(authorId, askHelper.helperId)));
+  if (!target?.targetSlug || !target.connectorSlug) {
+    throw new RequestError(NOT_FOUND_STATUS, ASK_ERROR_CODES.notHelper, "This member isn't on a path to the person you named. Message them instead.");
+  }
+  if (readAskState(target, new Date()) !== ASK_STATES.open) throw askClosedError();
+  return { targetSlug: target.targetSlug, connectorSlug: target.connectorSlug };
 }
 
 export type DeliverableOffer = { id: string; askerId: string; askTitle: string; note: string };
@@ -145,6 +213,24 @@ export async function removeAskWithin(transaction: Transaction, admin: SessionMe
   });
 }
 
+export async function removeAnswerWithin(transaction: Transaction, admin: SessionMember, answerId: string) {
+  const [target] = await transaction
+    .select({ authorId: askAnswer.authorId, authorName: user.name, body: askAnswer.body, askTitle: ask.title })
+    .from(askAnswer)
+    .innerJoin(ask, eq(ask.id, askAnswer.askId))
+    .innerJoin(user, eq(user.id, askAnswer.authorId))
+    .where(eq(askAnswer.id, answerId))
+    .for("update", { of: askAnswer });
+  if (!target) throw new RequestError(NOT_FOUND_STATUS, ASK_ERROR_CODES.answerNotFound, "This answer isn't there anymore.");
+  await transaction.delete(askAnswer).where(eq(askAnswer.id, answerId));
+  await recordAdminAction(transaction, admin.id, {
+    action: AUDIT_ACTIONS.askAnswerRemoved,
+    targetMemberId: target.authorId,
+    targetName: target.authorName,
+    detail: composeAnswerReportBody(target.askTitle, target.body),
+  });
+}
+
 export async function removeAsk({ database, member }: RequestContext, askId: string) {
   await withAdminTransaction(database, member.id, (transaction) => removeAskWithin(transaction, member, askId));
   logAdminAction("ask_removed", member.id, askId);
@@ -162,6 +248,8 @@ export async function deleteMemberAsks(transaction: Transaction, { memberId, mem
   }
   await transaction.delete(ask).where(eq(ask.authorId, memberId));
   await transaction.delete(askOffer).where(eq(askOffer.helperId, memberId));
+  await transaction.delete(askAnswer).where(eq(askAnswer.authorId, memberId));
+  await transaction.delete(askHelper).where(eq(askHelper.helperId, memberId));
 }
 
 // Hiding alone would bring these notes back after an unblock, and messages stay hidden after one.
@@ -175,4 +263,11 @@ export async function withdrawOffersBetween(transaction: Transaction, blockerId:
         and(eq(askOffer.helperId, blockerId), inArray(askOffer.askId, asksBy(blockedId))),
       ),
     );
+}
+
+export async function saveWeeklyAllowance({ database, member }: RequestContext, weeklyAllowance: number) {
+  await withAdminTransaction(database, member.id, async (transaction) => {
+    await saveSettings(transaction, { [ASK_ALLOWANCE_SETTING]: String(weeklyAllowance) });
+    await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.askAllowanceChanged, detail: String(weeklyAllowance) });
+  });
 }

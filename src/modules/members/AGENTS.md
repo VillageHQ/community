@@ -11,6 +11,7 @@ Core. Always on. Other modules build on it, and it never imports them.
 - `service-report-credit.ts`: the member's "credit me in reports" switch. Off by default.
 - `slots.tsx`: `MemberConversationSlot`. Messages fills it, so members never imports messages.
 - `service-linkedin.ts`: claiming a LinkedIn profile, and whether a member's email is trusted.
+- `service-fill-in.ts`, `contract-fill-in.ts`, `rules-fill-in.ts`: the profile fill-in's data. The admin's legal basis, each member's yes or no (`member_lookup`), and the filled-in lines (`member_fill_in`). Network makes the Village calls and saves through here.
 - `service-onboarding.ts`: onboarding state. `src/shell/onboarding.ts` decides the next step, because that needs network.
 - `contract-*.ts`: Zod schemas and constants. The schema loads them outside Next, so they use relative imports and no `server-only`.
 - `queries-*.ts`: client requests. `components/`: the UI.
@@ -19,4 +20,7 @@ Rules:
 
 - Never store an invite token. Store its hash, and compare in constant time.
 - Every admin change writes the audit log in the same transaction, through `withAdminTransaction`.
+- Filled-in lines never go into `member_profile`. The member's own words always win (`readShownCard`), and a filled-in face or logo shows only without an uploaded photo.
+- The fill-in gate is `isLookupAllowed`: no basis, nobody; "Don't look me up" always wins, and deletes the lines (a hidden line keeps its hide, with no words). `saveFilledProfile` checks it again under the row lock.
+- A refresh never touches `hidden_at`, so a hidden line stays hidden.
 - Tests are next to the code. They run against real route handlers and a real database.

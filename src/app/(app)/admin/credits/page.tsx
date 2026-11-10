@@ -13,6 +13,16 @@ import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { formatDateAndTimeUtc, formatLongDate } from "@/platform/text/format-date";
 import { requireAdmin } from "@/platform/auth/session";
 import { readDailyLookupLimit, readVillageOutOfCreditsAt } from "@/platform/village/settings";
+import { readMonthlyCreditUsage } from "@/platform/village/credit-ledger";
+import { NEAR_CAP_PERCENT } from "@/platform/village/contract";
+import { readActiveMemberCount } from "@/modules/members/reads-directory";
+import { readFilledMemberCount, readFillInSettings } from "@/modules/members/service-fill-in";
+import { FillInSettingsForm } from "@/modules/network/components/fill-in-settings-form";
+import { MonthlyCapForm } from "@/modules/network/components/monthly-cap-form";
+import { UsageMeter } from "@/modules/network/components/usage-meter";
+import { ConnectNudgeButton } from "@/modules/network/components/connect-nudge-button";
+import { readConnectMeter } from "@/modules/network/service-nudge";
+import { readResendConfig } from "@/platform/email/resend";
 
 import { AdminSection } from "@/shell/admin-section";
 import { StatRows } from "@/modules/admin/components/stat-rows";
@@ -90,14 +100,46 @@ function EmptyUsage() {
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminCredits };
 
+function NetworkReachCard({ meter }: { meter: Awaited<ReturnType<typeof readConnectMeter>> }) {
+  const { memberCount, connectedCount, unconnectedCount, nudgeableCount } = meter;
+  return (
+    <Card className="grid gap-4 lg:col-span-2">
+      <div className="grid gap-1.5">
+        <CardTitle>Who members can ask for intros</CardTitle>
+        <CardDescription>
+          Members who connected their network and share it with the community, so others can ask them for an intro. {unconnectedCount} haven&apos;t connected yet.
+        </CardDescription>
+      </div>
+      <UsageMeter
+        label="Connected and open to intro asks"
+        value={connectedCount}
+        maximum={Math.max(memberCount, 1)}
+        valueText={`${connectedCount} of ${memberCount} members`}
+      />
+      <ConnectNudgeButton nudgeableCount={nudgeableCount} isEmailOn={readResendConfig(process.env) !== null} />
+    </Card>
+  );
+}
+
+
+function readMonthSentence({ credits, cap, usedPercent }: Awaited<ReturnType<typeof readMonthlyCreditUsage>>) {
+  if (credits >= cap || usedPercent >= 100) return "The cap is reached. Lookups are paused until the 1st (UTC), or until you raise it.";
+  return `Lookups stop at the cap, and admins get an email at ${NEAR_CAP_PERCENT}% and at 100%. These are this site's estimates.`;
+}
+
 export default modulePage(networkManifest, async function AdminCreditsPage() {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const database = getDatabase();
-  const [usage, limit, outOfCreditsAt] = await Promise.all([
+  const [usage, limit, outOfCreditsAt, month, fillIn, filledMemberCount, memberCount] = await Promise.all([
     readCreditUsage(database),
     readDailyLookupLimit(database),
     readVillageOutOfCreditsAt(database),
+    readMonthlyCreditUsage(database),
+    readFillInSettings(database),
+    readFilledMemberCount(database),
+    readActiveMemberCount(database),
   ]);
+  const connectMeter = await readConnectMeter(database, admin.id);
   const hiddenMemberCount = usage.spendingMemberCount - usage.members.length;
 
   return (
@@ -108,6 +150,27 @@ export default modulePage(networkManifest, async function AdminCreditsPage() {
             <OutOfCreditsNotice outOfCreditsAt={outOfCreditsAt} />
           </div>
         ) : null}
+
+        <Card className="grid gap-5 lg:col-span-2">
+          <div className="grid gap-1.5">
+            <CardTitle>This month</CardTitle>
+            <CardDescription>{readMonthSentence(month)}</CardDescription>
+          </div>
+          <UsageMeter
+            label="Credits used this month"
+            value={month.credits}
+            maximum={month.cap}
+            valueText={`About ${month.credits.toLocaleString("en-US")} of ${month.cap.toLocaleString("en-US")} credits, ${month.usedPercent}%`}
+            isWarning={month.usedPercent >= NEAR_CAP_PERCENT}
+          />
+          <UsageMeter
+            label="Members filled in from public profiles"
+            value={filledMemberCount}
+            maximum={Math.max(memberCount, 1)}
+            valueText={`${filledMemberCount} of ${memberCount} members, about ${month.fillInCredits.toLocaleString("en-US")} credits this month`}
+          />
+          <MonthlyCapForm currentCap={month.cap} />
+        </Card>
 
         <Card className="grid gap-4">
           <div className="grid gap-1.5">
@@ -156,6 +219,19 @@ export default modulePage(networkManifest, async function AdminCreditsPage() {
             <CardDescription>Stops one member from spending all your credits. Each member can use up to {limit} lookups a day right now.</CardDescription>
           </div>
           <DailyLimitForm currentLimit={limit} />
+        </Card>
+
+        <NetworkReachCard meter={connectMeter} />
+
+        <Card className="grid gap-4 lg:col-span-2">
+          <div className="grid gap-1.5">
+            <CardTitle>Profile fill-in</CardTitle>
+            <CardDescription>
+              Fills empty cards from public work profiles through Village. It stays off until you record what lets you do it. A member&apos;s own words always win, and each
+              member can hide any line or say no.
+            </CardDescription>
+          </div>
+          <FillInSettingsForm basis={fillIn.basis} termsDate={fillIn.termsDate} />
         </Card>
 
         <Card className="grid gap-4">

@@ -377,7 +377,7 @@ ${HELP_NOTE}`;
   });
 
   describe("the feed switch", () => {
-    const migration = readFileSync(resolve(import.meta.dirname, "../../drizzle/0017_today_weekly.sql"), "utf8");
+    const migration = readFileSync(resolve(import.meta.dirname, "../../drizzle/0021_today_weekly.sql"), "utf8");
     const feedRule = migration.split("--> statement-breakpoint").at(-1) ?? "";
 
     async function readFeedState() {

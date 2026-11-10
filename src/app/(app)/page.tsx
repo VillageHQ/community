@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/page-header";
 import { getDatabase } from "@/platform/database/client";
 import { readSetupProgress } from "@/shell/admin-setup";
 import { readBrandingForPage } from "@/platform/branding/branding";
+import { readLookupState } from "@/modules/members/service-fill-in";
+import { LookupQuestionCard } from "@/modules/members/components/lookup-question-card";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { readResendConfig } from "@/platform/email/resend";
@@ -48,15 +50,18 @@ export default modulePage(membersManifest, async function HomePage() {
   const isAdmin = isAdminMember(member);
   const enabledIds = await readEnabledIds(database);
   const isFeedOn = enabledIds.has(feedManifest.id);
-  const [community, networkProgress, setupProgress, profile, avatarUrl, feedPage, today] = await Promise.all([
+  const isNetworkOn = enabledIds.has(networkManifest.id);
+  const [community, networkProgress, setupProgress, profile, avatarUrl, feedPage, today, lookupState] = await Promise.all([
     readBrandingForPage(),
-    enabledIds.has(networkManifest.id) ? readNetworkProgress(database, member) : null,
+    isNetworkOn ? readNetworkProgress(database, member) : null,
     isAdmin ? readSetupProgress(database) : null,
     readMemberProfile(database, member.id),
     readAvatarUrl(database, member.id),
     isFeedOn ? readFeedPage(database, member, null) : null,
     readTodayItems(database, member.id, enabledIds),
+    isNetworkOn ? readLookupState(database, member.id) : null,
   ]);
+  const lookupQuestion = lookupState?.needsAnswer ? <LookupQuestionCard communityName={community.name} /> : null;
 
   const nextSteps = selectNextSteps({
     setupProgress,
@@ -75,7 +80,8 @@ export default modulePage(membersManifest, async function HomePage() {
     return (
       <>
         {greeting}
-        <div className="max-w-[640px]">
+        <div className="grid max-w-[640px] gap-5">
+          {lookupQuestion}
           <TodayList today={today} nextSteps={nextSteps} />
         </div>
       </>
@@ -94,6 +100,7 @@ export default modulePage(membersManifest, async function HomePage() {
           <TodayList today={today} nextSteps={nextSteps} />
         </aside>
         <div className="grid gap-5 lg:order-1">
+          {lookupQuestion}
           <HydrationBoundary state={dehydrate(queryClient)}>
             <Feed viewer={{ id: member.id, name: member.name, avatarUrl, isAdmin }} />
           </HydrationBoundary>

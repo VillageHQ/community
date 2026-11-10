@@ -1,12 +1,13 @@
 import "server-only";
 
-import { and, eq, gt, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, count, eq, gt, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 
 import { introRequest } from "./schema.ts";
 import { isAwaitingTarget, isConsentTokenLive, readLiveConsentHash } from "./reads-consent.ts";
 import { isTargetOptedOut } from "./opt-out.ts";
 import { isTargetRefusingRequester, issueConsent, saveConsentLink } from "./service-consent.ts";
-import { memberBlock } from "../members/schema.ts";
+import { memberBlock, memberNetwork, memberProfile } from "../members/schema.ts";
+import type { Transaction } from "../../platform/database/client.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
@@ -17,6 +18,7 @@ import {
   INTRO_ACTION_RULES,
   INTRO_ACTIONS,
   INTRO_ERROR_CODES,
+  INTRO_LIMITS,
   INTRO_ROLES,
   INTRO_STATES,
   REQUESTER_STATES,
@@ -49,6 +51,8 @@ const CONFLICT_STATUS = 409;
 const BAD_GATEWAY_STATUS = 502;
 const UNPROCESSABLE_STATUS = 422;
 const CONSENT_EMAIL_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+export const CONNECTOR_WEEKLY_CAP = 10;
 const INTRO_CHANGED_MESSAGE = "This intro request just changed. Here's where it stands now.";
 
 export function introGoneError() {
@@ -104,7 +108,43 @@ async function readAskedConnector(context: RequestContext, { targetSlug, connect
   };
 }
 
-export async function createIntroRequest(context: RequestContext, body: CreateIntroBody) {
+// Checks the member's weekly allowance inside the create transaction. The shell passes it, because asks share it.
+export type IntroAllowanceCheck = (transaction: Transaction, memberId: string) => Promise<void>;
+export type CreateIntroOptions = { assertAllowance: IntroAllowanceCheck; askId?: string | null };
+
+// Both rows are locked in one order, so two members asking each other at once can't deadlock.
+async function lockMembers(transaction: Transaction, memberIds: string[]) {
+  await transaction
+    .select({ id: user.id })
+    .from(user)
+    .where(inArray(user.id, memberIds.toSorted()))
+    .orderBy(user.id)
+    .for("no key update");
+}
+
+// A connector gets at most CONNECTOR_WEEKLY_CAP intro asks a week, so nobody becomes everyone's pitch inbox. Intros a
+// connector offered themselves, and asks nobody showed them, don't count.
+async function assertConnectorHasRoom(transaction: Transaction, introducerId: string, introducerName: string, now: Date) {
+  const [row] = await transaction
+    .select({ received: count() })
+    .from(introRequest)
+    .where(
+      and(
+        eq(introRequest.introducerId, introducerId),
+        eq(introRequest.isConnectorOffer, false),
+        eq(introRequest.isWithheld, false),
+        gte(introRequest.createdAt, new Date(now.getTime() - WEEK_MS)),
+      ),
+    );
+  if ((row?.received ?? 0) < CONNECTOR_WEEKLY_CAP) return;
+  throw new RequestError(
+    CONFLICT_STATUS,
+    INTRO_ERROR_CODES.connectorBusy,
+    `${introducerName} has had a lot of intro asks this week. Try someone else, or ask again next week.`,
+  );
+}
+
+export async function createIntroRequest(context: RequestContext, body: CreateIntroBody, options: CreateIntroOptions) {
   const { database, member } = context;
   const asked = await readAskedConnector(context, body);
   await enforceIntroLimit(database, member.id, INTRO_LIMIT_KINDS.ask);
@@ -123,6 +163,9 @@ export async function createIntroRequest(context: RequestContext, body: CreateIn
   const createdAt = new Date();
   const branding = isWithheld ? null : await readEmailBranding(database, context.environment);
   const created = await database.transaction(async (transaction) => {
+    await lockMembers(transaction, [member.id, asked.introducerId]);
+    await options.assertAllowance(transaction, member.id);
+    if (!isWithheld) await assertConnectorHasRoom(transaction, asked.introducerId, asked.introducerName, createdAt);
     const [inserted] = await transaction
       .insert(introRequest)
       .values({
@@ -133,6 +176,7 @@ export async function createIntroRequest(context: RequestContext, body: CreateIn
         isWithheld,
         createdAt,
         expiresAt: readIntroDeadline(createdAt),
+        askId: options.askId ?? null,
       })
       .onConflictDoNothing()
       .returning({ id: introRequest.id });
@@ -330,4 +374,62 @@ export async function recordIntroOutcome(context: RequestContext, { introId, out
   const current = await readRequiredIntro(context, introId);
   if (applied || current.outcome === outcome) return current;
   throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.changed, INTRO_CHANGED_MESSAGE);
+}
+
+export type OfferedIntroBody = { requesterId: string; askId: string; targetSlug: string; targetName: string; note: string };
+
+const NOT_JOINED_MESSAGE = "Intros go through the community network. You both need to have joined it on the Network page.";
+
+async function readJoinedNetwork(context: RequestContext, memberId: string) {
+  const [row] = await context.database
+    .select({ linkedinSlug: memberNetwork.linkedinSlug, title: memberProfile.title, company: memberProfile.company, name: user.name })
+    .from(memberNetwork)
+    .innerJoin(user, eq(user.id, memberNetwork.userId))
+    .leftJoin(memberProfile, eq(memberProfile.userId, memberNetwork.userId))
+    .where(and(eq(memberNetwork.userId, memberId), isNotNull(memberNetwork.groupJoinedAt)));
+  return row?.linkedinSlug ? { ...row, linkedinSlug: row.linkedinSlug } : null;
+}
+
+// "I know someone" on an ask: the helper is the connector and has already said yes by offering, so the intro starts
+// waiting on the target. The helper then makes the consent link on the Intros page, as after any yes.
+export async function createOfferedIntro(context: RequestContext, body: OfferedIntroBody) {
+  const { database, member, environment } = context;
+  await enforceIntroLimit(database, member.id, INTRO_LIMIT_KINDS.ask);
+  const [connector, requester] = await Promise.all([readJoinedNetwork(context, member.id), readJoinedNetwork(context, body.requesterId)]);
+  if (!connector || !requester) throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.notJoined, NOT_JOINED_MESSAGE);
+  if (body.targetSlug === connector.linkedinSlug || body.targetSlug === requester.linkedinSlug) {
+    throw new RequestError(UNPROCESSABLE_STATUS, INTRO_ERROR_CODES.ownTarget, "That's one of you two. Name the person you'd introduce them to.");
+  }
+  if (await isTargetRefusingRequester(database, environment, body.requesterId, body.targetSlug)) {
+    throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.targetRefuses, "This person asked not to get intro asks through this community.");
+  }
+
+  const now = new Date();
+  const [created] = await database
+    .insert(introRequest)
+    .values({
+      requesterId: body.requesterId,
+      introducerId: member.id,
+      targetLinkedinSlug: body.targetSlug,
+      targetName: body.targetName,
+      targetHeadline: null,
+      introducerName: connector.name,
+      introducerHeadline: [connector.title, connector.company].filter(Boolean).join(", ") || null,
+      introducerLinkedinSlug: connector.linkedinSlug,
+      reason: `${connector.name} offered this intro on an ask`.slice(0, INTRO_LIMITS.reasonLength),
+      note: body.note,
+      state: INTRO_STATES.askingTarget,
+      requesterHasUpdate: true,
+      createdAt: now,
+      askedTargetAt: now,
+      expiresAt: readTargetDeadline(readIntroDeadline(now), now),
+      askId: body.askId,
+      isConnectorOffer: true,
+    })
+    .onConflictDoNothing()
+    .returning({ id: introRequest.id });
+  if (!created) {
+    throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.duplicate, "You already have an open intro for them with this person.");
+  }
+  return created;
 }
