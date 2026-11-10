@@ -1,5 +1,5 @@
 {
-  "id": "6703698d-7c3a-46ee-9d4b-3961f9b6cc68",
+  "id": "b0d1cd08-a46f-402f-8679-b8b8ca708e96",
   "prevId": "66968db4-7dc8-4e57-8204-ac0a730eb5af",
   "version": "7",
   "dialect": "postgresql",
@@ -760,7 +760,7 @@
           "type": "timestamp (3) with time zone",
           "primaryKey": false,
           "notNull": true,
-          "default": "date_trunc('milliseconds', now())"
+          "default": "now()"
         },
         "last_error": {
           "name": "last_error",
@@ -784,12 +784,6 @@
         "dedupe_key": {
           "name": "dedupe_key",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp (3) with time zone",
           "primaryKey": false,
           "notNull": false
         }
@@ -3028,12 +3022,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "target_reminder_at": {
-          "name": "target_reminder_at",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "ask_id": {
           "name": "ask_id",
           "type": "uuid",
@@ -3203,6 +3191,271 @@
         "intro_request_snapshot_lengths": {
           "name": "intro_request_snapshot_lengths",
           "value": "char_length(\"intro_request\".\"target_name\") between 1 and 200 and char_length(\"intro_request\".\"introducer_name\") between 1 and 200 and char_length(\"intro_request\".\"reason\") between 1 and 600"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.job_posting": {
+      "name": "job_posting",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "department": {
+          "name": "department",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "posted_at": {
+          "name": "posted_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_manual": {
+          "name": "is_manual",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "job_posting_source_idx": {
+          "name": "job_posting_source_idx",
+          "columns": [
+            {
+              "expression": "source_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "job_posting_source_id_job_source_id_fk": {
+          "name": "job_posting_source_id_job_source_id_fk",
+          "tableFrom": "job_posting",
+          "tableTo": "job_source",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "job_posting_source_external_unique": {
+          "name": "job_posting_source_external_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "source_id",
+            "external_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.job_source": {
+      "name": "job_source",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company": {
+          "name": "company",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_slug": {
+          "name": "company_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tool": {
+          "name": "tool",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hidden": {
+          "name": "hidden",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "hidden_by_admin": {
+          "name": "hidden_by_admin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "last_pulled_at": {
+          "name": "last_pulled_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "job_source_member_idx": {
+          "name": "job_source_member_idx",
+          "columns": [
+            {
+              "expression": "member_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "job_source_company_slug_idx": {
+          "name": "job_source_company_slug_idx",
+          "columns": [
+            {
+              "expression": "company_slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "job_source_member_id_user_id_fk": {
+          "name": "job_source_member_id_user_id_fk",
+          "tableFrom": "job_source",
+          "tableTo": "user",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "job_source_tool_known": {
+          "name": "job_source_tool_known",
+          "value": "\"job_source\".\"tool\" in ('greenhouse', 'lever', 'ashby', 'workable', 'smartrecruiters', 'recruitee', 'breezy', 'rippling', 'teamtailor', 'bamboohr', 'personio', 'jobvite', 'manual')"
+        },
+        "job_source_admin_hide_is_hidden": {
+          "name": "job_source_admin_hide_is_hidden",
+          "value": "not \"job_source\".\"hidden_by_admin\" or \"job_source\".\"hidden\""
+        },
+        "job_source_feed_has_slug": {
+          "name": "job_source_feed_has_slug",
+          "value": "(\"job_source\".\"tool\" = 'manual') = (\"job_source\".\"slug\" is null)"
         }
       },
       "isRLSEnabled": false
@@ -3857,24 +4110,6 @@
         },
         "website": {
           "name": "website",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "stage": {
-          "name": "stage",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sector": {
-          "name": "sector",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cohort": {
-          "name": "cohort",
           "type": "text",
           "primaryKey": false,
           "notNull": false
