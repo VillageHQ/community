@@ -6,7 +6,7 @@ What it does now.
 - A member posts an ask or an update. An ask can name one person to reach, by LinkedIn link.
 - When an ask is posted, members who may help are found:
   - members on the author's network path to the named person, only members who joined the community group (and so agreed to share);
-  - up to 5 members whose "can help with" shares a word with the ask (plain word overlap, common words ignored).
+  - up to 5 members whose "can help with" line or tags share a real word with the ask (plain word overlap; stop words and everyday words such as "first" or "team" never count; the same rule picks the Today list, and every helper emailed sees the ask on Today).
   Members blocked in either direction are never helpers. Each helper gets one email ("Asks you could help with" topic, one-click unsubscribe). A failed path lookup never stops the ask.
 - On the board, a helper sees why they were picked. Anyone else can:
   - "I know someone": starts a two-sided intro with them as the connector, waiting on the person's yes. They make the consent link on the Intros page. Their note also reaches the author as an offer. With Intros off, it saves a private note instead.
