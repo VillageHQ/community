@@ -1,10 +1,10 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, CircleCheck, Link2, Lock, X } from "lucide-react";
+import { ArrowRight, ChevronRight, CircleCheck, Link2, Lock, X } from "lucide-react";
 import Link from "next/link";
 import { Dialog } from "radix-ui";
-import { useId, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
+import { Fragment, useId, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 
 import type { ConstellationPerson } from "@/components/constellation";
 import { FormError } from "@/components/form-error";
@@ -65,6 +65,29 @@ function IntroducerPreview({ viewer, targetName, note, reason }: { viewer: Const
         <Link2 aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-brand-emphasis" />
         <span className="min-w-0">{reason}</span>
       </p>
+    </div>
+  );
+}
+
+// The way in, on top: who passes the note on, and why they know each other.
+function AskPath({ connector, targetName }: { connector: Connector; targetName: string }) {
+  const names = ["You", connector.name, ...(connector.throughName ? [connector.throughName] : []), targetName];
+  return (
+    <div className="grid gap-1">
+      <p className="type-small flex flex-wrap items-center gap-x-2 font-semibold text-foreground-soft">
+        {names.map((name, position) => (
+          <Fragment key={`${position}-${name}`}>
+            {position > 0 ? (
+              <span className="font-normal text-muted-foreground">
+                <span aria-hidden="true">→</span>
+                <span className="sr-only">then</span>
+              </span>
+            ) : null}
+            <span className="wrap-anywhere">{name}</span>
+          </Fragment>
+        ))}
+      </p>
+      <p className="type-small wrap-anywhere text-muted-foreground">{connector.reason}</p>
     </div>
   );
 }
@@ -170,7 +193,7 @@ export function AskIntroDialog(props: AskIntroDialogProps) {
             <form onSubmit={submit} className="grid gap-4">
               <div className="flex items-start justify-between gap-3">
                 <Dialog.Title className="type-h2 min-w-0 wrap-anywhere">
-                  Ask {introducerFirst} for an intro to {targetFirst}
+                  Ask {introducerFirst} to introduce you to {targetFirst}
                 </Dialog.Title>
                 <Dialog.Close asChild>
                   <Button type="button" variant="quiet" size="icon" aria-label="Close" className="-mt-1 -mr-1 shrink-0">
@@ -178,8 +201,9 @@ export function AskIntroDialog(props: AskIntroDialogProps) {
                   </Button>
                 </Dialog.Close>
               </div>
+              <AskPath connector={connector} targetName={targetName} />
               <div className="grid gap-2">
-                <Label htmlFor={noteId}>Your note to {introducerFirst}</Label>
+                <Label htmlFor={noteId}>One note to {introducerFirst}</Label>
                 <Textarea
                   ref={noteField}
                   id={noteId}
@@ -192,13 +216,18 @@ export function AskIntroDialog(props: AskIntroDialogProps) {
                   onChange={(event) => changeNote(event.target.value)}
                 />
                 <p id={hintId} className="type-small text-muted-foreground">
-                  Say who you are and why you&apos;d like to meet {targetFirst}. {note.length} of {INTRO_LIMITS.noteLength} characters.
+                  Say who you are and why {targetFirst}. {note.length} of {INTRO_LIMITS.noteLength} characters.
                 </p>
               </div>
-              <div className="grid gap-2">
-                <h3 className="type-label">What {introducerFirst} will see</h3>
-                <IntroducerPreview viewer={viewer} targetName={targetName} note={note} reason={connector.reason} />
-              </div>
+              <details className="group">
+                <summary className="type-small flex min-h-11 w-fit list-none items-center gap-1.5 text-foreground-soft underline underline-offset-2 hover:text-foreground [&::-webkit-details-marker]:hidden">
+                  <ChevronRight aria-hidden="true" className="size-4 shrink-0 transition-transform group-open:rotate-90" />
+                  See exactly what {introducerFirst} gets
+                </summary>
+                <div className="mt-1">
+                  <IntroducerPreview viewer={viewer} targetName={targetName} note={note} reason={connector.reason} />
+                </div>
+              </details>
               <p className="type-small flex gap-2.5 text-foreground-soft">
                 <Lock aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
                 <span>

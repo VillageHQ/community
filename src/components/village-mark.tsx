@@ -30,14 +30,3 @@ export function RunsOnVillageProvider({ value, children }: { value: boolean; chi
 export function OnlyOnVillage({ children, otherwise = null }: { children: ReactNode; otherwise?: ReactNode }) {
   return use(RunsOnVillageContext) ? children : otherwise;
 }
-
-export function NetworkByVillage() {
-  return (
-    <OnlyOnVillage>
-      <p className="type-micro flex items-center gap-2 text-muted-foreground">
-        <VillageMark />
-        Network by Village
-      </p>
-    </OnlyOnVillage>
-  );
-}

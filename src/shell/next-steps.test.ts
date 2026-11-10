@@ -97,10 +97,9 @@ describe("the next step card", () => {
     expect(nextStep?.isUrgent).toBe(true);
   });
 
-  it("moves an admin past finished setup", () => {
-    const [nextStep] = selectNextSteps({ ...READY_FACTS, setupProgress: { ...PENDING_SETUP, isComplete: true } });
-
-    expect(nextStep?.title).toBe(NEXT_STEPS[NETWORK_PROGRESS.ready].title);
+  it("moves an admin past finished setup, and leaves a ready network to Today's search box", () => {
+    expect(selectNextSteps({ ...READY_FACTS, setupProgress: { ...PENDING_SETUP, isComplete: true } })).toEqual([]);
+    expect(selectNextSteps({ ...READY_FACTS, isCardFilled: false }).map(({ title }) => title)).toEqual(["Finish your card"]);
   });
 
   it("shows an unfinished card alongside the network step", () => {
@@ -146,14 +145,6 @@ describe("the next step card", () => {
     const [nextStep] = selectNextSteps({ ...READY_FACTS, networkProgress: NETWORK_PROGRESS.notConfigured });
 
     expect(nextStep?.isUrgent).toBe(false);
-  });
-
-  it("stops being urgent once a member has joined", () => {
-    const [nextStep] = selectNextSteps(READY_FACTS);
-
-    expect(nextStep?.isUrgent).toBe(false);
-    expect(nextStep?.progress).toBeNull();
-    expect(nextStep?.action?.href).toBe(ROUTES.network);
   });
 
   describe("with network off", () => {

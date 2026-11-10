@@ -100,7 +100,7 @@ export function SignInChoice({ returnPath, isLinkOn }: { returnPath?: string | n
   return (
     <div className="grid gap-5">
       <SignInLinkForm />
-      <Button type="button" variant="quiet" className="justify-self-center" onClick={() => setIsPasswordShown(true)}>
+      <Button type="button" variant="quiet" className="justify-self-center font-medium underline underline-offset-2 hover:bg-transparent" onClick={() => setIsPasswordShown(true)}>
         Sign in with a password instead
       </Button>
     </div>

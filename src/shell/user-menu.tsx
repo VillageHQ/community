@@ -7,7 +7,6 @@ import { Dialog, DropdownMenu } from "radix-ui";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { NetworkByVillage } from "@/components/village-mark";
 import { describeBadge } from "./navigation-rules";
 import { ROUTES } from "@/platform/http/routes";
 import { signOut } from "@/platform/auth/sign-out";
@@ -169,9 +168,6 @@ export function PhoneUserMenu({ member, adminBadgeCount }: PhoneUserMenuProps) {
               <LogOut aria-hidden="true" />
               Sign out
             </button>
-          </div>
-          <div className="mt-3 px-4">
-            <NetworkByVillage />
           </div>
         </Dialog.Content>
       </Dialog.Portal>

@@ -4,7 +4,6 @@ import {
   Link2,
   MailCheck,
   RefreshCw,
-  Search,
   ShieldAlert,
   ShieldCheck,
   UserRound,
@@ -25,7 +24,10 @@ type NetworkStepCopy = {
   action?: string;
 };
 
-export const NEXT_STEPS: Record<NetworkProgress, NetworkStepCopy> = {
+// A member whose network is ready gets no card: Today opens with the "Who do you want to meet?" search box instead.
+type PendingNetworkProgress = Exclude<NetworkProgress, typeof NETWORK_PROGRESS.ready>;
+
+export const NEXT_STEPS: Record<PendingNetworkProgress, NetworkStepCopy> = {
   [NETWORK_PROGRESS.notConfigured]: {
     icon: Clock,
     kicker: "Almost there",
@@ -71,13 +73,6 @@ export const NEXT_STEPS: Record<NetworkProgress, NetworkStepCopy> = {
     title: "Finish syncing your network",
     description: "Connect your Village account so your network can join the search.",
     action: "Continue",
-  },
-  [NETWORK_PROGRESS.ready]: {
-    icon: Search,
-    kicker: "You're in",
-    title: "Who do you want to meet?",
-    description: "Search your community's shared networks and see who can introduce you, and why.",
-    action: "Search the network",
   },
 };
 
@@ -166,7 +161,7 @@ function readJoinProgress(progress: NetworkProgress) {
   return { doneCount, totalCount: steps.length, label: `${doneCount} of ${steps.length} network steps done` };
 }
 
-function describeNetworkStep(progress: NetworkProgress, confirmationCopy: EmailConfirmationCopy): NextStep {
+function describeNetworkStep(progress: PendingNetworkProgress, confirmationCopy: EmailConfirmationCopy): NextStep {
   const step = NEXT_STEPS[progress];
   const { title, description } = progress === NETWORK_PROGRESS.needsEmailConfirmation ? confirmationCopy : step;
   return {
@@ -176,16 +171,20 @@ function describeNetworkStep(progress: NetworkProgress, confirmationCopy: EmailC
     description,
     action: step.action ? { label: step.action, href: ROUTES.network } : null,
     progress: readJoinProgress(progress),
-    isUrgent: progress !== NETWORK_PROGRESS.ready && step.action !== undefined,
+    isUrgent: step.action !== undefined,
   };
 }
 
 export function selectNextSteps(facts: NextStepFacts): NextStep[] {
   const { setupProgress, networkProgress, communityName, isCardFilled, confirmationCopy } = facts;
   const hasOpenSetup = setupProgress && !setupProgress.isComplete;
-  if (!hasOpenSetup && !networkProgress) return isCardFilled ? [] : [FINISH_CARD_STEP];
-
-  const leadStep = hasOpenSetup ? describeAdminSetup(setupProgress, communityName) : describeNetworkStep(networkProgress ?? NETWORK_PROGRESS.ready, confirmationCopy);
+  const pendingNetwork = networkProgress && networkProgress !== NETWORK_PROGRESS.ready ? networkProgress : null;
+  const leadStep = hasOpenSetup
+    ? describeAdminSetup(setupProgress, communityName)
+    : pendingNetwork
+      ? describeNetworkStep(pendingNetwork, confirmationCopy)
+      : null;
+  if (!leadStep) return isCardFilled ? [] : [FINISH_CARD_STEP];
   if (isCardFilled) return [leadStep];
   return leadStep.isUrgent ? [leadStep, FINISH_CARD_STEP] : [FINISH_CARD_STEP, leadStep];
 }

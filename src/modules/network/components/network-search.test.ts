@@ -7,8 +7,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 
 import { NetworkSearch } from "./network-search";
+import { TodaySearchBox } from "./today-search-box";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
+const address = vi.hoisted(() => ({ params: new URLSearchParams(), replace: (_path: string, _options?: unknown) => {} }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), replace: address.replace }),
+  useSearchParams: () => address.params,
+}));
 
 const SIX_MINUTES_MS = 6 * 60 * 1000;
 const WELCOME = {
@@ -91,6 +97,23 @@ describe("network search", () => {
 
       expect(searchCalls).toBe(0);
     });
+
+    it("runs Today's words once, then drops them from the address", async () => {
+      const replaced: string[] = [];
+      address.params = new URLSearchParams({ q: "founders" });
+      address.replace = (path) => replaced.push(path);
+      try {
+        renderSearch(createClient());
+
+        await waitFor(() => expect(screen.getByRole("heading", { name: "1 person in your network" })).toBeTruthy());
+        expect(screen.getByLabelText<HTMLInputElement>("Describe who you want to meet").value).toBe("founders");
+        expect(searchCalls).toBe(1);
+        expect(replaced).toEqual([ROUTES.network]);
+      } finally {
+        address.params = new URLSearchParams();
+        address.replace = () => {};
+      }
+    });
   });
 
   describe("a member whose name can't match their LinkedIn", () => {
@@ -106,5 +129,20 @@ describe("network search", () => {
 
       expect(screen.queryByRole("link", { name: "Edit your card" })).toBeNull();
     });
+  });
+});
+
+describe("Today's search box", () => {
+  afterEach(cleanup);
+
+  it("sends its words to network search", () => {
+    render(createElement(TodaySearchBox, { communityName: "Northwind" }));
+    const form = screen.getByRole("search", { name: "Who do you want to meet?" });
+    const field = screen.getByRole<HTMLInputElement>("textbox", { name: "Who do you want to meet?" });
+
+    expect(form.getAttribute("action")).toBe(ROUTES.network);
+    expect(form.getAttribute("method")).toBe("get");
+    expect(field.name).toBe("q");
+    expect(screen.getByRole("button", { name: "Find" })).toBeTruthy();
   });
 });

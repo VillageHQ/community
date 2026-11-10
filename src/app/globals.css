@@ -8,6 +8,7 @@
 @theme inline {
   --font-sans: var(--font-figtree), var(--font-figtree-extended), "Avenir Next", Avenir, "Segoe UI Variable Text",
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-source-serif), "Iowan Old Style", Charter, Georgia, "Times New Roman", serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -25,6 +26,7 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-rule: var(--rule);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-brand-emphasis: var(--brand-emphasis);
@@ -42,12 +44,13 @@
   --spacing-icon: 22px;
   --spacing-icon-small: 18px;
 
-  --radius-card-phone: 24px;
-  --radius-small: 16px;
-  --radius-field: 20px;
-  --radius-input: 24px;
-  --radius-card: 28px;
-  --radius-panel: 36px;
+  /* Flat sheets: small, even corners instead of soft, floating cards. */
+  --radius-card-phone: 14px;
+  --radius-small: 10px;
+  --radius-field: 12px;
+  --radius-input: 12px;
+  --radius-card: 14px;
+  --radius-panel: 16px;
 
   --shadow-panel: var(--elevation-panel);
   --shadow-cta: var(--elevation-cta);
@@ -66,6 +69,7 @@
   --muted: #f2efe7;
   --muted-foreground: #566463;
   --border: #e7e2d6;
+  --rule: #e2dccd;
   --input: #878b84;
   --logo-backdrop-dark: #0c2427;
   --destructive: #b42318;
@@ -90,18 +94,16 @@
   --tint-f-bg: #f3dde8;
   --tint-f-fg: #6e2c4e;
 
-  --cta-lift: inset 0 1px 0 rgb(255 255 255 / 0.24), 0 1px 2px rgb(30 30 20 / 0.18);
-  --cta-glow: 60%;
-  --elevation-panel: 0 1px 2px rgb(40 34 20 / 0.05), 0 8px 24px rgb(40 34 20 / 0.06);
-  --elevation-sheet: 0 -1px 0 var(--border), 0 -10px 28px -16px rgb(20 20 16 / 0.25);
+  /* A sheet sits flat on the page with a hairline edge; nothing floats. */
+  --elevation-panel: 0 0 0 1px var(--rule);
+  --elevation-sheet: 0 -1px 0 var(--rule);
 }
 
 :root,
 [data-accent-scope] {
-  --elevation-cta: inset 0 0 0 1.5px var(--brand-edge), var(--cta-lift),
-    0 6px 14px -6px color-mix(in srgb, var(--primary) var(--cta-glow), transparent);
-  --elevation-cta-hover: inset 0 0 0 1.5px var(--brand-edge), var(--cta-lift),
-    0 12px 22px -8px color-mix(in srgb, var(--primary) var(--cta-glow), transparent);
+  /* The brand edge stays (it keeps a pale accent visible); the glow and the lift are gone. */
+  --elevation-cta: inset 0 0 0 1.5px var(--brand-edge);
+  --elevation-cta-hover: inset 0 0 0 1.5px var(--brand-edge), inset 0 0 0 999px rgb(0 0 0 / 0.08);
 }
 
 .dark {
@@ -115,6 +117,7 @@
   --muted: #2a2820;
   --muted-foreground: #aaa698;
   --border: #37342b;
+  --rule: #3b382f;
   --input: #8f8c80;
   --destructive: #f97066;
   --destructive-foreground: #000000;
@@ -138,56 +141,65 @@
   --tint-f-bg: #5a2a43;
   --tint-f-fg: #f3dde8;
 
-  --cta-lift: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 1px 2px rgb(0 0 0 / 0.4);
-  --cta-glow: 0%;
-  --elevation-panel: 0 0 0 1px #2d2a22, 0 8px 24px rgb(0 0 0 / 0.28);
-  --elevation-sheet: 0 -1px 0 var(--border), 0 -10px 28px -16px rgb(0 0 0 / 0.6);
+  --elevation-panel: 0 0 0 1px var(--rule);
+  --elevation-sheet: 0 -1px 0 var(--rule);
 }
 
+/* Headings are set in the serif: the fund's voice. Body text stays in Figtree at regular weight. */
 @utility type-display {
-  font-size: 44px;
-  line-height: 50px;
-  font-weight: 700;
-  letter-spacing: -0.022em;
+  font-family: var(--font-serif);
+  font-size: 40px;
+  line-height: 46px;
+  font-weight: 600;
+  letter-spacing: -0.008em;
 }
 
 @utility type-h1 {
-  font-size: 32px;
-  line-height: 38px;
-  font-weight: 700;
-  letter-spacing: -0.018em;
+  font-family: var(--font-serif);
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
 }
 
 @utility type-h2 {
-  font-size: 24px;
-  line-height: 30px;
-  font-weight: 700;
-  letter-spacing: -0.012em;
+  font-family: var(--font-serif);
+  font-size: 23px;
+  line-height: 29px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
 }
 
 @utility type-h3 {
+  font-family: var(--font-serif);
   font-size: 19px;
   line-height: 26px;
-  font-weight: 700;
-  letter-spacing: -0.006em;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+@utility type-serif {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 @utility type-lead {
-  font-size: 17px;
-  line-height: 27px;
-  font-weight: 500;
+  font-size: 16px;
+  line-height: 25px;
+  font-weight: 400;
 }
 
 @utility type-body {
   font-size: 16px;
   line-height: 24px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 @utility type-small {
   font-size: 14px;
   line-height: 20px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 @utility type-label {
@@ -199,7 +211,7 @@
 @utility type-note {
   font-size: 15px;
   line-height: 23px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 @utility type-micro {
@@ -234,7 +246,7 @@
     font-family: var(--font-sans);
     font-size: 16px;
     line-height: 24px;
-    font-weight: 500;
+    font-weight: 400;
     font-synthesis: none;
     font-variant-numeric: lining-nums;
     -webkit-font-smoothing: antialiased;
@@ -323,10 +335,28 @@
   max-width: none;
 }
 
+/* A centered page shown inside the app (a page that isn't there) leaves the footer to the app. */
+[data-slot="app-shell"] [data-slot="centered-page"] [data-slot="site-footer"] {
+  display: none;
+}
+
+/* The source link sits in the sidebar only while messages fill the page, where a page footer can't. */
+[data-slot="sidebar-source"] {
+  display: none;
+}
+
 /* Messages fill the page beside the sidebar on desktop. */
 @media (min-width: 1024px) {
   [data-slot="app-shell"]:has([data-slot="messages"]) > main {
     padding: 0;
+  }
+
+  [data-slot="app-shell"]:has([data-slot="messages"]) [data-slot="site-footer"] {
+    display: none;
+  }
+
+  [data-slot="app-shell"]:has([data-slot="messages"]) [data-slot="sidebar-source"] {
+    display: block;
   }
 
   [data-slot="app-shell"]:has([data-slot="messages"]) [data-slot="page-width"] {
@@ -342,6 +372,10 @@
 
   [data-slot="app-shell"]:has([data-phone-takeover]) > main {
     padding: 0;
+  }
+
+  [data-slot="app-shell"]:has([data-phone-takeover]) [data-slot="site-footer"] {
+    display: none;
   }
 }
 

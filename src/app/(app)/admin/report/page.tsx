@@ -8,11 +8,11 @@ import { modulePage } from "@/platform/modules/module-page";
 
 import { AdminSection } from "@/shell/admin-section";
 import { adminManifest } from "@/modules/admin/manifest";
-import { readCommunitySection, readPeriodSections } from "@/modules/admin/partner-report-rows";
+import { readCommunitySection, readPeriodSections, readReportSummary } from "@/modules/admin/partner-report-rows";
 import { readPartnerReport, readPartnerReportSettings } from "@/modules/admin/reads-partner-report";
 import { PartnerSendCard } from "@/modules/admin/components/partner-send-card";
 import { ReportActions } from "@/modules/admin/components/report-actions";
-import { ReportTable } from "@/modules/admin/components/report-table";
+import { ReportSummary, ReportTable } from "@/modules/admin/components/report-table";
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminReport };
 
@@ -24,6 +24,7 @@ export default modulePage(adminManifest, async function AdminReportPage() {
   const [report, settings] = await Promise.all([readPartnerReport(database), readPartnerReportSettings(database)]);
   const headings = report.periods.map(({ label, range }) => ({ label, range }));
   const community = readCommunitySection(report);
+  const summary = readReportSummary(report);
 
   return (
     <AdminSection
@@ -32,6 +33,7 @@ export default modulePage(adminManifest, async function AdminReportPage() {
       action={<ReportActions />}
     >
       <div className="grid gap-5">
+        {summary ? <ReportSummary summary={summary} /> : null}
         {readPeriodSections(report).map((section) => (
           <ReportTable key={section.id} section={section} headings={headings} />
         ))}

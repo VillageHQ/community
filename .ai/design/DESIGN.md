@@ -9,6 +9,5 @@ The design system's rules live with the code, not here:
 - **Components:** shared components under `src/components/` (shadcn primitives in `src/components/ui/`) and each module's `components/`.
 - **Fonts:** self-hosted through `next/font/local` (no font network).
 
-Changing: the merged product's quieter look (serif headings, hairline edges, no "Network by Village" on member
-screens) is being built as the `look-theme` build (roadmap, open). When it lands, its rules update
-`docs/design/tokens.md`, and this page keeps pointing there.
+The merged look (serif headings, hairline edges, plain buttons, only the fund's name for members) is in
+`docs/design/tokens.md`; what it changed on each screen is in `.ai/features/look-theme/SPEC.md`.

@@ -128,6 +128,10 @@ export type NetworkPath = NetworkPaths["paths"][number];
 
 export const LOW_LOOKUPS_LEFT = 10;
 
+// Today's "Who do you want to meet?" box sends its words to network search in this parameter.
+export const SEARCH_PROMPT_PARAM = "q";
+export const SEARCH_PROMPT_MAX_LENGTH = 500;
+
 export const VILLAGE_STATUSES = {
   notShared: "not_shared",
   sharing: "sharing",

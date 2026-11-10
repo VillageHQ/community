@@ -7,7 +7,7 @@ import { POST as postSend } from "@/app/api/admin/partner-report/send/route";
 import { POST as postShared } from "@/app/api/admin/partner-report/shared/route";
 import { POST as postReportCredit } from "@/app/api/profile/report-credit/route";
 import { REPORT_PERIOD_KEYS } from "@/modules/admin/contract-partner-report";
-import { renderPartnerReportCsv } from "@/modules/admin/partner-report-rows";
+import { readReportSummary, renderPartnerReportCsv } from "@/modules/admin/partner-report-rows";
 import { readPartnerReport, readPartnerReportSettings, readReportPeriods } from "@/modules/admin/reads-partner-report";
 import { ask } from "@/modules/asks/schema";
 import { asksManifest } from "@/modules/asks/manifest";
@@ -168,6 +168,14 @@ describe("the partner report", () => {
       });
       expect(intros?.periods[REPORT_PERIOD_KEYS.lastQuarter]).toMatchObject({ asked: 2, introduced: 1, declined: 1, expired: 0, open: 0, helped: 1, helpedPercent: 100, medianDaysToIntroduced: 1 });
       expect(intros?.periods[REPORT_PERIOD_KEYS.sinceLaunch]).toMatchObject({ asked: 15, introduced: 4, declined: 3, expired: 4, withdrawn: 1, open: 3, helped: 2, notHelped: 1, helpedPercent: 67 });
+    });
+
+    it("sums up this quarter in one line from the same counts", async () => {
+      const report = await readPartnerReport(database);
+
+      expect(readReportSummary(report)).toBe("12 intros asked, 3 made, 1 said it helped: a customer conversation and a hire.");
+      await clearDatabase(database);
+      expect(readReportSummary(await readPartnerReport(database))).toBe("No intros asked yet this quarter.");
     });
 
     it("never counts an expiry as a decline, and every period adds up", async () => {

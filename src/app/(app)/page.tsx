@@ -20,7 +20,8 @@ import { selectNextSteps } from "@/shell/next-steps";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 import { isAdminMember } from "@/platform/auth/roles";
-import { readNetworkProgress } from "@/modules/network/reads-progress";
+import { NETWORK_PROGRESS, readNetworkProgress } from "@/modules/network/reads-progress";
+import { TodaySearchBox } from "@/modules/network/components/today-search-box";
 
 import { Feed } from "@/modules/feed/components/feed";
 import { feedQuery } from "@/modules/feed/queries";
@@ -78,7 +79,13 @@ export default modulePage(membersManifest, async function HomePage() {
     ),
   });
 
-  const greeting = <PageHeader title={`Good to see you, ${readFirstName(member.name)}.`} description={readWeekSentence(today)} />;
+  const searchBox = networkProgress === NETWORK_PROGRESS.ready ? <TodaySearchBox communityName={community.name} /> : null;
+  const greeting = (
+    <>
+      <PageHeader title={`Good to see you, ${readFirstName(member.name)}.`} description={readWeekSentence(today)} />
+      {searchBox ? <div className="mb-5 max-w-[640px]">{searchBox}</div> : null}
+    </>
+  );
 
   if (!feedPage) {
     return (

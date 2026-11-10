@@ -178,7 +178,7 @@ export function TabBar({ items, badges }: Omit<NavigationProps, "isAdmin">) {
     <nav
       aria-label="Main"
       data-slot="tab-bar"
-      className="fixed inset-x-0 bottom-0 z-20 grid auto-cols-fr grid-flow-col rounded-t-card bg-card px-2 pt-2 pb-[max(env(safe-area-inset-bottom),14px)] shadow-sheet lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-20 grid auto-cols-fr grid-flow-col bg-card px-2 pt-2 pb-[max(env(safe-area-inset-bottom),14px)] shadow-sheet lg:hidden"
     >
       {tabs.map(({ label, href, icon, badge }) => {
         const isActive = isNavigationItemActive(href, pathname);

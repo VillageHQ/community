@@ -3,7 +3,8 @@
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { ChevronDown, Search, Waypoints } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import type { ConstellationPerson } from "@/components/constellation";
 import { EmptyState } from "@/components/empty-state";
@@ -12,7 +13,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { ROUTES } from "@/platform/http/routes";
-import { LOW_LOOKUPS_LEFT, type NetworkPerson } from "@/modules/network/contract";
+import { LOW_LOOKUPS_LEFT, SEARCH_PROMPT_MAX_LENGTH, SEARCH_PROMPT_PARAM, type NetworkPerson } from "@/modules/network/contract";
 
 import { AskCommunityLink, readSearchAskDraft, useCanAskCommunity } from "./ask-community-link";
 import { LeaveGroup } from "./leave-group";
@@ -26,7 +27,6 @@ import { useIsDesktop } from "./use-is-desktop";
 import type { WelcomeContext } from "@/modules/members/components/shared/welcome-context";
 
 const PROMPT_FIELD = "prompt";
-const SEARCH_EXAMPLES = ["Fintech founders in London", "Angels who back climate", "Heads of sales at SaaS companies"];
 const STACKED_FACES = 4;
 
 function readSearchScope(sharingMemberCount: number) {
@@ -189,32 +189,34 @@ function NetworkSettings() {
   );
 }
 
-type SearchHeroProps = { welcome: WelcomeContext; initialPrompt: string; onSearch: (prompt: string) => void };
+type SearchHeaderProps = { welcome: WelcomeContext; initialPrompt: string; onSearch: (prompt: string) => void };
 
-function SearchHero({ welcome, initialPrompt, onSearch }: SearchHeroProps) {
+// A plain page header: the question, whose networks it searches, and the box.
+function SearchHeader({ welcome, initialPrompt, onSearch }: SearchHeaderProps) {
   const [draft, setDraft] = useState(initialPrompt);
-  const field = useRef<HTMLInputElement>(null);
 
   return (
-    <section aria-labelledby="network-title" className="rounded-card bg-accent px-card-phone py-7 sm:rounded-panel sm:px-10 sm:pt-10 sm:pb-8">
-      <h1 id="network-title" className="type-h1 text-center">
-        Who do you want to meet?
-      </h1>
-      <div className="type-lead mt-2 flex flex-wrap items-center justify-center gap-3 text-center text-foreground-soft">
-        {welcome.neighbours.length > 0 ? (
-          <span aria-hidden="true" className="inline-flex">
-            {welcome.neighbours.slice(0, STACKED_FACES).map(({ id, name }) => (
-              <Avatar
-                key={id}
-                stableId={id}
-                name={name}
-                sizePx={32}
-                className="-ml-1.5 shadow-[0_0_0_2.5px_var(--accent)] first:ml-0"
-              />
-            ))}
-          </span>
-        ) : null}
-        <p>{readSearchScope(welcome.sharingMemberCount)}</p>
+    <section aria-labelledby="network-title" className="grid gap-4">
+      <div className="grid gap-2">
+        <h1 id="network-title" className="type-h1 max-sm:text-[28px] max-sm:leading-[34px]">
+          Who do you want to meet?
+        </h1>
+        <div className="type-lead flex flex-wrap items-center gap-3 text-foreground-soft">
+          {welcome.neighbours.length > 0 ? (
+            <span aria-hidden="true" className="inline-flex">
+              {welcome.neighbours.slice(0, STACKED_FACES).map(({ id, name }) => (
+                <Avatar
+                  key={id}
+                  stableId={id}
+                  name={name}
+                  sizePx={28}
+                  className="-ml-1.5 shadow-[0_0_0_2px_var(--background)] first:ml-0"
+                />
+              ))}
+            </span>
+          ) : null}
+          <p>{readSearchScope(welcome.sharingMemberCount)}</p>
+        </div>
       </div>
       <form
         role="search"
@@ -223,42 +225,26 @@ function SearchHero({ welcome, initialPrompt, onSearch }: SearchHeroProps) {
           const prompt = draft.trim();
           if (prompt) onSearch(prompt);
         }}
-        className="mx-auto mt-6 flex max-w-[760px] flex-wrap items-center gap-2 rounded-[38px] bg-card p-2 pl-5 text-brand-emphasis shadow-[0_0_0_2px_var(--brand-emphasis),var(--elevation-panel)] focus-within:shadow-[0_0_0_3px_var(--brand-emphasis),0_0_0_6px_var(--accent),var(--elevation-panel)] sm:min-h-[76px] sm:flex-nowrap sm:gap-3.5 sm:pl-[26px]"
+        className="flex max-w-[760px] flex-wrap items-center gap-2 rounded-card bg-card p-2 pl-4 text-brand-emphasis shadow-[inset_0_0_0_1.5px_var(--input)] focus-within:shadow-[inset_0_0_0_2px_var(--ring)] sm:flex-nowrap sm:gap-3"
       >
-        <Search aria-hidden="true" className="size-6 shrink-0" />
+        <Search aria-hidden="true" className="size-5 shrink-0" />
         <label htmlFor={PROMPT_FIELD} className="sr-only">
           Describe who you want to meet
         </label>
         <input
-          ref={field}
           id={PROMPT_FIELD}
           name={PROMPT_FIELD}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           required
+          maxLength={SEARCH_PROMPT_MAX_LENGTH}
           placeholder="Fintech founders in London"
-          className="min-h-11 min-w-0 flex-1 bg-transparent text-lg leading-7 font-semibold text-foreground outline-none placeholder:text-muted-foreground sm:text-xl"
+          className="min-h-11 min-w-0 flex-1 bg-transparent text-[17px] leading-6 text-foreground outline-none placeholder:text-muted-foreground"
         />
-        <Button type="submit" size="lg" className="max-sm:w-full">
+        <Button type="submit" className="max-sm:w-full">
           Search
         </Button>
       </form>
-      <ul aria-label="Search ideas" className="mt-[18px] flex flex-wrap justify-center gap-2">
-        {SEARCH_EXAMPLES.map((example) => (
-          <li key={example}>
-            <button
-              type="button"
-              onClick={() => {
-                setDraft(example);
-                field.current?.focus();
-              }}
-              className="inline-flex min-h-11 items-center rounded-full bg-card px-card-phone text-[15px] leading-5 font-semibold text-foreground-soft hover:text-foreground hover:shadow-[inset_0_0_0_1.5px_var(--input)]"
-            >
-              {example}
-            </button>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }
@@ -267,16 +253,39 @@ function toActiveSearch(prompt: string): ActiveSearch {
   return { prompt, startedAtMs: Date.now(), wasSeen: false };
 }
 
+// Today's search box arrives with its words in the address: search them once, then drop them from the address so a
+// reload doesn't spend another lookup.
+function useSearchFromAddress(startSearch: (prompt: string) => void) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const raw = searchParams.get(SEARCH_PROMPT_PARAM);
+  const prompt = raw?.trim().slice(0, SEARCH_PROMPT_MAX_LENGTH) ?? "";
+  const handled = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (raw === null || handled.current === raw) return;
+    handled.current = raw;
+    if (prompt) startSearch(prompt);
+    router.replace(ROUTES.network, { scroll: false });
+  }, [raw, prompt, router, startSearch]);
+}
+
 export function NetworkSearch({ welcome }: { welcome: WelcomeContext }) {
   const queryClient = useQueryClient();
   const { data: active } = useQuery(activeSearchQuery);
+  const startSearch = useCallback(
+    (prompt: string) => queryClient.setQueryData(activeSearchQuery.queryKey, toActiveSearch(prompt)),
+    [queryClient],
+  );
+  useSearchFromAddress(startSearch);
 
   return (
     <div className="grid gap-6">
-      <SearchHero
+      <SearchHeader
+        key={active?.startedAtMs ?? "new"}
         welcome={welcome}
         initialPrompt={active?.prompt ?? ""}
-        onSearch={(prompt) => queryClient.setQueryData(activeSearchQuery.queryKey, toActiveSearch(prompt))}
+        onSearch={startSearch}
       />
       {active ? (
         <QueryBoundary

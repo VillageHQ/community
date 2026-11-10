@@ -6,10 +6,11 @@
 
 Who: a member (the asker) who needs to reach someone.
 
-1. The asker opens the network search (`/network`) and types who they need → results show people with a path, named
+1. The asker types who they need in Today's "Who do you want to meet?" box, or opens "Meet" (`/network`) → results show people with a path, named
    only through members who agreed to share ("1 way in"). A search that finds nobody offers to post it as an ask.
-2. They open a person's paths and tap "Ask for an intro" through a connector → one dialog: a note starting from a
-   short draft, and the promise "<connector> reads your note first. <person> hears nothing unless they say yes."
+2. They open a person's paths and tap "Ask <connector> for an intro" (message and profile are quiet links below it)
+   → one dialog: the path on top (You → connector → person, and why they know each other), one note starting from a
+   short draft, the full preview folded under "See exactly what <connector> gets", and the promise "<connector> reads your note first. <person> hears nothing unless they say yes."
 3. They send → the intro appears on `/intros` as waiting; the connector is told by email. It uses one ask from the
    shared weekly allowance (default 5), and a connector gets at most 10 asks a week.
 4. They follow it on `/intros/<id>`: waiting on the connector, then on the person asked. A no from either side shows
