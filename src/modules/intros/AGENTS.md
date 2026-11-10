@@ -7,7 +7,7 @@ A member asks another member for an introduction to someone in their network. Th
 - `service-consent.ts`: issue consent tokens and save the target's answer, including "stop all asks".
 - `reads.ts`, `reads-open-asks.ts`, `reads-consent.ts`: boards, counts, details, the public page. Expiry and the outcome prompt happen at read time. A timed sweep (`integration.ts` jobs) also expires due asks, so admin counts stay right.
 - `service-blocks.ts`: what a block does to open asks. The block route passes it to members.
-- `email.ts`: notices to members, through the platform outbox. `queueIntroEmail` runs inside the move's transaction; `deliverIntroEmail` is for moves outside a member's request. `email-target.ts`: the two emails to the target. `limits.ts`: rate limits. `copy.ts`: words.
+- `email.ts`: notices to members, through the platform outbox. `queueIntroEmail` runs inside the move's transaction; `deliverIntroEmail` is for moves outside a member's request. `email-target.ts`: the target's emails; `target-reminder.ts` (a job) sends one reminder on day 4, claimed once. `limits.ts`: rate limits. `copy.ts`: words.
 - `queries.ts`: client requests. `components/`: the UI. `components/consent-answer-panel.tsx` is the public page's form.
 - `components/connector-ask.tsx`: fills the network slots with the ask dialog and the promise line.
 

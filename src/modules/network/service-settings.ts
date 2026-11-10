@@ -99,7 +99,8 @@ export async function readVillageSearchSettings(database: DatabaseOrTransaction)
 
 function describeSettings({ searchScope, introducers, chosenIntroducerIds, serviceEmail }: VillageSettingsBody) {
   const scope = searchScope === SEARCH_SCOPES.everyone ? "search everyone" : "search members' networks";
-  const who = introducers === INTRODUCER_RULES.chosen ? `${chosenIntroducerIds.length} chosen introducers` : "every sharing member introduces";
+  const count = chosenIntroducerIds.length;
+  const who = introducers === INTRODUCER_RULES.chosen ? `${count} chosen ${count === 1 ? "introducer" : "introducers"}` : "every sharing member introduces";
   return `${scope}, ${who}, service email ${serviceEmail || "the first admin's"}`;
 }
 

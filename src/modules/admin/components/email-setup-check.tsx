@@ -47,9 +47,12 @@ function CheckLine({ line }: { line: DnsCheckLine }) {
               <dd className="wrap-anywhere">{line.toAdd.value}</dd>
             </div>
           </dl>
-          <div>
-            <CopyButton text={line.toAdd.value} label={`Copy the ${line.label} value`} />
-          </div>
+          {/* DKIM's value is a key only Resend knows, so there is nothing here to copy. */}
+          {line.key === "dkim" ? null : (
+            <div>
+              <CopyButton text={line.toAdd.value} label={`Copy the ${line.label} value`} />
+            </div>
+          )}
         </div>
       ) : null}
     </li>

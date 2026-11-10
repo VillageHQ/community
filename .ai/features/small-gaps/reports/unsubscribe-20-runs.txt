@@ -1,0 +1,1 @@
+one-click unsubscribe test: 20 of 20 runs passed
