@@ -13,7 +13,7 @@ import { messagesModule } from "./messages/integration";
 import { networkModule } from "./network/integration";
 import { perksModule } from "./perks/integration";
 
-// A module adds one line here. The order is the order of the navigation.
+// A module adds one line here. The navigation keeps its own order in `shell/navigation.ts`.
 export const MODULES: readonly ModuleIntegration[] = [
   feedModule,
   messagesModule,

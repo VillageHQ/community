@@ -85,7 +85,7 @@ describe("the messages badge", () => {
 });
 
 describe("the phone tab bar", () => {
-  const TWO_OVERFLOW_ENTRIES = { intros: 2, asks: 3 };
+  const OVERFLOW_BADGES = { asks: 3 };
 
   afterEach(() => {
     cleanup();
@@ -107,7 +107,7 @@ describe("the phone tab bar", () => {
     it("shows every item and no More entry", () => {
       renderTabBar(["feed", messagesManifest.id, "members", networkManifest.id, introsManifest.id, "admin"]);
 
-      expect(readTabNames()).toEqual(["Feed", "Messages", "Members", "Meet", "Intros"]);
+      expect(readTabNames()).toEqual(["Feed", "Meet", "Intros", "Messages", "Members"]);
     });
 
     it("keeps a community with only a few modules on as it was", () => {
@@ -122,7 +122,21 @@ describe("the phone tab bar", () => {
     it("keeps four tabs and a More entry, five in all", () => {
       renderTabBar(null);
 
-      expect(readTabNames()).toEqual(["Feed", "Messages", "Members", "Meet", "More"]);
+      expect(readTabNames()).toEqual(["Feed", "Meet", "Intros", "Messages", "More"]);
+    });
+
+    it("shows the intros count on the Intros tab", () => {
+      renderTabBar(null, { intros: 2 });
+
+      const introsTab = screen.getByRole("link", { name: /Intros/ });
+
+      expect(within(introsTab).getByRole("img", { name: "2 intros need a look" }).textContent).toBe("2");
+    });
+
+    it("moves the next entry up when Intros is off, leaving no gap", () => {
+      renderTabBar([messagesManifest.id, "members", networkManifest.id, asksManifest.id, "admin"]);
+
+      expect(readTabNames()).toEqual(["Home", "Meet", "Messages", "Members", "Asks"]);
     });
 
     it("lists the rest in a sheet when opened", () => {
@@ -131,20 +145,20 @@ describe("the phone tab bar", () => {
       fireEvent.click(screen.getByRole("button", { name: "More" }));
 
       const sheet = within(screen.getByRole("dialog", { name: "More" }));
-      expect(sheet.getByRole("link", { name: "Intros" }).getAttribute("href")).toBe(ROUTES.intros);
+      expect(sheet.getByRole("link", { name: "Members" }).getAttribute("href")).toBe(ROUTES.members);
       expect(sheet.getByRole("link", { name: "Asks" }).getAttribute("href")).toBe(ASKS_PAGE);
     });
 
     it("adds up the badges of what it hides", () => {
-      renderTabBar(null, TWO_OVERFLOW_ENTRIES);
+      renderTabBar(null, { intros: 2, ...OVERFLOW_BADGES });
 
       const more = screen.getByRole("button", { name: /More/ });
 
-      expect(within(more).getByRole("img", { name: "5 need your attention" }).textContent).toBe("5");
+      expect(within(more).getByRole("img", { name: "3 need your attention" }).textContent).toBe("3");
     });
 
     it("describes each badge in the sheet", () => {
-      renderTabBar(null, TWO_OVERFLOW_ENTRIES);
+      renderTabBar(null, OVERFLOW_BADGES);
 
       fireEvent.click(screen.getByRole("button", { name: /More/ }));
 
@@ -165,10 +179,10 @@ describe("the phone tab bar", () => {
     });
   });
 
-  it("counts Home as an item when the feed is off", () => {
+  it("shows Home, Meet, Intros, Messages and More with the default modules", () => {
     renderTabBar([messagesManifest.id, "members", networkManifest.id, introsManifest.id, asksManifest.id, "admin"]);
 
-    expect(readTabNames()).toEqual(["Home", "Messages", "Members", "Meet", "More"]);
+    expect(readTabNames()).toEqual(["Home", "Meet", "Intros", "Messages", "More"]);
   });
 });
 

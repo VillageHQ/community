@@ -335,7 +335,7 @@ Some extras cost more than a line:
 | An admin tab | A line in `ADMIN_TABS`, plus `adminTabs` in the manifest | The tab's badge reads facts from the shell. |
 | A setup step | A line in `SETUP_STEP_OWNERS` and the checklist | No module has needed this yet. |
 
-The phone tab bar holds five items. With more, the fifth becomes "More", a sheet with the rest, and its badge adds up theirs. Registry order decides what stays on the bar.
+The phone tab bar holds five items. With more, the fifth becomes "More", a sheet with the rest, and its badge adds up theirs. The navigation order in `src/shell/navigation.ts` decides what stays on the bar: Home, Meet, Intros, Messages, then More (Members, Asks and the rest). A module that is off drops out and the next one moves up.
 
 Timed work runs only through the job runner (`platform/jobs`): platform jobs, a module's `jobs` while it's on, and the shell's jobs, like the weekly email, which reads several modules. Work that can happen at read time still should, with `after()` if it shouldn't block the response.
 

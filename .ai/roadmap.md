@@ -33,8 +33,8 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
 
 ### From the final check of the merged app (2026-11-10), not covered by another part
-- [ ] On a phone, Intros and Asks hide behind "More": put them on the bottom bar (5 of the simulated buyers named it)
-- [ ] A forwarded invite lets the wrong person in until an admin checks, and their messages stay after the lock: hold new members back until their email is confirmed
+- [ ] On a phone, Intros moves onto the bottom bar (Home · Meet · Intros · Messages · More; Members and Asks under More) — the owner's pick, 5 of the simulated buyers named it — phone-bar — open pull request — [charter](features/phone-bar/CHARTER.md)
+- [x] A forwarded invite lets the wrong person in until an admin checks, and their messages stay after the lock: hold new members back until their email is confirmed — owner's call: keep (today's way stays, no invite lock)
 - [ ] The connector's "email them for me" option hides after the first view, and comes back only behind "Make a new link"
 - [ ] The weekly email's answer page shows no "done" after an answer is saved
 - [ ] "Did it help?" saves only after a second tap, so a member who taps "Yes" and leaves counts as not answered; Today doesn't ask it either
