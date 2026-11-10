@@ -3,6 +3,7 @@ import { check, index, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid, 
 
 import { INVITE_EMAIL_STATUSES } from "./contract-invite-state.ts";
 import { MAXIMUM_AVATAR_BYTES } from "./contract-avatar.ts";
+import { CHOICE_PLACES, MESSAGE_POLICIES } from "./contract-privacy.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import { bytea } from "../../platform/database/bytea.ts";
 import { emailOutbox } from "../../platform/email/schema.ts";
@@ -134,7 +135,36 @@ export const memberRemoval = pgTable("member_removal", {
   removedByUserId: text("removed_by_user_id").references(() => user.id, { onDelete: "set null" }),
   removedAt: timestamp("removed_at", { withTimezone: true, precision: MILLISECOND_PRECISION }).notNull().defaultNow(),
   villageLeaveOutcome: text("village_leave_outcome"),
+  // Set when the account was deleted for real: the user row is then an empty placeholder with no personal data.
+  erasedAt: timestamp("erased_at", { withTimezone: true, precision: MILLISECOND_PRECISION }),
+  // What Village said when asked to cancel the member's Village user, recorded with the deletion.
+  villageCancelOutcome: text("village_cancel_outcome"),
 });
+
+// A member's privacy switches. No row means the defaults: listed, anyone can message, and "accept intro asks" never
+// answered (treated as yes for members who joined before the question existed).
+export const memberPrivacy = pgTable(
+  "member_privacy",
+  {
+    userId: text("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    isHidden: boolean("is_hidden").notNull().default(false),
+    messagePolicy: text("message_policy").notNull().default(MESSAGE_POLICIES.anyone),
+    acceptsIntroAsks: boolean("accepts_intro_asks"),
+    introAsksAnsweredAt: timestamp("intro_asks_answered_at", { withTimezone: true }),
+    introAsksAnsweredPlace: text("intro_asks_answered_place"),
+    hiddenChangedAt: timestamp("hidden_changed_at", { withTimezone: true }),
+    messagePolicyChangedAt: timestamp("message_policy_changed_at", { withTimezone: true }),
+  },
+  (table) => [
+    check("member_privacy_message_policy", sql`${table.messagePolicy} in ('${sql.raw(MESSAGE_POLICIES.anyone)}', '${sql.raw(MESSAGE_POLICIES.introduced)}')`),
+    check(
+      "member_privacy_intro_asks_place",
+      sql`${table.introAsksAnsweredPlace} is null or ${table.introAsksAnsweredPlace} in ('${sql.raw(CHOICE_PLACES.onboarding)}', '${sql.raw(CHOICE_PLACES.yourData)}')`,
+    ),
+  ],
+);
 
 // A member's own answer about the profile fill-in, and how their last lookup went.
 // No row means they never answered and were never looked up.

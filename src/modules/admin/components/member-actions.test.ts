@@ -22,6 +22,7 @@ const MEMBER: AdminMember = {
   isEmailConfirmed: true,
   isRemoved: false,
   isReclaimed: false,
+    isErased: false,
   removedAt: null,
   removalContentChoice: null,
   inviteId: null,

@@ -21,6 +21,7 @@ export const MESSAGE_ERROR_CODES = {
   peerBlocked: "message_peer_blocked",
   peerUnavailable: "message_peer_unavailable",
   deleted: "message_deleted",
+  notAllowed: "message_not_allowed",
 } as const;
 
 const LARGEST_POSTGRES_INTEGER = 2_147_483_647;

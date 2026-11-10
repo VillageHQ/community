@@ -16,6 +16,7 @@ import { FILL_IN_SOURCE_LABEL } from "@/modules/members/contract-fill-in";
 import { readExternalHost } from "@/modules/members/rules-external-url";
 import { isBlockedBy } from "@/modules/members/service-blocks";
 import { isCardFilledIn, readMemberProfile } from "@/modules/members/service-profile";
+import { isHiddenMember } from "@/modules/members/service-privacy";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 import { linkedinUrl } from "@villagehq/sdk";
@@ -63,6 +64,8 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
   if (!profile) notFound();
 
   const isOwnProfile = viewer.id === profile.id;
+  // "Hide me from the directory": members can't open the profile either. Admins still can.
+  if (!isOwnProfile && !isAdminMember(viewer) && (await isHiddenMember(database, profile.id))) notFound();
   const isBlockedByViewer = !isOwnProfile && (await isBlockedBy(database, viewer.id, profile.id));
   const { shown } = profile;
   const roleLine = [shown.title, shown.company].filter(Boolean).join(", ");

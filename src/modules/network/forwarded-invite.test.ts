@@ -30,6 +30,7 @@ import { POST as postReclaim } from "@/app/api/admin/invites/reclaim/route";
 import { GET as getAuthRoute, POST as postAuthRoute } from "@/app/api/auth/[...all]/route";
 import { POST as postAccept } from "@/app/api/invites/accept/route";
 import { POST as postOnboarding } from "@/app/api/onboarding/route";
+import { POST as postIntroAsks } from "@/app/api/onboarding/intro-asks/route";
 import { POST as postConfirm } from "@/app/api/members/confirmation/confirm/route";
 import { POST as postConfirmation } from "@/app/api/members/confirmation/route";
 import { POST as postConsent } from "@/app/api/network/consent/route";
@@ -443,6 +444,8 @@ describe("a forwarded invite", () => {
       const member = await acceptAs("Alice", link);
       const sessionMember = { id: member.id, email: member.email };
       await postOnboarding(jsonRequest(member.cookie, { step: ONBOARDING_STEPS.card }));
+      expect(await resolveOnboardingStep(database, sessionMember)).toBe(ONBOARDING_STEPS.introAsks);
+      await postIntroAsks(jsonRequest(member.cookie, { acceptsIntroAsks: true }));
 
       expect(await resolveOnboardingStep(database, sessionMember)).toBe(ONBOARDING_STEPS.network);
 

@@ -1,10 +1,12 @@
 export const ADMIN_CREATED_PARAM = "adminCreated";
+export const ACCOUNT_DELETED_PARAM = "accountDeleted";
 
 export const ROUTES = {
   feed: "/",
   signIn: "/sign-in",
   signInLink: "/sign-in/link",
   signInAsNewAdmin: `/sign-in?${ADMIN_CREATED_PARAM}=true`,
+  signInAfterDeletion: `/sign-in?${ACCOUNT_DELETED_PARAM}=true`,
   signUp: "/sign-up",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
@@ -21,6 +23,7 @@ export const ROUTES = {
   introConsent: "/meet",
   members: "/members",
   editCard: "/members/card",
+  yourData: "/members/data",
   network: "/network",
   admin: "/admin",
   adminMembers: "/admin/members",
@@ -79,6 +82,7 @@ export const API_ROUTES = {
   memberUnban: "/api/admin/members/unban",
   memberLeaveGroup: "/api/admin/members/leave-group",
   memberReinvite: "/api/admin/members/reinvite",
+  memberDelete: "/api/admin/members/delete",
   reportList: "/api/admin/reports/list",
   reportDismiss: "/api/admin/reports/dismiss",
   reportDeleteContent: "/api/admin/reports/delete-content",
@@ -137,6 +141,10 @@ export const API_ROUTES = {
   profile: "/api/profile",
   profileAvatar: "/api/profile/avatar",
   profileReportCredit: "/api/profile/report-credit",
+  profilePrivacy: "/api/profile/privacy",
+  profileExport: "/api/profile/export",
+  profileDelete: "/api/profile/delete",
+  onboardingIntroAsks: "/api/onboarding/intro-asks",
   onboarding: "/api/onboarding",
   villageKeys: "/api/admin/village/keys",
   villageGroup: "/api/admin/village/group",

@@ -131,6 +131,17 @@ export default modulePage(membersManifest, async function EditCardPage() {
       {isNetworkOn ? <VillageDisclosure isFillInOn={fillIn?.state.isAllowed === true} /> : null}
       {isIntrosOn ? <ReportCreditCard isOn={isReportCreditOn} /> : null}
       {showsLeaveCard ? <LeaveGroupCard /> : null}
+      <section aria-labelledby="your-data-link-title" className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
+        <div className="grid gap-1">
+          <h2 id="your-data-link-title" className="type-h3">
+            Your data
+          </h2>
+          <p className="type-small text-foreground-soft">See what is kept about you, export it, choose who can reach you, or delete your account.</p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href={ROUTES.yourData}>Open Your data</Link>
+        </Button>
+      </section>
     </div>
   );
 });

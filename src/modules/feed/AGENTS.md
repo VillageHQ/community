@@ -14,3 +14,4 @@ Rules:
 - Every read goes through `isAuthorVisibleTo`, so a banned member's content stays hidden.
 - Deleting content writes `moderation_record` in the same transaction. The audit log reads it.
 - Reports are saved by `admin/service-reports`, which the report route calls.
+- `service-erasure.ts`: a deleted account's posts, replies and reactions, with no copy of their words; earlier moderation copies of their words lose the text.
