@@ -220,6 +220,7 @@ export function buildSampleItems(now = new Date()): TodayItems {
         author: { id: "sample-asker", name: "Priya Shah" },
         listedAt: at,
         matchedWords: ["finance"],
+        why: null,
       },
     ],
     introsToAnswer: [intro],

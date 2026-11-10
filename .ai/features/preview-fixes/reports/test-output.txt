@@ -1,0 +1,7 @@
+ ✓ src/modules/asks/asks-helpers.test.ts > asks that reach helpers > the Today list and the helper email agree > shows the ask on Today to exactly the helpers it emailed 108ms
+ ✓ src/modules/asks/asks-helpers.test.ts > asks that reach helpers > the Today list and the helper email agree > never matches on everyday words like first, with, help or team 64ms
+ ✓ src/modules/asks/asks-helpers.test.ts > asks that reach helpers > the Today list and the helper email agree > matches a real skill and names it as the reason 67ms
+ ✓ src/modules/asks/asks-helpers.test.ts > asks that reach helpers > the Today list and the helper email agree > leaves an update off Today, as it emails nobody 54ms
+ ✓ src/platform/weekly-email/weekly-email-rules.test.ts > matching asks to helpers > matches on shared words, singular or plural, never on common ones 1ms
+ ✓ src/platform/weekly-email/weekly-email-rules.test.ts > matching asks to helpers > drops everyday words and keeps real skills 0ms
+      Tests  38 passed (38)

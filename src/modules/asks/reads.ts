@@ -6,7 +6,7 @@ import { alias, QueryBuilder, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
-import { memberAvatar, memberBlock, memberProfile } from "../members/schema.ts";
+import { memberAvatar, memberBlock, memberProfile, memberTag } from "../members/schema.ts";
 import { toAvatarUrl } from "../members/service-profile.ts";
 import { readSettings } from "../../platform/settings/store.ts";
 import {
@@ -26,6 +26,7 @@ import {
   type AskKind,
   type OwnAsks,
 } from "./contract.ts";
+import { findMatchedWords, readWords } from "./rules-help-match.ts";
 import { canRenewAsk, readAskState, readExpiresAt, readOldestOpenListing } from "./rules-state.ts";
 import { ask, askAnswer, askHelper, askOffer } from "./schema.ts";
 
@@ -369,42 +370,28 @@ export async function readReportableAnswer(database: Database, viewerId: string,
   return target ?? null;
 }
 
-const STOP_WORDS = new Set(
-  (
-    "the and for with who are our you your someone somebody anyone people person intro introduction looking find help need want " +
-    "would like know knows from about into that this have has any some can could head lead team company companies founder founders " +
-    "startup startups also just get got please thanks thank been being was were will what when where which their them they there " +
-    "here how does doing done one two new out over more most very good great best work working"
-  ).split(" "),
-);
-const MINIMUM_WORD_LENGTH = 3;
-const WORD_SPLIT = /[^\p{L}\p{N}]+/u;
+export type WordHelper = { memberId: string; sharedWords: string[] };
 
-export function readMatchWords(text: string) {
-  return new Set(
-    text
-      .toLowerCase()
-      .split(WORD_SPLIT)
-      .filter((word) => word.length >= MINIMUM_WORD_LENGTH && !STOP_WORDS.has(word)),
-  );
-}
-
-export type WordHelper = { memberId: string; sharedWords: string[]; canHelpWith: string };
-
-// Members whose "can help with" shares a word with the ask. Plain word overlap, no AI. The most shared words first.
+// Members whose "can help with" line or tags share a word with the ask, by the same rule the Today list uses
+// (rules-help-match.ts). Plain word overlap, no AI. The most shared words first.
 export async function readWordHelpers(database: Database, authorId: string, askText: string, now = new Date()): Promise<WordHelper[]> {
-  const wanted = readMatchWords(askText);
-  if (wanted.size === 0) return [];
+  if (readWords(askText).size === 0) return [];
   const rows = await database
-    .select({ memberId: memberProfile.userId, canHelpWith: memberProfile.canHelpWith })
-    .from(memberProfile)
-    .innerJoin(user, eq(user.id, memberProfile.userId))
-    .where(and(isNotNull(memberProfile.canHelpWith), ne(memberProfile.userId, authorId), isActiveMember(now), hasNoBlockBetween(authorId, memberProfile.userId)));
-  return rows
-    .flatMap(({ memberId, canHelpWith }) => {
-      if (!canHelpWith) return [];
-      const sharedWords = [...readMatchWords(canHelpWith)].filter((word) => wanted.has(word));
-      return sharedWords.length > 0 ? [{ memberId, sharedWords, canHelpWith }] : [];
+    .select({ memberId: user.id, canHelpWith: memberProfile.canHelpWith, tag: memberTag.tag })
+    .from(user)
+    .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
+    .leftJoin(memberTag, eq(memberTag.userId, user.id))
+    .where(and(or(isNotNull(memberProfile.canHelpWith), isNotNull(memberTag.tag)), ne(user.id, authorId), isActiveMember(now), hasNoBlockBetween(authorId, user.id)));
+  const textByMember = new Map<string, { canHelpWith: string; tags: string[] }>();
+  for (const { memberId, canHelpWith, tag } of rows) {
+    const entry = textByMember.get(memberId) ?? { canHelpWith: canHelpWith ?? "", tags: [] };
+    if (tag) entry.tags.push(tag);
+    textByMember.set(memberId, entry);
+  }
+  return [...textByMember]
+    .flatMap(([memberId, { canHelpWith, tags }]) => {
+      const sharedWords = findMatchedWords(askText, readWords([canHelpWith, ...tags].join(" ")));
+      return sharedWords.length > 0 ? [{ memberId, sharedWords }] : [];
     })
     .toSorted((first, second) => second.sharedWords.length - first.sharedWords.length)
     .slice(0, ASK_LIMITS.wordHelpersPerAsk);
