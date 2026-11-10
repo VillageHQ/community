@@ -5,15 +5,30 @@ import { HandHelping, Plus } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
-import type { AskCategory } from "@/modules/asks/contract";
+import { ASK_KINDS, type AskCategory, type AskKind } from "@/modules/asks/contract";
 import { askBoardQuery } from "@/modules/asks/queries";
 
 import { AskCard } from "./ask-card";
 import { CATEGORY_DISPLAY } from "./ask-display";
 
-type EmptyBoardProps = { category: AskCategory | null; onAsk: () => void; onSeeEverything: () => void };
+type EmptyBoardProps = { category: AskCategory | null; kind?: AskKind | null; onAsk: () => void; onSeeEverything: () => void };
 
-function EmptyBoard({ category, onAsk, onSeeEverything }: EmptyBoardProps) {
+function EmptyBoard({ category, kind = null, onAsk, onSeeEverything }: EmptyBoardProps) {
+  if (kind === ASK_KINDS.update && !category) {
+    return (
+      <div className="rounded-panel bg-card shadow-panel">
+        <EmptyState icon={HandHelping} title="No updates yet" description="When something works out, a hire, a customer, a round, share it here so the people who helped can see it.">
+          <Button type="button" size="lg" onClick={onAsk}>
+            <Plus aria-hidden="true" />
+            Share an update
+          </Button>
+          <Button type="button" size="lg" variant="quiet" onClick={onSeeEverything}>
+            See every open ask
+          </Button>
+        </EmptyState>
+      </div>
+    );
+  }
   return (
     <div className="rounded-panel bg-card shadow-panel">
       <EmptyState
@@ -41,16 +56,17 @@ function EmptyBoard({ category, onAsk, onSeeEverything }: EmptyBoardProps) {
 
 type AskBoardProps = EmptyBoardProps & { isViewerAdmin: boolean; onSeeYourAsks: () => void };
 
-export function AskBoard({ category, isViewerAdmin, onAsk, onSeeEverything, onSeeYourAsks }: AskBoardProps) {
-  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useSuspenseInfiniteQuery(askBoardQuery(category));
+export function AskBoard({ category, kind = null, isViewerAdmin, onAsk, onSeeEverything, onSeeYourAsks }: AskBoardProps) {
+  const { data, hasNextPage, isFetchingNextPage, fetchNextPage } = useSuspenseInfiniteQuery(askBoardQuery(category, kind));
   const asks = data.pages.flatMap((page) => page.asks);
-  if (asks.length === 0) return <EmptyBoard category={category} onAsk={onAsk} onSeeEverything={onSeeEverything} />;
+  const canIntro = data.pages[0]?.canIntro ?? false;
+  if (asks.length === 0) return <EmptyBoard category={category} kind={kind} onAsk={onAsk} onSeeEverything={onSeeEverything} />;
   return (
     <div className="grid gap-4">
       <ul className="grid items-start gap-4 xl:grid-cols-2">
         {asks.map((ask) => (
           <li key={ask.id}>
-            <AskCard ask={ask} isViewerAdmin={isViewerAdmin} onSeeYourAsks={onSeeYourAsks} />
+            <AskCard ask={ask} canIntro={canIntro} isViewerAdmin={isViewerAdmin} onSeeYourAsks={onSeeYourAsks} />
           </li>
         ))}
       </ul>

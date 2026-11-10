@@ -9,7 +9,7 @@ export const asksManifest = {
   label: "Asks",
   description: "Members post what they need, and others step in.",
   icon: HandHelping,
-  isOnByDefault: false,
+  isOnByDefault: true,
   needsVillage: false,
   requires: [],
   navigation: [{ label: "Asks", href: ASKS_PAGE, icon: HandHelping, section: NAVIGATION_SECTIONS.primary, badge: "asks" }],

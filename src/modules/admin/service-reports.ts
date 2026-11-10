@@ -4,10 +4,10 @@ import { and, count, desc, eq, inArray, isNotNull, isNull, or, sql } from "drizz
 import { alias, unionAll } from "drizzle-orm/pg-core";
 
 import { contentReport } from "./schema.ts";
-import { composeAskReportBody } from "../asks/contract.ts";
-import { readReportableAsk } from "../asks/reads.ts";
-import { ask } from "../asks/schema.ts";
-import { removeAskWithin } from "../asks/service.ts";
+import { composeAnswerReportBody, composeAskReportBody } from "../asks/contract.ts";
+import { readReportableAnswer, readReportableAsk } from "../asks/reads.ts";
+import { ask, askAnswer } from "../asks/schema.ts";
+import { removeAnswerWithin, removeAskWithin } from "../asks/service.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
 import { comment, post } from "../feed/schema.ts";
@@ -145,6 +145,18 @@ export async function reportAsk(context: RequestContext, askId: string) {
   });
 }
 
+export async function reportAskAnswer(context: RequestContext, answerId: string) {
+  const target = await readReportableAnswer(context.database, context.member.id, answerId);
+  if (!target) throw contentGoneError();
+  return saveReport(context, {
+    targetType: REPORT_TARGETS.askAnswer,
+    targetId: answerId,
+    reportedMemberId: target.authorId,
+    body: composeAnswerReportBody(target.askTitle, target.body),
+    contentCreatedAt: target.createdAt,
+  });
+}
+
 function selectMessageReports(database: Database) {
   return database
     .select({
@@ -227,12 +239,14 @@ async function readExistingTargets(database: Database, rows: ReportRow[]) {
   const postIds = idsOfType(REPORT_TARGETS.post);
   const commentIds = idsOfType(REPORT_TARGETS.comment);
   const askIds = idsOfType(REPORT_TARGETS.ask);
-  const [posts, comments, asks] = await Promise.all([
+  const answerIds = idsOfType(REPORT_TARGETS.askAnswer);
+  const [posts, comments, asks, answers] = await Promise.all([
     postIds.length === 0 ? [] : database.select({ id: post.id }).from(post).where(inArray(post.id, postIds)),
     commentIds.length === 0 ? [] : database.select({ id: comment.id }).from(comment).where(inArray(comment.id, commentIds)),
     askIds.length === 0 ? [] : database.select({ id: ask.id }).from(ask).where(inArray(ask.id, askIds)),
+    answerIds.length === 0 ? [] : database.select({ id: askAnswer.id }).from(askAnswer).where(inArray(askAnswer.id, answerIds)),
   ]);
-  return new Set([...posts, ...comments, ...asks].map(({ id }) => id));
+  return new Set([...posts, ...comments, ...asks, ...answers].map(({ id }) => id));
 }
 
 function toIsoOrNull(timestamp: string | null) {
@@ -243,6 +257,7 @@ const CONTENT_DELETERS = {
   [REPORT_TARGETS.post]: deletePostWithin,
   [REPORT_TARGETS.comment]: deleteCommentWithin,
   [REPORT_TARGETS.ask]: removeAskWithin,
+  [REPORT_TARGETS.askAnswer]: removeAnswerWithin,
 };
 
 function isDeletableTarget(targetType: string): targetType is keyof typeof CONTENT_DELETERS {
@@ -375,7 +390,7 @@ export async function dismissReport({ database, member }: RequestContext, report
 export async function deleteReportedContent({ database, member }: RequestContext, report: ReportActionBody) {
   const { targetType } = report;
   if (!isDeletableTarget(targetType)) {
-    throw new RequestError(UNPROCESSABLE_STATUS, ADMIN_ERROR_CODES.notDeletable, "Only posts, replies and asks can be deleted from here.");
+    throw new RequestError(UNPROCESSABLE_STATUS, ADMIN_ERROR_CODES.notDeletable, "Only posts, replies, asks and answers can be deleted from here.");
   }
   await withAdminTransaction(database, member.id, async (transaction) => {
     const locked = await lockOpenReport(transaction, report);

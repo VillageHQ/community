@@ -18,6 +18,8 @@ import { POST as postSeen } from "@/app/api/asks/seen/route";
 import { POST as postBlock } from "@/app/api/members/block/route";
 import { REPORT_FILTERS, REPORT_TARGETS, reportPageSchema } from "@/modules/admin/contract";
 import {
+  ASK_ALLOWANCE,
+  ASK_ALLOWANCE_SETTING,
   ASK_CATEGORIES,
   ASK_ERROR_CODES,
   ASK_LIMITS,
@@ -40,6 +42,7 @@ import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import { adminAuditEntry } from "@/platform/audit/schema";
 import { user } from "@/platform/database/auth-schema";
 import { saveModuleState } from "@/platform/modules/enablement";
+import { saveSettings } from "@/platform/settings/store";
 import { recordFailedAttempt } from "@/platform/rate-limit/attempt-rate-limit";
 import { readEnabledIds, readModuleBadges } from "@/shell/enabled-modules";
 import { clearDatabase, createTestDatabase } from "@/test/database";
@@ -123,6 +126,8 @@ describe("asks", () => {
   beforeEach(async () => {
     await clearDatabase(database);
     await saveModuleState(database, asksManifest, true);
+    // The weekly allowance has its own tests (asks-helpers.test.ts). Here it stays out of the open limit's way.
+    await saveSettings(database, { [ASK_ALLOWANCE_SETTING]: String(ASK_ALLOWANCE.maximum) });
     [asker, helper, bystander, admin] = await Promise.all([
       createSignedInMember(database),
       createSignedInMember(database),
@@ -139,11 +144,12 @@ describe("asks", () => {
       expect((await call(postCreate, null, { title: CFO_ASK, category: ASK_CATEGORIES.hire })).status).toBe(UNAUTHORIZED_STATUS);
     });
 
-    it("is off for a community until an admin turns it on", async () => {
+    it("is on for a new community, and an admin can turn it off", async () => {
       await clearDatabase(database);
       const member = await createSignedInMember(database);
 
-      expect((await readEnabledIds(database)).has(asksManifest.id)).toBe(false);
+      expect((await readEnabledIds(database)).has(asksManifest.id)).toBe(true);
+      await saveModuleState(database, asksManifest, false);
       expect((await call(postBoard, member)).status).toBe(NOT_FOUND_STATUS);
     });
 

@@ -1,5 +1,5 @@
 {
-  "id": "de4767f4-699b-4f89-920e-4a5d96b595ae",
+  "id": "67890599-e450-436f-828f-b8010c2fd5a2",
   "prevId": "d3f5022c-dc96-4535-8523-94a200e9fbdc",
   "version": "7",
   "dialect": "postgresql",
@@ -1033,60 +1033,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.village_monthly_usage": {
-      "name": "village_monthly_usage",
-      "schema": "",
-      "columns": {
-        "usage_month": {
-          "name": "usage_month",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "credits": {
-          "name": "credits",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "fill_in_credits": {
-          "name": "fill_in_credits",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "warned_near_cap_at": {
-          "name": "warned_near_cap_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "warned_at_cap_at": {
-          "name": "warned_at_cap_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "village_monthly_usage_month": {
-          "name": "village_monthly_usage_month",
-          "value": "\"village_monthly_usage\".\"usage_month\" ~ '^[0-9]{4}-[0-9]{2}$'"
-        },
-        "village_monthly_usage_credits": {
-          "name": "village_monthly_usage_credits",
-          "value": "\"village_monthly_usage\".\"credits\" >= 0 and \"village_monthly_usage\".\"fill_in_credits\" >= 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.content_report": {
       "name": "content_report",
       "schema": "",
@@ -1276,7 +1222,7 @@
       "checkConstraints": {
         "content_report_target_known": {
           "name": "content_report_target_known",
-          "value": "\"content_report\".\"target_type\" in ('post', 'comment', 'intro_note', 'ask')"
+          "value": "\"content_report\".\"target_type\" in ('post', 'comment', 'intro_note', 'ask', 'ask_answer')"
         },
         "content_report_body_length": {
           "name": "content_report_body_length",
@@ -1319,6 +1265,25 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ask'"
+        },
+        "target_slug": {
+          "name": "target_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_name": {
+          "name": "target_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "listed_at": {
           "name": "listed_at",
@@ -1384,6 +1349,27 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "ask_author_created_idx": {
+          "name": "ask_author_created_idx",
+          "columns": [
+            {
+              "expression": "author_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1405,6 +1391,14 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
+        "ask_kind_known": {
+          "name": "ask_kind_known",
+          "value": "\"ask\".\"kind\" in ('ask', 'update')"
+        },
+        "ask_target_only_on_asks": {
+          "name": "ask_target_only_on_asks",
+          "value": "\"ask\".\"target_slug\" is null or \"ask\".\"kind\" = 'ask'"
+        },
         "ask_category_known": {
           "name": "ask_category_known",
           "value": "\"ask\".\"category\" in ('intro', 'hire', 'customer', 'advice', 'other')"
@@ -1424,6 +1418,220 @@
         "ask_detail_length": {
           "name": "ask_detail_length",
           "value": "char_length(\"ask\".\"detail\") between 1 and 1000"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ask_answer": {
+      "name": "ask_answer",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "ask_id": {
+          "name": "ask_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author_id": {
+          "name": "author_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ask_answer_author_id_idx": {
+          "name": "ask_answer_author_id_idx",
+          "columns": [
+            {
+              "expression": "author_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ask_answer_ask_id_ask_id_fk": {
+          "name": "ask_answer_ask_id_ask_id_fk",
+          "tableFrom": "ask_answer",
+          "tableTo": "ask",
+          "columnsFrom": [
+            "ask_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ask_answer_author_id_user_id_fk": {
+          "name": "ask_answer_author_id_user_id_fk",
+          "tableFrom": "ask_answer",
+          "tableTo": "user",
+          "columnsFrom": [
+            "author_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "ask_answer_one_per_member": {
+          "name": "ask_answer_one_per_member",
+          "nullsNotDistinct": false,
+          "columns": [
+            "ask_id",
+            "author_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ask_answer_body_length": {
+          "name": "ask_answer_body_length",
+          "value": "char_length(\"ask_answer\".\"body\") between 1 and 1000"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ask_helper": {
+      "name": "ask_helper",
+      "schema": "",
+      "columns": {
+        "ask_id": {
+          "name": "ask_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "helper_id": {
+          "name": "helper_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "why": {
+          "name": "why",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "connector_slug": {
+          "name": "connector_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notified_at": {
+          "name": "notified_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ask_helper_helper_id_idx": {
+          "name": "ask_helper_helper_id_idx",
+          "columns": [
+            {
+              "expression": "helper_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ask_helper_ask_id_ask_id_fk": {
+          "name": "ask_helper_ask_id_ask_id_fk",
+          "tableFrom": "ask_helper",
+          "tableTo": "ask",
+          "columnsFrom": [
+            "ask_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ask_helper_helper_id_user_id_fk": {
+          "name": "ask_helper_helper_id_user_id_fk",
+          "tableFrom": "ask_helper",
+          "tableTo": "user",
+          "columnsFrom": [
+            "helper_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ask_helper_ask_id_helper_id_pk": {
+          "name": "ask_helper_ask_id_helper_id_pk",
+          "columns": [
+            "ask_id",
+            "helper_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ask_helper_reason_known": {
+          "name": "ask_helper_reason_known",
+          "value": "\"ask_helper\".\"reason\" in ('path', 'words')"
         }
       },
       "isRLSEnabled": false
@@ -2317,6 +2525,19 @@
           "type": "timestamp (3) with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "ask_id": {
+          "name": "ask_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_connector_offer": {
+          "name": "is_connector_offer",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {
@@ -2386,6 +2607,22 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "intro_request_ask_id_idx": {
+          "name": "intro_request_ask_id_idx",
+          "columns": [
+            {
+              "expression": "ask_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"intro_request\".\"ask_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2797,160 +3034,6 @@
         "member_block_not_self": {
           "name": "member_block_not_self",
           "value": "\"member_block\".\"blocker_id\" <> \"member_block\".\"blocked_id\""
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.member_fill_in": {
-      "name": "member_fill_in",
-      "schema": "",
-      "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "field": {
-          "name": "field",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "value": {
-          "name": "value",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "filled_at": {
-          "name": "filled_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "hidden_at": {
-          "name": "hidden_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "member_fill_in_user_id_user_id_fk": {
-          "name": "member_fill_in_user_id_user_id_fk",
-          "tableFrom": "member_fill_in",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "member_fill_in_user_id_field_pk": {
-          "name": "member_fill_in_user_id_field_pk",
-          "columns": [
-            "user_id",
-            "field"
-          ]
-        }
-      },
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "member_fill_in_field": {
-          "name": "member_fill_in_field",
-          "value": "\"member_fill_in\".\"field\" in ('title', 'company', 'location', 'headline', 'face', 'company_logo')"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.member_lookup": {
-      "name": "member_lookup",
-      "schema": "",
-      "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "consented_at": {
-          "name": "consented_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "refused_at": {
-          "name": "refused_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "looked_up_at": {
-          "name": "looked_up_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "linkedin_url": {
-          "name": "linkedin_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "member_lookup_looked_up_at_idx": {
-          "name": "member_lookup_looked_up_at_idx",
-          "columns": [
-            {
-              "expression": "looked_up_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "member_lookup_user_id_user_id_fk": {
-          "name": "member_lookup_user_id_user_id_fk",
-          "tableFrom": "member_lookup",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "member_lookup_status": {
-          "name": "member_lookup_status",
-          "value": "\"member_lookup\".\"status\" is null or \"member_lookup\".\"status\" in ('found', 'not_found', 'failed')"
         }
       },
       "isRLSEnabled": false
@@ -3912,45 +3995,6 @@
           "value": "char_length(\"message_report\".\"message_body\") between 1 and 4000"
         }
       },
-      "isRLSEnabled": false
-    },
-    "public.member_connect_nudge": {
-      "name": "member_connect_nudge",
-      "schema": "",
-      "columns": {
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "last_sent_at": {
-          "name": "last_sent_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "member_connect_nudge_user_id_user_id_fk": {
-          "name": "member_connect_nudge_user_id_user_id_fk",
-          "tableFrom": "member_connect_nudge",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.member_path_result": {

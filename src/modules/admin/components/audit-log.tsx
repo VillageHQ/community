@@ -25,6 +25,7 @@ const REPORT_TARGET_NAMES: Record<string, string> = {
   [REPORT_TARGETS.directMessage]: "direct message",
   [REPORT_TARGETS.introNote]: "intro note",
   [REPORT_TARGETS.ask]: "ask",
+  [REPORT_TARGETS.askAnswer]: "answer on an ask",
 };
 
 const GROUP_DEPARTURE_SENTENCES: Record<string, (target: string) => string> = {
@@ -70,6 +71,8 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.moduleTurnedOn]: ({ detail }) => `turned on ${detail}`,
   [AUDIT_ACTIONS.moduleTurnedOff]: ({ detail }) => `turned off ${detail}`,
   [AUDIT_ACTIONS.askRemoved]: ({ target, detail }) => `removed an ask by ${target}: "${detail}"`,
+  [AUDIT_ACTIONS.askAnswerRemoved]: ({ target, detail }) => `removed an answer by ${target}: "${detail}"`,
+  [AUDIT_ACTIONS.askAllowanceChanged]: ({ detail }) => `set the weekly ask allowance to ${detail} per member`,
   [AUDIT_ACTIONS.domainConfirmed]: ({ detail }) => `confirmed the domain ${detail} in Village`,
   [AUDIT_ACTIONS.introAsksStopped]: () => "asked this community to stop sending them intro asks",
   [AUDIT_ACTIONS.fillInBasisChanged]: ({ detail }) => readFillInBasisSentence(detail),

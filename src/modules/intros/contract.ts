@@ -126,6 +126,9 @@ export const INTRO_ERROR_CODES = {
   consentTooManyTries: "intro_consent_too_many_tries",
   targetEmailRefused: "intro_target_email_refused",
   targetEmailFailed: "intro_target_email_failed",
+  connectorBusy: "intro_connector_busy",
+  notJoined: "intro_not_joined",
+  targetRefuses: "intro_target_refuses",
 } as const;
 
 const slugSchema = z.string().trim().toLowerCase().min(1).max(INTRO_LIMITS.slugLength);

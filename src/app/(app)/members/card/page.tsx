@@ -23,6 +23,7 @@ import { modulePage } from "@/platform/modules/module-page";
 import { EMAIL_TOPICS } from "@/platform/email/kinds";
 import { readResendConfig } from "@/platform/email/resend";
 import { readOptedOutTopics } from "@/platform/email/unsubscribe";
+import { asksManifest } from "@/modules/asks/manifest";
 import { introsManifest } from "@/modules/intros/manifest";
 import { messagesManifest } from "@/modules/messages/manifest";
 import { EmailPreferencesCard } from "@/shell/email-preferences-card";
@@ -41,6 +42,7 @@ const TOPIC_MODULES = [
   { topic: EMAIL_TOPICS.intros, moduleId: introsManifest.id },
   { topic: EMAIL_TOPICS.messages, moduleId: messagesManifest.id },
   { topic: EMAIL_TOPICS.network, moduleId: networkManifest.id },
+  { topic: EMAIL_TOPICS.asks, moduleId: asksManifest.id },
 ];
 
 type Profile = NonNullable<Awaited<ReturnType<typeof readMemberProfile>>>;

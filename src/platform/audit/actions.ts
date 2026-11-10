@@ -32,6 +32,8 @@ export const AUDIT_ACTIONS = {
   moduleTurnedOn: "module_turned_on",
   moduleTurnedOff: "module_turned_off",
   askRemoved: "ask_removed",
+  askAnswerRemoved: "ask_answer_removed",
+  askAllowanceChanged: "ask_allowance_changed",
   introAsksStopped: "intro_asks_stopped",
   fillInBasisChanged: "fill_in_basis_changed",
   fillInRunStarted: "fill_in_run_started",
