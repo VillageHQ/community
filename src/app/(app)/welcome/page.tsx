@@ -29,7 +29,8 @@ export default modulePage(membersManifest, async function WelcomePage() {
   const member = await requireMember();
   const database = getDatabase();
   const step = await resolveOnboardingStep(database, member);
-  if (step === ONBOARDING_STEPS.done) redirect(ROUTES.feed);
+  // Back to the landing, which sends a new admin on to setup.
+  if (step === ONBOARDING_STEPS.done) redirect(ROUTES.landing);
 
   const isNetworkOn = await isModuleEnabled(database, networkManifest);
   const [context, inviter, profile, progress, memberNeighbours, memberCount] = await Promise.all([

@@ -113,7 +113,7 @@ describe("the admin home", () => {
 
     expect(items.find(({ id }) => id === ADMIN_HOME_ITEMS.stuckIntros)).toEqual({
       id: ADMIN_HOME_ITEMS.stuckIntros,
-      label: "2 intros asked, no answer",
+      label: "2 intros asked over 4 days ago, still no answer",
       href: ROUTES.adminReport,
       isUrgent: false,
     });

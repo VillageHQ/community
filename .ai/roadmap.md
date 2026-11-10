@@ -26,6 +26,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [x] Intro fixes from the final check: empty "no" note, the yes on a forwarded link, reminders for quiet intros, a connector who said no, the "no thanks" page — fix-intros — merged, [PR #27](https://github.com/VillageHQ/community/pull/27)
 - [x] Running-the-app fixes from the final check: timed jobs on every host, a Village-down notice, one job source per careers link — fix-ops — merged, [PR #29](https://github.com/VillageHQ/community/pull/29) · [spec](features/fix-ops/SPEC.md)
 - [ ] An admin home that leads with this quarter's intros, then what needs the admin — admin-home — open pull request, [PR #32](https://github.com/VillageHQ/community/pull/32) — [spec](features/admin-home/SPEC.md)
+- [ ] A new admin lands on setup until it is done; the stuck-intros line says it counts older asks — admin-firstrun — open pull request, [PR #33](https://github.com/VillageHQ/community/pull/33) — [spec](features/admin-firstrun/SPEC.md)
 
 ## Next (queued)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
@@ -44,7 +45,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] A locked member's ask still counts in the partner report's asks by need
 - [ ] Reporting the note on an already-declined intro answers 404
 - [ ] A removed member sees "You have been banned from this application. Please contact support"
-- [ ] Text slips: the "Invite someone" link on Admin → Members goes nowhere; "sam's network"; "help with investor"; two different member counts in the welcome steps; "Continue to the feed" with the feed off; a double footer; "Logistics's jobs"
+- [ ] Text slips: the "Invite someone" link on Admin → Members goes nowhere; "sam's network"; "help with investor"; two different member counts in the welcome steps; "Continue to the feed" with the feed off; a double footer; "Logistics's jobs" — the "Invite someone" link works since PR #32 (checked in the running app on 2026-11-10: it opens the "Invite someone" form; [proof](features/admin-firstrun/reports/invite-button-1280.png))
 
 ## Later (someday / deferred)
 - [ ] Admin console home, member-view switch, mail page lists and asks admin page — parity — [spec](features/admin-console/SPEC.md)

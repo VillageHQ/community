@@ -8,7 +8,7 @@
 - Top line: `admin/reads-partner-report.ts` `readQuarterIntroLine` calls the report's own `readIntroReports` with the
   report's own "this quarter so far" period, so asked / made / said it helped always equal the report's. Null while
   intros are off; the page then says intros are switched off.
-- Stuck intros: `intros/reads-report.ts` `readStuckIntroCount`: not withheld, and still `requested` 4+ days after the
+- Stuck intros ("N intros asked over 4 days ago, still no answer": true in any part of the quarter, so it never seems to contradict the top line): `intros/reads-report.ts` `readStuckIntroCount`: not withheld, and still `requested` 4+ days after the
   ask, or still `asking_target` 4+ days after the person asked for was asked (the reminder days). It links to the
   partner report, because admins never see individual asks.
 - Items: `readAdminHomeItems` (pure, tested) lists, most urgent first, Village trouble (keys refused: the keys step;
