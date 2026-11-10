@@ -46,9 +46,20 @@ function setUpCopy() {
     }
     resetTimer = setTimeout(() => {
       label.textContent = COPY_LABEL;
+      status.textContent = "";
     }, COPIED_LABEL_RESET_MS);
+  });
+}
+
+// Printed pages show every answer, since nobody can click to open one on paper.
+function setUpPrint() {
+  window.addEventListener("beforeprint", () => {
+    document.querySelectorAll(".faq details").forEach((details) => {
+      details.open = true;
+    });
   });
 }
 
 setUpMenu();
 setUpCopy();
+setUpPrint();

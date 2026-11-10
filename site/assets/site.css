@@ -513,10 +513,12 @@ h4 {
 
 .mock-action {
   flex: none;
+  max-width: 9.5em;
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.35;
+  text-align: right;
   color: var(--accent-ink);
-  white-space: nowrap;
 }
 
 .avatar {
@@ -1253,9 +1255,27 @@ h4 {
 }
 
 @media print {
-  .site-header,
-  .skip-link {
+  .site-header {
     position: static;
+  }
+
+  .skip-link,
+  .menu-toggle,
+  .site-bar .button,
+  .hero-actions,
+  .deploy .button,
+  .deploy-command .button {
+    display: none !important;
+  }
+
+  .faq details::details-content {
+    content-visibility: visible;
+    display: block;
+  }
+
+  .section,
+  .closing {
+    padding-block: 32px;
   }
 }
 
@@ -1282,5 +1302,41 @@ h4 {
 @media (max-width: 860px) {
   .site-bar {
     gap: 12px;
+  }
+}
+
+h1,
+h2 {
+  text-wrap: balance;
+}
+
+.switches > li > p {
+  flex: 1;
+}
+
+.switch-state {
+  min-width: 3.4em;
+  text-align: center;
+}
+
+@media (max-width: 370px) {
+  :root {
+    --gutter: 16px;
+  }
+
+  .site-bar .button {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .mock-row {
+    flex-wrap: wrap;
+  }
+
+  .mock-action {
+    max-width: none;
+    margin-left: 44px;
+    text-align: left;
   }
 }
