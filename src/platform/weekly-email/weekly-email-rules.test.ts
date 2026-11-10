@@ -60,6 +60,7 @@ describe("matching asks to helpers", () => {
   it("drops everyday words and keeps real skills", () => {
     expect([...readWords("First hires, team help with anything")]).toEqual(["hires"]);
     expect(findMatchedWords("Our first team offsite", readWords("first team building"))).toEqual([]);
+    expect(findMatchedWords("Any quick tips or ideas?", readWords("Happy to share tips and ideas"))).toEqual([]);
     expect(findMatchedWords("Pricing and fundraising advice", readWords("fundraising, pricing"))).toEqual(["fundraising", "pricing"]);
   });
 });

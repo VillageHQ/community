@@ -20,7 +20,8 @@ const COMMON_WORDS = new Set(
     // Everyday words that name no skill or topic.
     "able ask asking best better big came come comes coming day days early easy find finding first get gets getting " +
     "give given go goes going good got great hello help helped helping helps hey hi know knows last later " +
-    "look looking looks lot lots love new next nice old people person place plan put ready right say second soon " +
+    "call calls happy hear idea ideas interested look looking looks lot lots love meet new next nice old people person " +
+    "place plan put question questions quick ready recommend right say second share small soon tip tips " +
     "start started starting stuff sure take talk team teams tell think third time times today try trying use used " +
     "using want wanted wants week weeks work worked working works year years " +
     // Words every ask and profile in a founder community share.
