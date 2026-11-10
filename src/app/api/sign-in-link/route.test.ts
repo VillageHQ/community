@@ -3,6 +3,7 @@ import { eq, like } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { account, session, user, verification } from "@/platform/database/auth-schema";
+import { sendDueEmails } from "@/platform/email/outbox-sender";
 import { emailOutbox } from "@/platform/email/schema";
 import { EVENTUALLY } from "@/test/async-timeouts";
 import { clearDatabase, createTestDatabase } from "@/test/database";
@@ -189,6 +190,32 @@ describe("signing in by emailed link", () => {
 
     expect((await confirm(token, { Origin: "https://evil.example" })).status).toBe(403);
     expect(await countSessions()).toBe(0);
+  });
+
+  it("never sends a link that died while it waited to be retried", async () => {
+    vi.stubEnv("RESEND_API_URL", "http://127.0.0.1:9");
+    await postAuth("/sign-in/magic-link", { email: MEMBER.email });
+    await vi.waitFor(async () => {
+      const [queued] = await database.select().from(emailOutbox);
+      expect(queued).toMatchObject({ status: "pending", attempts: 1 });
+    }, EVENTUALLY);
+    const [queued] = await database.select().from(emailOutbox);
+    const [link] = await database.select().from(verification).where(like(verification.identifier, "magic-link:%"));
+    expect(queued!.expiresAt!.getTime()).toBeLessThan(link!.expiresAt.getTime());
+
+    vi.stubEnv("RESEND_API_URL", resend.url);
+    await database.update(emailOutbox).set({ nextAttemptAt: new Date(Date.now() - 1000) });
+    const sixteenMinutesOn = Date.now() + 16 * 60 * 1000;
+    vi.spyOn(Date, "now").mockReturnValue(sixteenMinutesOn);
+    try {
+      await sendDueEmails(database, process.env);
+    } finally {
+      vi.restoreAllMocks();
+    }
+
+    expect(resend.state.emails).toHaveLength(0);
+    const [finished] = await database.select().from(emailOutbox);
+    expect(finished).toMatchObject({ status: "skipped", html: "", text: "" });
   });
 });
 

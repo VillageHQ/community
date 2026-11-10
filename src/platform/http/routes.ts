@@ -48,6 +48,9 @@ export const API_ROUTES = {
   adminWeeklyEmail: "/api/admin/weekly-email",
   adminWeeklyEmailSchedule: "/api/admin/weekly-email/schedule",
   adminWeeklyEmailTest: "/api/admin/weekly-email/test",
+  adminEmail: "/api/admin/email",
+  adminEmailCheck: "/api/admin/email/check",
+  adminEmailTest: "/api/admin/email/test",
   resendWebhook: "/api/email/resend-webhook",
   recoverAdmin: "/api/recover-admin",
   signInLink: "/api/sign-in-link",
@@ -144,6 +147,7 @@ export const API_ROUTES = {
   onboarding: "/api/onboarding",
   villageKeys: "/api/admin/village/keys",
   villageGroup: "/api/admin/village/group",
+  villageSettings: "/api/admin/village/settings",
   villageLinks: "/api/admin/village/links",
   villageLinkReset: "/api/admin/village/links/reset",
 } as const;

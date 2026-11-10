@@ -50,6 +50,7 @@ export const AUDIT_ACTIONS = {
   chatDisconnected: "chat_disconnected",
   perksSaved: "perks_saved",
   perksRemoved: "perks_removed",
+  villageSettingsChanged: "village_settings_changed",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

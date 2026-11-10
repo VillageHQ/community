@@ -21,4 +21,8 @@ export const INSTANCE_SETTING_KEYS = {
   fillInTermsDate: "fill_in_terms_date",
   partnerReportRecipients: "partner_report_recipients",
   partnerReportSharedAt: "partner_report_shared_at",
+  villageSearchScope: "village_search_scope",
+  villageIntroducers: "village_introducers",
+  villageChosenIntroducerIds: "village_chosen_introducer_ids",
+  villageServiceEmail: "village_service_email",
 } as const;

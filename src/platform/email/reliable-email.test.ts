@@ -160,6 +160,17 @@ describe("reliable email", () => {
       expect(notice.recent[0]?.lastError).toContain("503");
     });
 
+    // A rounded default put about half of new rows up to half a millisecond in the future, so a send in that instant
+    // skipped them (the one-click header test failed that way in CI).
+    it("makes a new email due at once, never a moment later", async () => {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        const result = await database.execute<{ isLater: boolean }>(
+          sql`insert into email_outbox (kind, to_email, subject, html, text) values ('invite', 'a@example.com', 's', 'h', 't') returning next_attempt_at > now() as "isLater"`,
+        );
+        expect(result.rows[0]?.isLater).toBe(false);
+      }
+    });
+
     it("queues nothing when email is off", async () => {
       expect(await queueEmail(database, {}, { kind: EMAIL_KINDS.invite, to: "a@example.com", memberId: null, subject: "s", html: "h", text: "t" })).toBeNull();
     });

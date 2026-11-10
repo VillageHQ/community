@@ -41,8 +41,9 @@ function describePathWhy(targetName: string | null, reason: string) {
   return clip(`May know ${person}: ${reason}`);
 }
 
-function describeWordsWhy(canHelpWith: string) {
-  return clip(`Can help with "${canHelpWith}"`);
+// Names only the words the ask and the helper share, never their whole profile line.
+function describeWordsWhy(sharedWords: readonly string[]) {
+  return clip(`Can help with ${sharedWords.join(", ")}`);
 }
 
 async function findPathHelpers(context: RequestContext, targetSlug: string | null, findPaths: PathFinder) {
@@ -62,9 +63,9 @@ function mergeHelpers(authorId: string, lookup: PathLookup | null, wordHelpers: 
     if (memberId === authorId || drafts.has(memberId)) continue;
     drafts.set(memberId, { helperId: memberId, reason: ASK_HELPER_REASONS.path, why: describePathWhy(lookup?.targetName ?? null, reason), connectorSlug });
   }
-  for (const { memberId, canHelpWith } of wordHelpers) {
+  for (const { memberId, sharedWords } of wordHelpers) {
     if (drafts.has(memberId)) continue;
-    drafts.set(memberId, { helperId: memberId, reason: ASK_HELPER_REASONS.words, why: describeWordsWhy(canHelpWith), connectorSlug: null });
+    drafts.set(memberId, { helperId: memberId, reason: ASK_HELPER_REASONS.words, why: describeWordsWhy(sharedWords), connectorSlug: null });
   }
   return [...drafts.values()];
 }

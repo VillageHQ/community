@@ -8,6 +8,8 @@ export const INTRO_LIFETIME_DAYS = 14;
 export const TARGET_ANSWER_MINIMUM_DAYS = 7;
 export const OUTCOME_PROMPT_AFTER_DAYS = 14;
 export const OUTCOME_REMINDER_AFTER_DAYS = 3;
+// The one reminder to the person asked, this many days after the app last emailed them.
+export const TARGET_REMINDER_AFTER_DAYS = 4;
 export const OUTCOME_PROMPT_WINDOW_DAYS = 45;
 export const CONSENT_TOKEN_MAXIMUM_LENGTH = 128;
 
@@ -128,6 +130,7 @@ export const INTRO_ERROR_CODES = {
   targetEmailFailed: "intro_target_email_failed",
   connectorBusy: "intro_connector_busy",
   notJoined: "intro_not_joined",
+  notIntroducer: "intro_not_introducer",
   targetRefuses: "intro_target_refuses",
   notTakingAsks: "intro_not_taking_asks",
 } as const;

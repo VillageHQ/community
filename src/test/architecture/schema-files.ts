@@ -12,7 +12,11 @@ export function readSchemaPatterns() {
 }
 
 export function readLoadedSchemaFiles() {
-  return readSchemaPatterns().flatMap((pattern) => globSync(pattern, { cwd: REPOSITORY_ROOT })).toSorted();
+  // globSync answers with the platform's separator; every other path here uses "/".
+  return readSchemaPatterns()
+    .flatMap((pattern) => globSync(pattern, { cwd: REPOSITORY_ROOT }))
+    .map((file) => file.replaceAll("\\", "/"))
+    .toSorted();
 }
 
 export function readDeclaredTables(file: string) {

@@ -12,7 +12,7 @@ import type { Transaction } from "../../platform/database/client.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
-import { readAskableConnectors } from "../network/service.ts";
+import { canMemberIntroduce, readAskableConnectors } from "../network/service.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import { type RequestContext } from "../../platform/http/request-context.ts";
 import {
@@ -49,6 +49,7 @@ import {
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
+const FORBIDDEN_STATUS = 403;
 const BAD_GATEWAY_STATUS = 502;
 const UNPROCESSABLE_STATUS = 422;
 const CONSENT_EMAIL_COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -405,6 +406,9 @@ export async function createOfferedIntro(context: RequestContext, body: OfferedI
   await enforceIntroLimit(database, member.id, INTRO_LIMIT_KINDS.ask);
   const [connector, requester] = await Promise.all([readJoinedNetwork(context, member.id), readJoinedNetwork(context, body.requesterId)]);
   if (!connector || !requester) throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.notJoined, NOT_JOINED_MESSAGE);
+  if (!(await canMemberIntroduce(database, member.id))) {
+    throw new RequestError(FORBIDDEN_STATUS, INTRO_ERROR_CODES.notIntroducer, "In this community, intros go through members the admins chose. Ask one of them, or post your lead on the ask.");
+  }
   if (body.targetSlug === connector.linkedinSlug || body.targetSlug === requester.linkedinSlug) {
     throw new RequestError(UNPROCESSABLE_STATUS, INTRO_ERROR_CODES.ownTarget, "That's one of you two. Name the person you'd introduce them to.");
   }

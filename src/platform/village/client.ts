@@ -107,8 +107,11 @@ export function leaveVillageGroup(session: VillageSession, groupId: string) {
   return session.village.groups.leave(groupId, withinDeadline(session));
 }
 
-export async function searchVillageNetwork(session: VillageSession, prompt: string) {
-  const { results, response } = await session.village.people.search(prompt, withinDeadline(session, VILLAGE_TIMEOUTS_MS.search));
+export const GLOBAL_SOURCE = "global";
+
+// "network" searches the member's network; "global" searches everyone Village knows.
+export async function searchVillageNetwork(session: VillageSession, prompt: string, scope: typeof NETWORK_SOURCE | typeof GLOBAL_SOURCE = NETWORK_SOURCE) {
+  const { results, response } = await session.village.people.search({ prompt, scope }, withinDeadline(session, VILLAGE_TIMEOUTS_MS.search));
   return { people: results, source: response.metadata.source };
 }
 

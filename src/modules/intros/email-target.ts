@@ -39,6 +39,25 @@ export function renderConsentAskEmail(facts: ConsentAskFacts, link: string, acce
   return { subject, html, text: `${greeting}\n\n${body}\n\n${action}: ${link}` };
 }
 
+export function renderTargetReminderEmail(facts: ConsentAskFacts, link: string, accentColor: string) {
+  const requesterName = toSingleLine(facts.requesterName);
+  const introducerName = toSingleLine(facts.introducerName);
+  const targetFirst = toSingleLine(readFirstName(facts.targetName));
+  const communityName = toSingleLine(facts.communityName);
+  const subject = `Still there? ${readFirstName(requesterName)} would like to meet you`;
+  const greeting = `Hi ${targetFirst},`;
+  const body = `A few days ago ${introducerName} asked if you'd like to meet ${requesterName} through ${communityName}. If you haven't had a chance, read their note and say yes or no thanks. Nothing happens unless you say yes, and this is the only reminder.`;
+  const action = "Read the note";
+  const html = [
+    `<div style="${EMAIL_FRAME}">`,
+    `<p style="margin:0 0 12px">${escapeHtml(greeting)}</p>`,
+    `<p style="margin:0 0 24px">${escapeHtml(body)}</p>`,
+    `<a href="${escapeHtml(link)}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${accentColor};color:${pickOnAccent(accentColor)};font-weight:700;text-decoration:none">${escapeHtml(action)}</a>`,
+    `</div>`,
+  ].join("");
+  return { subject, html, text: `${greeting}\n\n${body}\n\n${action}: ${link}` };
+}
+
 type ConsentAskRequest = { intro: Intro; token: string; targetEmail: string };
 
 export async function sendConsentAskEmail(database: Database, environment: Environment, { intro, token, targetEmail }: ConsentAskRequest) {

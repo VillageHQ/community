@@ -7,7 +7,7 @@ type PasswordResetEmailFacts = { link: string; communityName: string; accentColo
 
 export function renderPasswordResetEmail({ link, communityName, accentColor }: PasswordResetEmailFacts) {
   const community = toSingleLine(communityName);
-  const subject = `Reset your ${community} password`;
+  const subject = `Reset your password for ${community}`;
   const opening = `Someone asked to reset the password for this address on ${community}. If that was you, choose a new one with this link.`;
   const warning = "It works once and lasts one hour. If it wasn't you, ignore this email and nothing changes.";
   const html = [

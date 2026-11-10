@@ -9,6 +9,10 @@ type DirectoryMemberSeed = {
   name: string;
   company?: string;
   canHelpWith?: string;
+  stage?: string;
+  sector?: string;
+  cohort?: string;
+  updatedAt?: Date;
   tags?: string[];
   banned?: boolean;
   banExpires?: Date;
@@ -29,7 +33,16 @@ export async function seedMember(database: Database, seed: DirectoryMemberSeed) 
   });
   await database
     .insert(memberProfile)
-    .values({ userId: id, company: seed.company, canHelpWith: seed.canHelpWith, onboardingCompletedAt: new Date() });
+    .values({
+      userId: id,
+      company: seed.company,
+      canHelpWith: seed.canHelpWith,
+      stage: seed.stage,
+      sector: seed.sector,
+      cohort: seed.cohort,
+      onboardingCompletedAt: new Date(),
+      ...(seed.updatedAt ? { updatedAt: seed.updatedAt } : {}),
+    });
   for (const tag of seed.tags ?? []) {
     await database.insert(memberTag).values({ userId: id, tag, normalizedTag: normalizeTag(tag) });
   }
