@@ -92,7 +92,7 @@ describe("the next step card", () => {
     const [nextStep] = selectNextSteps({ ...READY_FACTS, setupProgress: PENDING_SETUP });
 
     expect(nextStep?.title).toBe("Let's get Northwind ready");
-    expect(nextStep?.action?.href).toBe(ROUTES.admin);
+    expect(nextStep?.action?.href).toBe(ROUTES.adminSetup);
     expect(nextStep?.progress).toMatchObject({ doneCount: 1, totalCount: 4 });
     expect(nextStep?.isUrgent).toBe(true);
   });

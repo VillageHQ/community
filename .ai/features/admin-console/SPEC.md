@@ -22,3 +22,7 @@ The console home with counts only (never who asked whom), the founder-view switc
 
 ## Open questions
 - Which of these are still wanted now that the partner report exists?
+
+## Update 2026-11-10: the console home shipped
+The console home (intro counts, waiting items) shipped as the admin home: `.ai/features/admin-home/`. Still open
+here: the member-view switch, the mail page, the asks admin page, Village test connection and the mail setup step.

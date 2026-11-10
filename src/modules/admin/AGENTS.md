@@ -17,3 +17,4 @@ Rules:
 - Removing a member always tries the Village departure, after the removal commits. Village being down must not stop a removal.
 - Reports stay visible and resolvable whatever modules are on. Moderation can't disappear because a switch was flipped.
 - The partner report shows counts and outcomes, never who asked whom. A connector is named only with "credit me in reports" on and while an active member. Every number comes from the one read, so the page, CSV and email can't disagree.
+- Admin home: `readQuarterIntroLine` (in `reads-partner-report.ts`) gives the home its top line from the report's own intro read and period; the stuck-intro count is `intros/reads-report.ts` `readStuckIntroCount`; the rest is read in `src/shell/admin-home.ts`.

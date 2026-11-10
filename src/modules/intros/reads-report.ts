@@ -1,12 +1,12 @@
 import "server-only";
 
-import { and, desc, eq, gte, inArray, lt, min, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, min, or, sql, type SQL } from "drizzle-orm";
 
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberProfile } from "../members/schema.ts";
-import { INTRO_OUTCOMES, INTRO_RESULTS, INTRO_STATES, OPEN_INTRO_STATES, type IntroResult } from "./contract.ts";
+import { CONNECTOR_REMINDER_AFTER_DAYS, INTRO_OUTCOMES, INTRO_RESULTS, INTRO_STATES, OPEN_INTRO_STATES, TARGET_REMINDER_AFTER_DAYS, type IntroResult } from "./contract.ts";
 import { expireDueIntros } from "./reads.ts";
 import { introRequest } from "./schema.ts";
 
@@ -161,4 +161,27 @@ export async function readIntroReports<Key extends string>(database: Database, p
   const namedIds = await readNamedConnectorIds(database);
   const entries = await Promise.all(Object.entries<ReportPeriod>(periods).map(async ([key, period]) => [key, await readIntroReport(database, period, namedIds)] as const));
   return { periods: Object.fromEntries(entries) as Record<Key, IntroReport>, namedConnectors: await readConnectorNames(database, namedIds) };
+}
+
+const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+
+// Asks still waiting on a first answer past the reminder day: the connector hasn't answered, or the person asked for
+// hasn't answered since they were asked. A count only, for the admin home; nothing says who asked whom.
+export async function readStuckIntroCount(database: Database, now = new Date()) {
+  await expireDueIntros(database, null);
+  const connectorSince = new Date(now.getTime() - CONNECTOR_REMINDER_AFTER_DAYS * DAY_IN_MILLISECONDS);
+  const targetSince = new Date(now.getTime() - TARGET_REMINDER_AFTER_DAYS * DAY_IN_MILLISECONDS);
+  const [row] = await database
+    .select({ stuck: countWhere(sql`true`) })
+    .from(introRequest)
+    .where(
+      and(
+        eq(introRequest.isWithheld, false),
+        or(
+          and(eq(introRequest.state, INTRO_STATES.requested), lt(introRequest.createdAt, connectorSince)),
+          and(eq(introRequest.state, INTRO_STATES.askingTarget), lt(introRequest.askedTargetAt, targetSince)),
+        ),
+      ),
+    );
+  return row?.stuck ?? 0;
 }

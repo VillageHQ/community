@@ -6,6 +6,10 @@ import { MEMBER_ROLES } from "../../platform/auth/roles.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { VILLAGE_STATUSES, GROUP_DEPARTURE_OUTCOMES } from "../network/contract.ts";
 
+// The invite card on Members. In this server-safe file so a server page can link to it (a value exported from a
+// "use client" file reaches the server as a reference, not the string).
+export const INVITE_SECTION_ID = "invite-someone";
+
 export const CONTENT_CHOICES = { keep: "keep", delete: "delete" } as const;
 export const MEMBER_FILTERS = { all: "all", admins: "admins", attention: "attention", removed: "removed" } as const;
 
