@@ -25,3 +25,4 @@ Rules:
 - The target's email is optional, typed by the connector, used only with Resend, and cleared when the ask leaves `asking_target` or `target_agreed`. Nothing here spends Village credits to find an address.
 - Admins see totals only, from `reads-report.ts`: by period asked, no withheld asks, expiries never declines.
 - An intro ask uses the shared weekly allowance (passed in by the route) and a connector gets at most 10 a week. "I know someone" on an ask makes a helper-offered intro (`is_connector_offer`) that starts at `asking_target` and counts toward neither.
+- `service-erasure.ts`: a deleted account's intros stay as rows, without their words or identity.

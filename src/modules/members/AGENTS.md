@@ -13,6 +13,8 @@ Core. Always on. Other modules build on it, and it never imports them.
 - `service-linkedin.ts`: claiming a LinkedIn profile, and whether a member's email is trusted.
 - `service-fill-in.ts`, `contract-fill-in.ts`, `rules-fill-in.ts`: the profile fill-in's data. The admin's legal basis, each member's yes or no (`member_lookup`), and the filled-in lines (`member_fill_in`). Network makes the Village calls and saves through here.
 - `service-onboarding.ts`: onboarding state. `src/shell/onboarding.ts` decides the next step, because that needs network.
+- `contract-privacy.ts`, `service-privacy.ts`: `member_privacy`: hide me, who can message me, accept intro asks (null = never answered, treated as yes). `isListedMember` keeps hidden members out of every directory list.
+- `service-erasure.ts`: the real delete's part here. The `user` row stays as a "Deleted member" placeholder with `deleted-<id>@reclaimed.invalid`; `member_removal.erased_at` marks it. `src/shell/account-deletion.ts` runs the whole delete.
 - `contract-*.ts`: Zod schemas and constants. The schema loads them outside Next, so they use relative imports and no `server-only`.
 - `queries-*.ts`: client requests. `components/`: the UI.
 

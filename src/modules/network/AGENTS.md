@@ -20,3 +20,4 @@ Rules:
 - Never name a path through a member who hasn't agreed to share.
 - Every paid call goes through `withCreditCall`. It reserves the call's estimate against the community's monthly cap (and the member's day, except fill-in) before Village is called, and emails admins once at 80% and once at 100%.
 - Departure runs whatever else happens. A removed member's network must stop being shared.
+- `service-erasure.ts`: before a real delete, leave the group and cancel the Village user (`POST /v2/user/cancel`).
