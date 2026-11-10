@@ -45,6 +45,8 @@ export const API_ROUTES = {
   adminWeeklyEmail: "/api/admin/weekly-email",
   adminWeeklyEmailSchedule: "/api/admin/weekly-email/schedule",
   adminWeeklyEmailTest: "/api/admin/weekly-email/test",
+  adminEmailCheck: "/api/admin/email/check",
+  adminEmailTest: "/api/admin/email/test",
   resendWebhook: "/api/email/resend-webhook",
   recoverAdmin: "/api/recover-admin",
   signInLink: "/api/sign-in-link",

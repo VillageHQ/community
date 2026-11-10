@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CardDescription } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { getDatabase } from "@/platform/database/client";
+import { EmailSetupCheck } from "@/modules/admin/components/email-setup-check";
 import { SettingCard } from "@/modules/admin/components/setting-card";
 import { VillageSecretCard } from "@/modules/admin/components/village-secret-card";
 import { HOST_SETTINGS_GUIDE_URL, UPDATE_GUIDE_URL } from "@/modules/admin/copy";
@@ -82,6 +83,10 @@ function EmailOn({ fromAddress, enabledIds }: { fromAddress: string; enabledIds:
         Sending as <strong className="font-bold text-foreground">{fromAddress}</strong>. What that means:
       </p>
       <EffectList effects={selectEffects(EMAIL_ON_EFFECTS, enabledIds)} />
+      <p className="type-small text-foreground-soft">
+        Mail lands in inboxes, not spam, when the domain has SPF, DKIM and DMARC records. Check them here:
+      </p>
+      <EmailSetupCheck />
     </>
   );
 }

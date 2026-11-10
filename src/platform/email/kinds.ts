@@ -20,6 +20,7 @@ export const EMAIL_KINDS = {
   connectNudge: "connect_nudge",
   askHelper: "ask_helper",
   partnerReport: "partner_report",
+  emailTest: "email_test",
 } as const;
 
 export type EmailKind = (typeof EMAIL_KINDS)[keyof typeof EMAIL_KINDS];
@@ -41,6 +42,8 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.askHelper]: EMAIL_TOPICS.asks,
   // Sent by an admin to people outside the community, who have no member switch. The send itself skips addresses that bounced.
   [EMAIL_KINDS.partnerReport]: null,
+  // An admin's "Send a test to me" from Settings.
+  [EMAIL_KINDS.emailTest]: null,
 };
 
 export const EMAIL_TOPIC_LABELS: Record<EmailTopic, { title: string; description: string }> = {
