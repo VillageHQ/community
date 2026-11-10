@@ -1,1 +1,6 @@
 tmp/
+/logs/
+/plan.json*
+/PLAN.md
+/features/*/verification/
+/features/*/run.log
