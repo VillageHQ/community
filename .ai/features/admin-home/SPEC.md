@@ -12,6 +12,7 @@ full partner report and the admin tabs.
   switched off" while they are off.
 - **Needs you:** each a count and a link, hidden at zero: Village trouble (to the keys step or Credits), reports
   waiting (Reports), people waiting for the admin's OK (Members), invites not accepted yet (Members, the invite
-  list), intros asked with no answer past the reminder day (the partner report), setup steps left (`/admin/setup`).
-- **Setup** lives at `/admin/setup`; once setup is done it sends the admin to the home.
+  list), older intros still waiting for an answer past the reminder day (the partner report), setup steps left
+  (`/admin/setup`).
+- **Setup** lives at `/admin/setup`; a new admin lands there until it is done ([admin-firstrun](../admin-firstrun/SPEC.md)), then it sends the admin to the home.
 - **Privacy:** counts only. Admins never see who asked whom. Members are sent away.
