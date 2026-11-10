@@ -22,6 +22,8 @@ const DISCORD_CHANNELS: Record<string, string> = { [FAKE_DISCORD_CHANNEL]: "asks
 
 type ChatKind = "slack" | "discord";
 export type FakePost = { kind: ChatKind; channel: string; text: string };
+// A slash command's later answer, sent to the response_url.
+export type FakeCommandResponse = { path: string; text: string; responseType: string };
 
 // What Slack sends as X-Slack-Request-Timestamp and X-Slack-Signature for a body.
 export function signSlackRequest(secret: string, body: string, timestamp = Math.floor(Date.now() / 1000)) {
@@ -50,6 +52,8 @@ function parseParameters(request: IncomingMessage, url: URL, raw: string): Recor
 
 export async function startFakeChatServer({ port = 0 }: { port?: number } = {}) {
   const posts: FakePost[] = [];
+  const commandResponses: FakeCommandResponse[] = [];
+  let slackDelayMs = 0;
   const limits: Record<ChatKind, number> = { slack: 0, discord: 0 };
   const goodTokens: Record<ChatKind, string> = { slack: FAKE_SLACK_TOKEN, discord: FAKE_DISCORD_TOKEN };
   const slackUsers = new Map<string, string>([["U0STRANGER", "stranger@example.net"]]);
@@ -58,6 +62,7 @@ export async function startFakeChatServer({ port = 0 }: { port?: number } = {}) 
     const raw = request.method === "POST" ? await readBody(request) : "";
     const parameters = parseParameters(request, url, raw);
     const token = String(request.headers.authorization ?? "").replace(/^Bearer\s+/, "");
+    if (slackDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, slackDelayMs));
     if (token !== goodTokens.slack) return sendJson(response, 200, { ok: false, error: token === FAKE_SLACK_TOKEN ? "token_revoked" : "invalid_auth" });
     if (method === "auth.test") return sendJson(response, 200, { ok: true, team: FAKE_SLACK_TEAM.name, team_id: FAKE_SLACK_TEAM.id, user_id: "U0BOT" });
     if (method === "conversations.list") return sendJson(response, 200, { ok: true, channels: FAKE_SLACK_CHANNELS, response_metadata: { next_cursor: "" } });
@@ -103,7 +108,14 @@ export async function startFakeChatServer({ port = 0 }: { port?: number } = {}) 
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? "/", "http://fake");
     const slackMethod = url.pathname.match(/^\/slack\/api\/([\w.]+)$/)?.[1];
-    const answered = slackMethod
+    const answered = url.pathname.startsWith("/slack/hooks/") && request.method === "POST"
+      ? readBody(request).then((raw) => {
+          const body = JSON.parse(raw) as { text?: string; response_type?: string };
+          commandResponses.push({ path: url.pathname, text: String(body.text), responseType: String(body.response_type) });
+          response.writeHead(200, { "content-type": "text/plain" });
+          response.end("ok");
+        })
+      : slackMethod
       ? answerSlack(request, response, slackMethod, url)
       : url.pathname.startsWith("/discord/api/v10/")
         ? answerDiscord(request, response, url.pathname.slice("/discord/api/v10".length))
@@ -115,7 +127,14 @@ export async function startFakeChatServer({ port = 0 }: { port?: number } = {}) 
 
   return {
     posts,
-    environment: { SLACK_API_BASE: `${base}/slack/api`, DISCORD_API_BASE: `${base}/discord/api/v10` },
+    commandResponses,
+    // Slack's address for a command's later answer.
+    responseUrl: `${base}/slack/hooks/commands/T0FAKE/1/fake`,
+    environment: { SLACK_API_BASE: `${base}/slack/api`, DISCORD_API_BASE: `${base}/discord/api/v10`, SLACK_RESPONSE_BASE: `${base}/slack/hooks` },
+    // Every Slack Web API call waits this long first, as when Slack is slow.
+    slowSlack(milliseconds: number) {
+      slackDelayMs = milliseconds;
+    },
     // The next n posts to that tool answer 429.
     limit(kind: ChatKind, count = 1) {
       limits[kind] = count;
@@ -132,6 +151,8 @@ export async function startFakeChatServer({ port = 0 }: { port?: number } = {}) 
     },
     reset() {
       posts.length = 0;
+      commandResponses.length = 0;
+      slackDelayMs = 0;
       limits.slack = 0;
       limits.discord = 0;
       this.restore("slack");

@@ -33,6 +33,7 @@ import {
   type FakeChatServer,
 } from "@/test/fake-chat-server";
 import { createSignedInMember } from "@/test/signed-in-member";
+import { answerSlackCommand, SLACK_POSTING_NOTE } from "@/shell/slack-ask";
 
 const APP_URL = "http://localhost:3000";
 const SETUP_TOKEN = "chat-test-setup-token-4c7Qz9Lw2Xv8Rb1Np6Ks3Dm5";
@@ -81,6 +82,7 @@ describe("Slack and Discord", () => {
     fake.reset();
     vi.stubEnv("SLACK_API_BASE", fake.environment.SLACK_API_BASE);
     vi.stubEnv("DISCORD_API_BASE", fake.environment.DISCORD_API_BASE);
+    vi.stubEnv("SLACK_RESPONSE_BASE", fake.environment.SLACK_RESPONSE_BASE);
     vi.stubEnv("SETUP_TOKEN", SETUP_TOKEN);
     await saveModuleState(database, chatManifest, true);
     admin = await createSignedInMember(database, "admin");
@@ -288,6 +290,23 @@ describe("Slack and Discord", () => {
       expect(response.status).toBe(OK_STATUS);
       expect((await response.json()).text).toContain("Posted to");
       expect(await database.select({ authorId: ask.authorId, title: ask.title }).from(ask)).toEqual([{ authorId: member.userId, title: "An intro to a hospital buyer in the US" }]);
+    });
+
+    it("answers at once when posting is slow, then says in Slack when the ask is up", async () => {
+      fake.slowSlack(400);
+      const body = new URLSearchParams({ command: "/ask", team_id: FAKE_SLACK_TEAM.id, user_id: "U0MEMBER", text: "A slow intro ask", response_url: fake.responseUrl }).toString();
+      const request = new Request(`${APP_URL}/api/chat/slack/command`, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded", ...signSlackRequest(FAKE_SLACK_SIGNING_SECRET, body) },
+        body,
+      });
+
+      const response = await answerSlackCommand(database, process.env, request, { replyWithinMs: 50 });
+
+      expect((await response.json()).text).toBe(SLACK_POSTING_NOTE);
+      await vi.waitFor(() => expect(fake.commandResponses).toHaveLength(1), { timeout: 5_000 });
+      expect(fake.commandResponses[0]).toMatchObject({ responseType: "ephemeral", text: expect.stringContaining("Posted to") });
+      expect(await database.select({ title: ask.title }).from(ask)).toEqual([{ title: "A slow intro ask" }]);
     });
 
     it("refuses a bad signature and an old one", async () => {
