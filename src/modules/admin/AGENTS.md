@@ -7,7 +7,6 @@ Core. Always on. It sits on top of the features it manages, so it may import the
 - `reads-*.ts`: the member list, audit log and community health.
 - Partner report: `reads-partner-report.ts` reads it once; `partner-report-rows.ts` turns that into the rows the page, the CSV and the email all render; `service-partner-report.ts` sends it to partners through the outbox and marks it shared.
 - `schema.ts`: `content_report` and `member_removal`.
-- `components/data-home-form.tsx`: Settings' "Where your data is kept" card. The values and their checks live in `src/platform/settings/data-home*.ts`, because members' Your data reads them too.
 - `components/email-setup-check.tsx`: Settings' email check. The DNS lookups live in `src/platform/email/dns-check.ts`, with the resolver passed in so tests never touch real DNS.
 - `contract-modules.ts`, `queries-modules.ts`, `components/feature-screen.tsx`: the features screen. `src/shell/module-settings.ts` holds its logic, because it needs the registry.
 - `queries-*.ts`: client requests. `components/`: the UI.

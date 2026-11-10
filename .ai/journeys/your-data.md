@@ -18,3 +18,7 @@ What works on main today, all on the member's card page (`/members/card`):
 Not on main yet (the Your data page, open on roadmap): one "Your data" page listing what is stored and what Village
 receives, the consent record, export as one JSON file, delete my account for real, hide me from the directory, and
 who can message me.
+
+Where the data is kept and whom to ask (2026-11-10): when an admin fills in Settings' "Where your data is kept"
+card, the Your data page (`/members/data`) shows that place and the data-request contact, word for word, under
+"What is stored, and where". With nothing set, it shows nothing about them.
