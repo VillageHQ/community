@@ -30,7 +30,10 @@ export function AppShell({ community, member, navigation, badges, isNetworkOn, c
           <div className="flex items-center gap-3 px-2 pb-5">
             <LogoTile name={community.name} logo={community.logo} sizePx={46} />
             <div className="min-w-0">
-              <div className="type-serif text-lg leading-[22px]">{community.name}</div>
+              {/* A long fund name keeps to three lines; the full name is in the tooltip. */}
+              <div title={community.name} className="type-serif line-clamp-3 text-lg leading-[22px] wrap-anywhere">
+                {community.name}
+              </div>
               {community.descriptor ? (
                 <div className="type-micro text-muted-foreground">{community.descriptor}</div>
               ) : null}
@@ -50,7 +53,7 @@ export function AppShell({ community, member, navigation, badges, isNetworkOn, c
         className="sticky top-0 z-10 flex min-h-[68px] items-center gap-2.5 bg-background px-3.5 py-3 lg:hidden"
       >
         <LogoTile name={community.name} logo={community.logo} sizePx={38} />
-        <span className="type-serif min-w-0 flex-1 truncate text-[19px] leading-[24px]">
+        <span title={community.name} className="type-serif min-w-0 flex-1 truncate text-[19px] leading-[24px]">
           {community.name}
         </span>
         <PhoneUserMenu member={member} adminBadgeCount={badges.admin} />
