@@ -29,13 +29,13 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] One marketing website, "Founderhall by Village", in `site/` — one-site — open pull request — [PR #23](https://github.com/VillageHQ/community/pull/23)
 - [ ] Two preview bugs: helpers emailed but missing from Today, and matching on common words — preview-fixes — open pull request — [PR #22](https://github.com/VillageHQ/community/pull/22)
 
+- [ ] Intro fixes from the final check: empty-note no, a forwarded yes joins by email, connector reminder and expiry email, a connector who said no leaves the paths, the "no thanks" page — fix-intros — open pull request — [charter](features/fix-intros/CHARTER.md) (covers [declined-connector-paths](features/declined-connector-paths/SPEC.md) and [no-thanks-wording](features/no-thanks-wording/SPEC.md))
+
 ## Next (queued)
 - [ ] Perks from the in-app menu skips the Perks page's security policy (client-side navigation) — (from chat-perks) — [spec](features/perks-menu-csp/SPEC.md)
 - [ ] Slack /ask has no follow-up when posting takes more than 3 seconds — (from chat-perks) — [spec](features/slack-ask-slow-reply/SPEC.md)
 - [ ] The sign-in password form clears the typed email — (from small-gaps) — [spec](features/sign-in-keeps-email/SPEC.md)
-- [ ] The "no thanks" link later says "stopped intro requests" — (from two-sided-intros) — [spec](features/no-thanks-wording/SPEC.md)
 - [ ] A switched-off module answers 200, not 404 — [spec](features/module-off-404/SPEC.md)
-- [ ] A connector who said no still shows in the asker's paths list — [spec](features/declined-connector-paths/SPEC.md)
 - [ ] Single invites have no cohort field — (from small-gaps) — [spec](features/invite-cohort-field/SPEC.md)
 - [ ] Filled-in lines to confirm on Today and in the weekly email, and a jobs card on Today — parity — [spec](features/profile-confirm-lines/SPEC.md)
 - [ ] Intros from a profile without Village, and the finer intro rules — parity — [spec](features/intros-from-profile/SPEC.md)

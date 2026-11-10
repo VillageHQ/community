@@ -27,6 +27,8 @@ export const INTRO_EMAIL_EVENTS = {
   joined: "joined",
   outcomeAsked: "outcome_asked",
   outcomeReminder: "outcome_reminder",
+  connectorReminder: "connector_reminder",
+  expired: "expired",
 } as const;
 
 export type IntroEmailEvent = (typeof INTRO_EMAIL_EVENTS)[keyof typeof INTRO_EMAIL_EVENTS];
@@ -83,6 +85,19 @@ const INTRO_EMAIL_COPY: Record<IntroEmailEvent, (names: IntroEmailNames) => Intr
     body: `Did ${readFirstName(introducerName)}'s intro to ${targetName} help? "Not yet" is a fine answer too. This is the last time we'll email about it.`,
     action: "Answer in one tap",
   }),
+  [INTRO_EMAIL_EVENTS.connectorReminder]: ({ requesterName, targetName }) => ({
+    subject: `Still waiting: ${readFirstName(requesterName)} asked you for an intro`,
+    heading: "A quick reminder",
+    body: `A few days ago ${requesterName} asked you for an intro to ${targetName}. Yes, not this time, or "I don't know them well enough" are all fine answers, and it takes a few seconds. ${readFirstName(targetName)} hears nothing unless you say yes. This is the only reminder.`,
+    action: "Answer the intro request",
+  }),
+  // Never names who didn't answer: the asker can't tell a quiet connector from a quiet person asked.
+  [INTRO_EMAIL_EVENTS.expired]: ({ targetName }) => ({
+    subject: `Your intro to ${readFirstName(targetName)} closed without an answer`,
+    heading: "No answer this time",
+    body: `Your intro request to ${targetName} closed without an answer. That happens, and it says nothing about your ask. Someone else may be able to help, and you can ask again.`,
+    action: "See other ways in",
+  }),
 };
 
 const RECIPIENT_BY_EVENT: Record<IntroEmailEvent, keyof IntroEmailParticipants> = {
@@ -94,6 +109,8 @@ const RECIPIENT_BY_EVENT: Record<IntroEmailEvent, keyof IntroEmailParticipants> 
   [INTRO_EMAIL_EVENTS.joined]: "introducerId",
   [INTRO_EMAIL_EVENTS.outcomeAsked]: "requesterId",
   [INTRO_EMAIL_EVENTS.outcomeReminder]: "requesterId",
+  [INTRO_EMAIL_EVENTS.connectorReminder]: "introducerId",
+  [INTRO_EMAIL_EVENTS.expired]: "requesterId",
 };
 
 type IntroEmailParticipants = { requesterId: string; introducerId: string };
@@ -107,6 +124,8 @@ const KIND_BY_EVENT: Record<IntroEmailEvent, EmailKind> = {
   [INTRO_EMAIL_EVENTS.joined]: EMAIL_KINDS.introUpdate,
   [INTRO_EMAIL_EVENTS.outcomeAsked]: EMAIL_KINDS.introUpdate,
   [INTRO_EMAIL_EVENTS.outcomeReminder]: EMAIL_KINDS.introUpdate,
+  [INTRO_EMAIL_EVENTS.connectorReminder]: EMAIL_KINDS.introAsked,
+  [INTRO_EMAIL_EVENTS.expired]: EMAIL_KINDS.introDeclined,
 };
 
 export type IntroEmailFacts = IntroEmailParticipants & IntroEmailNames & { introId: string; event: IntroEmailEvent };

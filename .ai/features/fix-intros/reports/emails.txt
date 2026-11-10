@@ -1,0 +1,31 @@
+Emails captured by the fake Resend server during the fix-intros verification (made-up people only).
+
+2026-11-10T12:21:46.025Z  to: priya.shah@example.com  |  Dana Whitfield invited you to Your community
+2026-11-10T12:21:46.199Z  to: priya.shah@example.com  |  Confirm your email for Your community
+2026-11-10T12:21:46.253Z  to: sam.lee@example.com  |  Dana Whitfield invited you to Your community
+2026-11-10T12:21:46.420Z  to: sam.lee@example.com  |  Confirm your email for Your community
+2026-11-10T12:21:46.465Z  to: ada.okafor@example.com  |  Dana Whitfield invited you to Your community
+2026-11-10T12:21:46.621Z  to: ada.okafor@example.com  |  Confirm your email for Your community
+2026-11-10T12:21:46.683Z  to: amara.diallo@example.com  |  Dana Whitfield invited you to Your community
+2026-11-10T12:21:46.835Z  to: amara.diallo@example.com  |  Confirm your email for Your community
+2026-11-10T12:21:46.885Z  to: elena.rossi@example.com  |  Dana Whitfield invited you to Your community
+2026-11-10T12:21:47.064Z  to: elena.rossi@example.com  |  Confirm your email for Your community
+2026-11-10T12:22:07.640Z  to: priya.shah@example.com  |  Sam Lee asked you for an intro
+2026-11-10T12:22:08.539Z  to: priya.shah@example.com  |  Ada Okafor asked you for an intro
+2026-11-10T12:22:09.007Z  to: priya.shah@example.com  |  Elena Rossi asked you for an intro
+2026-11-10T12:22:09.425Z  to: priya.shah@example.com  |  Amara Diallo asked you for an intro
+2026-11-10T12:22:25.854Z  to: sam.lee@example.com  |  Your intro to Alex Kim isn't happening this time
+2026-11-10T12:22:42.191Z  to: sam.lee@example.com  |  Your intro to Dana Morris isn't happening this time
+2026-11-10T12:24:13.611Z  to: nina.patel@outside.test, ada.okafor@example.com  |  Nina, meet Ada
+2026-11-10T12:24:13.626Z  to: priya.shah@example.com  |  Nina said yes, and they're connected
+2026-11-10T12:25:09.383Z  to: priya.shah@example.com  |  Leo said no thanks
+2026-11-10T12:25:09.385Z  to: elena.rossi@example.com  |  Your intro to Leo Grant isn't happening this time
+2026-11-10T12:25:25.414Z  to: zoe.martin@outside.test, amara.diallo@example.com  |  Zoe, meet Amara
+2026-11-10T12:25:25.430Z  to: priya.shah@example.com  |  Zoe said yes, and they're connected
+2026-11-10T12:25:47.410Z  to: priya.shah@example.com  |  Still waiting: Amara asked you for an intro
+2026-11-10T12:26:01.457Z  to: amara.diallo@example.com  |  Your intro to Maya closed without an answer
+2026-11-10T12:26:21.018Z  to: elena.rossi@example.com  |  Your intro to Ruth closed without an answer
+2026-11-10T12:27:38.369Z  to: sam.lee@example.com  |  Your intro to Omar Haddad isn't happening this time
+2026-11-10T12:27:38.370Z  to: priya.shah@example.com  |  Omar said no thanks
+2026-11-10T12:27:55.815Z  to: ada.okafor@example.com  |  Your intro to Omar Haddad isn't happening this time
+2026-11-10T12:27:55.816Z  to: priya.shah@example.com  |  Omar said no thanks

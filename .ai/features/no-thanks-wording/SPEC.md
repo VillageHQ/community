@@ -1,6 +1,6 @@
 ---
 id: no-thanks-wording
-status: idea
+status: building
 waits-on: []
 size:
 touches: ["src/modules/intros/"]
@@ -21,4 +21,5 @@ A person who said "no thanks" on one intro link and later stopped all intro asks
 The first link shows the answer given on it.
 
 ## Open questions
-- None known.
+- None known. Built by fix-intros: the answer is saved on each intro (`target_answer`), and the first link says
+  "no thanks", then the later stop as a later step.

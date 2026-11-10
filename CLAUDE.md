@@ -34,5 +34,6 @@ Better Auth, Vitest, pnpm. Village is optional (network search and profile fill-
 - `src/AGENTS.md` (the code map) and one per module: `src/modules/admin/`, `src/modules/asks/`, `src/modules/chat/`, `src/modules/feed/`, `src/modules/intros/`, `src/modules/job-board/`, `src/modules/members/`, `src/modules/messages/`, `src/modules/network/`, `src/modules/perks/`.
 - `scripts/AGENTS.md`.
 - How features work today: `.ai/features/chat-perks/NOTES.md`, `.ai/features/partner-report/NOTES.md`,
-  `.ai/features/small-gaps/NOTES.md`, `.ai/features/today-weekly/NOTES.md`, `.ai/features/two-sided-intros/NOTES.md`.
+  `.ai/features/small-gaps/NOTES.md`, `.ai/features/today-weekly/NOTES.md`, `.ai/features/two-sided-intros/NOTES.md`,
+  `.ai/features/fix-intros/NOTES.md`.
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (the public guides), `drizzle/` (generated), `site/` (has its README).

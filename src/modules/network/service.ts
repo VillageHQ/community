@@ -477,13 +477,16 @@ async function readPathsFacts(
   return { targetSlug, viewerSlug: network.linkedinSlug, memberSlugs, reachableMembers, isCached, dailyLookupsLeft };
 }
 
-export type OpenAsksReader = (
-  database: Database,
-  requesterId: string,
-  targetSlug: string,
-) => Promise<ReadonlyMap<string, { id: string; state: string }>>;
+// What this member's intro asks say about each connector for one person: the ask still open, and the connectors who
+// already said no (they leave this member's paths to that person). Intros passes it in, so network never imports it.
+export type OpenAsks = {
+  openByConnector: ReadonlyMap<string, { id: string; state: string }>;
+  declinedConnectorIds: ReadonlySet<string>;
+};
 
-export const NO_OPEN_ASKS: OpenAsksReader = async () => new Map();
+export type OpenAsksReader = (database: Database, requesterId: string, targetSlug: string) => Promise<OpenAsks>;
+
+export const NO_OPEN_ASKS: OpenAsksReader = async () => ({ openByConnector: new Map(), declinedConnectorIds: new Set() });
 
 async function describePathsForViewer(
   context: RequestContext,
@@ -495,11 +498,13 @@ async function describePathsForViewer(
 ) {
   villagePaths = await keepChosenIntroducers(context.database, villagePaths);
   const facts = await readPathsFacts(context, villagePaths, network, targetSlug, isCached);
-  const openAsks = await readOpenAsks(context.database, context.member.id, targetSlug);
-  const connectors = readConnectors(villagePaths, facts).map((connector) => ({
-    ...connector,
-    openAsk: connector.member ? (openAsks.get(connector.member.id) ?? null) : null,
-  }));
+  const { openByConnector, declinedConnectorIds } = await readOpenAsks(context.database, context.member.id, targetSlug);
+  const connectors = readConnectors(villagePaths, facts)
+    .filter(({ member }) => !member || !declinedConnectorIds.has(member.id))
+    .map((connector) => ({
+      ...connector,
+      openAsk: connector.member ? (openByConnector.get(connector.member.id) ?? null) : null,
+    }));
   return describeMemberPaths(villagePaths, facts, connectors);
 }
 

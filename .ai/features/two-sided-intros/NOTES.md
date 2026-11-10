@@ -14,8 +14,9 @@
 - A failed consent email puts back the address and time that were there before, and only while the intro still
   waits on the target.
 
-Known gaps: no outbox, so a crash between a state change and its email loses the email. A target who said
-"no thanks" on one link and later stopped all intros sees "You've stopped intro requests" on the first link too.
+Known gaps: the joining email is still sent straight to Resend, not through the outbox. (Fixed by fix-intros: a
+"no thanks" link now keeps its own answer after a later stop-all; a yes on a forwarded link asks for the target's
+email and joins them; unanswered intros get a connector reminder and an expiry email.)
 
 ## Consent links and stop all (moved from `src/modules/intros/AGENTS.md`, word for word)
 
