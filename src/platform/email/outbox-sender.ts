@@ -4,6 +4,7 @@ import type { Database } from "../database/client.ts";
 import type { Environment } from "../environment.ts";
 import { logError, readErrorReason } from "../observability/route-logging.ts";
 import { runAfterResponse } from "../observability/after-response.ts";
+import { DEMO_EMAIL_NOTE, isDemoMode } from "../demo/mode.ts";
 import { readEmailTopic } from "./kinds.ts";
 import { isEmailWanted, OUTBOX_STATUSES } from "./outbox.ts";
 import { readResendConfig, sendResendEmail, type ResendConfig } from "./resend.ts";
@@ -113,6 +114,11 @@ async function deliver(database: Database, environment: Environment, config: Res
       await finish(database, email, OUTBOX_STATUSES.skipped);
       return OUTBOX_STATUSES.skipped;
     }
+    // Demo mode: the email stays in the sending log, marked, and never reaches Resend.
+    if (isDemoMode(environment)) {
+      await finish(database, email, OUTBOX_STATUSES.skipped, DEMO_EMAIL_NOTE);
+      return OUTBOX_STATUSES.skipped;
+    }
     await sendResendEmail(config, await composeEmail(database, environment, email));
   } catch (error) {
     return scheduleRetry(database, email, error);
@@ -160,7 +166,9 @@ export async function sendQueuedEmailNow(database: Database, environment: Enviro
   try {
     const { sent } = await sendClaimed(database, environment, id);
     if (sent > 0) return true;
-    const [row] = await database.select({ status: emailOutbox.status }).from(emailOutbox).where(eq(emailOutbox.id, id));
+    const [row] = await database.select({ status: emailOutbox.status, lastError: emailOutbox.lastError }).from(emailOutbox).where(eq(emailOutbox.id, id));
+    // In the demo an email kept in the sending log counts as handled, so screens don't say it's retrying.
+    if (isDemoMode(environment) && row?.lastError === DEMO_EMAIL_NOTE) return true;
     return row?.status === OUTBOX_STATUSES.sent;
   } catch (error) {
     logError("email-outbox", error);

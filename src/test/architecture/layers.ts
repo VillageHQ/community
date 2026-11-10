@@ -29,6 +29,8 @@ const ALLOWED_MODULE_IMPORTS: Readonly<Record<string, readonly string[]>> = {
 
 const LAYER_PREFIXES: readonly (readonly [string, Layer])[] = [
   ["src/app/", LAYERS.app],
+  // Next's boot hook is an entry point like a page: it starts the demo, which seeds every module's tables.
+  ["src/instrumentation.ts", LAYERS.app],
   ["src/shell/", LAYERS.shell],
   ["src/modules/registry", LAYERS.registry],
   ["src/modules/", LAYERS.module],

@@ -18,7 +18,7 @@ type Auth = Awaited<ReturnType<typeof getAuth>>;
 export type SignInLinkResult = { isSignedIn: false } | { isSignedIn: true; setCookies: string[]; isPasswordRemoved: boolean };
 
 // The same hash Better Auth's magic-link plugin stores with `storeToken: "hashed"`.
-function toStoredIdentifier(token: string) {
+export function toStoredIdentifier(token: string) {
   return `${SIGN_IN_LINK_IDENTIFIER_PREFIX}${createHash("sha256").update(token).digest("base64url")}`;
 }
 
