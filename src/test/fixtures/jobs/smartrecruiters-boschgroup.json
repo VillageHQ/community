@@ -1,0 +1,153 @@
+{
+ "offset": 0,
+ "limit": 100,
+ "totalFound": 3,
+ "content": [
+  {
+   "id": "744000159862638",
+   "name": "JUNIOR BI DATA ANALYST (36211)",
+   "uuid": "efbfc46e-dc2a-41ff-858a-e613f17992d0",
+   "jobAdId": "be42371e-df0b-4c90-bfdc-f65e32a31a46",
+   "defaultJobAd": true,
+   "refNumber": "REF299839U",
+   "company": {
+    "identifier": "BoschGroup",
+    "name": "Bosch Group"
+   },
+   "releasedDate": "2026-11-05T13:03:17.605Z",
+   "location": {
+    "city": "Campinas",
+    "region": "SP",
+    "country": "br",
+    "address": "Avenida Robert Bosch",
+    "postalCode": "13064-765",
+    "remote": false,
+    "hybrid": false,
+    "latitude": "-22.8992722",
+    "longitude": "-47.1170748",
+    "fullLocation": "Campinas, SP, Brazil"
+   },
+   "industry": {
+    "id": "mechanical_engineering",
+    "label": "Mechanical Or Industrial Engineering"
+   },
+   "department": {},
+   "function": {
+    "id": "information_technology",
+    "label": "Information Technology"
+   },
+   "typeOfEmployment": {
+    "id": "permanent",
+    "label": "Full-time"
+   },
+   "experienceLevel": {
+    "id": "entry_level",
+    "label": "Entry Level"
+   },
+   "visibility": "PUBLIC",
+   "ref": "https://api.smartrecruiters.com/v1/companies/BoschGroup/postings/744000159862638",
+   "language": {
+    "code": "pt-BR",
+    "label": "Portuguese (Brazil)",
+    "labelNative": "português (Brasil)"
+   }
+  },
+  {
+   "id": "744000159859639",
+   "name": "Koordinator načrtovalcev materiala in proizvodnje",
+   "uuid": "deb1013f-3abb-4854-a986-38a3afaa5375",
+   "jobAdId": "e6b9e7e3-0951-4810-ac0c-b42968db8fe6",
+   "defaultJobAd": true,
+   "refNumber": "REF300190O",
+   "company": {
+    "identifier": "BoschGroup",
+    "name": "Bosch Group"
+   },
+   "releasedDate": "2026-11-05T12:47:01.259Z",
+   "location": {
+    "city": "Leskovec pri Krškem",
+    "region": "Krško",
+    "country": "si",
+    "address": "Velika vas pri Krškem",
+    "remote": false,
+    "hybrid": false,
+    "latitude": "45.920817",
+    "longitude": "15.4526749",
+    "fullLocation": "Leskovec pri Krškem, Krško, Slovenia"
+   },
+   "industry": {
+    "id": "mechanical_engineering",
+    "label": "Mechanical Or Industrial Engineering"
+   },
+   "department": {},
+   "function": {
+    "id": "administrative",
+    "label": "Administrative"
+   },
+   "typeOfEmployment": {
+    "id": "permanent",
+    "label": "Full-time"
+   },
+   "experienceLevel": {
+    "id": "associate",
+    "label": "Associate"
+   },
+   "visibility": "PUBLIC",
+   "ref": "https://api.smartrecruiters.com/v1/companies/BoschGroup/postings/744000159859639",
+   "language": {
+    "code": "sl",
+    "label": "Slovenian",
+    "labelNative": "slovenščina"
+   }
+  },
+  {
+   "id": "744000159859240",
+   "name": "Praktikum Software Development (w/m/div.)",
+   "uuid": "e06f0256-8999-4eab-a776-4fb8ccd94aa7",
+   "jobAdId": "9475d9a9-34de-4f36-8a3f-1559340c454f",
+   "defaultJobAd": true,
+   "refNumber": "REF298680M",
+   "company": {
+    "identifier": "BoschGroup",
+    "name": "Bosch Group"
+   },
+   "releasedDate": "2026-11-05T12:45:24.645Z",
+   "location": {
+    "city": "Wien",
+    "region": "Wien",
+    "country": "at",
+    "address": "Göllnergasse",
+    "postalCode": "1030",
+    "remote": false,
+    "hybrid": false,
+    "latitude": "48.200088",
+    "longitude": "16.4007122",
+    "fullLocation": "Wien, Wien, Austria"
+   },
+   "industry": {
+    "id": "mechanical_engineering",
+    "label": "Mechanical Or Industrial Engineering"
+   },
+   "department": {},
+   "function": {
+    "id": "information_technology",
+    "label": "Information Technology"
+   },
+   "typeOfEmployment": {
+    "id": "intern",
+    "label": "Intern"
+   },
+   "experienceLevel": {
+    "id": "entry_level",
+    "label": "Entry Level"
+   },
+   "visibility": "PUBLIC",
+   "ref": "https://api.smartrecruiters.com/v1/companies/BoschGroup/postings/744000159859240",
+   "language": {
+    "code": "de",
+    "label": "German",
+    "labelNative": "Deutsch"
+   }
+  }
+ ]
+}

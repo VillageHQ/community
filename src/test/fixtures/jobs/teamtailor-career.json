@@ -1,0 +1,133 @@
+{
+ "version": "https://jsonfeed.org/version/1.1",
+ "title": "Teamtailor",
+ "home_page_url": "https://career.teamtailor.com/jobs",
+ "feed_url": "https://career.teamtailor.com/jobs.json",
+ "items": [
+  {
+   "id": "7b9dec76-cac2-489b-bc00-aab47097947f",
+   "title": "Customer Success Manager - Finnish speaking",
+   "url": "https://career.teamtailor.com/jobs/8660969-customer-success-manager-finnish-speaking",
+   "date_published": "2026-11-03T19:37:57+01:00",
+   "_jobposting": {
+    "@context": "http://schema.org/",
+    "@type": "JobPosting",
+    "title": "Customer Success Manager - Finnish speaking",
+    "identifier": {
+     "@type": "PropertyValue",
+     "name": "Teamtailor",
+     "value": "8660969"
+    },
+    "datePosted": "2026-11-03T19:37:57+01:00",
+    "employmentType": "FULL_TIME",
+    "directApply": true,
+    "hiringOrganization": {
+     "@type": "Organization",
+     "name": "Teamtailor",
+     "sameAs": "https://career.teamtailor.com",
+     "logo": "https://images.teamtailor-cdn.com/images/s3/teamtailor-production/logotype-v3/image_uploads/c8c3f7c9-5cf9-4ef6-9554-652e97576f47/original.svg"
+    },
+    "jobLocation": [
+     {
+      "@type": "Place",
+      "address": {
+       "streetAddress": "Östgötagatan 16",
+       "addressLocality": "Stockholm",
+       "postalCode": "116 21",
+       "addressCountry": "SE",
+       "addressRegion": "Sweden",
+       "@type": "PostalAddress"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "5c189e36-797b-4e58-8540-defb85b3668a",
+   "title": "Solution Architect (Bilingual French/English)",
+   "url": "https://career.teamtailor.com/jobs/8636263-solution-architect-bilingual-french-english",
+   "date_published": "2026-10-29T13:25:57+01:00",
+   "_jobposting": {
+    "@context": "http://schema.org/",
+    "@type": "JobPosting",
+    "title": "Solution Architect (Bilingual French/English)",
+    "identifier": {
+     "@type": "PropertyValue",
+     "name": "Teamtailor",
+     "value": "8636263"
+    },
+    "datePosted": "2026-10-29T13:25:57+01:00",
+    "employmentType": "FULL_TIME",
+    "directApply": true,
+    "hiringOrganization": {
+     "@type": "Organization",
+     "name": "Teamtailor",
+     "sameAs": "https://career.teamtailor.com",
+     "logo": "https://images.teamtailor-cdn.com/images/s3/teamtailor-production/logotype-v3/image_uploads/c8c3f7c9-5cf9-4ef6-9554-652e97576f47/original.svg"
+    },
+    "jobLocation": [
+     {
+      "@type": "Place",
+      "address": {
+       "streetAddress": "Östgötagatan 16",
+       "addressLocality": "Stockholm",
+       "postalCode": "116 21",
+       "addressCountry": "SE",
+       "addressRegion": "Sweden",
+       "@type": "PostalAddress"
+      }
+     },
+     {
+      "@type": "Place",
+      "address": {
+       "streetAddress": "33 Rue La Fayette",
+       "addressLocality": "Paris",
+       "postalCode": "75009",
+       "addressCountry": "FR",
+       "addressRegion": "Europe",
+       "@type": "PostalAddress"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "90fcca34-e34d-4488-b81d-030cbbf256e4",
+   "title": "Head of Marketing - North America",
+   "url": "https://career.teamtailor.com/jobs/8633011-head-of-marketing-north-america",
+   "date_published": "2026-10-28T22:13:17+01:00",
+   "_jobposting": {
+    "@context": "http://schema.org/",
+    "@type": "JobPosting",
+    "title": "Head of Marketing - North America",
+    "identifier": {
+     "@type": "PropertyValue",
+     "name": "Teamtailor",
+     "value": "8633011"
+    },
+    "datePosted": "2026-10-28T22:13:17+01:00",
+    "employmentType": "FULL_TIME",
+    "directApply": true,
+    "hiringOrganization": {
+     "@type": "Organization",
+     "name": "Teamtailor",
+     "sameAs": "https://career.teamtailor.com",
+     "logo": "https://images.teamtailor-cdn.com/images/s3/teamtailor-production/logotype-v3/image_uploads/c8c3f7c9-5cf9-4ef6-9554-652e97576f47/original.svg"
+    },
+    "jobLocation": [
+     {
+      "@type": "Place",
+      "address": {
+       "streetAddress": "125 S Clark St",
+       "addressLocality": "Chicago",
+       "postalCode": "60603",
+       "addressCountry": "US",
+       "addressRegion": "North America",
+       "@type": "PostalAddress"
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

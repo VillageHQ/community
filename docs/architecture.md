@@ -18,6 +18,8 @@ src/
     intros/     Toggle. Warm intros. Needs network.
     asks/       Toggle, off by default. Members post what they need, others offer help.
                 The feed is a toggle too, off by default for a new community.
+    job-board/  Toggle, off by default. Founders' open jobs from their hiring tools, a public
+                board and a website widget.
     admin/      Core. Roster, reports, audit view, health, the features screen.
   platform/     Infrastructure with no product opinion: auth, audit, branding, database,
                 design, email, http, observability, rate-limit, secrets, settings, text, village.
@@ -41,7 +43,7 @@ app -> shell -> modules -> components -> platform
 Inside `modules`:
 
 ```text
-members <- messages, feed, network, asks
+members <- messages, feed, network, asks, job-board
 network <- intros
 all     <- admin
 ```
