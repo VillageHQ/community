@@ -2,10 +2,10 @@ import "server-only";
 
 import { inArray, sql } from "drizzle-orm";
 
-import type { Database, DatabaseOrTransaction } from "../database/client.ts";
+import type { DatabaseOrTransaction } from "../database/client.ts";
 import { instanceSettings } from "./schema.ts";
 
-export async function readSettings(database: Database, keys: string[]) {
+export async function readSettings(database: DatabaseOrTransaction, keys: string[]) {
   const settings = await database
     .select({ key: instanceSettings.key, value: instanceSettings.value })
     .from(instanceSettings)

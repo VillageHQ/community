@@ -11,6 +11,7 @@ import { isAdminMember } from "@/platform/auth/roles";
 import { requireMember } from "@/platform/auth/session";
 import { getDatabase } from "@/platform/database/client";
 import { modulePage } from "@/platform/modules/module-page";
+import { isAskIntroOn, readAskAllowance } from "@/shell/ask-helpers";
 
 export const metadata: Metadata = { title: ASKS_PAGE_TITLE };
 
@@ -19,15 +20,16 @@ type AsksPageProps = { searchParams: Promise<Record<string, string | string[] | 
 export default modulePage(asksManifest, async function AsksPage({ searchParams }: AsksPageProps) {
   const member = await requireMember();
   const database = getDatabase();
-  const { category } = parseAskBoardFilters(await searchParams);
+  const { category, kind } = parseAskBoardFilters(await searchParams);
+  const [canIntro, allowance] = await Promise.all([isAskIntroOn(database), readAskAllowance(database, member.id)]);
   const [firstPage, ownAsks, newOffers] = await Promise.all([
-    readAskBoard(database, { viewerId: member.id, category, cursor: null }),
-    readOwnAsks(database, member.id),
+    readAskBoard(database, { viewerId: member.id, category, kind, cursor: null, canIntro }),
+    readOwnAsks(database, member.id, { allowance, canIntro }),
     readNewOfferCount(database, member.id),
   ]);
 
   const queryClient = new QueryClient();
-  queryClient.setQueryData(askBoardQuery(category).queryKey, { pages: [firstPage], pageParams: [null] });
+  queryClient.setQueryData(askBoardQuery(category, kind).queryKey, { pages: [firstPage], pageParams: [null] });
   queryClient.setQueryData(ownAsksQuery().queryKey, ownAsks);
   queryClient.setQueryData(askCountsQuery().queryKey, { newOffers });
 
