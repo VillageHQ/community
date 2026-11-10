@@ -9,6 +9,9 @@ import { getDatabase } from "@/platform/database/client";
 import { EmailSetupCheck } from "@/modules/admin/components/email-setup-check";
 import { SettingCard } from "@/modules/admin/components/setting-card";
 import { VillageSecretCard } from "@/modules/admin/components/village-secret-card";
+import { DataHomeForm } from "@/modules/admin/components/data-home-form";
+import { readDataHome } from "@/platform/settings/data-home";
+import { isDataHomeSet, type DataHome } from "@/platform/settings/data-home-api";
 import { VillageSettingsForm } from "@/modules/network/components/village-settings-form";
 import { readSharingMembers, readVillageSearchSettings } from "@/modules/network/service-settings";
 import { readFirstAdminEmail } from "@/modules/network/service-fill-in";
@@ -166,6 +169,22 @@ async function VillageSettingsCard({ database }: { database: Database }) {
   );
 }
 
+// Only what the admin types: the app never guesses the region or claims a certification.
+function DataHomeCard({ dataHome }: { dataHome: DataHome }) {
+  const tag = isDataHomeSet(dataHome) ? <Tag tone="sage">On Your data</Tag> : <Tag>Not set</Tag>;
+  return (
+    <SettingCard title="Where your data is kept" tag={tag}>
+      <CardDescription>
+        Tell members where this community keeps their data and whom to ask about it. Both show on each member&apos;s Your
+        data page. Leave them empty to show nothing.
+      </CardDescription>
+      <DataHomeForm
+        saved={{ location: dataHome.location ?? "", contactName: dataHome.contact?.name ?? "", contactEmail: dataHome.contact?.email ?? "" }}
+      />
+    </SettingCard>
+  );
+}
+
 function VersionCard() {
   return (
     <SettingCard
@@ -205,11 +224,12 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
   const admin = await requireAdmin();
   const { step } = await searchParams;
   const database = getDatabase();
-  const [progress, branding, enabledIds, givenUp] = await Promise.all([
+  const [progress, branding, enabledIds, givenUp, dataHome] = await Promise.all([
     readSetupProgress(database),
     readBranding(database),
     readEnabledIds(database),
     readGivenUpEmails(database),
+    readDataHome(database),
   ]);
   const keyState = await readVillageKeyState(database);
 
@@ -221,6 +241,7 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
           <EmailCard config={readResendConfig(process.env)} enabledIds={enabledIds} givenUp={givenUp} />
           <VillageSecretCard status={keyState.status} isNetworkOn={enabledIds.has(networkManifest.id)} />
           {enabledIds.has(networkManifest.id) ? <VillageSettingsCard database={database} /> : null}
+          <DataHomeCard dataHome={dataHome} />
           <VersionCard />
         </div>
         <AdminBrandCard branding={branding} isCurrentStep={false} />

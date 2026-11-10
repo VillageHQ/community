@@ -10,6 +10,13 @@ export const DEMO_COMMUNITY = {
   accentColor: "#24525a",
 } as const;
 
+// Made-up answers for Settings' "Where your data is kept", so a buyer sees what members see on Your data.
+export const DEMO_DATA_HOME = {
+  location: "EU, Frankfurt, DigitalOcean",
+  contactName: "Data protection lead",
+  contactEmail: "privacy@example.com",
+} as const;
+
 export type DemoPerson = {
   key: string;
   name: string;

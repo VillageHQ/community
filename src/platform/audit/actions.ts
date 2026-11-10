@@ -51,6 +51,7 @@ export const AUDIT_ACTIONS = {
   perksSaved: "perks_saved",
   perksRemoved: "perks_removed",
   villageSettingsChanged: "village_settings_changed",
+  dataHomeSaved: "data_home_saved",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

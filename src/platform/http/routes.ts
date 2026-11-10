@@ -57,6 +57,7 @@ export const API_ROUTES = {
   demoSignIn: "/api/demo/sign-in",
   profilePassword: "/api/profile/password",
   branding: "/api/admin/branding",
+  dataHome: "/api/admin/data-home",
   brandingLogo: "/api/branding/logo",
   networkStatus: "/api/network/status",
   networkLinkedin: "/api/network/linkedin",

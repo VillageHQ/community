@@ -18,11 +18,12 @@ import { perksManifest } from "@/modules/perks/manifest";
 import { user } from "@/platform/database/auth-schema";
 import type { Transaction } from "@/platform/database/client";
 import { communityBranding } from "@/platform/branding/schema";
-import { DEMO_COMMUNITY, DEMO_INVITEES, DEMO_OUTSIDERS, DEMO_PEOPLE, toDemoEmail, toDemoSlug, type DemoPerson } from "@/platform/demo/people";
+import { DEMO_COMMUNITY, DEMO_DATA_HOME, DEMO_INVITEES, DEMO_OUTSIDERS, DEMO_PEOPLE, toDemoEmail, toDemoSlug, type DemoPerson } from "@/platform/demo/people";
 import { DEMO_VILLAGE_GROUP, DEMO_VILLAGE_KEYS } from "@/platform/demo/village-answers";
 import type { Environment } from "@/platform/environment";
 import { saveModuleState } from "@/platform/modules/enablement";
 import { saveSettings } from "@/platform/settings/store";
+import { toDataHomeSettings } from "@/platform/settings/data-home";
 import { INSTANCE_SETTING_KEYS } from "@/platform/settings/schema";
 import { saveVillageKeys } from "@/platform/village/settings";
 
@@ -492,6 +493,7 @@ async function seedSettings(transaction: Transaction, environment: Environment, 
     [INSTANCE_SETTING_KEYS.villageGroupInviteLink]: DEMO_VILLAGE_GROUP.inviteLink,
     [INSTANCE_SETTING_KEYS.demoSeededAt]: now.toISOString(),
     [INSTANCE_SETTING_KEYS.demoResetAt]: now.toISOString(),
+    ...toDataHomeSettings(DEMO_DATA_HOME),
   });
   await saveVillageKeys(transaction, DEMO_VILLAGE_KEYS, environment);
   // The features a fund buys it for are on; the ones that need a real outside account stay off.
