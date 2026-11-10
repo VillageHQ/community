@@ -1,6 +1,16 @@
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { formatReportValue, type ReportSection } from "@/modules/admin/partner-report-rows";
 
+// The quarter in one line, on top: what a fund reads out at the partner meeting.
+export function ReportSummary({ summary }: { summary: string }) {
+  return (
+    <Card className="grid gap-1">
+      <p className="type-micro tracking-[0.06em] text-foreground-soft uppercase">This quarter, in one line</p>
+      <p className="type-serif text-[22px] leading-[29px]">{summary}</p>
+    </Card>
+  );
+}
+
 // One section of the partner report. The page, the CSV and the email render the same rows.
 export function ReportTable({ section, headings }: { section: ReportSection; headings: readonly { label: string; range: string }[] }) {
   const titleId = `report-${section.id}`;
@@ -27,7 +37,7 @@ export function ReportTable({ section, headings }: { section: ReportSection; hea
           </thead>
           <tbody>
             {section.rows.map(({ label, note, values, isStrong }, rowIndex) => (
-              <tr key={`${rowIndex}-${label}`} className="border-t border-border">
+              <tr key={`${rowIndex}-${label}`} className="border-t border-rule">
                 <th scope="row" className={`min-w-32 px-1 py-2.5 align-top ${isStrong ? "font-bold" : "font-normal"}`}>
                   <span className="block break-words">{label}</span>
                   {note ? <span className="type-small block text-foreground-soft">{note}</span> : null}

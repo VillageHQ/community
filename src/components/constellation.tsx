@@ -28,14 +28,14 @@ const THREADS = [
   "M76 13Q75.525 33.6 88 50",
 ];
 
-const STAR_RING = "shadow-[0_0_0_4px_var(--primary),0_0_0_6px_color-mix(in_srgb,var(--primary-foreground)_40%,transparent)]";
+const STAR_RING = "shadow-[0_0_0_4px_var(--muted),0_0_0_6px_color-mix(in_srgb,var(--brand-emphasis)_40%,transparent)]";
 const STAR_LABEL = "type-micro rounded-full bg-card px-2.5 py-0.5 font-bold whitespace-nowrap text-foreground";
 
 function EmptyStar({ sizePx }: { sizePx: number }) {
   return (
     <span
       style={{ width: sizePx, height: sizePx }}
-      className={`flex items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--primary-foreground)_16%,var(--primary))] text-primary-foreground ${STAR_RING}`}
+      className={`flex items-center justify-center rounded-full bg-card text-brand-emphasis ${STAR_RING}`}
     >
       <UserRound className="size-1/2" strokeWidth={1.75} />
     </span>
@@ -51,7 +51,7 @@ export function Constellation({ you, people = [] }: ConstellationProps) {
         viewBox="0 0 100 100"
         fill="none"
         preserveAspectRatio="none"
-        className="absolute inset-0 size-full text-primary-foreground opacity-50"
+        className="absolute inset-0 size-full text-brand-emphasis opacity-40"
       >
         <g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
           {THREADS.map((thread) => (

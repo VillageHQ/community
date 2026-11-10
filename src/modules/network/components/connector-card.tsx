@@ -1,7 +1,8 @@
 "use client";
 
-import { ExternalLink, Globe, Link2, UserRound } from "lucide-react";
+import { ExternalLink, Globe, Link2 } from "lucide-react";
 import Link from "next/link";
+import { useContext } from "react";
 
 import { CommunityMemberBadge } from "@/components/community-member-badge";
 import { Avatar } from "@/components/ui/avatar";
@@ -12,7 +13,7 @@ import { ROUTES } from "@/platform/http/routes";
 import { linkedinUrl } from "@villagehq/sdk";
 import type { Connector } from "@/modules/network/contract";
 
-import { MemberConversationSlot } from "@/modules/members/slots";
+import { MemberConversationSlot, MemberConversationSlotContext } from "@/modules/members/slots";
 import { ConnectorAskSlot, type ConnectorSlotProps } from "@/modules/network/slots";
 
 const CONNECTOR_AVATAR_SIZE_PX = 52;
@@ -59,22 +60,40 @@ function OutsideActions({ connector }: { connector: Connector }) {
   );
 }
 
+// `!` because the size classes use the theme's own spacing names, which class merging can't match.
+const QUIET_LINK = "min-h-11 px-0! text-[14px]! font-normal text-brand-emphasis";
+
+// One primary step (the ask); a message or the profile stay one quiet line below it.
 function MemberActions(props: ConnectorSlotProps) {
   const { member, name } = props.connector;
+  const canMessage = useContext(MemberConversationSlotContext) !== null;
   if (!member) return null;
 
   return (
     <>
       <ConnectorAskSlot {...props} />
-      <div className="grid grid-cols-2 gap-2">
-        <MemberConversationSlot memberId={member.id} label="Message" accessibleName={`Message ${name}`} variant="outline" size="sm" />
-        <Button asChild variant="outline" size="sm">
+      <p className="type-small -my-2 flex flex-wrap items-center gap-x-1.5 text-foreground-soft">
+        <span>Or</span>
+        {canMessage ? (
+          <>
+            <MemberConversationSlot
+              memberId={member.id}
+              label="message them"
+              accessibleName={`Message ${name}`}
+              variant="link"
+              size="sm"
+              showsIcon={false}
+              className={QUIET_LINK}
+            />
+            <span aria-hidden="true">·</span>
+          </>
+        ) : null}
+        <Button asChild variant="link" size="sm" className={QUIET_LINK}>
           <Link href={`${ROUTES.members}/${member.id}`} aria-label={`See ${name}'s profile`}>
-            <UserRound aria-hidden="true" />
-            Profile
+            see their profile
           </Link>
         </Button>
-      </div>
+      </p>
     </>
   );
 }

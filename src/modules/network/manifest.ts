@@ -13,7 +13,7 @@ export const networkManifest = {
   isOnByDefault: true,
   needsVillage: true,
   requires: [],
-  navigation: [{ label: "Network", href: ROUTES.network, icon: Waypoints, section: NAVIGATION_SECTIONS.primary }],
+  navigation: [{ label: "Meet", href: ROUTES.network, icon: Waypoints, section: NAVIGATION_SECTIONS.primary }],
   adminTabs: [{ label: "Credits", href: ROUTES.adminCredits }],
   paths: {
     pages: [ROUTES.network, ROUTES.adminCredits],

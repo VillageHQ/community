@@ -140,7 +140,9 @@ describe("a connector", () => {
       const dialog = openDialog();
 
       expect(within(dialog).getByRole<HTMLTextAreaElement>("textbox").value).toContain("Hi Jonas,");
-      expect(within(dialog).getByRole("heading", { name: "What Jonas will see" })).toBeTruthy();
+      expect(within(dialog).getByText("You")).toBeTruthy();
+      expect(within(dialog).getAllByText(REASON).length).toBeGreaterThan(0);
+      expect(within(dialog).getByText("See exactly what Jonas gets")).toBeTruthy();
       expect(within(dialog).getByText(/Jonas reads your note first. Clara hears nothing unless they say yes./)).toBeTruthy();
     });
 

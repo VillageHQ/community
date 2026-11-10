@@ -102,7 +102,7 @@ describe("the phone tab bar", () => {
     it("shows every item and no More entry", () => {
       renderTabBar(["feed", messagesManifest.id, "members", networkManifest.id, introsManifest.id, "admin"]);
 
-      expect(readTabNames()).toEqual(["Feed", "Messages", "Members", "Network", "Intros"]);
+      expect(readTabNames()).toEqual(["Feed", "Messages", "Members", "Meet", "Intros"]);
     });
 
     it("keeps a community with only a few modules on as it was", () => {
@@ -117,7 +117,7 @@ describe("the phone tab bar", () => {
     it("keeps four tabs and a More entry, five in all", () => {
       renderTabBar(null);
 
-      expect(readTabNames()).toEqual(["Feed", "Messages", "Members", "Network", "More"]);
+      expect(readTabNames()).toEqual(["Feed", "Messages", "Members", "Meet", "More"]);
     });
 
     it("lists the rest in a sheet when opened", () => {
@@ -163,6 +163,6 @@ describe("the phone tab bar", () => {
   it("counts Home as an item when the feed is off", () => {
     renderTabBar([messagesManifest.id, "members", networkManifest.id, introsManifest.id, asksManifest.id, "admin"]);
 
-    expect(readTabNames()).toEqual(["Home", "Messages", "Members", "Network", "More"]);
+    expect(readTabNames()).toEqual(["Home", "Messages", "Members", "Meet", "More"]);
   });
 });

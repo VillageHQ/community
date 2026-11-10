@@ -5,12 +5,12 @@ import { MAIN_CONTENT_ID } from "@/components/skip-link";
 import { DEFAULT_ACCENT_COLOR, renderAccentCss } from "@/platform/design/accent";
 import { SYSTEM_THEME_SCRIPT } from "@/platform/design/theme";
 
-import { figtree, figtreeExtended } from "./fonts";
+import { figtree, figtreeExtended, sourceSerif } from "./fonts";
 import "./globals.css";
 
 export default function GlobalError({ retry }: { retry: () => void }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${figtree.variable} ${figtreeExtended.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${figtree.variable} ${figtreeExtended.variable} ${sourceSerif.variable}`}>
       <head>
         <title>Something went wrong</title>
         <style dangerouslySetInnerHTML={{ __html: renderAccentCss(DEFAULT_ACCENT_COLOR) }} />

@@ -4,17 +4,17 @@ import { Slot } from "radix-ui";
 import type { ComponentProps } from "react";
 
 export const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center rounded-full border-0 text-center font-bold tracking-[-0.003em] transition-[transform,box-shadow,background-color,color] duration-150 ease-out select-none active:translate-y-px disabled:pointer-events-none disabled:opacity-55 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center rounded-field border-0 text-center font-bold tracking-[-0.003em] transition-[transform,box-shadow,background-color,color] duration-150 ease-out select-none active:translate-y-px disabled:pointer-events-none disabled:opacity-55 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         primary:
-          "bg-primary text-primary-foreground shadow-cta hover:-translate-y-px hover:shadow-cta-hover active:translate-y-px",
+          "bg-primary text-primary-foreground shadow-cta hover:shadow-cta-hover",
         soft: "bg-secondary text-secondary-foreground hover:shadow-[inset_0_0_0_1.5px_var(--brand-emphasis)]",
         outline: "bg-card text-foreground shadow-[inset_0_0_0_1.5px_var(--input)] hover:bg-muted",
         quiet: "bg-transparent text-foreground-soft hover:bg-muted hover:text-foreground",
         destructive:
-          "bg-destructive text-destructive-foreground hover:-translate-y-px hover:shadow-panel active:translate-y-px",
+          "bg-destructive text-destructive-foreground hover:shadow-[inset_0_0_0_999px_rgb(0_0_0/0.08)]",
         link: "min-h-0 bg-transparent p-0 font-bold text-brand-emphasis underline hover:no-underline",
       },
       size: {
@@ -22,8 +22,8 @@ export const buttonVariants = cva(
         default: "min-h-12 gap-2.5 px-6 py-2.5 text-base leading-5 [&_svg:not([class*='size-'])]:size-5",
         lg: "min-h-14 gap-2.5 px-8 py-3 text-[17px] leading-[22px] [&_svg:not([class*='size-'])]:size-5",
         hero: "min-h-16 gap-3 px-10 py-3 text-lg leading-6 [&_svg:not([class*='size-'])]:size-icon",
-        icon: "size-11 p-0 [&_svg:not([class*='size-'])]:size-icon",
-        "icon-lg": "size-12 p-0 [&_svg:not([class*='size-'])]:size-icon",
+        icon: "size-11 rounded-full p-0 [&_svg:not([class*='size-'])]:size-icon",
+        "icon-lg": "size-12 rounded-full p-0 [&_svg:not([class*='size-'])]:size-icon",
       },
     },
     defaultVariants: { variant: "primary", size: "default" },

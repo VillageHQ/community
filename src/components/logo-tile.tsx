@@ -46,7 +46,7 @@ export function LogoTile({ name, logo, sizePx = DEFAULT_LOGO_SIZE_PX, tone = "ac
       data-slot="logo-tile"
       aria-hidden="true"
       style={{ ...dimensions, fontSize: sizePx * INITIAL_SIZE_RATIO }}
-      className={cn("inline-flex shrink-0 items-center justify-center leading-none font-bold", TILE_TONES[tone], className)}
+      className={cn("inline-flex shrink-0 items-center justify-center font-sans leading-none font-bold", TILE_TONES[tone], className)}
     >
       {readInitials(name).slice(0, 1)}
     </span>

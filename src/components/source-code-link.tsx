@@ -9,9 +9,24 @@ export function SourceCodeLink() {
       href={SOURCE_CODE_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className="type-micro text-muted-foreground underline underline-offset-2 hover:text-foreground"
+      className="underline underline-offset-2 hover:text-foreground"
     >
       Source code (AGPL-3.0)
     </a>
+  );
+}
+
+// The foot of every page, phones included: the fund's name and the way to the source.
+export function SiteFooter({ name }: { name: string }) {
+  return (
+    <footer data-slot="site-footer" className="type-micro flex flex-wrap items-baseline justify-center gap-x-2.5 gap-y-1 pt-8 pb-2 text-center font-normal text-muted-foreground">
+      {name ? (
+        <>
+          <span>{name}</span>
+          <span aria-hidden="true">·</span>
+        </>
+      ) : null}
+      <SourceCodeLink />
+    </footer>
   );
 }

@@ -22,7 +22,7 @@ export default modulePage(introsManifest, async function IntrosPage() {
 
   return (
     <>
-      <PageHeader title="Intros" description="The warm way to meet someone: one person who knows them, saying yes first." />
+      <PageHeader title="Intros" description="Each one needs a yes from both people before it happens." />
       <HydrationBoundary state={dehydrate(queryClient)}>
         <QueryBoundary loadingMessage="Finding your intros…">
           <IntroBoardView />

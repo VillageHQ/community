@@ -12,7 +12,7 @@ import { toRootMetadata } from "@/platform/branding/page-metadata";
 import { renderAccentCss } from "@/platform/design/accent";
 import { DARK_CLASS, parseTheme, SYSTEM_THEME_SCRIPT, THEME_COOKIE, THEMES } from "@/platform/design/theme";
 
-import { figtree, figtreeExtended } from "./fonts";
+import { figtree, figtreeExtended, sourceSerif } from "./fonts";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -29,7 +29,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn(figtree.variable, figtreeExtended.variable, theme === THEMES.dark && DARK_CLASS)}
+      className={cn(figtree.variable, figtreeExtended.variable, sourceSerif.variable, theme === THEMES.dark && DARK_CLASS)}
     >
       <head>
         <style dangerouslySetInnerHTML={{ __html: renderAccentCss(accentColor) }} />

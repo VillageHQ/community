@@ -3,7 +3,8 @@ import type { ElementType, ReactNode } from "react";
 import { Constellation, type ConstellationPerson } from "@/components/constellation";
 import { LogoTile } from "@/components/logo-tile";
 import { MAIN_CONTENT_ID } from "@/components/skip-link";
-import { NetworkByVillage, OnlyOnVillage, VillageMark } from "@/components/village-mark";
+import { SiteFooter } from "@/components/source-code-link";
+import { OnlyOnVillage, VillageMark } from "@/components/village-mark";
 import type { CommunityLogo } from "@/platform/branding/branding";
 
 type Community = { name: string; descriptor: string; logo: CommunityLogo | null };
@@ -35,15 +36,15 @@ export function SplitLayout({
     >
       <aside
         aria-label={community.name}
-        className="relative flex flex-col overflow-hidden rounded-b-card bg-primary p-card-phone text-primary-foreground lg:sticky lg:top-0 lg:h-dvh lg:min-h-[720px] lg:rounded-none lg:p-10"
+        className="relative flex flex-col overflow-hidden border-b border-rule px-3.5 py-3.5 sm:px-10 lg:sticky lg:top-0 lg:h-dvh lg:min-h-[720px] lg:border-r lg:border-b-0 lg:bg-muted lg:p-10"
       >
-        <div className="flex items-center gap-3.5 text-[22px] leading-7 font-bold tracking-[-0.014em]">
-          <LogoTile name={community.name} logo={community.logo} sizePx={52} tone="inverse" />
+        <div className="type-serif flex items-center gap-3.5 text-[22px] leading-7">
+          <LogoTile name={community.name} logo={community.logo} sizePx={40} />
           <span className="min-w-0">{community.name}</span>
         </div>
         <div className="hidden min-h-0 flex-1 flex-col lg:flex">
           <Constellation you={you} people={people} />
-          <figure className="relative rounded-card bg-card p-6 text-foreground shadow-[0_12px_32px_-14px_rgb(0_0_0/0.35)]">
+          <figure className="relative rounded-card bg-card p-6 text-foreground shadow-panel">
             {note}
           </figure>
         </div>
@@ -53,8 +54,8 @@ export function SplitLayout({
         className="flex min-w-0 flex-col px-3.5 pt-6 pb-10 sm:px-10 lg:min-h-dvh lg:px-16 lg:pt-11 lg:pb-12"
       >
         <div className="mx-auto w-full max-w-[720px] flex-1">{children}</div>
-        <div className="mx-auto mt-8 w-full max-w-[720px] lg:hidden">
-          <NetworkByVillage />
+        <div className="mx-auto mt-8 w-full max-w-[720px]">
+          <SiteFooter name={community.name} />
         </div>
       </Copy>
     </div>

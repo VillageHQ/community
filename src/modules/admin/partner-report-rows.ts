@@ -148,6 +148,31 @@ export function readCommunitySection({ community }: PartnerReport): ReportSectio
   };
 }
 
+function countPhrase(count: number, one: string, many: string) {
+  return count === 1 ? one : `${count} ${many}`;
+}
+
+function joinPhrases(phrases: string[]) {
+  if (phrases.length < 2) return phrases.join("");
+  return `${phrases.slice(0, -1).join(", ")} and ${phrases.at(-1)}`;
+}
+
+// The line a fund reads out at the partner meeting, from this quarter's counts. Null while intros are off.
+export function readReportSummary(report: PartnerReport): string | null {
+  const [current] = report.periods;
+  const intros = current && report.intros ? report.intros.periods[current.key] : null;
+  if (!intros) return null;
+  if (intros.asked === 0) return "No intros asked yet this quarter.";
+  const { customer, hire, investor } = intros.results;
+  const results = [
+    customer > 0 ? countPhrase(customer, "a customer conversation", "customer conversations") : null,
+    hire > 0 ? countPhrase(hire, "a hire", "hires") : null,
+    investor > 0 ? countPhrase(investor, "an investor meeting", "investor meetings") : null,
+  ].filter((phrase) => phrase !== null);
+  const counts = `${countPhrase(intros.asked, "1 intro asked", "intros asked")}, ${intros.introduced} made, ${intros.helped} said it helped`;
+  return results.length > 0 ? `${counts}: ${joinPhrases(results)}.` : `${counts}.`;
+}
+
 export function formatReportValue(value: ReportValue) {
   return value === null ? "–" : String(value);
 }

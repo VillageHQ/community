@@ -45,7 +45,7 @@ export function TodayList({ today, nextSteps, perksCommunityName = null }: Today
       {nextSteps.map((nextStep) => (
         <NextStepCard key={nextStep.title} nextStep={nextStep} />
       ))}
-      <p className="type-small text-center text-muted-foreground">{TODAY_END_LINE}</p>
+      <p className="mt-2 text-center font-serif text-[17px] leading-6 text-foreground-soft italic">{TODAY_END_LINE}</p>
     </section>
   );
 }
