@@ -70,6 +70,7 @@ const adminMemberSchema = z.object({
   isEmailConfirmed: z.boolean(),
   isRemoved: z.boolean(),
   isReclaimed: z.boolean(),
+  isErased: z.boolean(),
   removedAt: timestampSchema.nullable(),
   removalContentChoice: z.enum(CONTENT_CHOICES).nullable(),
   inviteId: z.string().nullable(),

@@ -64,9 +64,22 @@ async function isMemberActive(database: DatabaseOrTransaction, memberId: string)
   return active !== undefined;
 }
 
-export async function startConversation({ database, member }: RequestContext, memberId: string) {
+// Whether the sender may write to the recipient under the recipient's "who can message me" choice. The route passes it
+// from the shell, because "introduced" is about intros, which this module can't import.
+export type MessagePermission = (connection: DatabaseOrTransaction, senderId: string, recipientId: string) => Promise<boolean>;
+
+function notAllowedError() {
+  return new RequestError(
+    FORBIDDEN_STATUS,
+    MESSAGE_ERROR_CODES.notAllowed,
+    "This member only takes messages from people they were introduced to here. Ask for an intro first.",
+  );
+}
+
+export async function startConversation({ database, member }: RequestContext, memberId: string, mayMessage: MessagePermission) {
   if (memberId === member.id) throw ownConversationError();
   if (!(await isMemberActive(database, memberId))) throw memberGoneError();
+  if (!(await mayMessage(database, member.id, memberId))) throw notAllowedError();
 
   await enforceMessagingLimit(database, member.id, MESSAGING_KINDS.start);
   const pair = toConversationPair(member.id, memberId);
@@ -121,9 +134,9 @@ function peerUnavailableError() {
   return new RequestError(CONFLICT_STATUS, MESSAGE_ERROR_CODES.peerUnavailable, "This member isn't available right now.");
 }
 
-type Sender = { environment: Environment; branding: EmailBranding | null; memberId: string };
+type Sender = { environment: Environment; branding: EmailBranding | null; memberId: string; mayMessage: MessagePermission };
 
-async function insertMessage(transaction: Transaction, { environment, branding, memberId }: Sender, { conversationId, clientKey, body }: SendMessageBody) {
+async function insertMessage(transaction: Transaction, { environment, branding, memberId, mayMessage }: Sender, { conversationId, clientKey, body }: SendMessageBody) {
   const target = await lockConversation(transaction, conversationId, memberId);
   const racedMessageId = await readOwnMessageIdByKey(transaction, { conversationId, clientKey }, memberId);
   if (racedMessageId) return { messageId: racedMessageId, isEmailQueued: false };
@@ -132,6 +145,7 @@ async function insertMessage(transaction: Transaction, { environment, branding, 
   const { isBlockedByMe, isBlockedByPeer } = await readBlockDirections(transaction, memberId, peerId);
   if (isBlockedByMe) throw peerBlockedError();
   if (!(await isMemberActive(transaction, peerId))) throw peerUnavailableError();
+  if (!(await mayMessage(transaction, memberId, peerId))) throw notAllowedError();
 
   const revision = target.lastRevision + 1;
   await transaction.update(conversation).set({ lastRevision: revision }).where(eq(conversation.id, conversationId));
@@ -158,12 +172,12 @@ async function readRequiredMessage(database: Database, viewerId: string, message
   return message;
 }
 
-export async function sendMessage({ database, environment, member }: RequestContext, body: SendMessageBody) {
+export async function sendMessage({ database, environment, member }: RequestContext, body: SendMessageBody, mayMessage: MessagePermission) {
   const alreadySentId = await readOwnMessageIdByKey(database, body, member.id);
   if (alreadySentId) return readRequiredMessage(database, member.id, alreadySentId);
 
   await enforceMessagingLimit(database, member.id, MESSAGING_KINDS.send);
-  const sender = { environment, branding: await readEmailBranding(database, environment), memberId: member.id };
+  const sender = { environment, branding: await readEmailBranding(database, environment), memberId: member.id, mayMessage };
   const { messageId, isEmailQueued } = await database.transaction((transaction) => insertMessage(transaction, sender, body));
   if (isEmailQueued) sendQueuedEmailsSoon(database, environment);
   return readRequiredMessage(database, member.id, messageId);

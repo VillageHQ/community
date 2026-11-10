@@ -16,6 +16,7 @@ import { ConsentStep } from "@/modules/network/components/consent-step";
 import { LinkedinWelcome } from "@/modules/network/components/linkedin-step";
 import { loadWelcomeContext } from "@/shell/load-welcome-context";
 import { CardStep } from "@/modules/members/components/card-step";
+import { IntroAsksStep } from "@/modules/members/components/intro-asks-step";
 import { ConfirmationStep } from "@/modules/members/components/confirmation-step";
 import { membersManifest } from "@/modules/members/manifest";
 import { networkManifest } from "@/modules/network/manifest";
@@ -44,6 +45,7 @@ export default modulePage(membersManifest, async function WelcomePage() {
   if (step === ONBOARDING_STEPS.card && profile) {
     return <CardStep welcome={welcome} profile={profile} memberCount={memberCount} />;
   }
+  if (step === ONBOARDING_STEPS.introAsks) return <IntroAsksStep welcome={welcome} />;
   if (progress === NETWORK_PROGRESS.needsEmailConfirmation) return <ConfirmationStep welcome={welcome} />;
   if (progress === NETWORK_PROGRESS.needsLinkedin) return <LinkedinWelcome welcome={welcome} />;
   return <ConsentStep welcome={welcome} />;

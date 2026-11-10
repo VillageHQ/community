@@ -6,7 +6,7 @@ import { getDatabase } from "@/platform/database/client";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { isFirstAdminClaimed } from "@/platform/auth/first-admin";
 import { parseReturnPath, RETURN_PATH_PARAM } from "@/platform/http/return-path";
-import { ADMIN_CREATED_PARAM, ROUTES } from "@/platform/http/routes";
+import { ACCOUNT_DELETED_PARAM, ADMIN_CREATED_PARAM, ROUTES } from "@/platform/http/routes";
 
 import { SignInChoice } from "./sign-in-form";
 import { readResendConfig } from "@/platform/email/resend";
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: PAGE_TITLES.signIn };
 
-type SignInPageProps = { searchParams: Promise<{ [RETURN_PATH_PARAM]?: string; [ADMIN_CREATED_PARAM]?: string }> };
+type SignInPageProps = { searchParams: Promise<{ [RETURN_PATH_PARAM]?: string; [ADMIN_CREATED_PARAM]?: string; [ACCOUNT_DELETED_PARAM]?: string }> };
 
 export default modulePage(PLATFORM_MANIFEST, async function SignInPage({ searchParams }: SignInPageProps) {
   if (!(await isFirstAdminClaimed(getDatabase()))) redirect(ROUTES.setup);
@@ -40,6 +40,11 @@ export default modulePage(PLATFORM_MANIFEST, async function SignInPage({ searchP
             ? "Sign in with the email and password you just chose. A checklist takes you through the rest."
             : `Sign in to ${community.isSaved ? community.name : "your community"}.`}
         </p>
+        {params[ACCOUNT_DELETED_PARAM] !== undefined ? (
+          <p role="status" className="type-small mt-4 rounded-field bg-muted p-3.5 text-foreground">
+            Your account and everything it held are deleted. Thank you for being part of {community.isSaved ? community.name : "this community"}.
+          </p>
+        ) : null}
         {returnPath ? (
           <p className="type-small mt-3 text-foreground-soft">
             Sign in to finish confirming your email. If you never accepted this invite, tell your admin.

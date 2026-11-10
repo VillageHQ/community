@@ -116,7 +116,7 @@ export const directorySchema = z.object({
 
 export type Directory = z.infer<typeof directorySchema>;
 
-export const ONBOARDING_STEPS = { card: "card", network: "network", done: "done" } as const;
+export const ONBOARDING_STEPS = { card: "card", introAsks: "intro_asks", network: "network", done: "done" } as const;
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[keyof typeof ONBOARDING_STEPS];
 

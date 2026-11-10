@@ -119,3 +119,22 @@ export const askAnswer = pgTable(
     check("ask_answer_body_length", sql`char_length(${table.body}) between 1 and ${sql.raw(String(ASK_LIMITS.answerLength))}`),
   ],
 );
+
+// One row per ask whose author deleted their account: no author, no words, only what the partner report counts.
+// The report adds these to the live asks, so a deletion never changes a past number.
+export const askTally = pgTable(
+  "ask_tally",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    category: text("category").notNull(),
+    kind: text("kind").notNull(),
+    outcome: text("outcome"),
+    createdAt: askTimestamp("created_at").notNull(),
+  },
+  (table) => [
+    index("ask_tally_created_idx").on(table.createdAt),
+    check("ask_tally_category_known", sql`${table.category} in (${toSqlList(ASK_CATEGORIES)})`),
+    check("ask_tally_kind_known", sql`${table.kind} in (${toSqlList(ASK_KINDS)})`),
+    check("ask_tally_outcome_known", sql`${table.outcome} in (${toSqlList(ASK_OUTCOMES)})`),
+  ],
+);

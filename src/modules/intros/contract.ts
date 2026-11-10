@@ -129,6 +129,7 @@ export const INTRO_ERROR_CODES = {
   connectorBusy: "intro_connector_busy",
   notJoined: "intro_not_joined",
   targetRefuses: "intro_target_refuses",
+  notTakingAsks: "intro_not_taking_asks",
 } as const;
 
 const slugSchema = z.string().trim().toLowerCase().min(1).max(INTRO_LIMITS.slugLength);

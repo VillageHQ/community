@@ -10,6 +10,7 @@ import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { toAvatarUrl } from "./service-profile.ts";
 import { FILL_IN_FIELDS } from "./contract-fill-in.ts";
 import { shownFillInColumn } from "./service-fill-in.ts";
+import { isListedMember } from "./service-privacy.ts";
 
 export const DIRECTORY_PAGE_SIZE = 12;
 
@@ -77,7 +78,7 @@ async function readPopularTags(database: Database) {
     .select({ value: memberTag.normalizedTag, label: min(memberTag.tag), tagCount })
     .from(memberTag)
     .innerJoin(user, eq(user.id, memberTag.userId))
-    .where(isActiveMember())
+    .where(and(isActiveMember(), isListedMember()))
     .groupBy(memberTag.normalizedTag)
     .orderBy(desc(tagCount), asc(memberTag.normalizedTag))
     .limit(MAXIMUM_POPULAR_TAGS);
@@ -90,7 +91,7 @@ export async function readActiveMemberCount(database: Database) {
 }
 
 export async function readDirectory(database: Database, { search, tag, page }: DirectoryFilters): Promise<Directory> {
-  const conditions = and(isActiveMember(), matchesSearch(database, search), matchesTag(database, tag));
+  const conditions = and(isActiveMember(), isListedMember(), matchesSearch(database, search), matchesTag(database, tag));
   const [counted] = await database
     .select({ matchCount: count() })
     .from(user)
@@ -145,7 +146,7 @@ export function readMemberNeighbours(database: Database, excludedMemberId: strin
   return database
     .select({ id: user.id, name: user.name })
     .from(user)
-    .where(and(ne(user.id, excludedMemberId), isActiveMember()))
+    .where(and(ne(user.id, excludedMemberId), isActiveMember(), isListedMember()))
     .orderBy(desc(user.createdAt), asc(user.id))
     .limit(MAXIMUM_NEIGHBOURS);
 }
@@ -155,6 +156,7 @@ export async function readNewMembers(database: Database, excludedMemberId: strin
     gte(user.createdAt, new Date(now.getTime() - NEW_MEMBER_WINDOW_MS)),
     ne(user.id, excludedMemberId),
     isActiveMember(now),
+    isListedMember(),
   );
   const [[counted], rows] = await Promise.all([
     database.select({ newCount: count() }).from(user).where(isNewAndActive),

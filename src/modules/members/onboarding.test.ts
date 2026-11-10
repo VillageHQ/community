@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { memberProfile, memberNetwork } from "@/modules/members/schema";
+import { memberPrivacy, memberProfile, memberNetwork } from "@/modules/members/schema";
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { ONBOARDING_STEPS } from "@/modules/members/contract-profile";
 import { saveVillageGroup } from "@/modules/network/service-settings";
@@ -12,6 +12,7 @@ import { createSignedInMember } from "@/test/signed-in-member";
 
 import { POST as postProfile } from "@/app/api/profile/route";
 import { POST as postOnboarding } from "@/app/api/onboarding/route";
+import { POST as postIntroAsks } from "@/app/api/onboarding/intro-asks/route";
 
 const APP_URL = "http://localhost:3000";
 const GROUP = { id: "group-1", inviteLink: "https://village.test/join/invite-code" };
@@ -51,6 +52,8 @@ describe("onboarding", () => {
     await clearDatabase(database);
     member = await createSignedInMember(database);
     await database.insert(memberProfile).values({ userId: member.userId });
+    // The intro asks question has its own test below; the rest of this file is about the steps around it.
+    await database.insert(memberPrivacy).values({ userId: member.userId, acceptsIntroAsks: true, introAsksAnsweredAt: new Date() });
   });
 
   it("leaves out anyone who never accepted an invite, like the first admin", async () => {
@@ -69,11 +72,14 @@ describe("onboarding", () => {
     expect(await readStep()).toBe(ONBOARDING_STEPS.card);
   });
 
-  it("lets a member skip the card", async () => {
+  it("lets a member skip the card, then asks whether they take intro asks before anything else", async () => {
     await connectVillage();
+    await database.delete(memberPrivacy).where(eq(memberPrivacy.userId, member.userId));
 
     await post(postOnboarding, { step: ONBOARDING_STEPS.card });
+    expect(await readStep()).toBe(ONBOARDING_STEPS.introAsks);
 
+    await post(postIntroAsks, { acceptsIntroAsks: true });
     expect(await readStep()).toBe(ONBOARDING_STEPS.network);
   });
 

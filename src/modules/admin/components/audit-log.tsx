@@ -81,7 +81,18 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.connectNudgeSent]: ({ detail }) => `reminded ${detail} to connect their network`,
   [AUDIT_ACTIONS.partnerReportSent]: ({ detail }) => `emailed the partner report to ${detail}`,
   [AUDIT_ACTIONS.partnerReportMarkedShared]: () => "marked the partner report as shared",
+  [AUDIT_ACTIONS.accountDeleted]: ({ detail }) => readAccountDeletedSentence(detail),
+  [AUDIT_ACTIONS.introAsksAnswered]: ({ detail }) => (detail === "yes" ? "said they take intro asks" : "said they don't take intro asks"),
 };
+
+// The detail is "self" or "admin", then what Village said, for example "admin|cancelled". It never names anyone.
+function readAccountDeletedSentence(detail: string) {
+  const [who, village] = detail.split("|");
+  const what = who === "self" ? "deleted their own account and everything it held" : "deleted a member's account and everything it held";
+  if (village === "cancelled") return `${what}. Village was asked to remove them, and did`;
+  if (village === "failed") return `${what}. Village couldn't be reached to remove them`;
+  return what;
+}
 
 function readFillInBasisSentence(detail: string) {
   if (detail === "off") return "turned off filling in profiles from public profiles";

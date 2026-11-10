@@ -55,16 +55,20 @@ function ownAccountError(message: string) {
   return new RequestError(CONFLICT_STATUS, ADMIN_ERROR_CODES.ownAccount, message);
 }
 
+export async function lockAdminRoster(transaction: Transaction) {
+  await transaction.execute(sql`select pg_advisory_xact_lock(${ADMIN_ROSTER_LOCK_ID})`);
+}
+
 // Every write to a role or a ban takes this lock first, so the admin count can't change between the check and the write.
 export async function withAdminRosterLock<Result>(database: Database, actorId: string, work: (transaction: Transaction) => Promise<Result>) {
   return database.transaction(async (transaction) => {
-    await transaction.execute(sql`select pg_advisory_xact_lock(${ADMIN_ROSTER_LOCK_ID})`);
+    await lockAdminRoster(transaction);
     await requireCurrentAdmin(transaction, actorId);
     return work(transaction);
   });
 }
 
-async function requireAnotherAdmin(transaction: Transaction) {
+export async function requireAnotherAdmin(transaction: Transaction) {
   const [admins] = await transaction
     .select({ adminCount: count() })
     .from(user)
