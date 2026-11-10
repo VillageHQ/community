@@ -177,6 +177,46 @@ describe("the member directory", () => {
     });
   });
 
+  describe("filtering by stage, sector, cohort and freshness", () => {
+    beforeEach(async () => {
+      await seedMember(database, { name: "Ada", stage: "Seed", sector: "Climate", cohort: "Fund II" });
+      await seedMember(database, { name: "Bo", stage: "seed ", sector: "Fintech", cohort: "Fund I", updatedAt: new Date(Date.now() - 40 * DAY_MS) });
+      await seedMember(database, { name: "Cy", stage: "Pre-seed", sector: "Climate", updatedAt: new Date(Date.now() - 100 * DAY_MS) });
+      await seedMember(database, { name: "Banned Dee", stage: "Series B", sector: "Climate", banned: true });
+    });
+
+    it("matches a whole value, whatever the case", async () => {
+      expect(await searchNames({ stage: "SEED" })).toEqual(["Ada", "Bo"]);
+      expect(await searchNames({ sector: "climate" })).toEqual(["Ada", "Cy"]);
+      expect(await searchNames({ cohort: "Fund II" })).toEqual(["Ada"]);
+    });
+
+    it("combines the filters with each other and the search", async () => {
+      expect(await searchNames({ stage: "seed", sector: "Climate" })).toEqual(["Ada"]);
+      expect(await searchNames({ sector: "Climate", search: "Cy" })).toEqual(["Cy"]);
+      expect(await searchNames({ stage: "seed", cohort: "Fund III" })).toEqual([]);
+    });
+
+    it("keeps only cards updated in the window", async () => {
+      // The viewer has saved no card yet, so has no update to count.
+      expect(await searchNames({ updatedWithinDays: 30 })).toEqual(["Ada"]);
+      expect(await searchNames({ updatedWithinDays: 90, sector: "Climate" })).toEqual(["Ada"]);
+      expect(await searchNames({ updatedWithinDays: 0, sector: "Climate" })).toEqual(["Ada", "Cy"]);
+    });
+
+    it("offers the values active members use, once each", async () => {
+      const { filterOptions, members } = await search({ cohort: "Fund I" });
+
+      expect(filterOptions.stage.map((stage) => stage.toLowerCase())).toEqual(["pre-seed", "seed"]);
+      expect(filterOptions).toMatchObject({ sector: ["Climate", "Fintech"], cohort: ["Fund I", "Fund II"] });
+      expect(members[0]).toMatchObject({ name: "Bo", stage: "seed ", sector: "Fintech", cohort: "Fund I" });
+    });
+
+    it("refuses a window it doesn't offer", async () => {
+      expect((await request(viewer, { updatedWithinDays: 5 })).status).toBe(UNPROCESSABLE_STATUS);
+    });
+  });
+
   describe("pagination", () => {
     beforeEach(async () => {
       for (let position = 0; position < DIRECTORY_PAGE_SIZE; position += 1) {

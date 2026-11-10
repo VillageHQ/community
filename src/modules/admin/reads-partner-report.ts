@@ -8,6 +8,7 @@ import { readAskNeedCounts } from "../asks/reads-report.ts";
 import { readIntroReports, type ReportPeriod } from "../intros/reads-report.ts";
 import { REPORT_PERIOD_KEYS, REPORT_PERIOD_ORDER, type ReportPeriodKey } from "./contract-partner-report.ts";
 import { readCommunityHealth } from "./reads-health.ts";
+import { readCohortMemberCounts } from "../members/reads-directory.ts";
 import { readEnabledModuleIds } from "../../platform/modules/enablement.ts";
 import { asksManifest } from "../asks/manifest.ts";
 import { introsManifest } from "../intros/manifest.ts";
@@ -68,17 +69,18 @@ export async function readReportOptions(database: Database): Promise<ReportOptio
 export async function readPartnerReport(database: Database, now = new Date()) {
   const { isIntrosOn, isAsksOn, isNetworkOn } = await readReportOptions(database);
   const periods = readReportPeriods(now);
-  const [community, intros, needs, branding] = await Promise.all([
+  const [community, intros, needs, branding, cohortMembers] = await Promise.all([
     readCommunityHealth(database, now),
     isIntrosOn ? readIntroReports(database, periods) : null,
     isAsksOn ? readNeedsByPeriod(database, periods) : null,
     readBranding(database),
+    readCohortMemberCounts(database),
   ]);
   return {
     communityName: branding.name,
     generatedAt: now.toISOString(),
     periods: REPORT_PERIOD_ORDER.map((key) => periods[key]),
-    community: { ...community, isNetworkOn },
+    community: { ...community, isNetworkOn, cohortMembers },
     intros,
     needs,
   };

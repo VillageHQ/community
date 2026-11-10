@@ -158,13 +158,14 @@ describe("inviting many people", () => {
     ]);
   });
 
-  it("puts the company from the CSV on the new member's card", async () => {
-    const response = await postBulk(bulkRequest(admin, "csv", "name,email,company\nAda,ada@example.com,Engines Ltd"));
+  it("puts the company and cohort from the CSV on the new member's card", async () => {
+    const response = await postBulk(bulkRequest(admin, "csv", "name,email,company,cohort\nAda,ada@example.com,Engines Ltd,Fund II"));
     const [link] = bulkInviteResultSchema.parse(await response.json()).links;
 
     const accepted = await acceptInvite(database, link?.link.split("/").at(-1) ?? "", { name: "Ada", password: "a-long-test-password" });
     const [profile] = await database.select().from(memberProfile).where(eq(memberProfile.userId, accepted?.userId ?? ""));
     expect(profile?.company).toBe("Engines Ltd");
+    expect(profile?.cohort).toBe("Fund II");
   });
 
   it("is for admins only", async () => {

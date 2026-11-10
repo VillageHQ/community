@@ -66,6 +66,16 @@ function RoleFields({ profile }: CardFieldsProps) {
   );
 }
 
+function GroupFields({ profile }: CardFieldsProps) {
+  return (
+    <div className="grid gap-5 sm:grid-cols-3">
+      <FormField name="stage" label="Stage" placeholder="Seed" defaultValue={profile.stage ?? ""} maxLength={PROFILE_LIMITS.stage} />
+      <FormField name="sector" label="Sector" placeholder="Climate" defaultValue={profile.sector ?? ""} maxLength={PROFILE_LIMITS.sector} />
+      <FormField name="cohort" label="Cohort" placeholder="Fund II" defaultValue={profile.cohort ?? ""} maxLength={PROFILE_LIMITS.cohort} />
+    </div>
+  );
+}
+
 function AboutFields({ profile }: CardFieldsProps) {
   return (
     <>
@@ -196,6 +206,7 @@ function EditCardForm({ profile }: CardFieldsProps) {
         defaultValue={profile.location ?? ""}
         maxLength={PROFILE_LIMITS.location}
       />
+      <GroupFields profile={profile} />
       <AboutFields profile={profile} />
       <TagsField profile={profile} />
       <LinkedinField profile={profile} />

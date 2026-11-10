@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, desc, eq, gte, inArray, lt, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt, min, sql, type SQL } from "drizzle-orm";
 
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { user } from "../../platform/database/auth-schema.ts";
@@ -134,10 +134,23 @@ async function readConnectorNames(database: Database, ids: readonly string[]) {
   return ids.map((id) => ({ id, name: rows.find((row) => row.id === id)?.name ?? "" }));
 }
 
+// Intros by the cohort of the member who asked, for cohorts members wrote on their card. Counts only. A cohort is one
+// value whatever its case or outer spaces, so "Fund II" and "fund ii " count together.
+async function readCohortCounts(database: Database, period: ReportPeriod) {
+  const cohortKey = sql<string>`lower(trim(${memberProfile.cohort}))`;
+  return database
+    .select({ key: cohortKey, label: min(sql<string>`trim(${memberProfile.cohort})`), asked: countWhere(sql`true`), introduced: countWhere(introduced) })
+    .from(introRequest)
+    .innerJoin(memberProfile, eq(memberProfile.userId, introRequest.requesterId))
+    .where(and(isInPeriod(period), sql`nullif(trim(${memberProfile.cohort}), '') is not null`))
+    .groupBy(cohortKey)
+    .orderBy(cohortKey);
+}
+
 export async function readIntroReport(database: Database, period: ReportPeriod, namedIds?: readonly string[]) {
   const named = namedIds ?? (await readNamedConnectorIds(database));
-  const [counts, connectors] = await Promise.all([readCounts(database, period), readConnectors(database, period, named)]);
-  return { ...counts, connectors };
+  const [counts, connectors, byCohort] = await Promise.all([readCounts(database, period), readConnectors(database, period, named), readCohortCounts(database, period)]);
+  return { ...counts, connectors, byCohort: byCohort.map(({ key, label, asked, introduced }) => ({ key, label: label ?? key, asked, introduced })) };
 }
 
 export type IntroReport = Awaited<ReturnType<typeof readIntroReport>>;

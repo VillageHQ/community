@@ -66,6 +66,7 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
   const isBlockedByViewer = !isOwnProfile && (await isBlockedBy(database, viewer.id, profile.id));
   const { shown } = profile;
   const roleLine = [shown.title, shown.company].filter(Boolean).join(", ");
+  const facts = [profile.stage, profile.sector, profile.cohort].filter(Boolean).join(" · ");
 
   return (
     <div className="mx-auto grid max-w-[820px] gap-5">
@@ -89,6 +90,7 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
                 {shown.location}
               </p>
             ) : null}
+            {facts ? <p className="type-small mt-1 text-foreground-soft">{facts}</p> : null}
             {shown.headline ? <p className="type-small mt-1 text-foreground-soft">{shown.headline}</p> : null}
             {shown.filledAt ? (
               <p className="type-small mt-2 text-muted-foreground">

@@ -14,6 +14,7 @@ import { asksManifest } from "@/modules/asks/manifest";
 import { ASK_CATEGORIES, ASK_OUTCOMES } from "@/modules/asks/contract";
 import { INTRO_OUTCOMES, INTRO_RESULTS, INTRO_STATES } from "@/modules/intros/contract";
 import { introRequest } from "@/modules/intros/schema";
+import { memberProfile } from "@/modules/members/schema";
 import { readReportCredit } from "@/modules/members/service-report-credit";
 import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import { adminAuditEntry } from "@/platform/audit/schema";
@@ -193,6 +194,23 @@ describe("the partner report", () => {
 
       const open = await database.select({ id: introRequest.id }).from(introRequest).where(eq(introRequest.state, INTRO_STATES.requested));
       expect(open).toHaveLength(2);
+    });
+
+    it("adds intros and members by cohort only once members have a cohort", async () => {
+      expect(renderPartnerReportCsv(await readPartnerReport(database))).not.toContain("cohort");
+
+      await database.insert(memberProfile).values({ userId: asker.userId, cohort: "Fund II" }).onConflictDoUpdate({ target: memberProfile.userId, set: { cohort: "Fund II" } });
+      await database.insert(memberProfile).values({ userId: credited.userId, cohort: " fund ii" }).onConflictDoUpdate({ target: memberProfile.userId, set: { cohort: " fund ii" } });
+      const report = await readPartnerReport(database);
+
+      expect(report.intros?.periods[REPORT_PERIOD_KEYS.thisQuarter].byCohort).toEqual([{ key: "fund ii", label: expect.stringMatching(/^fund ii$/i), asked: 12, introduced: 3 }]);
+      expect(report.intros?.periods[REPORT_PERIOD_KEYS.sinceLaunch].byCohort).toMatchObject([{ asked: 15, introduced: 4 }]);
+      expect(report.community.cohortMembers).toMatchObject([{ key: "fund ii", members: 2 }]);
+      const csv = renderPartnerReportCsv(report);
+      expect(csv).toMatch(/Intros by cohort,Fund II: asked for,12,2,15/i);
+      expect(csv).toMatch(/Intros by cohort,Fund II: introduced,3,1,4/i);
+      expect(csv).toMatch(/Community,Members in Fund II,2/i);
+      expect(csv).not.toContain(ASKER_NAME);
     });
 
     it("breaks asks down by need when the Asks board is on", async () => {

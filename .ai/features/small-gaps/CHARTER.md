@@ -11,7 +11,7 @@ Close the small gaps left after waves 1 and 2, and fix four follow-ups the earli
 In:
 
 1. **Directory.** The member card gains three optional lines: stage, sector and cohort. A cohort an admin set on an
-   invite (single invite or list/CSV, which already stores it) fills the new member's cohort when they join. The
+   invite (the list or CSV import, which already stores it) fills the new member's cohort when they join. The
    directory filters by stage, sector, cohort (the values members use) and by how recently the profile was
    updated. The partner report adds a "By cohort" breakdown when at least one member has a cohort.
 2. **Intro reminder to the person asked.** When the connector emailed the person asked and they haven't answered

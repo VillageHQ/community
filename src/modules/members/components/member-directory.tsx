@@ -14,9 +14,10 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Tag } from "@/components/ui/tag";
-import { parseDirectoryFilters, toDirectoryQueryString } from "@/modules/members/rules-directory-url";
-import { PROFILE_LIMITS, type DirectoryFilters, type DirectoryMember } from "@/modules/members/contract-profile";
+import { EMPTY_DIRECTORY_FILTERS, hasDirectoryFilters, parseDirectoryFilters, readUpdatedWithinDays, toDirectoryQueryString } from "@/modules/members/rules-directory-url";
+import { PROFILE_LIMITS, UPDATED_WITHIN_DAYS, type Directory, type DirectoryFilters, type DirectoryMember } from "@/modules/members/contract-profile";
 import { ROUTES } from "@/platform/http/routes";
 
 import { MemberConversationSlot } from "@/modules/members/slots";
@@ -44,7 +45,7 @@ function scheduleSearch(search: string, filters: DirectoryFilters) {
 function clearFilters(setSearchDraft: (search: string) => void) {
   clearTimeout(pendingSearch);
   setSearchDraft("");
-  applyFilters({ search: "", tag: EVERYONE_TAG, page: 1 });
+  applyFilters(EMPTY_DIRECTORY_FILTERS);
   document.getElementById(SEARCH_INPUT_ID)?.focus();
 }
 
@@ -55,6 +56,7 @@ function goToPage(page: number, filters: DirectoryFilters) {
 
 function MemberCard({ member, viewerId }: { member: DirectoryMember; viewerId: string }) {
   const { id, name, title, company, canHelpWith, avatarUrl, tags } = member;
+  const facts = [member.stage, member.sector, member.cohort].filter(Boolean).join(" · ");
   return (
     <li className="flex">
       <article className="flex w-full flex-col rounded-card-phone bg-card p-card-phone shadow-panel sm:rounded-card sm:p-6">
@@ -64,6 +66,7 @@ function MemberCard({ member, viewerId }: { member: DirectoryMember; viewerId: s
             <h2 className="text-lg leading-6 font-bold tracking-[-0.006em]">{name}</h2>
             {title ? <div className="type-small text-muted-foreground">{title}</div> : null}
             {company ? <div className="type-small text-muted-foreground">{company}</div> : null}
+            {facts ? <div className="type-small text-muted-foreground">{facts}</div> : null}
           </div>
         </div>
         {canHelpWith ? (
@@ -99,8 +102,7 @@ function readMatchSentence(matchCount: number) {
 }
 
 function DirectoryEmpty({ filters, onClear }: { filters: DirectoryFilters; onClear: () => void }) {
-  const isFiltered = Boolean(filters.search || filters.tag);
-  if (!isFiltered) {
+  if (!hasDirectoryFilters(filters)) {
     return (
       <div className="rounded-panel bg-card shadow-panel">
         <EmptyState
@@ -115,7 +117,7 @@ function DirectoryEmpty({ filters, onClear }: { filters: DirectoryFilters; onCle
     <div className="rounded-panel bg-card shadow-panel">
       <EmptyState
         title="Nobody matches that yet"
-        description="Try a different name, company or tag. Fewer words usually help."
+        description="Try a different name, company or tag, or fewer filters."
       >
         <Button type="button" size="lg" onClick={onClear}>
           Show everyone
@@ -125,14 +127,74 @@ function DirectoryEmpty({ filters, onClear }: { filters: DirectoryFilters; onCle
   );
 }
 
+type FilterKey = "stage" | "sector" | "cohort";
+
+const FILTER_LABELS: Record<FilterKey, { label: string; any: string }> = {
+  stage: { label: "Stage", any: "Any stage" },
+  sector: { label: "Sector", any: "Any sector" },
+  cohort: { label: "Cohort", any: "Any cohort" },
+};
+
+function readUpdatedLabel(days: number) {
+  return days === 0 ? "Updated any time" : `Updated in the last ${days} days`;
+}
+
+function DirectoryFilterMenus({ filters, options }: { filters: DirectoryFilters; options: Directory["filterOptions"] }) {
+  const keys = (Object.keys(FILTER_LABELS) as FilterKey[]).filter((key) => options[key].length > 0 || filters[key]);
+  return (
+    <div role="group" aria-label="Narrow the list" className="mb-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      {keys.map((key) => {
+        const chosen = options[key].find((value) => value.toLowerCase() === filters[key].toLowerCase()) ?? filters[key];
+        const values = chosen && !options[key].includes(chosen) ? [chosen, ...options[key]] : options[key];
+        return (
+          <div key={key}>
+            <label htmlFor={`member-filter-${key}`} className="sr-only">
+              {FILTER_LABELS[key].label}
+            </label>
+            <Select
+              id={`member-filter-${key}`}
+              value={chosen}
+              onChange={(event) => applyFilters({ ...filters, [key]: event.target.value, page: 1 })}
+            >
+              <option value="">{FILTER_LABELS[key].any}</option>
+              {values.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </Select>
+          </div>
+        );
+      })}
+      <div>
+        <label htmlFor="member-filter-updated" className="sr-only">
+          How recently the card was updated
+        </label>
+        <Select
+          id="member-filter-updated"
+          value={filters.updatedWithinDays}
+          onChange={(event) => applyFilters({ ...filters, updatedWithinDays: readUpdatedWithinDays(event.target.value), page: 1 })}
+        >
+          {[0, ...UPDATED_WITHIN_DAYS].map((days) => (
+            <option key={days} value={days}>
+              {readUpdatedLabel(days)}
+            </option>
+          ))}
+        </Select>
+      </div>
+    </div>
+  );
+}
+
 type DirectoryResultsProps = { filters: DirectoryFilters; onClear: () => void; isStale: boolean; viewerId: string };
 
 function DirectoryResults({ filters, onClear, isStale, viewerId }: DirectoryResultsProps) {
   const { data: directory } = useSuspenseQuery(directoryQuery(filters));
-  const { members, matchCount, page, pageCount, popularTags } = directory;
-  const isFiltered = Boolean(filters.search || filters.tag);
+  const { members, matchCount, page, pageCount, popularTags, filterOptions } = directory;
+  const isFiltered = hasDirectoryFilters(filters);
   return (
     <>
+      <DirectoryFilterMenus filters={filters} options={filterOptions} />
       {popularTags.length > 0 ? (
         <div role="group" aria-label="Filter members" className="mb-6 flex flex-wrap gap-2">
           <Chip
