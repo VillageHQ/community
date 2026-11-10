@@ -842,6 +842,13 @@ describe("intro requests", () => {
       expect(declined.declineReason).toBeNull();
     });
 
+    it("declines with the note left empty, as the browser sends it", async () => {
+      const response = await transition(jonas, intro.id, INTRO_ACTIONS.decline, { reason: null, kind: "not_this_time" });
+
+      expect(response.status).toBe(OK_STATUS);
+      expect(introSchema.parse(await response.json()).declineReason).toBeNull();
+    });
+
     it("treats a blank reason as no reason", async () => {
       const declined = introSchema.parse(await (await transition(jonas, intro.id, INTRO_ACTIONS.decline, { reason: "   " })).json());
 
