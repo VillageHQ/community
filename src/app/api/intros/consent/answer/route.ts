@@ -19,7 +19,10 @@ export const POST = introsRoutes.open(
     }
     const body = consentAnswerBodySchema.safeParse(await readJsonBody(request));
     if (!body.success) {
-      return respondWithError({ status: UNPROCESSABLE_STATUS, code: REQUEST_ERROR_CODES.invalidRequest, message: "This answer didn't come through. Try again." });
+      // A bad address gets its own words, so the person fixes it instead of retrying the same one.
+      const emailIssue = body.error.issues.find(({ path }) => path[0] === "targetEmail");
+      const message = emailIssue ? emailIssue.message : "This answer didn't come through. Try again.";
+      return respondWithError({ status: UNPROCESSABLE_STATUS, code: REQUEST_ERROR_CODES.invalidRequest, message });
     }
 
     const viewer = await readSessionMember(request);

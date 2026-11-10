@@ -1298,6 +1298,16 @@ describe("double opt-in intros", () => {
       expect((await readRow(intro.id)).state).toBe(INTRO_STATES.askingTarget);
     });
 
+    it("says what's wrong with an address the browser let through", async () => {
+      configureResend();
+      const { token } = await askAndReachTarget();
+
+      const response = await answerYesWithEmail(token, "clara@outside");
+
+      expect(response.status).toBe(UNPROCESSABLE_STATUS);
+      expect(JSON.stringify(await response.json())).toContain("Enter an email address");
+    });
+
     it("keeps the address the connector already gave", async () => {
       configureResend();
       const { intro, token } = await askAndReachTarget();

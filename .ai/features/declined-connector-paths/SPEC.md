@@ -1,6 +1,6 @@
 ---
 id: declined-connector-paths
-status: idea
+status: building
 waits-on: []
 size:
 touches: ["src/modules/network/"]
@@ -21,4 +21,5 @@ After a connector says no to an intro, they still show as a way in on the asker'
 Leave them out of that asker's paths for that person (or mark them), without telling the asker who said no.
 
 ## Open questions
-- Leave out, or show as already asked?
+- Settled by fix-intros: left out, after either kind of no (the connector's or the person asked's), so the asker
+  can't tell who said no. See `.ai/features/fix-intros/CHARTER.md`.
