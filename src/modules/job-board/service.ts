@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 
 import { isAdminMember } from "@/platform/auth/roles";
@@ -27,6 +27,7 @@ import {
 import { detectBoard, describeLinkProblem } from "./rules-feeds";
 import { jobPosting, jobSource } from "./schema";
 import { pullSource, type PullOutcome } from "./service-pull";
+import { readMemberCompany } from "./reads";
 
 const FORBIDDEN_STATUS = 403;
 const NOT_FOUND_STATUS = 404;
@@ -65,6 +66,37 @@ async function assertSourceAllowance(database: DatabaseOrTransaction, memberId: 
   }
 }
 
+// A founder shares jobs only for the company on their own card, saved as the card spells it. An admin may add any company.
+async function readAllowedCompany({ database, member }: RequestContext, company: string) {
+  if (isAdminMember(member)) return company;
+  const ownCompany = (await readMemberCompany(database, member.id)).trim();
+  if (!ownCompany) {
+    throw new RequestError(FORBIDDEN_STATUS, JOB_BOARD_ERROR_CODES.companyMissing, "Add your company to your card first. Then you can share its jobs here.");
+  }
+  if (toCompanySlug(company) !== toCompanySlug(ownCompany)) {
+    throw new RequestError(
+      FORBIDDEN_STATUS,
+      JOB_BOARD_ERROR_CODES.companyNotYours,
+      `You can share jobs only for your own company, ${ownCompany}. If that's changed, update your card first. An admin can add other companies.`,
+    );
+  }
+  return ownCompany;
+}
+
+// One source per careers link in the whole community, so no job shows twice. The lock keeps two
+// quick clicks, or two founders at once, from both passing the check.
+// Board names are compared without case: the tools treat "Stripe" and "stripe" as one board.
+async function assertBoardFree(transaction: Transaction, tool: string, slug: string) {
+  const boardName = slug.toLowerCase();
+  await transaction.execute(sql`select pg_advisory_xact_lock(hashtext(${`job_source:${tool}:${boardName}`}))`);
+  const [taken] = await transaction
+    .select({ company: jobSource.company })
+    .from(jobSource)
+    .where(and(eq(jobSource.tool, tool), sql`lower(${jobSource.slug}) = ${boardName}`))
+    .limit(1);
+  if (taken) throw new RequestError(CONFLICT_STATUS, JOB_BOARD_ERROR_CODES.linkTaken, `This careers link is already on the board, for ${taken.company}.`);
+}
+
 function describePull(outcome: PullOutcome) {
   if (!outcome.ok) return outcome.error;
   if (outcome.count === 0) return "Linked. The board has no open jobs right now. We check again every hour.";
@@ -74,13 +106,15 @@ function describePull(outcome: PullOutcome) {
 export async function linkSource(context: RequestContext, body: z.infer<typeof linkSourceBodySchema>) {
   const board = detectBoard(body.link);
   if (!board) throw new RequestError(UNPROCESSABLE_STATUS, JOB_BOARD_ERROR_CODES.notALink, describeLinkProblem(body.link));
+  const company = await readAllowedCompany(context, body.company);
   const source = await context.database.transaction(async (transaction) => {
     // The member row lock keeps two quick clicks from passing the limit together. It leaves foreign keys free.
     await lockMember(transaction, context.member.id);
     await assertSourceAllowance(transaction, context.member.id);
+    await assertBoardFree(transaction, board.tool, board.slug);
     const [created] = await transaction
       .insert(jobSource)
-      .values({ memberId: context.member.id, company: body.company, companySlug: toCompanySlug(body.company), tool: board.tool, slug: board.slug, sourceUrl: board.link })
+      .values({ memberId: context.member.id, company, companySlug: toCompanySlug(company), tool: board.tool, slug: board.slug, sourceUrl: board.link })
       .returning();
     return created;
   });
@@ -90,17 +124,18 @@ export async function linkSource(context: RequestContext, body: z.infer<typeof l
 }
 
 export async function createManualSource(context: RequestContext, body: z.infer<typeof manualSourceBodySchema>) {
+  const company = await readAllowedCompany(context, body.company);
   const source = await context.database.transaction(async (transaction) => {
     await lockMember(transaction, context.member.id);
     await assertSourceAllowance(transaction, context.member.id);
     const [created] = await transaction
       .insert(jobSource)
-      .values({ memberId: context.member.id, company: body.company, companySlug: toCompanySlug(body.company), tool: MANUAL_TOOL, slug: null })
+      .values({ memberId: context.member.id, company, companySlug: toCompanySlug(company), tool: MANUAL_TOOL, slug: null })
       .returning({ id: jobSource.id });
     return created;
   });
   if (!source) throw sourceNotFound();
-  return { id: source.id, message: `Added ${body.company}. Now add its jobs.` };
+  return { id: source.id, message: `Added ${company}. Now add its jobs.` };
 }
 
 function assertPullAllowed(source: SourceRow) {

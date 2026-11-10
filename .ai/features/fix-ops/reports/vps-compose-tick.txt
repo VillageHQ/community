@@ -1,0 +1,25 @@
+# Own-server compose file (deploy/vps/compose.yml), run locally with an image built from this branch
+# config line:
+38:      JOBS_SELF_TICK: "true"
+# docker compose up -d --wait: postgres, app, caddy healthy; no outside scheduler.
+# job_lease about 80 s after boot:
+          name          |      last_finished_at      
+------------------------+----------------------------
+ chat-posts             | 2026-11-10 12:08:18.012+00
+ email-outbox           | 2026-11-10 12:08:18.016+00
+ email-outbox-pruning   | 2026-11-10 12:08:18.021+00
+ intro-expiry           | 2026-11-10 12:08:18.033+00
+ intro-outcome-emails   | 2026-11-10 12:08:18.036+00
+ intro-target-reminders | 2026-11-10 12:08:18.04+00
+ profile-fill-in        | 2026-11-10 12:08:18.025+00
+ weekly-email           | 2026-11-10 12:08:18.008+00
+(8 rows)
+
+# 62 s later (one-minute jobs ticked again):
+     name     |      last_finished_at      
+--------------+----------------------------
+ chat-posts   | 2026-11-10 12:09:17.944+00
+ email-outbox | 2026-11-10 12:09:17.947+00
+ intro-expiry | 2026-11-10 12:08:18.033+00
+(3 rows)
+

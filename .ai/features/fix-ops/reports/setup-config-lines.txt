@@ -1,0 +1,30 @@
+# vercel.json (the Vercel button deploys it)
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [{ "path": "/api/jobs/tick", "schedule": "0 9 * * *" }]
+}
+
+# Vercel button asks for: (README.md and site/index.html)
+README.md:env=SETUP_TOKEN%2CCRON_SECRET
+site/index.html:env=SETUP_TOKEN%2CCRON_SECRET
+
+# .do/deploy.template.yaml
+15-      instance_count: 1
+16:      http_port: 8080
+17-      envs:
+18-        - key: APP_URL
+--
+31-        # One long-running server: it calls its own jobs endpoint every minute (the weekly email,
+32:        # reminders, email retries and the nightly tasks). PORT matches http_port, so the call finds the app.
+33:        - key: PORT
+34-          scope: RUN_TIME
+35-          value: "8080"
+36:        - key: JOBS_SELF_TICK
+37-          scope: RUN_TIME
+38-          value: "true"
+
+# deploy/vps/compose.yml (install.sh)
+38:      JOBS_SELF_TICK: "true"
+
+# Railway template notes (README.md)
+259:- `JOBS_SELF_TICK`: `true` (the service runs as one long-lived server, so it ticks its own timed jobs)

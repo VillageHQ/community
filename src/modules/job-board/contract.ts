@@ -92,6 +92,9 @@ export const JOB_BOARD_ERROR_CODES = {
   tooSoon: "job_pull_too_soon",
   notManual: "job_source_not_manual",
   hiddenByAdmin: "job_source_hidden_by_admin",
+  linkTaken: "job_link_taken",
+  companyNotYours: "job_company_not_yours",
+  companyMissing: "job_company_missing",
 } as const;
 
 const httpLinkSchema = z

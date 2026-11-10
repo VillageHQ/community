@@ -5,6 +5,7 @@ import { getDatabase } from "@/platform/database/client";
 import { readAdminTabFacts } from "@/shell/admin-badges";
 
 import { AdminTabs } from "./admin-tabs";
+import { VillageTroubleNotice } from "./village-trouble-notice";
 
 type AdminSectionProps = { title: string; description?: string; action?: ReactNode; children: ReactNode };
 
@@ -14,6 +15,7 @@ export async function AdminSection({ title, description, action, children }: Adm
     <>
       <PageHeader title={title} description={description} action={action} />
       <AdminTabs facts={facts} />
+      {facts.villageTrouble ? <VillageTroubleNotice health={facts.villageTrouble} /> : null}
       {children}
     </>
   );

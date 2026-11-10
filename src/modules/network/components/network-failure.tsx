@@ -1,7 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { BatteryLow, Clock, RefreshCw, type LucideIcon } from "lucide-react";
+import { BatteryLow, Clock, CloudOff, RefreshCw, type LucideIcon } from "lucide-react";
 import { useEffect } from "react";
 import type { FallbackProps } from "react-error-boundary";
 
@@ -17,6 +17,14 @@ const FALLBACK_MESSAGE = "Something went wrong. Try again.";
 const FAILURE_TITLE = "That didn't work";
 
 type WarmStep = { icon: LucideIcon; title: string; description: string; action: string | null };
+
+// Village down, slow or refusing the keys: nothing the member did, so a calm note, never an error.
+const SEARCH_UNAVAILABLE: WarmStep = {
+  icon: CloudOff,
+  title: "Search is unavailable right now",
+  description: "Village, the service behind network search, isn't answering. Your admin can see this, so you don't need to do anything. Everything else here works as usual.",
+  action: "Check again",
+};
 
 const WARM_STEPS: Record<string, WarmStep> = {
   [NETWORK_ERROR_CODES.notSynced]: {
@@ -37,6 +45,9 @@ const WARM_STEPS: Record<string, WarmStep> = {
     description: "This community has run out of Village credits. Your admin can see this and add more, so you don't need to do anything. Everything you already opened is still here.",
     action: "Check again",
   },
+  [NETWORK_ERROR_CODES.unavailable]: SEARCH_UNAVAILABLE,
+  [NETWORK_ERROR_CODES.timedOut]: SEARCH_UNAVAILABLE,
+  [NETWORK_ERROR_CODES.keysRejected]: SEARCH_UNAVAILABLE,
 };
 
 const STAGE_CHANGING_CODES: ReadonlySet<string> = new Set([

@@ -1,9 +1,10 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { recordOutsiderAction } from "../../platform/audit/record.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
+import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
 import type { Environment } from "../../platform/environment.ts";
@@ -25,6 +26,7 @@ import { introConsentLink, introOptOut, introRequest } from "./schema.ts";
 const FORBIDDEN_STATUS = 403;
 const GONE_STATUS = 410;
 const TOO_MANY_REQUESTS_STATUS = 429;
+const UNPROCESSABLE_STATUS = 422;
 
 export function issueConsent(environment: Environment) {
   const token = createInviteToken();
@@ -83,7 +85,7 @@ async function respondToFailedAttempt(database: Database, request: Request, envi
   throw closedLinkError();
 }
 
-async function closeTargetsOtherAsks(transaction: Transaction, targetSlug: string, requesterId: string | null, now: Date) {
+async function closeTargetsOtherAsks(transaction: Transaction, targetSlug: string, requesterId: string | null, now: Date, targetAnswer: ConsentAnswer) {
   const sameTarget = eq(introRequest.targetLinkedinSlug, targetSlug);
   const sameRequester = requesterId ? eq(introRequest.requesterId, requesterId) : undefined;
   await transaction
@@ -92,7 +94,7 @@ async function closeTargetsOtherAsks(transaction: Transaction, targetSlug: strin
     .where(and(sameTarget, sameRequester, eq(introRequest.state, INTRO_STATES.requested)));
   return transaction
     .update(introRequest)
-    .set({ state: INTRO_STATES.targetDeclined, closedAt: now, requesterHasUpdate: true, ...CLOSES_CONSENT })
+    .set({ state: INTRO_STATES.targetDeclined, targetAnswer, closedAt: now, requesterHasUpdate: true, ...CLOSES_CONSENT })
     .where(and(sameTarget, sameRequester, eq(introRequest.state, INTRO_STATES.askingTarget)))
     .returning();
 }
@@ -102,14 +104,17 @@ async function saveOptOut(transaction: Transaction, targetSlugHash: string) {
   await recordOutsiderAction(transaction, AUDIT_ACTIONS.introAsksStopped);
 }
 
-type AnswerFacts = { database: Database; tokenHash: string; now: Date; targetSlugHash: string };
+type AnswerFacts = { database: Database; tokenHash: string; now: Date; targetSlugHash: string; targetEmail: string | null };
 
-async function saveYes({ database, tokenHash, now }: AnswerFacts) {
+// An address the connector already gave wins over one typed on a forwarded link.
+async function saveYes({ database, tokenHash, now, targetEmail }: AnswerFacts) {
   const [agreed] = await database
     .update(introRequest)
     .set({
       state: INTRO_STATES.targetAgreed,
+      targetAnswer: CONSENT_ANSWERS.yes,
       targetAgreedAt: now,
+      ...(targetEmail ? { targetEmail: sql`coalesce(${introRequest.targetEmail}, ${targetEmail})` } : {}),
       expiresAt: readIntroDeadline(now),
       requesterHasUpdate: true,
     })
@@ -119,15 +124,16 @@ async function saveYes({ database, tokenHash, now }: AnswerFacts) {
 }
 
 function saveNo({ database, tokenHash, now, targetSlugHash }: AnswerFacts, isStoppingAllAsks: boolean) {
+  const targetAnswer = isStoppingAllAsks ? CONSENT_ANSWERS.stopAllAsks : CONSENT_ANSWERS.noThanks;
   return database.transaction(async (transaction) => {
     const [refused] = await transaction
       .update(introRequest)
-      .set({ state: INTRO_STATES.targetDeclined, closedAt: now, requesterHasUpdate: true, ...CLOSES_CONSENT })
+      .set({ state: INTRO_STATES.targetDeclined, targetAnswer, closedAt: now, requesterHasUpdate: true, ...CLOSES_CONSENT })
       .where(isConsentTokenLive(transaction, tokenHash, now))
       .returning();
     if (!refused) return null;
     if (isStoppingAllAsks) await saveOptOut(transaction, targetSlugHash);
-    const others = await closeTargetsOtherAsks(transaction, refused.targetLinkedinSlug, isStoppingAllAsks ? null : refused.requesterId, now);
+    const others = await closeTargetsOtherAsks(transaction, refused.targetLinkedinSlug, isStoppingAllAsks ? null : refused.requesterId, now, targetAnswer);
     return { agreed: null, refused: [refused, ...others] };
   });
 }
@@ -183,7 +189,15 @@ async function tellEveryoneAboutNo(database: Database, environment: Environment,
 
 type AnswerContext = { database: Database; environment: Environment; request: Request; viewerId: string | null };
 
-export async function answerConsentAsk({ database, environment, request, viewerId }: AnswerContext, { token, answer }: ConsentAnswerBody) {
+async function isParticipantAddress(database: Database, intro: IntroFacts, email: string) {
+  const [match] = await database
+    .select({ id: user.id })
+    .from(user)
+    .where(and(inArray(user.id, [intro.requesterId, intro.introducerId]), eq(user.email, email)));
+  return match !== undefined;
+}
+
+export async function answerConsentAsk({ database, environment, request, viewerId }: AnswerContext, { token, answer, targetEmail }: ConsentAnswerBody) {
   const tokenHash = readLiveConsentHash(token);
   if (!tokenHash) return respondToFailedAttempt(database, request, environment);
   const linked = await readLinkedIntro(database, tokenHash);
@@ -192,8 +206,13 @@ export async function answerConsentAsk({ database, environment, request, viewerI
     throw new RequestError(FORBIDDEN_STATUS, INTRO_ERROR_CODES.consentLinkNotForYou, `This link is for ${linked.targetName}, so we didn't change anything.`);
   }
 
+  const typedEmail = answer === CONSENT_ANSWERS.yes && targetEmail && readResendConfig(environment) ? targetEmail : null;
+  if (typedEmail && (await isParticipantAddress(database, linked, typedEmail))) {
+    throw new RequestError(UNPROCESSABLE_STATUS, INTRO_ERROR_CODES.targetEmailRefused, "That address belongs to someone else in this intro. Enter your own email.");
+  }
+
   const targetSlugHash = await hashTargetSlug(database, environment, linked.targetLinkedinSlug);
-  const saved = await SAVES_ANSWER[answer]({ database, tokenHash, now: new Date(), targetSlugHash });
+  const saved = await SAVES_ANSWER[answer]({ database, tokenHash, now: new Date(), targetSlugHash, targetEmail: typedEmail });
   if (!saved) return readEarlierAnswer(database, environment, linked.id);
 
   const { agreed, refused } = saved;

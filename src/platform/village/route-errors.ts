@@ -4,8 +4,10 @@ import { isVillageError, type VillageErrorCode } from "@villagehq/sdk";
 
 import type { Database } from "../database/client.ts";
 import { respondWithError, type FriendlyError } from "../http/member-route.ts";
+import { logError } from "../observability/route-logging.ts";
 import { DailyLimitReachedError, MonthlyCapReachedError } from "./credit-ledger.ts";
 import { VILLAGE_ERROR_CODES } from "./error-codes.ts";
+import { recordVillageOutcome } from "./health.ts";
 import { recordVillageOutOfCredits } from "./settings.ts";
 
 const CONFLICT_STATUS = 409;
@@ -58,6 +60,9 @@ const FRIENDLY_VILLAGE_ERRORS: Partial<Record<VillageErrorCode, FriendlyError>> 
 
 export async function respondToVillageError(database: Database, error: unknown) {
   if (isVillageError(error, "out_of_credits")) await recordVillageOutOfCredits(database);
+  // The request hook records this too, but without waiting; here the admin's notice is there before the member's answer.
+  // A failed write never costs the member their friendly answer.
+  if (isVillageError(error)) await recordVillageOutcome(database, error).catch((cause: unknown) => logError("village-health", cause));
   if (isVillageError(error)) return respondWithError(FRIENDLY_VILLAGE_ERRORS[error.code] ?? UNAVAILABLE_ERROR);
   if (error instanceof DailyLimitReachedError) {
     return respondWithError({

@@ -23,12 +23,11 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 
 ## Now (in flight)
 - [ ] The small known bugs: sign-in keeps the typed email, switched-off pages answer 404, Today's "Check your card", Perks from the menu, Slack /ask follow-up, hyphenated words in matching, cohort on a single invite, long fund names on phones — fix-small — open pull request — [charter](features/fix-small/CHARTER.md)
-- [ ] Intro fixes from the final check: empty "no" note, the yes on a forwarded link, reminders for quiet intros, a connector who said no, the "no thanks" page — fix-intros — open pull request
-- [ ] Running-the-app fixes from the final check: scheduled jobs on the one-click hosts, a notice when Village is down, the job board's duplicate links — fix-ops — open pull request
+- [x] Intro fixes from the final check: empty "no" note, the yes on a forwarded link, reminders for quiet intros, a connector who said no, the "no thanks" page — fix-intros — merged, [PR #27](https://github.com/VillageHQ/community/pull/27)
+- [x] Running-the-app fixes from the final check: timed jobs on every host, a Village-down notice, one job source per careers link — fix-ops — merged, [PR #29](https://github.com/VillageHQ/community/pull/29) · [spec](features/fix-ops/SPEC.md)
+
 
 ## Next (queued)
-- [ ] The "no thanks" link later says "stopped intro requests" — (from two-sided-intros) — [spec](features/no-thanks-wording/SPEC.md)
-- [ ] A connector who said no still shows in the asker's paths list — [spec](features/declined-connector-paths/SPEC.md)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
 - [ ] Intros from a profile without Village, and the finer intro rules — parity — [spec](features/intros-from-profile/SPEC.md)
 - [ ] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
