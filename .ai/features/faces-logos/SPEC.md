@@ -1,3 +1,7 @@
+---
+id: faces-logos
+status: building
+---
 # Faces and company logos
 
 Members see each other's faces, and each company's logo, wherever a person or a company appears. The pictures come
