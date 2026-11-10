@@ -20,7 +20,7 @@ Better Auth, Vitest, pnpm. Village is optional (network search and profile fill-
 ## How to run / test
 - Run: `cp .env.example .env`, `docker compose up -d --wait`, `pnpm install`, `pnpm dev`; set `SETUP_TOKEN`, open `/setup`.
 - Test: a database only the tests use in `TEST_DATABASE_URL` (the tests wipe it), then
-  `pnpm lint && pnpm typecheck && pnpm test && pnpm build`. Fake Village, Resend and chat servers; no keys needed.
+  `pnpm lint && pnpm typecheck && pnpm test && pnpm build`. Fake Village, Resend and chat servers, no keys.
 - Architecture tests only: `pnpm test src/test/architecture`.
 - Migrations: `pnpm db:generate` after a schema change; the app migrates on boot (`pnpm db:migrate` by hand).
 
@@ -36,7 +36,7 @@ Better Auth, Vitest, pnpm. Village is optional (network search and profile fill-
 - How features work today: `.ai/features/chat-perks/NOTES.md`, `.ai/features/fix-intros/NOTES.md`,
   `.ai/features/fix-small/NOTES.md`, `.ai/features/hosting-data-settings/NOTES.md`, `.ai/features/partner-report/NOTES.md`, `.ai/features/small-gaps/NOTES.md`,
   `.ai/features/today-weekly/NOTES.md`, `.ai/features/two-sided-intros/NOTES.md`, `.ai/features/your-data/NOTES.md`,
-  `.ai/features/admin-home/NOTES.md`, `.ai/features/admin-firstrun/NOTES.md`, `.ai/features/faces-logos/NOTES.md`.
+  `.ai/features/admin-home/NOTES.md`, `.ai/features/admin-firstrun/NOTES.md`, `.ai/features/faces-logos/NOTES.md`, `.ai/features/demo-jobs-perks/NOTES.md`.
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (public guides), `drizzle/` (generated), `site/` (has its README), `public/` (demo pictures),
   `vercel.json` (the Vercel Cron Job running the timed jobs daily). Every deploy setup runs the job runner;
   `src/test/deploy-setups.test.ts` guards it.

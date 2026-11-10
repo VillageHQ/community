@@ -58,6 +58,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - Gaps neither product had (merge plan): Google/Microsoft sign-in and SSO, groups inside one community, CRM export, events, other languages.
 
 ## Done
+- [x] 2026-11-10 — The demo shows the job board and perks, with made-up jobs and deals — [spec](features/demo-jobs-perks/SPEC.md)
 - [x] 2026-11-10 — The merged look: serif headings, flat sheets, fund name only, one way to ask — [PR #26](https://github.com/VillageHQ/community/pull/26) · [spec](features/look-theme/SPEC.md)
 - [x] 2026-11-10 — Demo mode for sales: a made-up community, one-click demo sign-in, nightly reset — [PR #25](https://github.com/VillageHQ/community/pull/25) · [spec](features/demo-mode/SPEC.md)
 - [x] 2026-11-10 — Project notes: vision, personas, journeys, this roadmap and the parity map — [PR #24](https://github.com/VillageHQ/community/pull/24) · [spec](features/project-notes/SPEC.md)
@@ -278,3 +279,4 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Long intro history seed — (PR #25)
 - **done** · Demo login and banner — (PR #25)
 - **done** · Nightly reset — (PR #25)
+- **done** · Job board and perks in the demo — [spec](features/demo-jobs-perks/SPEC.md)

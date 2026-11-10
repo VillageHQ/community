@@ -3,7 +3,7 @@
 
 export type DemoPerk = { company: string; offer: string; detail: string; category: string };
 
-export const DEMO_PERKS_NOTE = "Demo: made-up deals. A real community shows its BuiltFirst perks marketplace here.";
+export const DEMO_PERKS_NOTE = "Made-up deals. A real community shows its BuiltFirst perks marketplace here.";
 
 export const DEMO_PERKS: readonly DemoPerk[] = [
   { company: "Cloudnest", offer: "$5,000 in hosting credits", detail: "For your first year, on any plan.", category: "Infrastructure" },
