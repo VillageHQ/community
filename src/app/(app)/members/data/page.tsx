@@ -69,7 +69,7 @@ function DataHomeFacts({ dataHome: { location, contact } }: { dataHome: DataHome
       {location ? (
         <div className="grid gap-0.5">
           <dt className="font-bold">Where the data is kept</dt>
-          <dd className="type-small wrap-anywhere text-foreground-soft">{location}, as the admins describe it.</dd>
+          <dd className="type-small wrap-anywhere text-foreground-soft">As the admins describe it: {location}</dd>
         </div>
       ) : null}
       {contact ? (

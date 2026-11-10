@@ -26,7 +26,16 @@ export function DataHomeForm({ saved }: { saved: DataHomeBody }) {
   const [location, setLocation] = useState(saved.location);
   const [contactName, setContactName] = useState(saved.contactName);
   const [contactEmail, setContactEmail] = useState(saved.contactEmail);
-  const save = useMutation({ mutationFn: saveDataHome, onSuccess: () => router.refresh() });
+  const save = useMutation({
+    mutationFn: saveDataHome,
+    onSuccess: () => {
+      // Show what was stored: the server trims, and keeps the email in lowercase.
+      setLocation((text) => text.trim());
+      setContactName((text) => text.trim());
+      setContactEmail((text) => text.trim().toLowerCase());
+      router.refresh();
+    },
+  });
 
   return (
     <form
@@ -43,7 +52,7 @@ export function DataHomeForm({ saved }: { saved: DataHomeBody }) {
         value={location}
         maxLength={MAXIMUM_DATA_LOCATION_LENGTH}
         onChange={(event) => setLocation(event.target.value)}
-        placeholder="EU, Frankfurt, DigitalOcean"
+        placeholder="For example: EU, Frankfurt, DigitalOcean"
         hint="The region and the host, in your own words. Members see exactly what you type."
       />
       <FormField
@@ -52,7 +61,7 @@ export function DataHomeForm({ saved }: { saved: DataHomeBody }) {
         value={contactName}
         maxLength={MAXIMUM_DATA_CONTACT_NAME_LENGTH}
         onChange={(event) => setContactName(event.target.value)}
-        placeholder="Data protection lead"
+        placeholder="For example: Data protection lead"
         hint="A name or a role. Optional."
       />
       <FormField
@@ -61,7 +70,7 @@ export function DataHomeForm({ saved }: { saved: DataHomeBody }) {
         type="email"
         value={contactEmail}
         onChange={(event) => setContactEmail(event.target.value)}
-        placeholder="privacy@example.com"
+        placeholder="For example: privacy@example.com"
         hint="Members can write here to ask about, copy or delete their data."
       />
       <FormError message={save.error?.message ?? null} />

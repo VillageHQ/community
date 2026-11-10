@@ -17,7 +17,7 @@ const session = vi.hoisted(() => ({ cookie: "" }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ cookie: session.cookie }) }));
 
 const APP_URL = "http://localhost:3000";
-const FILLED = { location: "EU, Frankfurt, a made-up host", contactName: "Data protection lead", contactEmail: "Privacy@Example.com" };
+const FILLED = { location: "EU, Frankfurt, a made-up host.", contactName: "Data protection lead", contactEmail: "Privacy@Example.com" };
 
 type Member = Awaited<ReturnType<typeof createSignedInMember>>;
 
@@ -91,7 +91,7 @@ describe("where the data is kept, and whom to ask", () => {
     expect(html).toContain("Write to");
   });
 
-  it("refuses a bad email, or a name with no email, in plain words", async () => {
+  it("refuses a bad email, a name with no email, or hidden characters, in plain words", async () => {
     const badEmail = await save(admin, { ...FILLED, contactEmail: "not-an-email" });
     expect(badEmail.status).toBe(422);
     expect(JSON.stringify(await badEmail.json())).toContain("Check the contact email: it isn't an email address.");
@@ -99,6 +99,10 @@ describe("where the data is kept, and whom to ask", () => {
     const nameOnly = await save(admin, { ...FILLED, contactEmail: "" });
     expect(nameOnly.status).toBe(422);
     expect(JSON.stringify(await nameOnly.json())).toContain("Add an email for data requests, or clear the contact's name.");
+
+    const hidden = await save(admin, { ...FILLED, location: "EU\u202Ehidden" });
+    expect(hidden.status).toBe(422);
+    expect(JSON.stringify(await hidden.json())).toContain("Use plain text on one line.");
 
     expect(await readDataHome(database)).toEqual({ location: null, contact: null });
   });

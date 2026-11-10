@@ -5,17 +5,22 @@ import { z } from "zod";
 export const MAXIMUM_DATA_LOCATION_LENGTH = 120;
 export const MAXIMUM_DATA_CONTACT_NAME_LENGTH = 80;
 const MAXIMUM_EMAIL_LENGTH = 254;
+// Line breaks and invisible characters (a right-to-left override can make text read backwards) are refused.
+const HIDDEN_CHARACTERS = /[\p{Cc}\p{Cf}]/u;
+const PLAIN_TEXT_MESSAGE = "Use plain text on one line.";
 
 export const dataHomeBodySchema = z
   .object({
     location: z
       .string()
       .trim()
-      .max(MAXIMUM_DATA_LOCATION_LENGTH, `Keep where the data is kept under ${MAXIMUM_DATA_LOCATION_LENGTH} characters.`),
+      .max(MAXIMUM_DATA_LOCATION_LENGTH, `Keep where the data is kept under ${MAXIMUM_DATA_LOCATION_LENGTH} characters.`)
+      .refine((text) => !HIDDEN_CHARACTERS.test(text), `Where the data is kept: ${PLAIN_TEXT_MESSAGE}`),
     contactName: z
       .string()
       .trim()
-      .max(MAXIMUM_DATA_CONTACT_NAME_LENGTH, `Keep the contact's name or role under ${MAXIMUM_DATA_CONTACT_NAME_LENGTH} characters.`),
+      .max(MAXIMUM_DATA_CONTACT_NAME_LENGTH, `Keep the contact's name or role under ${MAXIMUM_DATA_CONTACT_NAME_LENGTH} characters.`)
+      .refine((text) => !HIDDEN_CHARACTERS.test(text), `The contact's name or role: ${PLAIN_TEXT_MESSAGE}`),
     contactEmail: z
       .string()
       .trim()
