@@ -1335,6 +1335,7 @@ h2 {
   }
 
   .mock-action {
+    flex: 0 0 calc(100% - 44px);
     max-width: none;
     margin-left: 44px;
     text-align: left;

@@ -1,3 +1,4 @@
+// Usage (from a folder with playwright-core installed): node check-site.mjs <site dir> <out dir> <chrome.exe>
 // Serves site/ on a local port, screenshots it at 390 and 1280 px in light and dark, and logs every request.
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
@@ -16,7 +17,7 @@ const server = createServer(async (req, res) => {
 await new Promise((r) => server.listen(PORT, "127.0.0.1", r));
 const browser = await chromium.launch({ executablePath: exe });
 const requests = new Set(); const problems = [];
-for (const scheme of ["light", "dark"]) for (const width of [390, 1280]) {
+for (const scheme of ["light", "dark"]) for (const width of [320, 390, 1280]) {
   const page = await browser.newPage({ viewport: { width, height: 900 }, colorScheme: scheme, deviceScaleFactor: 1 });
   page.on("request", (r) => requests.add(r.url()));
   page.on("console", (m) => { if (m.type() === "error") problems.push(`${scheme} ${width}: ${m.text()}`); });
@@ -38,3 +39,8 @@ await browser.close(); server.close();
 const outside = [...requests].filter((u) => !u.startsWith(`http://127.0.0.1:${PORT}/`));
 console.log("requests:", [...requests].length, "outside this site:", outside.length ? outside : "none");
 console.log("problems:", problems.length ? problems : "none");
+if (outside.length || problems.length) process.exitCode = 1;
+{ const b2 = await chromium.launch({ executablePath: exe }); const s2 = createServer(server.listeners("request")[0]); await new Promise((r) => s2.listen(PORT, "127.0.0.1", r));
+  const p = await b2.newPage(); await p.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: "networkidle" }); await p.emulateMedia({ media: "print" });
+  const printed = await p.evaluate(() => ({ skip: getComputedStyle(document.querySelector(".skip-link")).display, faqOpenCss: [...document.querySelectorAll(".faq details p")].every((e) => e.getClientRects().length > 0) }));
+  await p.pdf({ path: join(outDir, "print-check.pdf") }); console.log("print:", printed); await b2.close(); s2.close(); }
