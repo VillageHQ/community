@@ -13,6 +13,7 @@
 - **Slack /ask when slow:** past `SLACK_REPLY_WITHIN_MS` (2.5 s) the command answers "Posting your ask…" and, after the
   response, sends the result (or a plain failure) to the command's `response_url`. Only addresses under
   `SLACK_RESPONSE_BASE` (default `https://hooks.slack.com`) are called.
-- **Word matching:** a hyphenated word also counts whole ("fund-raising"), and stems drop hyphens and simple endings
-  (s, es, ies, ing, ed, a final e) with at least 3 letters left.
+- **Word matching:** a hyphenated word also counts whole ("fund-raising") and is named alone in the reason. Forms:
+  hyphens dropped, plurals made singular ("es" only after s, x, z, ch, sh), and an "-ing" or "-ed" word stands for its
+  root with or without a final "e" (hiring → hir / hire). "-eed" words keep their "ed". At least 3 letters stay.
 - **Single invite cohort:** optional, at most 80 characters, goes on the new member's card like a CSV cohort.

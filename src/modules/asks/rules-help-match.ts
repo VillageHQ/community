@@ -51,25 +51,31 @@ export function readWords(text: string | null | undefined) {
 
 // Simple word forms count as one word, with no dictionary: "investors" matches "investor", "hiring" matches
 // "hire", "raised" matches "raising", and "fund-raising" matches "fundraising". A stem keeps 3 letters at least.
+// Kept narrow on purpose: "care" never becomes "car", "planes" never "plan", and "-eed" words ("feed") keep their "ed".
 const MINIMUM_STEM_LENGTH = 3;
+const ES_PLURAL = /(?:s|x|z|ch|sh)es$/;
 
 function strip(word: string, ending: string, replacement = "") {
   return word.endsWith(ending) && word.length - ending.length >= MINIMUM_STEM_LENGTH ? `${word.slice(0, -ending.length)}${replacement}` : null;
 }
 
-function stem(word: string) {
-  let base = word.replaceAll("-", "");
-  base = strip(base, "ies", "y") ?? (base.endsWith("ss") ? base : (strip(base, "es") ?? strip(base, "s"))) ?? base;
-  base = strip(base, "ing") ?? strip(base, "ed") ?? base;
-  return strip(base, "e") ?? base;
+function singular(word: string) {
+  if (word.endsWith("ss")) return word;
+  return strip(word, "ies", "y") ?? (ES_PLURAL.test(word) ? strip(word, "es") : null) ?? strip(word, "s") ?? word;
 }
 
-// The helper's own words that the ask shares, in the helper's order, so the reason names their skill.
+// The forms a word may stand for: "hiring" is "hir" or "hire", so it meets "hire" but "care" stays "care".
+function readForms(word: string) {
+  const base = singular(word.replaceAll("-", ""));
+  const root = strip(base, "ing") ?? (base.endsWith("eed") ? null : strip(base, "ed"));
+  return root ? [root, `${root}e`] : [base];
+}
+
+// The helper's own words that the ask shares, in the helper's order, so the reason names their skill. A matched
+// hyphenated word ("fund-raising") is named alone, without its parts.
 export function findMatchedWords(askText: string, helperWords: ReadonlySet<string>) {
-  const askStems = new Set([...readWords(askText)].map(stem));
-  const matched = new Set<string>();
-  for (const word of helperWords) {
-    if (!COMMON_WORDS.has(word) && askStems.has(stem(word))) matched.add(word);
-  }
-  return [...matched];
+  const askForms = new Set([...readWords(askText)].flatMap(readForms));
+  const matched = [...helperWords].filter((word) => !COMMON_WORDS.has(word) && readForms(word).some((form) => askForms.has(form)));
+  const partsOfMatched = new Set(matched.filter((word) => word.includes("-")).flatMap((word) => word.split("-")));
+  return matched.filter((word) => !partsOfMatched.has(word));
 }

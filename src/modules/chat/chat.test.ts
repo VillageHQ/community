@@ -34,6 +34,7 @@ import {
 } from "@/test/fake-chat-server";
 import { createSignedInMember } from "@/test/signed-in-member";
 import { answerSlackCommand, SLACK_POSTING_NOTE } from "@/shell/slack-ask";
+import { createChatClient } from "@/modules/chat/client";
 
 const APP_URL = "http://localhost:3000";
 const SETUP_TOKEN = "chat-test-setup-token-4c7Qz9Lw2Xv8Rb1Np6Ks3Dm5";
@@ -307,6 +308,11 @@ describe("Slack and Discord", () => {
       await vi.waitFor(() => expect(fake.commandResponses).toHaveLength(1), { timeout: 5_000 });
       expect(fake.commandResponses[0]).toMatchObject({ responseType: "ephemeral", text: expect.stringContaining("Posted to") });
       expect(await database.select({ title: ask.title }).from(ask)).toEqual([{ title: "A slow intro ask" }]);
+    });
+
+    it("sends a follow-up only to Slack's own address", async () => {
+      await expect(createChatClient({ environment: process.env }).slack.respond("https://elsewhere.example/hook", "Hi")).rejects.toMatchObject({ code: "bad_response_url" });
+      expect(fake.commandResponses).toEqual([]);
     });
 
     it("refuses a bad signature and an old one", async () => {
