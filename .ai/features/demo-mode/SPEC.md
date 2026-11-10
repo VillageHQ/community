@@ -1,4 +1,8 @@
-# Demo mode (what it does now)
+# Demo mode
+
+Status: building
+
+What it does now.
 
 One env setting, `DEMO_MODE=true`, turns an install into a sales demo. Any other value, or none, is off, and then
 nothing of the demo exists: no buttons, no strip, no route (`POST /api/demo/sign-in` answers 404), no reset job.
