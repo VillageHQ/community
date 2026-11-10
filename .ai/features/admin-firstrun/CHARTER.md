@@ -28,3 +28,9 @@ Out: any other landing change, the rest of the "Text slips" roadmap line, a new 
 ## Proof and estimate
 - Proof: screenshots at 390 and 1280 px of a fresh admin landing on setup, the home after setup, the Invite button,
   and the early-quarter home. Build about 45 minutes, tests about 30.
+
+## Decided during the build
+- The stuck line's words: the verifier found that "3 older intros still waiting for an answer" reads as extra intros
+  mid-quarter (the count includes this quarter's asks past the 4-day reminder), so it reads "3 intros asked over 4
+  days ago, still no answer", which is true in any part of the quarter.
+- The roadmap's "Text slips" line stays open (its other slips aren't fixed); it notes that the Invite link works.

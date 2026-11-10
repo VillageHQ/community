@@ -6,6 +6,7 @@ import { ROUTES } from "../platform/http/routes.ts";
 import { VILLAGE_TROUBLES } from "../platform/village/health.ts";
 import { INVITE_LIST_ID } from "../modules/admin/contract.ts";
 import { readQuarterIntroLine } from "../modules/admin/reads-partner-report.ts";
+import { CONNECTOR_REMINDER_AFTER_DAYS } from "../modules/intros/contract.ts";
 import { introsManifest } from "../modules/intros/manifest.ts";
 import { readStuckIntroCount } from "../modules/intros/reads-report.ts";
 import { readInviteCounts } from "../modules/members/service-invites.ts";
@@ -51,7 +52,7 @@ export function readAdminHomeItems(facts: AdminTabFacts, { pendingInvites, stuck
       ? { id: ADMIN_HOME_ITEMS.invites, label: `${plural(pendingInvites, "invite", "invites")} not accepted yet`, href: `${ROUTES.adminMembers}#${INVITE_LIST_ID}`, isUrgent: false }
       : null,
     stuckIntros > 0
-      ? { id: ADMIN_HOME_ITEMS.stuckIntros, label: `${plural(stuckIntros, "older intro", "older intros")} still waiting for an answer`, href: ROUTES.adminReport, isUrgent: false }
+      ? { id: ADMIN_HOME_ITEMS.stuckIntros, label: `${plural(stuckIntros, "intro", "intros")} asked over ${CONNECTOR_REMINDER_AFTER_DAYS} days ago, still no answer`, href: ROUTES.adminReport, isUrgent: false }
       : null,
     facts.setupStepsLeft > 0
       ? { id: ADMIN_HOME_ITEMS.setup, label: `${plural(facts.setupStepsLeft, "setup step", "setup steps")} left`, href: ROUTES.adminSetup, isUrgent: false }
