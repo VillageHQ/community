@@ -15,6 +15,7 @@ Rules:
 
 - Only the board's name comes from a pasted link. The address fetched is always the tool's own feed host, so a link never makes the app fetch an address of the founder's choosing. `JOB_FEEDS_FAKE_ORIGIN` points every feed at a fake server; it is for tests and local proof, and is ignored when `NODE_ENV` is `production`.
 - A pull that works replaces the pulled jobs. A pull that fails keeps the last good jobs and saves its problem in plain words on the source. Jobs added by hand (`is_manual`) are never touched by a pull.
+- In demo mode no pull fetches: it returns `DEMO_PULL_NOTE` and keeps the seeded jobs (`src/platform/demo/jobs.ts`).
 - Each source is pulled at most once an hour by the job, and Pull now at most once a minute.
 - The member who linked a source pulls, hides, removes and adds by hand. An admin may pull and hide any source, never remove it or add to it.
 - One source per careers link (tool and board name, without case) in the whole community, checked under a lock, so no job shows twice. A founder links or adds jobs only for the company on their card; an admin may add any company.

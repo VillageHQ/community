@@ -12,6 +12,7 @@ import { readPerksUrl } from "@/modules/perks/service";
 import { requireAdmin } from "@/platform/auth/session";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { getDatabase } from "@/platform/database/client";
+import { isDemoMode } from "@/platform/demo/mode";
 import { modulePage } from "@/platform/modules/module-page";
 import { AdminSection } from "@/shell/admin-section";
 
@@ -42,6 +43,14 @@ export default modulePage(perksManifest, async function AdminPerksPage() {
                 {PERKS_PAGE}
               </a>
               . Saved address: <span className="font-mono wrap-anywhere">{url}</span>
+            </CardDescription>
+          ) : isDemoMode(process.env) ? (
+            <CardDescription>
+              Demo: members see a made-up list of deals at{" "}
+              <a href={PERKS_PAGE} className="font-bold text-brand-emphasis underline hover:no-underline">
+                {PERKS_PAGE}
+              </a>
+              . A real community pastes its BuiltFirst embed code here.
             </CardDescription>
           ) : (
             <CardDescription>Members don&apos;t see Perks until you paste your BuiltFirst embed code.</CardDescription>

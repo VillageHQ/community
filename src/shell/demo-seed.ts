@@ -8,7 +8,9 @@ import { chatManifest } from "@/modules/chat/manifest";
 import { feedManifest } from "@/modules/feed/manifest";
 import { introRequest } from "@/modules/intros/schema";
 import { introsManifest } from "@/modules/intros/manifest";
+import { PUBLIC_BOARD_SETTING, toCompanySlug } from "@/modules/job-board/contract";
 import { jobBoardManifest } from "@/modules/job-board/manifest";
+import { jobPosting, jobSource } from "@/modules/job-board/schema";
 import { invite, memberFillIn, memberLookup, memberNetwork, memberProfile, memberTag } from "@/modules/members/schema";
 import { FILL_IN_BASES, LOOKUP_STATUSES } from "@/modules/members/contract-fill-in";
 import { saveFillInSettings } from "@/modules/members/service-fill-in";
@@ -21,6 +23,7 @@ import { perksManifest } from "@/modules/perks/manifest";
 import { user } from "@/platform/database/auth-schema";
 import type { Transaction } from "@/platform/database/client";
 import { communityBranding } from "@/platform/branding/schema";
+import { DEMO_JOB_SOURCES, toDemoCareersUrl, toDemoJobUrl } from "@/platform/demo/jobs";
 import { DEMO_COMMUNITY, DEMO_DATA_HOME, DEMO_INVITEES, DEMO_OUTSIDERS, DEMO_PEOPLE, toDemoEmail, toDemoSlug, type DemoPerson } from "@/platform/demo/people";
 import { DEMO_VILLAGE_GROUP, DEMO_VILLAGE_KEYS, toDemoProfile } from "@/platform/demo/village-answers";
 import { toDemoDomain, toDemoLogoUrl } from "@/platform/demo/pictures";
@@ -521,6 +524,33 @@ async function seedFillIn(transaction: Transaction, ids: Ids, ago: ReturnType<ty
   }
 }
 
+// Four founders linked their hiring tool and a pull found their jobs. The demo's pull never fetches, so they stay.
+async function seedJobs(transaction: Transaction, ids: Ids, ago: ReturnType<typeof makeClock>, now: Date) {
+  for (const seed of DEMO_JOB_SOURCES) {
+    const founder = person(seed.founder);
+    const [created] = await transaction
+      .insert(jobSource)
+      .values({
+        memberId: ids.get(founder.key) ?? "",
+        company: founder.company,
+        companySlug: toCompanySlug(founder.company),
+        tool: seed.tool,
+        slug: seed.slug,
+        sourceUrl: toDemoCareersUrl(seed.slug),
+        lastPulledAt: ago(0, 1),
+        createdAt: ago(seed.linkedDaysAgo),
+      })
+      .returning({ id: jobSource.id });
+    if (!created) continue;
+    await transaction.insert(jobPosting).values(
+      seed.jobs.map((job, index) => {
+        const externalId = `${seed.slug}-${index + 1}`;
+        return { sourceId: created.id, externalId, title: job.title, location: job.location, department: job.department, url: toDemoJobUrl(seed.slug, externalId), postedAt: ago(job.postedDaysAgo), updatedAt: now };
+      }),
+    );
+  }
+}
+
 async function seedSettings(transaction: Transaction, environment: Environment, ids: Ids, now: Date) {
   await transaction.insert(communityBranding).values({ ...DEMO_COMMUNITY, savedAt: now });
   await saveSettings(transaction, {
@@ -530,11 +560,13 @@ async function seedSettings(transaction: Transaction, environment: Environment, 
     [INSTANCE_SETTING_KEYS.demoSeededAt]: now.toISOString(),
     [INSTANCE_SETTING_KEYS.demoResetAt]: now.toISOString(),
     ...toDataHomeSettings(DEMO_DATA_HOME),
+    // The public job board and the website widget are on, so the demo can show them.
+    [PUBLIC_BOARD_SETTING]: "on",
   });
   await saveVillageKeys(transaction, DEMO_VILLAGE_KEYS, environment);
-  // The features a fund buys it for are on; the ones that need a real outside account stay off.
-  for (const manifest of [networkManifest, introsManifest, asksManifest, messagesManifest]) await saveModuleState(transaction, manifest, true);
-  for (const manifest of [feedManifest, jobBoardManifest, perksManifest, chatManifest]) await saveModuleState(transaction, manifest, false);
+  // The features a fund buys it for are on, with made-up jobs and perks; the feed and Slack/Discord stay off.
+  for (const manifest of [networkManifest, introsManifest, asksManifest, messagesManifest, jobBoardManifest, perksManifest]) await saveModuleState(transaction, manifest, true);
+  for (const manifest of [feedManifest, chatManifest]) await saveModuleState(transaction, manifest, false);
 }
 
 export async function seedDemo(transaction: Transaction, environment: Environment, now = new Date()) {
@@ -546,5 +578,6 @@ export async function seedDemo(transaction: Transaction, environment: Environmen
   await seedIntros(transaction, ids, ago);
   await seedAsks(transaction, ids, ago);
   await seedMessages(transaction, ids, ago);
+  await seedJobs(transaction, ids, ago, now);
   return { members: DEMO_PEOPLE.length, invites: DEMO_INVITEES.length, intros: CURRENT_INTROS.length + HISTORY_PAIRS.length, asks: ASKS.length };
 }
