@@ -8,7 +8,7 @@ import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ASKS_PAGE } from "@/modules/asks/contract";
-import { ASK_SKIP_ROUTE, skippedAskSchema, type HelpableAsk } from "@/modules/asks/contract-today";
+import { ASK_SKIP_ROUTE, describeWhyYou, skippedAskSchema, type HelpableAsk } from "@/modules/asks/contract-today";
 import { postRequest } from "@/platform/http/post-request";
 
 function HelpableAskRow({ ask }: { ask: HelpableAsk }) {
@@ -22,7 +22,7 @@ function HelpableAskRow({ ask }: { ask: HelpableAsk }) {
       <div className="min-w-0">
         <p className="type-label wrap-anywhere">“{ask.title}”</p>
         <p className="type-micro font-medium wrap-anywhere text-muted-foreground">
-          {ask.author.name} · You said you can help with {ask.matchedWords.join(", ")}
+          {ask.author.name} · {describeWhyYou(ask)}
         </p>
       </div>
       <div className="flex flex-wrap gap-2">

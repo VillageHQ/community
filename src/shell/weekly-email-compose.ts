@@ -1,3 +1,4 @@
+import { describeWhyYou } from "@/modules/asks/contract-today";
 import { pickOnAccent } from "@/platform/design/accent";
 import { escapeHtml, toSingleLine } from "@/platform/email/email-text";
 import type { WeeklyEmailItem } from "@/platform/weekly-email/schema";
@@ -87,6 +88,10 @@ function plainLine(sentence: string, url: string | null): Line {
   };
 }
 
+function lowerFirst(text: string) {
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
 function numberFor(numbered: readonly WeeklyEmailItem[], ref: string) {
   return numbered.find((item) => item.ref === ref)?.number ?? null;
 }
@@ -98,7 +103,7 @@ function buildSections(facts: WeeklyEmailFacts) {
   const askLines = items.helpableAsks.flatMap((ask) => {
     const number = numberFor(numbered, ask.id);
     if (number === null) return [];
-    const why = `Why you: you said you can help with ${ask.matchedWords.join(", ")}.`;
+    const why = `Why you: ${lowerFirst(describeWhyYou(ask)).replace(/[.!?]+$/u, "")}.`;
     return [numberedLine(number, `${quote(ask.title)} from ${toSingleLine(ask.author.name)}.`, why, facts)];
   });
   if (askLines.length > 0) sections.push(section("Asks you could help with", askLines));
