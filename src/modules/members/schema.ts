@@ -50,6 +50,10 @@ export const memberProfile = pgTable("member_profile", {
   canHelpWith: text("can_help_with"),
   needs: text("needs"),
   website: text("website"),
+  // Short, optional, and filterable in the directory. The cohort starts from the invite.
+  stage: text("stage"),
+  sector: text("sector"),
+  cohort: text("cohort"),
   // Off by default. On, the member's name may appear among the top connectors in the admin's partner report.
   creditInReports: boolean("credit_in_reports").notNull().default(false),
   cardStepDoneAt: timestamp("card_step_done_at", { withTimezone: true }),

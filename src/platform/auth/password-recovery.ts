@@ -13,7 +13,7 @@ import { readBranding } from "../branding/branding.ts";
 import { recordFailedAttempt } from "../rate-limit/attempt-rate-limit.ts";
 import { PASSWORD_RESET_LIFETIME_SECONDS, renderPasswordResetEmail } from "../email/password-reset-email.ts";
 import { EMAIL_KINDS } from "../email/kinds.ts";
-import { queueEmail } from "../email/outbox.ts";
+import { queueEmail, readLinkEmailExpiry } from "../email/outbox.ts";
 import { sendQueuedEmailNow } from "../email/outbox-sender.ts";
 import { readResendConfig } from "../email/resend.ts";
 import type { Environment } from "../environment.ts";
@@ -47,6 +47,7 @@ async function sendResetEmail(database: Database, environment: Environment, { me
     kind: EMAIL_KINDS.passwordReset,
     to: member.email,
     memberId,
+    expiresAt: readLinkEmailExpiry(PASSWORD_RESET_LIFETIME_SECONDS),
     ...renderPasswordResetEmail({ link, communityName, accentColor }),
   });
   await sendQueuedEmailNow(database, environment, queuedId);

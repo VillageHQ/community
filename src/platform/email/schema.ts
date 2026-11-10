@@ -25,12 +25,18 @@ export const emailOutbox = pgTable(
     replyTo: text("reply_to"),
     status: text("status").notNull().default("pending"),
     attempts: integer("attempts").notNull().default(0),
-    nextAttemptAt: emailTimestamp("next_attempt_at").notNull().defaultNow(),
+    // Truncated, not rounded: a rounded "now" can land up to half a millisecond in the future, and a send in that
+    // instant would find the new row not yet due.
+    nextAttemptAt: emailTimestamp("next_attempt_at")
+      .notNull()
+      .default(sql`date_trunc('milliseconds', now())`),
     lastError: text("last_error"),
     createdAt: emailTimestamp("created_at").notNull().defaultNow(),
     finishedAt: emailTimestamp("finished_at"),
     // Optional. A second queue call with the same key finds the first row instead of adding one.
     dedupeKey: text("dedupe_key").unique(),
+    // Optional. After this the email is no use (the link in it is dead), so it is skipped instead of sent.
+    expiresAt: emailTimestamp("expires_at"),
   },
   (table) => [
     index("email_outbox_due_idx").on(table.nextAttemptAt).where(sql`${table.status} in ('pending', 'sending')`),

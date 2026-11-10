@@ -24,6 +24,8 @@ export type QueuedEmail = {
   text: string;
   replyTo?: string | null;
   dedupeKey?: string;
+  // When the email stops making sense, like the moment the link it carries dies. A retry after it never sends.
+  expiresAt?: Date;
 };
 
 // An optional email (one with a topic) goes only to a member who left that topic on, at an
@@ -64,6 +66,13 @@ export async function cancelQueuedEmail(connection: DatabaseOrTransaction, id: s
     .where(and(eq(emailOutbox.id, id), inArray(emailOutbox.status, [OUTBOX_STATUSES.pending, OUTBOX_STATUSES.sending])));
 }
 
+// A link's email expires a minute before the link does, so it never arrives with seconds left.
+const LINK_EMAIL_MARGIN_MS = 60_000;
+
+export function readLinkEmailExpiry(lifetimeSeconds: number, now = new Date()) {
+  return new Date(now.getTime() + lifetimeSeconds * 1000 - LINK_EMAIL_MARGIN_MS);
+}
+
 // Call this inside the transaction that makes the change the email is about. It returns the row
 // id, or null when email is off or the person doesn't want this kind.
 export async function queueEmail(connection: DatabaseOrTransaction, environment: Environment, email: QueuedEmail) {
@@ -81,6 +90,7 @@ export async function queueEmail(connection: DatabaseOrTransaction, environment:
       text: email.text,
       replyTo: email.replyTo ?? null,
       dedupeKey: email.dedupeKey ?? null,
+      expiresAt: email.expiresAt ?? null,
     })
     .onConflictDoNothing({ target: emailOutbox.dedupeKey })
     .returning({ id: emailOutbox.id });

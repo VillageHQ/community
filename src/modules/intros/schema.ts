@@ -55,6 +55,8 @@ export const introRequest = pgTable(
     outcomeResults: text("outcome_results").array(),
     outcomeEmailAt: introTimestamp("outcome_email_at"),
     outcomeReminderAt: introTimestamp("outcome_reminder_at"),
+    // When the one reminder to the person asked was claimed. Set once, so it never goes twice.
+    targetReminderAt: introTimestamp("target_reminder_at"),
     // The ask this intro came from, if any. No foreign key: asks is another module, and an intro outlives its ask.
     askId: uuid("ask_id"),
     // The connector offered it ("I know someone") instead of being asked. It counts toward no allowance or cap.
