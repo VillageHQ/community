@@ -31,6 +31,8 @@ const LAYER_PREFIXES: readonly (readonly [string, Layer])[] = [
   ["src/app/", LAYERS.app],
   // Next's boot hook is an entry point like a page: it starts the demo, which seeds every module's tables.
   ["src/instrumentation.ts", LAYERS.app],
+  // Next's request hook, in front of every page: it answers 404 for a switched-off module's pages.
+  ["src/proxy.ts", LAYERS.app],
   ["src/shell/", LAYERS.shell],
   ["src/modules/registry", LAYERS.registry],
   ["src/modules/", LAYERS.module],
