@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, ilike, like, or, sql } from "drizzle-orm";
+import { eq, like, or, sql } from "drizzle-orm";
 
 import { account, session, user, verification } from "../../platform/database/auth-schema.ts";
 import type { Transaction } from "../../platform/database/client.ts";
@@ -73,7 +73,9 @@ export async function eraseMemberAccount(transaction: Transaction, { facts, acto
   await transaction.delete(account).where(eq(account.userId, memberId));
   await transaction
     .delete(verification)
-    .where(or(like(verification.identifier, toContainsPattern(memberId)), ilike(verification.identifier, toContainsPattern(email)), ilike(verification.value, toContainsPattern(email))));
+    .where(
+      or(like(verification.identifier, toContainsPattern(memberId)), matchesWord(verification.identifier, readEmailPattern(email)), matchesWord(verification.value, readEmailPattern(email))),
+    );
 
   await transaction
     .update(user)
@@ -101,6 +103,12 @@ export function readNamePattern(name: string) {
   const trimmed = name.trim();
   if (trimmed.length < MINIMUM_NAME_LENGTH || trimmed === DELETED_MEMBER_NAME) return null;
   return `\\m${trimmed.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\M`;
+}
+
+// The whole address only: "dana@example.com" must never match inside "adana@example.com" or "dana@example.com.au".
+export function readEmailPattern(email: string) {
+  const escaped = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return `(?<![a-z0-9._%+-])${escaped}(?![a-z0-9-]|\\.[a-z0-9])`;
 }
 
 export function matchesWord(column: Parameters<typeof sql>[1], pattern: string) {

@@ -12,7 +12,7 @@ import { eraseMemberFeed, ERASED_TEXT } from "@/modules/feed/service-erasure";
 import { anonymizeMemberIntros } from "@/modules/intros/service-erasure";
 import { introRequest } from "@/modules/intros/schema";
 import { DELETED_MEMBER_NAME } from "@/modules/members/contract-privacy";
-import { eraseMemberAccount, matchesWord, readErasureFacts, readNamePattern, type ErasureFacts } from "@/modules/members/service-erasure";
+import { eraseMemberAccount, matchesWord, readEmailPattern, readErasureFacts, readNamePattern, type ErasureFacts } from "@/modules/members/service-erasure";
 import { toContainsPattern } from "@/modules/members/reads-directory";
 import { eraseMemberMessages } from "@/modules/messages/service-erasure";
 import { messageReport } from "@/modules/messages/schema";
@@ -68,18 +68,18 @@ async function scrubWeeklyItems(transaction: Transaction, facts: ErasureFacts, r
 
 // Emails to them, and emails to others that name them. A pending one would only describe something that is gone.
 async function deleteOutboxCopies(transaction: Transaction, { memberId, email }: ErasureFacts, namePattern: string | null) {
-  const emailPattern = toContainsPattern(email);
+  const emailPattern = readEmailPattern(email);
   const naming = namePattern ? [matchesWord(emailOutbox.subject, namePattern), matchesWord(emailOutbox.text, namePattern), matchesWord(emailOutbox.html, namePattern)] : [];
   await transaction
     .delete(emailOutbox)
-    .where(or(eq(emailOutbox.memberId, memberId), ilike(emailOutbox.toEmail, email), ilike(emailOutbox.text, emailPattern), ilike(emailOutbox.html, emailPattern), ...naming));
+    .where(or(eq(emailOutbox.memberId, memberId), ilike(emailOutbox.toEmail, email), matchesWord(emailOutbox.text, emailPattern), matchesWord(emailOutbox.html, emailPattern), ...naming));
 }
 
 // Audit and moderation copies keep what happened and when, never who it was or what they wrote.
 async function scrubAuditCopies(transaction: Transaction, { memberId, email }: ErasureFacts, namePattern: string | null) {
   await transaction.update(adminAuditEntry).set({ targetName: DELETED_MEMBER_NAME, detail: null }).where(eq(adminAuditEntry.targetMemberId, memberId));
   await transaction.update(adminAuditEntry).set({ actorName: DELETED_MEMBER_NAME }).where(eq(adminAuditEntry.actorId, memberId));
-  await transaction.update(adminAuditEntry).set({ detail: null }).where(ilike(adminAuditEntry.detail, toContainsPattern(email)));
+  await transaction.update(adminAuditEntry).set({ detail: null }).where(matchesWord(adminAuditEntry.detail, readEmailPattern(email)));
   if (namePattern) {
     await transaction.update(adminAuditEntry).set({ detail: null }).where(matchesWord(adminAuditEntry.detail, namePattern));
     await transaction.update(adminAuditEntry).set({ targetName: DELETED_MEMBER_NAME }).where(matchesWord(adminAuditEntry.targetName, namePattern));
@@ -92,10 +92,10 @@ async function scrubAuditCopies(transaction: Transaction, { memberId, email }: E
 // A last sweep for the email address in every text column of every table, for any copy no step above knows about.
 async function sweepEmail(transaction: Transaction, email: string) {
   const columns = await transaction.execute<{ table_name: string; column_name: string; data_type: string }>(sql`
-    select table_name, column_name, data_type from information_schema.columns
-    where table_schema = 'public' and data_type in ('text', 'character varying', 'jsonb') and table_name not like '\\_\\_%'`);
-  const pattern = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const contains = toContainsPattern(email);
+    select c.table_name, c.column_name, c.data_type from information_schema.columns c
+    join information_schema.tables t on t.table_schema = c.table_schema and t.table_name = c.table_name and t.table_type = 'BASE TABLE'
+    where c.table_schema = 'public' and c.data_type in ('text', 'character varying', 'jsonb') and c.table_name not like '\\_\\_%'`);
+  const pattern = readEmailPattern(email);
   for (const { table_name: table, column_name: column, data_type: type } of columns.rows) {
     const target = sql.identifier(column);
     const replaced =
@@ -103,7 +103,7 @@ async function sweepEmail(transaction: Transaction, email: string) {
         ? sql`regexp_replace(${target}::text, ${pattern}, ${ERASED_EMAIL_TEXT}, 'gi')::jsonb`
         : sql`regexp_replace(${target}, ${pattern}, ${ERASED_EMAIL_TEXT}, 'gi')`;
     const haystack = type === "jsonb" ? sql`${target}::text` : target;
-    await transaction.execute(sql`update ${sql.identifier(table)} set ${target} = ${replaced} where ${haystack} ilike ${contains}`);
+    await transaction.execute(sql`update ${sql.identifier(table)} set ${target} = ${replaced} where ${haystack} ~* ${pattern}`);
   }
 }
 
@@ -132,7 +132,7 @@ async function eraseEverything(transaction: Transaction, facts: ErasureFacts, ac
   await transaction.delete(memberDailyUsage).where(eq(memberDailyUsage.userId, memberId));
   await transaction.delete(emailOptOut).where(eq(emailOptOut.memberId, memberId));
   await transaction.delete(emailSuppression).where(eq(emailSuppression.email, email));
-  await transaction.delete(rateLimit).where(or(like(rateLimit.key, toContainsPattern(memberId)), ilike(rateLimit.key, toContainsPattern(email))));
+  await transaction.delete(rateLimit).where(or(like(rateLimit.key, toContainsPattern(memberId)), matchesWord(rateLimit.key, readEmailPattern(email))));
   await scrubWeeklyItems(transaction, facts, refs, namePattern);
   await deleteOutboxCopies(transaction, facts, namePattern);
 

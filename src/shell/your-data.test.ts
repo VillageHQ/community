@@ -314,6 +314,20 @@ describe("your data and the real delete", () => {
       expect(entry).toMatchObject({ actorName: DELETED_MEMBER_NAME, targetName: DELETED_MEMBER_NAME, detail: "self|cancelled" });
     });
 
+    it("never touches a longer address that only contains theirs", async () => {
+      const lookalike = `x${dana.email}`;
+      await database.update(user).set({ email: lookalike }).where(eq(user.id, omar.userId));
+      await database.insert(adminAuditEntry).values({ action: AUDIT_ACTIONS.inviteCreated, actorId: admin.userId, actorName: "Ada Admin", detail: lookalike });
+      await database.insert(emailOutbox).values({ kind: "invite", toEmail: lookalike, subject: "Welcome", html: lookalike, text: lookalike, status: "sent" });
+
+      expect((await call(postDelete, dana, { confirmation: "delete" })).status).toBe(OK_STATUS);
+
+      const [omarRow] = await database.select({ email: user.email }).from(user).where(eq(user.id, omar.userId));
+      expect(omarRow?.email).toBe(lookalike);
+      expect((await database.select({ detail: adminAuditEntry.detail }).from(adminAuditEntry)).map(({ detail }) => detail)).toContain(lookalike);
+      expect(await database.select().from(emailOutbox)).toHaveLength(1);
+    });
+
     it("needs the word typed, and deletes nothing without it", async () => {
       expect((await call(postDelete, dana, { confirmation: "yes" })).status).toBe(UNPROCESSABLE_STATUS);
       expect((await call(postDelete, dana, {})).status).toBe(UNPROCESSABLE_STATUS);
