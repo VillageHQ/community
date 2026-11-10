@@ -11,6 +11,7 @@ import { readWaitingIntros } from "@/modules/intros/reads";
 import { readNewMembers } from "@/modules/members/reads-directory";
 import type { Database } from "@/platform/database/client";
 import type { WeeklyEmailItem } from "@/platform/weekly-email/schema";
+import { isAskIntroOn, readAskAllowance } from "@/shell/ask-helpers";
 
 // What needs one member this week. The home page and the weekly email both read it, so they can't
 // disagree. A section whose feature is off is empty.
@@ -30,12 +31,17 @@ export const WEEKLY_ITEM_KINDS = { ask: "ask", intro: "intro" } as const;
 
 export type WeeklyItemKind = (typeof WEEKLY_ITEM_KINDS)[keyof typeof WEEKLY_ITEM_KINDS];
 
+async function readOwnAsksForToday(database: Database, memberId: string, now: Date) {
+  const [allowance, canIntro] = await Promise.all([readAskAllowance(database, memberId, now), isAskIntroOn(database)]);
+  return readOwnAsks(database, memberId, { allowance, canIntro }, now);
+}
+
 export async function readTodayItems(database: Database, memberId: string, enabledIds: ReadonlySet<string>, now = new Date()): Promise<TodayItems> {
   const isAsksOn = enabledIds.has(asksManifest.id);
   const isIntrosOn = enabledIds.has(introsManifest.id);
   const [helpableAsks, ownAsks, waitingIntros, { newCount, newMembers }] = await Promise.all([
     isAsksOn ? readAsksYouCouldHelp(database, memberId, now) : [],
-    isAsksOn ? readOwnAsks(database, memberId, now) : null,
+    isAsksOn ? readOwnAsksForToday(database, memberId, now) : null,
     isIntrosOn ? readWaitingIntros(database, memberId) : [],
     readNewMembers(database, memberId, now),
   ]);
