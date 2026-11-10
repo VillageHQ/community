@@ -28,11 +28,12 @@ Better Auth, Vitest, pnpm. Village is optional (network search and profile fill-
 - Module boundaries and 404-when-off (`src/test/architecture/`).
 - Public repo hygiene: no real people, keys or community data (`src/test/public-repo.test.ts`).
 - Admins see intro counts, never who asked whom; members never see each other's email addresses.
-- Every email goes through the outbox in the same transaction as its change, and is sent once.
+- Every email goes through the outbox in its change's transaction, and is sent once.
 
 ## Where the notes are
 - `src/AGENTS.md` (the code map) and one per module: `src/modules/admin/`, `src/modules/asks/`, `src/modules/chat/`, `src/modules/feed/`, `src/modules/intros/`, `src/modules/job-board/`, `src/modules/members/`, `src/modules/messages/`, `src/modules/network/`, `src/modules/perks/`.
 - `scripts/AGENTS.md`.
-- How features work today: `.ai/features/chat-perks/NOTES.md`, `.ai/features/partner-report/NOTES.md`,
-  `.ai/features/small-gaps/NOTES.md`, `.ai/features/today-weekly/NOTES.md`, `.ai/features/two-sided-intros/NOTES.md`.
+- How features work today: `.ai/features/chat-perks/NOTES.md`, `.ai/features/fix-small/NOTES.md`,
+  `.ai/features/partner-report/NOTES.md`, `.ai/features/small-gaps/NOTES.md`, `.ai/features/today-weekly/NOTES.md`,
+  `.ai/features/two-sided-intros/NOTES.md`, `.ai/features/your-data/NOTES.md`.
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (the public guides), `drizzle/` (generated), `site/` (has its README).
