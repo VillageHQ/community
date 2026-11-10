@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Made up in the shape of Jobvite's company XML feed (Xml.aspx?c=...). -->
+<result>
+  <job>
+    <id>oAbc1fwA</id>
+    <title>Backend Engineer</title>
+    <category>Engineering</category>
+    <location>Berlin, Germany</location>
+    <date>10/21/2026</date>
+    <detail-url><![CDATA[https://jobs.example.com/acme/job/oAbc1fwA]]></detail-url>
+    <apply-url><![CDATA[https://jobs.example.com/acme/job/oAbc1fwA/apply]]></apply-url>
+  </job>
+  <job>
+    <id>oAbc2fwB</id>
+    <title>Product Designer &amp; Researcher</title>
+    <category>Design</category>
+    <location>Remote</location>
+    <date>10/18/2026</date>
+    <detail-url><![CDATA[https://jobs.example.com/acme/job/oAbc2fwB]]></detail-url>
+  </job>
+  <job>
+    <id>oAbc3fwC</id>
+    <title>Account Executive</title>
+    <category>Sales</category>
+    <location>London, United Kingdom</location>
+    <date>10/02/2026</date>
+    <apply-url><![CDATA[https://jobs.example.com/acme/job/oAbc3fwC/apply]]></apply-url>
+  </job>
+</result>

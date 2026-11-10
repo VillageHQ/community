@@ -1,0 +1,56 @@
+[
+ {
+  "categories": {
+   "commitment": "Permanent",
+   "department": "Operations and Business Support",
+   "location": "New York, NY",
+   "team": "Platform",
+   "allLocations": [
+    "New York, NY"
+   ]
+  },
+  "createdAt": 1792767640768,
+  "id": "2a55d6c9-c564-443a-be3e-a3851db5a93b",
+  "text": "Account Executive - Commercial, Spotify Technology",
+  "country": "US",
+  "workplaceType": "hybrid",
+  "hostedUrl": "https://jobs.lever.co/spotify/2a55d6c9-c564-443a-be3e-a3851db5a93b",
+  "applyUrl": "https://jobs.lever.co/spotify/2a55d6c9-c564-443a-be3e-a3851db5a93b/apply"
+ },
+ {
+  "categories": {
+   "commitment": "Permanent",
+   "department": "Operations and Business Support",
+   "location": "London",
+   "team": "Platform",
+   "allLocations": [
+    "London"
+   ]
+  },
+  "createdAt": 1792792277203,
+  "id": "2d67c471-9015-41c0-a041-b982ec4a14fd",
+  "text": "Account Executive - Commercial, Spotify Technology",
+  "country": "GB",
+  "workplaceType": "hybrid",
+  "hostedUrl": "https://jobs.lever.co/spotify/2d67c471-9015-41c0-a041-b982ec4a14fd",
+  "applyUrl": "https://jobs.lever.co/spotify/2d67c471-9015-41c0-a041-b982ec4a14fd/apply"
+ },
+ {
+  "categories": {
+   "commitment": "Permanent",
+   "department": "Operations and Business Support",
+   "location": "Toronto",
+   "team": "Platform",
+   "allLocations": [
+    "Toronto"
+   ]
+  },
+  "createdAt": 1792767789073,
+  "id": "f263a2af-0a4e-4540-a0f6-adb3655e027b",
+  "text": "Account Executive - Commercial, Spotify Technology",
+  "country": "CA",
+  "workplaceType": "hybrid",
+  "hostedUrl": "https://jobs.lever.co/spotify/f263a2af-0a4e-4540-a0f6-adb3655e027b",
+  "applyUrl": "https://jobs.lever.co/spotify/f263a2af-0a4e-4540-a0f6-adb3655e027b/apply"
+ }
+]

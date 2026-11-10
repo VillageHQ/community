@@ -155,6 +155,13 @@
       "when": 1794296878006,
       "tag": "0022_chat_perks",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794299649748,
+      "tag": "0023_job_board",
+      "breakpoints": true
     }
   ]
 }

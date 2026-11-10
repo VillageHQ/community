@@ -1,0 +1,30 @@
+# Real HTTP answers from the running app (next dev), Jobs on, public board on
+
+== GET /jobs/yours (no cookie)
+HTTP/1.1 307 Temporary Redirect
+Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
+X-Frame-Options: DENY
+Referrer-Policy: strict-origin-when-cross-origin
+location: /sign-in
+
+== GET /api/job-board/embed (no cookie)
+HTTP/1.1 200 OK
+Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors *
+Referrer-Policy: no-referrer
+
+== GET /api/job-board/embed?company=ledgerline (no cookie)
+HTTP/1.1 200 OK
+Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors *
+Referrer-Policy: no-referrer
+
+== GET /api/job-board/widget.js (no cookie)
+HTTP/1.1 200 OK
+Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
+X-Frame-Options: DENY
+Referrer-Policy: strict-origin-when-cross-origin
+
+== GET /public/jobs (no cookie)
+HTTP/1.1 200 OK
+Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
+X-Frame-Options: DENY
+Referrer-Policy: strict-origin-when-cross-origin
