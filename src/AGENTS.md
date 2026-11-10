@@ -3,22 +3,20 @@
 > ⚠ RECONSTRUCTED from code on 2026-11-10 — needs confirmation
 > Sources: `docs/architecture.md`, `src/test/architecture/`, `src/modules/registry.ts`.
 
-The app's code. The full map, the import rules and the file roles in a module are in `docs/architecture.md`;
-read it before adding a file.
+The app's code. Map, import rules and module file roles: `docs/architecture.md`; read it before adding a file.
 
 - `app/`: pages and route handlers. They parse, call one thing, and respond.
-- `proxy.ts`: runs before every page; a page of a switched-off module answers 404 here, because the shared
-  loading screen has already sent 200 by the time the page's own guard runs.
-- `shell/`: code that reads several modules for one screen (navigation, Today, onboarding, the weekly email, the
-  setup checklist, scheduled jobs).
+- `proxy.ts`: answers 404 for a switched-off module's page before the loading screen sends 200.
+- `shell/`: code reading several modules for one screen (navigation, Today, onboarding, weekly email, setup
+  checklist, scheduled jobs).
 - `modules/`: one folder per feature, each with its own `AGENTS.md`. Core: `members`, `admin`. Switches: `feed`,
   `messages`, `network`, `intros`, `asks`, `chat`, `job-board`, `perks`. `registry.ts` lists them.
 - `platform/`: infrastructure with no product opinion (auth, audit, branding, database, email, jobs, rate limits,
   secrets, settings, Village, the weekly email schedule).
 - `components/`: UI with no module knowledge; `components/ui/` is shadcn.
-- `test/`: fake Village, Resend and chat servers, fixtures, and the architecture tests (`test/architecture/`), which
-  fail on a wrong import, a route outside its module, a schema file `drizzle.config.ts` can't find, or a module
-  page that doesn't 404 when switched off.
+- `test/`: fake Village, Resend and chat servers, fixtures, and the architecture tests (`test/architecture/`):
+  they fail on a wrong import, a route outside its module, a schema `drizzle.config.ts` misses, or a module page
+  not 404 when off.
 
 Rules:
 - A module never imports a module it doesn't require; pass behaviour in from `shell/` or through a slot.
