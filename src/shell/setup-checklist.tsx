@@ -4,7 +4,9 @@ import Link from "next/link";
 import { StepRow, type StepState, STEP_STATES } from "@/components/step-row";
 import { Button } from "@/components/ui/button";
 import type { Database } from "@/platform/database/client";
-import { SETUP_STEPS, type SetupProgress, type SetupStepId } from "@/shell/admin-setup";
+import { readOptionalSetupSteps, SETUP_STEPS, type OptionalSetupStep, type SetupProgress, type SetupStepId } from "@/shell/admin-setup";
+import { CHAT_ADMIN_PAGE } from "@/modules/chat/contract";
+import { ROUTES } from "@/platform/http/routes";
 import { SETUP_STEP_COPY } from "@/shell/admin-setup-copy";
 import { readBranding, type Branding } from "@/platform/branding/branding";
 import { readResendConfig } from "@/platform/email/resend";
@@ -109,6 +111,29 @@ export function AdminBrandCard({ branding, isCurrentStep }: { branding: Branding
   );
 }
 
+function OptionalChatStep({ step, number }: { step: OptionalSetupStep; number: number }) {
+  const description = step.isDone
+    ? "New asks go to your Slack, and members can post with /ask."
+    : step.isModuleOn
+      ? "Connect your Slack app and pick a channel. Members can then post an ask with /ask."
+      : "Turn on Slack and Discord under Features, then connect your Slack. Skip it if your community isn't on Slack.";
+  const href = step.isModuleOn ? CHAT_ADMIN_PAGE : ROUTES.adminFeatures;
+  return (
+    <StepRow
+      state={step.isDone ? STEP_STATES.done : STEP_STATES.todo}
+      isDone={step.isDone}
+      number={number}
+      title="Optional: post new asks to your Slack"
+      description={description}
+      action={
+        <Button asChild size="sm" variant={step.isDone ? "quiet" : "outline"}>
+          <Link href={href}>{step.isDone ? "Manage" : step.isModuleOn ? "Connect" : "Turn it on"}</Link>
+        </Button>
+      }
+    />
+  );
+}
+
 type SetupChecklistProps = {
   database: Database;
   admin: SessionMember;
@@ -119,10 +144,11 @@ type SetupChecklistProps = {
 
 export async function SetupChecklist({ database, admin, progress, openStepId, basePath }: SetupChecklistProps) {
   const isNetworkStepShown = progress.steps.some(({ id }) => id === SETUP_STEPS.keys);
-  const [branding, keyState, group] = await Promise.all([
+  const [branding, keyState, group, optionalSteps] = await Promise.all([
     readBranding(database),
     isNetworkStepShown ? readVillageKeyState(database) : null,
     isNetworkStepShown ? readVillageGroup(database) : null,
+    readOptionalSetupSteps(database),
   ]);
   const keys = keyState?.keys ?? null;
   const savedPublicKey = keyState?.publicKey ?? "";
@@ -153,6 +179,9 @@ export async function SetupChecklist({ database, admin, progress, openStepId, ba
           </StepRow>
         );
       })}
+      {optionalSteps.map((step, position) => (
+        <OptionalChatStep key={step.id} step={step} number={progress.steps.length + position + 1} />
+      ))}
     </ol>
   );
 }
