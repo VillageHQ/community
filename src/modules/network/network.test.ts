@@ -2,6 +2,8 @@ import { and, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { memberDailyUsage } from "@/platform/village/schema";
+import { readVillageHealth, VILLAGE_TROUBLES } from "@/platform/village/health";
+import { readAdminTabFacts } from "@/shell/admin-badges";
 import { memberNetwork } from "@/modules/members/schema";
 import { memberPathResult } from "@/modules/network/schema";
 import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
@@ -875,6 +877,41 @@ describe("the member network API", () => {
         expect(response.status).toBe(502);
         expect(await response.json()).toMatchObject({ code: NETWORK_ERROR_CODES.unavailable });
         expect(JSON.stringify(logged.mock.calls)).toContain(`\\"code\\":\\"network\\"`);
+      });
+
+      it("tells the admin when Village is down or refuses the keys, with when it last worked, until it answers again", async () => {
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+        await vi.waitFor(async () => {
+          await search();
+          expect((await readVillageHealth(database)).lastOkAt).not.toBeNull();
+        });
+        const { lastOkAt } = await readVillageHealth(database);
+
+        const previousUrl = process.env.VILLAGE_API_URL;
+        process.env.VILLAGE_API_URL = "http://127.0.0.1:9";
+        await search();
+        process.env.VILLAGE_API_URL = previousUrl;
+
+        expect(await readVillageHealth(database)).toMatchObject({ trouble: VILLAGE_TROUBLES.down, troubleAt: expect.any(String), lastOkAt });
+        expect((await readAdminTabFacts(database, process.env)).villageTrouble).toMatchObject({ trouble: VILLAGE_TROUBLES.down, lastOkAt });
+
+        village.state.failures.set(SEARCH_PATH, { status: 401, type: "unauthorized" });
+        await search();
+        expect((await readVillageHealth(database)).trouble).toBe(VILLAGE_TROUBLES.keysRejected);
+
+        village.state.failures.delete(SEARCH_PATH);
+        await search();
+        await vi.waitFor(async () => expect((await readVillageHealth(database)).trouble).toBeNull());
+        expect((await readAdminTabFacts(database, process.env)).villageTrouble).toBeNull();
+      });
+
+      it("counts out of credits as Village answering, not as Village down", async () => {
+        village.state.failures.set(SEARCH_PATH, { status: 402, type: "out_of_credits" });
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+        await search();
+
+        expect((await readVillageHealth(database)).trouble).toBeNull();
       });
 
       it("keeps the group settings when a call fails", async () => {

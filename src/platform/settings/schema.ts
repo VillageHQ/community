@@ -15,6 +15,10 @@ export const INSTANCE_SETTING_KEYS = {
   villageGroupInviteLink: "village_group_invite_link",
   dailyLookupLimit: "daily_lookup_limit",
   villageOutOfCreditsAt: "village_out_of_credits_at",
+  // When Village last answered, and the trouble since (it didn't answer, or refused the keys). A later answer clears the trouble.
+  villageLastOkAt: "village_last_ok_at",
+  villageTroubleAt: "village_trouble_at",
+  villageTrouble: "village_trouble",
   jobsTickSecret: "jobs_tick_secret",
   monthlyCreditCap: "monthly_credit_cap",
   fillInBasis: "fill_in_basis",

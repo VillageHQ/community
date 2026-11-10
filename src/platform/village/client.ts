@@ -6,6 +6,9 @@ import { isVillageError, VillageError, type CallOptions, type Village, type Vill
 import { createVillageApp, type VillageApp } from "@villagehq/sdk/server";
 import { z } from "zod";
 
+import { getDatabase } from "../database/client.ts";
+import { noteVillageOutcome, VillageDeadlineError } from "./health.ts";
+
 export const VILLAGE_TIMEOUTS_MS = { default: 15_000, paths: 60_000, search: 120_000 } as const;
 export const NETWORK_SOURCE = "network";
 
@@ -44,6 +47,12 @@ function isLeaveOutcome({ operation, status }: VillageRequestEvent) {
   return operation === LEAVE_OPERATION && status === BAD_REQUEST_STATUS;
 }
 
+// Every call also updates when Village last worked, or the trouble it's in, for the admin's notice.
+function onVillageRequest(event: VillageRequestEvent) {
+  noteVillageOutcome(getDatabase, isLeaveOutcome(event) ? null : event.error);
+  logVillageFailure(event);
+}
+
 function logVillageFailure(event: VillageRequestEvent) {
   const { operation, durationMs, requestId, error } = event;
   if (!error || error.isExpected || isLeaveOutcome(event)) return;
@@ -60,7 +69,7 @@ function readVillageApp({ apiUrl, secretKey }: VillageConnection) {
 
   const oldestKey = villageApps.keys().next().value;
   if (villageApps.size >= MAXIMUM_VILLAGE_APPS && oldestKey) villageApps.delete(oldestKey);
-  const villageApp = createVillageApp({ secretKey, apiUrl, fetch: fetchVillageJson, onRequest: logVillageFailure });
+  const villageApp = createVillageApp({ secretKey, apiUrl, fetch: fetchVillageJson, onRequest: onVillageRequest });
   villageApps.set(key, villageApp);
   return villageApp;
 }
@@ -71,7 +80,7 @@ export function createVillageSession(connection: VillageConnection, { externalId
 
 export function withinDeadline({ deadlineAtMs }: Pick<VillageSession, "deadlineAtMs">, usualTimeoutMs: number = VILLAGE_TIMEOUTS_MS.default): CallOptions {
   const remainingMs = deadlineAtMs - Date.now();
-  if (remainingMs <= 0) throw new VillageError({ code: "timeout", message: "No time was left to call Village." });
+  if (remainingMs <= 0) throw new VillageDeadlineError();
   return { timeoutMs: Math.min(usualTimeoutMs, remainingMs) };
 }
 
@@ -245,7 +254,7 @@ const USER_CANCEL_PATH = "/v2/user/cancel";
 export async function cancelVillageUser(connection: VillageConnection, identity: VillageIdentity) {
   const token = await mintVillageToken(connection, identity);
   const remainingMs = connection.deadlineAtMs - Date.now();
-  if (remainingMs <= 0) throw new VillageError({ code: "timeout", message: "No time was left to call Village." });
+  if (remainingMs <= 0) throw new VillageDeadlineError();
   const apiUrl = (connection.apiUrl ?? DEFAULT_VILLAGE_API_URL).replace(/\/+$/, "");
   const response = await fetch(`${apiUrl}${USER_CANCEL_PATH}`, {
     method: "POST",
