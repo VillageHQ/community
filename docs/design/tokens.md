@@ -228,29 +228,33 @@ shadcn's `--accent` means a hover surface, not the brand color. In the app, use 
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--radius-small` | 16px | Readouts, small insets |
-| `--radius-field` | 20px | Connector cards, list rows, inner panels |
-| `--radius-input` | 24px | Inputs, comment bubbles. Message bubbles use 24px with an 8px tail corner |
-| `--radius-card` | 28px | Cards. 24px on phones |
-| `--radius-panel` | 36px | Hero panels, intro panel |
-| `--radius-full` | 999px | Buttons, chips, tags, nav items, reply field |
+| `--radius-small` | 10px | Readouts, small insets |
+| `--radius-field` | 12px | Buttons, connector cards, list rows, inner panels |
+| `--radius-input` | 12px | Inputs, comment bubbles |
+| `--radius-card` | 14px | Cards (also on phones) |
+| `--radius-panel` | 16px | Larger panels, the intro panel |
+| `--radius-full` | 999px | Chips, tags, nav items, icon buttons, avatars |
 | Logo tile | 30% of its size | Matches Village's mark |
 
 ## Type
 
-Recommendation: bundle **Figtree** (OFL, variable). Warm geometric shapes, and the same look on every OS. The system stack only looks like this on Apple devices. Use `next/font/local` with a committed woff2, so self-hosted builds need no network. `next/font/google` also self-hosts at runtime but downloads at build time.
+Headings (display, H1 to H3, the fund's name in the top bar) are set in **Source Serif 4** (OFL, variable,
+`@fontsource-variable/source-serif-4`, `--font-serif`): the fund's voice, sober rather than an app's. Body text stays
+in Figtree at regular weight. Both are self-hosted through `next/font/local`.
+
+Figtree, the body face: recommendation: bundle **Figtree** (OFL, variable). Warm geometric shapes, and the same look on every OS. The system stack only looks like this on Apple devices. Use `next/font/local` with a committed woff2, so self-hosted builds need no network. `next/font/google` also self-hosts at runtime but downloads at build time.
 
 Fallback, also what the mockup renders: `"Avenir Next", Avenir, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`. Avenir Next only approximates Figtree, which was not rendered in this mockup. Layout held with Arial, Verdana and system-ui substituted.
 
 | Style | Size / line | Weight | Tracking |
 | --- | --- | --- | --- |
-| Display | 44 / 50 | 700 | -0.022em |
-| H1 | 32 / 38 | 700 | -0.018em |
-| H2 | 24 / 30 | 700 | -0.012em |
-| H3 | 19 / 26 | 700 | -0.006em |
-| Body large, posts | 17 / 27 | 500 | 0 |
-| Body | 16 / 24 | 500 | 0 |
-| Small | 14 / 20 | 500 | 0 |
+| Display (serif) | 40 / 46 | 600 | -0.008em |
+| H1 (serif) | 30 / 36 | 600 | -0.005em |
+| H2 (serif) | 23 / 29 | 600 | -0.005em |
+| H3 (serif) | 19 / 26 | 600 | 0 |
+| Body large, posts | 16 / 25 | 400 | 0 |
+| Body | 16 / 24 | 400 | 0 |
+| Small | 14 / 20 | 400 | 0 |
 | Micro, tags | 13 / 18 | 600 | 0 |
 | Tab bar only | 12 / 16 | 600 | 0 |
 
@@ -280,10 +284,11 @@ Icons: Lucide, which the repo already has, at stroke 2. No emoji.
 
 ## Elevation
 
-- Panel, light: `0 1px 2px rgb(40 34 20 / .05), 0 8px 24px rgb(40 34 20 / .06)`. Adapted from Village's `--shadow-panel`.
-- Panel, dark: `0 0 0 1px #2d2a22, 0 8px 24px rgb(0 0 0 / .28)`.
-- Primary button, adapted from Village's `--shadow-cta`: `inset 0 0 0 1.5px var(--accent-edge), inset 0 1px 0 rgb(255 255 255 / .24), 0 1px 2px rgb(30 30 20 / .18), 0 6px 14px -6px color-mix(in srgb, var(--accent) 60%, transparent)`. Dark mode drops the colored glow.
-- Press: `translateY(1px)`. Hover: `translateY(-1px)`. Honor `prefers-reduced-motion`.
+Flat: sheets sit on the page with a hairline edge, nothing floats.
+- Panel: `0 0 0 1px var(--rule)`. `--rule` is `#e2dccd` light, `#3b382f` dark.
+- Sheet (tab bar, bottom sheets): `0 -1px 0 var(--rule)`.
+- Primary button: `inset 0 0 0 1.5px var(--brand-edge)` only (keeps a pale accent visible); hover darkens it slightly. No glow, no lift.
+- Press: `translateY(1px)`. Honor `prefers-reduced-motion`.
 
 ## What came from Village
 
