@@ -4,7 +4,7 @@ import type { Database } from "../platform/database/client.ts";
 import type { Environment } from "../platform/environment.ts";
 import { ROUTES } from "../platform/http/routes.ts";
 import { VILLAGE_TROUBLES } from "../platform/village/health.ts";
-import { INVITE_SECTION_ID } from "../modules/admin/contract.ts";
+import { INVITE_LIST_ID } from "../modules/admin/contract.ts";
 import { readQuarterIntroLine } from "../modules/admin/reads-partner-report.ts";
 import { introsManifest } from "../modules/intros/manifest.ts";
 import { readStuckIntroCount } from "../modules/intros/reads-report.ts";
@@ -42,13 +42,13 @@ export function readAdminHomeItems(facts: AdminTabFacts, { pendingInvites, stuck
         }
       : null,
     facts.reportsBadge > 0
-      ? { id: ADMIN_HOME_ITEMS.reports, label: `${plural(facts.reportsBadge, "reported post", "reported posts")} waiting`, href: ROUTES.adminReports, isUrgent: true }
+      ? { id: ADMIN_HOME_ITEMS.reports, label: `${plural(facts.reportsBadge, "report", "reports")} waiting`, href: ROUTES.adminReports, isUrgent: true }
       : null,
     facts.membersBadge > 0
       ? { id: ADMIN_HOME_ITEMS.waitingMembers, label: `${plural(facts.membersBadge, "person", "people")} waiting for your OK`, href: ROUTES.adminMembers, isUrgent: false }
       : null,
     pendingInvites > 0
-      ? { id: ADMIN_HOME_ITEMS.invites, label: `${plural(pendingInvites, "invite", "invites")} not accepted yet`, href: `${ROUTES.adminMembers}#${INVITE_SECTION_ID}`, isUrgent: false }
+      ? { id: ADMIN_HOME_ITEMS.invites, label: `${plural(pendingInvites, "invite", "invites")} not accepted yet`, href: `${ROUTES.adminMembers}#${INVITE_LIST_ID}`, isUrgent: false }
       : null,
     stuckIntros > 0
       ? { id: ADMIN_HOME_ITEMS.stuckIntros, label: `${plural(stuckIntros, "intro", "intros")} asked, no answer`, href: ROUTES.adminReport, isUrgent: false }

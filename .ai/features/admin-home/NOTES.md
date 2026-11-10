@@ -12,8 +12,8 @@
   ask, or still `asking_target` 4+ days after the person asked for was asked (the reminder days). It links to the
   partner report, because admins never see individual asks.
 - Items: `readAdminHomeItems` (pure, tested) lists, most urgent first, Village trouble (keys refused: the keys step;
-  not answering: Credits), reported posts, people waiting for the admin's OK, invites not accepted yet (Members, the
-  invite card), stuck intros, setup steps left. Every item at zero is left out.
+  not answering: Credits), reports waiting, people waiting for the admin's OK, invites not accepted yet (Members, the
+  invite list), stuck intros, setup steps left. Every item at zero is left out.
 - View: `src/shell/admin-home-view.tsx`: the serif line, the "Needs you" row, the report link, then the admin tabs
   unchanged. The home doesn't use `AdminSection`, so the tabs sit below the items and the big Village notice is
   replaced by its item.

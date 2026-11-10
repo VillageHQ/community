@@ -34,7 +34,7 @@ function QuarterIntros({ quarter }: { quarter: QuarterLine }) {
     <header className="mb-6">
       <p className="type-micro font-bold text-brand-emphasis">{periodLabel}</p>
       <h1 className="type-h1 mt-1.5 sm:type-display" data-testid="admin-home-intros">
-        {asked} {readIntroWord(asked)} asked, {introduced} made, {helped} said it helped
+        {asked === 0 ? "No intros asked yet this quarter" : `${asked} ${readIntroWord(asked)} asked, ${introduced} made, ${helped} said it helped`}
       </h1>
       <p className="type-small mt-2 text-foreground-soft">Counts only. Who asked whom never appears here.</p>
     </header>

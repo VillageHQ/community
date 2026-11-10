@@ -135,9 +135,9 @@ describe("the admin home", () => {
 
     expect(items.map(({ label, href }) => [label, href])).toEqual([
       ["Village refused your keys", `${ROUTES.adminSettings}?step=keys`],
-      ["1 reported post waiting", ROUTES.adminReports],
+      ["1 report waiting", ROUTES.adminReports],
       ["2 people waiting for your OK", ROUTES.adminMembers],
-      ["1 invite not accepted yet", `${ROUTES.adminMembers}#invite-someone`],
+      ["1 invite not accepted yet", `${ROUTES.adminMembers}#invites`],
       ["3 setup steps left", ROUTES.adminSetup],
     ]);
   });
