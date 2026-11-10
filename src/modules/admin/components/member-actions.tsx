@@ -336,7 +336,7 @@ export function MemberActions(context: MemberActionContext) {
     <div className="grid gap-2.5 pt-1">
       {member.isRemoved ? null : <RoleActions {...context} />}
       {member.isRemoved ? null : <EmailActions {...context} />}
-      {isNetworkOn || member.isInVillageGroup || member.hasStaleVillageMembership ? <VillageActions {...context} /> : null}
+      {!member.isErased && (isNetworkOn || member.isInVillageGroup || member.hasStaleVillageMembership) ? <VillageActions {...context} /> : null}
       {member.isRemoved ? null : <LinkedinActions {...context} />}
       {member.isErased ? null : <RemovalActions {...context} />}
       <DeleteAccountActions {...context} />
