@@ -31,11 +31,13 @@ import {
   ownAsksSchema,
 } from "@/modules/asks/contract";
 import { asksManifest } from "@/modules/asks/manifest";
+import { readAsksYouCouldHelp } from "@/modules/asks/reads-could-help";
 import { askHelper } from "@/modules/asks/schema";
 import { INTRO_ACTIONS, INTRO_ERROR_CODES, INTRO_STATES } from "@/modules/intros/contract";
 import { introRequest } from "@/modules/intros/schema";
 import { CONNECTOR_WEEKLY_CAP } from "@/modules/intros/service";
-import { memberProfile } from "@/modules/members/schema";
+import { normalizeTag } from "@/modules/members/contract-profile";
+import { memberProfile, memberTag } from "@/modules/members/schema";
 import { saveVillageGroup } from "@/modules/network/service-settings";
 import { EMAIL_KINDS, EMAIL_TOPICS } from "@/platform/email/kinds";
 import { emailOutbox } from "@/platform/email/schema";
@@ -217,7 +219,7 @@ describe("asks that reach helpers", () => {
         [jonas.userId, true],
         [noor.userId, false],
       ]);
-      expect((await readBoard(noor)).asks[0]?.whyYou).toBe('Can help with "Freight pricing and logistics"');
+      expect((await readBoard(noor)).asks[0]?.whyYou).toBe("Can help with freight, pricing");
       expect((await readBoard(gardener)).asks[0]?.whyYou).toBeNull();
     });
 
@@ -261,6 +263,58 @@ describe("asks that reach helpers", () => {
       expect(await readHelperEmails()).toEqual([]);
       expect((await readOwn(amara)).allowance.used).toBe(0);
       expect((await readBoard(noor)).asks[0]?.kind).toBe(ASK_KINDS.update);
+    });
+  });
+
+  describe("the Today list and the helper email agree", () => {
+    async function readTodayAskIds(member: Member) {
+      return (await readAsksYouCouldHelp(database, member.userId)).map(({ id }) => id);
+    }
+
+    it("shows the ask on Today to exactly the helpers it emailed", async () => {
+      await database.insert(memberTag).values({ userId: bystander.userId, tag: "Freight", normalizedTag: normalizeTag("Freight") });
+
+      const { id, helperCount } = await post(amara);
+
+      expect(helperCount).toBe(3);
+      const emailed = (await readHelperEmails()).map(({ memberId }) => memberId).toSorted();
+      expect(emailed).toEqual([jonas.userId, noor.userId, bystander.userId].toSorted());
+      for (const member of [amara, jonas, noor, bystander, gardener, admin]) {
+        expect(await readTodayAskIds(member)).toEqual(emailed.includes(member.userId) ? [id] : []);
+      }
+      const [pathAsk] = await readAsksYouCouldHelp(database, jonas.userId);
+      expect(pathAsk?.why).toContain("May know Clara Bergström");
+    });
+
+    it("never matches on everyday words like first, with, help or team", async () => {
+      village.state.pathsByUrl.clear();
+      await setCanHelpWith(noor, "First hires, and team help with anything");
+
+      const { helperCount } = await post(amara, { title: "Help my team ship our first release with care", targetLinkedin: null });
+
+      expect(helperCount).toBe(0);
+      expect(await readHelperEmails()).toEqual([]);
+      expect(await readTodayAskIds(noor)).toEqual([]);
+    });
+
+    it("matches a real skill and names it as the reason", async () => {
+      village.state.pathsByUrl.clear();
+      await setCanHelpWith(noor, "Fundraising and pricing");
+
+      const { id, helperCount } = await post(amara, { title: "Advice on pricing before our first fundraising round", targetLinkedin: null });
+
+      expect(helperCount).toBe(1);
+      const [email] = await readHelperEmails();
+      expect(email?.text).toContain("Can help with fundraising, pricing");
+      const [today] = await readAsksYouCouldHelp(database, noor.userId);
+      expect(today?.id).toBe(id);
+      expect(today?.matchedWords.toSorted()).toEqual(["fundraising", "pricing"]);
+    });
+
+    it("leaves an update off Today, as it emails nobody", async () => {
+      await post(amara, { kind: ASK_KINDS.update, title: "We closed our first freight customer", category: ASK_CATEGORIES.other, targetLinkedin: null });
+
+      expect(await readTodayAskIds(noor)).toEqual([]);
     });
   });
 

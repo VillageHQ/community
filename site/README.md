@@ -1,6 +1,6 @@
-# Community landing page
+# Founderhall by Village: landing page
 
-The public marketing page for Community. Plain HTML, CSS and a little JavaScript, with no framework and no build step. It loads nothing from third parties.
+The public marketing page for the app in this repo, under the name Founderhall by Village. Plain HTML, CSS and a little JavaScript, with no framework and no build step. It loads nothing from third parties.
 
 ## Preview
 
@@ -20,12 +20,16 @@ Point any static host at this repo with **root directory `site`**. There's no bu
 - Set `og:image` in `index.html` to an absolute URL, and add `og:url`. Social networks ignore relative image paths, and the page has no public address yet.
 - Confirm `install.sh` is on `main`. The page shows it as the third deploy path.
 - Recheck the status note under the deploy options. It says the one-click buttons haven't run end to end on a live host, which is what the root README says today.
+- The GitHub links point at `VillageHQ/community`. Change them if the repository is renamed.
 
 ## Keeping it in step with the app
 
-- Claims come from the root `README.md`, `SECURITY.md` and `src/`. Change the page when they change.
+- Every product claim must be true of the app on `main`. Claims come from `src/` first, then the root `README.md` and `SECURITY.md`. Change the page when they change.
+- No prices, no competitor prices, and no sign-in methods the app doesn't have (it signs in by email link or password).
 - The deploy button URLs match the root README exactly. Change both together.
-- The colors, radii and type come from `docs/design/tokens.md`. The sample people come from `docs/design/mockup.html`.
+- The look is the quiet one: Source Serif 4 headings, Figtree body text, hairline edges, no shadows. Light and dark follow the visitor's system setting.
+- The product sketches are HTML, not screenshots. Their wording copies the app's own (email subjects, the consent page, the consent text). The people and the fund are made up.
+- No forms. A waitlist or contact form needs a server, which this folder doesn't have.
 
 ## How it stays out of the app
 
@@ -35,6 +39,6 @@ Point any static host at this repo with **root directory `site`**. There's no bu
 
 ## Third-party assets
 
-- Figtree, from `@fontsource-variable/figtree`, under the SIL Open Font License: `assets/fonts/OFL.txt`.
-- Icons from Lucide, under the ISC license, inlined in `index.html`.
-- `assets/product-feed.png` is `docs/screenshots/feed.png`, with fictional people.
+- Figtree, from `@fontsource-variable/figtree`, under the SIL Open Font License: `assets/fonts/OFL-figtree.txt`.
+- Source Serif 4, by Adobe, under the SIL Open Font License: `assets/fonts/OFL-source-serif-4.txt`.
+- `assets/og.png` is rendered from the page's own fonts and mark.
