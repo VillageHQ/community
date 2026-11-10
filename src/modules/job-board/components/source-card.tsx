@@ -12,8 +12,8 @@ import { SourceActions } from "./source-actions";
 function describeStatus(source: JobSourceView) {
   const jobs = `${source.jobCount} open ${source.jobCount === 1 ? "job" : "jobs"}`;
   if (!source.slug) return `${jobs}, added by hand.`;
-  if (!source.lastPulledAt) return `${jobs}. Not pulled yet.`;
-  return `${jobs}. Last pulled ${formatDateAndTimeUtc(source.lastPulledAt)}.`;
+  if (!source.lastPulledAt) return `${jobs}. Not checked yet.`;
+  return `${jobs}. Last checked ${formatDateAndTimeUtc(source.lastPulledAt)}.`;
 }
 
 type SourceCardProps = { source: JobSourceView; canRemove: boolean; showMember: boolean; children?: ReactNode };

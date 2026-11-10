@@ -56,7 +56,7 @@ export function LinkSourceForm({ defaultCompany }: { defaultCompany: string }) {
         </p>
       </div>
       {done ? (
-        <Alert variant="success" aria-live="polite">
+        <Alert variant={done.ok === false ? "info" : "success"} aria-live="polite">
           {done.message}
         </Alert>
       ) : null}

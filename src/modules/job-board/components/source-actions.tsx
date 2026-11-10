@@ -66,7 +66,8 @@ export function SourceActions({ sourceId, company, hidden, canPull, canRemove }:
           </Button>
         ) : null}
       </div>
-      {done ? (
+      {/* A failed pull's problem is already on the card. */}
+      {done && done.data?.ok !== false ? (
         <Alert variant="success" aria-live="polite">
           {done.data?.message}
         </Alert>

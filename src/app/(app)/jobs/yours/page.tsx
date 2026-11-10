@@ -48,7 +48,7 @@ export default modulePage(jobBoardManifest, async function YourJobsPage() {
                     ))}
                   </ul>
                 ) : null}
-                <AddJobForm sourceId={source.id} />
+                <AddJobForm sourceId={source.id} isOpen={source.slug === null && manualJobs.length === 0} />
               </SourceCard>
             );
           })}

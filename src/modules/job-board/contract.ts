@@ -132,7 +132,8 @@ export const removeJobBodySchema = z.object({ sourceId: sourceIdSchema, jobId: z
 
 export const publicSwitchBodySchema = z.object({ isPublic: z.boolean() });
 
-export const messageResponseSchema = z.object({ message: z.string() });
+// ok is false when a link or a pull went through but the feed had a problem; the message says what.
+export const messageResponseSchema = z.object({ message: z.string(), ok: z.boolean().optional() });
 
 export type BoardJob = {
   id: string;
