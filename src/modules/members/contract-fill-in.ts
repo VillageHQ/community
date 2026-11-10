@@ -57,4 +57,9 @@ export const lookupChoiceBodySchema = z.object({ allowsLookup: z.boolean() });
 
 export const fillInVisibilityBodySchema = z.object({ field: z.enum(FILL_IN_FIELD_VALUES), isHidden: z.boolean() });
 
+// Today asks a member to check the words public profiles put on their card this past week.
+export const LINES_TO_CHECK_DAYS = 7;
+
+export type LineToCheck = { field: FillInField; label: string; value: string };
+
 export type FilledLine = { field: FillInField; value: string; filledAt: string; isHidden: boolean };
