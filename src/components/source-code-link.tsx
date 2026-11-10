@@ -1,3 +1,5 @@
+import { cn } from "cn";
+
 // The AGPL asks a network service to offer its source to the people who use it.
 // A copy with changes should point NEXT_PUBLIC_SOURCE_CODE_URL at its own source.
 export const SOURCE_CODE_URL =
@@ -17,9 +19,12 @@ export function SourceCodeLink() {
 }
 
 // The foot of every page, phones included: the fund's name and the way to the source.
-export function SiteFooter({ name }: { name: string }) {
+export function SiteFooter({ name, className }: { name: string; className?: string }) {
   return (
-    <footer data-slot="site-footer" className="type-micro flex flex-wrap items-baseline justify-center gap-x-2.5 gap-y-1 pt-8 pb-2 text-center font-normal text-muted-foreground">
+    <footer
+      data-slot="site-footer"
+      className={cn("type-micro flex flex-wrap items-baseline justify-center gap-x-2.5 gap-y-1 pt-8 pb-2 text-center font-normal text-muted-foreground", className)}
+    >
       {name ? (
         <>
           <span>{name}</span>

@@ -9,7 +9,7 @@ type CenteredPageProps = { name: string; logo: CommunityLogo | null; children: R
 
 export function CenteredPage({ name, logo, children }: CenteredPageProps) {
   return (
-    <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex min-h-dvh flex-col items-center justify-center gap-6 px-3.5 py-10">
+    <main data-slot="centered-page" id={MAIN_CONTENT_ID} tabIndex={-1} className="flex min-h-dvh flex-col items-center justify-center gap-6 px-3.5 py-10">
       <div className="type-serif flex items-center gap-3 text-xl">
         <LogoTile name={name} logo={logo} />
         {name}

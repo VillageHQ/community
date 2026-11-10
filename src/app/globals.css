@@ -335,6 +335,11 @@
   max-width: none;
 }
 
+/* A centered page shown inside the app (a page that isn't there) leaves the footer to the app. */
+[data-slot="app-shell"] [data-slot="centered-page"] [data-slot="site-footer"] {
+  display: none;
+}
+
 /* The source link sits in the sidebar only while messages fill the page, where a page footer can't. */
 [data-slot="sidebar-source"] {
   display: none;

@@ -258,15 +258,16 @@ function toActiveSearch(prompt: string): ActiveSearch {
 function useSearchFromAddress(startSearch: (prompt: string) => void) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const prompt = searchParams.get(SEARCH_PROMPT_PARAM)?.trim().slice(0, SEARCH_PROMPT_MAX_LENGTH) ?? "";
+  const raw = searchParams.get(SEARCH_PROMPT_PARAM);
+  const prompt = raw?.trim().slice(0, SEARCH_PROMPT_MAX_LENGTH) ?? "";
   const handled = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!prompt || handled.current === prompt) return;
-    handled.current = prompt;
-    startSearch(prompt);
+    if (raw === null || handled.current === raw) return;
+    handled.current = raw;
+    if (prompt) startSearch(prompt);
     router.replace(ROUTES.network, { scroll: false });
-  }, [prompt, router, startSearch]);
+  }, [raw, prompt, router, startSearch]);
 }
 
 export function NetworkSearch({ welcome }: { welcome: WelcomeContext }) {

@@ -25,6 +25,8 @@ export function TodaySearchBox({ communityName }: { communityName: string }) {
           name={SEARCH_PROMPT_PARAM}
           required
           maxLength={SEARCH_PROMPT_MAX_LENGTH}
+          pattern=".*\S.*"
+          title="Describe who you want to meet."
           aria-describedby={HINT_ID}
           placeholder="A buyer at a hospital group…"
           className="min-h-12 flex-1 px-4"

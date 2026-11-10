@@ -54,8 +54,8 @@ export function SplitLayout({
         className="flex min-w-0 flex-col px-3.5 pt-6 pb-10 sm:px-10 lg:min-h-dvh lg:px-16 lg:pt-11 lg:pb-12"
       >
         <div className="mx-auto w-full max-w-[720px] flex-1">{children}</div>
-        <div className="mx-auto mt-8 w-full max-w-[720px]">
-          <SiteFooter name={community.name} />
+        <div className="mx-auto mt-8 w-full max-w-[720px] lg:mt-0">
+          <SiteFooter name={community.name} className="lg:pt-0" />
         </div>
       </Copy>
     </div>
