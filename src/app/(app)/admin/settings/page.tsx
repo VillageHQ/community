@@ -9,6 +9,10 @@ import { getDatabase } from "@/platform/database/client";
 import { EmailSetupCheck } from "@/modules/admin/components/email-setup-check";
 import { SettingCard } from "@/modules/admin/components/setting-card";
 import { VillageSecretCard } from "@/modules/admin/components/village-secret-card";
+import { VillageSettingsForm } from "@/modules/network/components/village-settings-form";
+import { readSharingMembers, readVillageSearchSettings } from "@/modules/network/service-settings";
+import { readFirstAdminEmail } from "@/modules/network/service-fill-in";
+import type { Database } from "@/platform/database/client";
 import { HOST_SETTINGS_GUIDE_URL, UPDATE_GUIDE_URL } from "@/modules/admin/copy";
 import { readVillageKeyState } from "@/platform/village/settings";
 import { parseSetupStep, readSetupProgress } from "@/shell/admin-setup";
@@ -152,6 +156,16 @@ function EmailCard({ config, enabledIds, givenUp }: { config: ResendConfig | nul
   );
 }
 
+// Shown with the network feature on: where searches look, who can introduce, and the service email.
+async function VillageSettingsCard({ database }: { database: Database }) {
+  const [settings, sharingMembers, defaultServiceEmail] = await Promise.all([readVillageSearchSettings(database), readSharingMembers(database), readFirstAdminEmail(database)]);
+  return (
+    <SettingCard title="Village" tag={<Tag>Network</Tag>}>
+      <VillageSettingsForm settings={{ ...settings, serviceEmail: settings.serviceEmail ?? "" }} sharingMembers={sharingMembers} defaultServiceEmail={defaultServiceEmail} />
+    </SettingCard>
+  );
+}
+
 function VersionCard() {
   return (
     <SettingCard
@@ -206,6 +220,7 @@ export default modulePage(adminManifest, async function AdminSettingsPage({ sear
           <SetupChecklist database={database} admin={admin} progress={progress} openStepId={parseSetupStep(step, progress.steps.map(({ id }) => id))} basePath={ROUTES.adminSettings} />
           <EmailCard config={readResendConfig(process.env)} enabledIds={enabledIds} givenUp={givenUp} />
           <VillageSecretCard status={keyState.status} isNetworkOn={enabledIds.has(networkManifest.id)} />
+          {enabledIds.has(networkManifest.id) ? <VillageSettingsCard database={database} /> : null}
           <VersionCard />
         </div>
         <AdminBrandCard branding={branding} isCurrentStep={false} />

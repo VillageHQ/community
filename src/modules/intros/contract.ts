@@ -130,6 +130,7 @@ export const INTRO_ERROR_CODES = {
   targetEmailFailed: "intro_target_email_failed",
   connectorBusy: "intro_connector_busy",
   notJoined: "intro_not_joined",
+  notIntroducer: "intro_not_introducer",
   targetRefuses: "intro_target_refuses",
 } as const;
 

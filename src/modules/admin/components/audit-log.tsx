@@ -81,6 +81,7 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.connectNudgeSent]: ({ detail }) => `reminded ${detail} to connect their network`,
   [AUDIT_ACTIONS.partnerReportSent]: ({ detail }) => `emailed the partner report to ${detail}`,
   [AUDIT_ACTIONS.partnerReportMarkedShared]: () => "marked the partner report as shared",
+  [AUDIT_ACTIONS.villageSettingsChanged]: ({ detail }) => `changed the Village settings: ${detail}`,
 };
 
 function readFillInBasisSentence(detail: string) {

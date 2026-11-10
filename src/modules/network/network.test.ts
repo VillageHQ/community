@@ -24,6 +24,9 @@ import { POST as postPaths } from "@/app/api/network/paths/route";
 import { POST as postSearch } from "@/app/api/network/search/route";
 import { POST as postStatus } from "@/app/api/network/status/route";
 import { POST as postSyncToken } from "@/app/api/network/sync-token/route";
+import { POST as postVillageSettings } from "@/app/api/admin/village/settings/route";
+import { adminAuditEntry } from "@/platform/audit/schema";
+import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 
 const APP_URL = "http://localhost:3000";
 const INVITE_LINK = "https://village.test/join/stored-invite";
@@ -459,6 +462,59 @@ describe("the member network API", () => {
       const response = await postPaths(jsonRequest(reader, { linkedinSlug: slug }));
       return networkPathsSchema.parse(await response.json());
     }
+
+    async function saveSettings(body: Record<string, unknown>) {
+      const admin = await createSignedInMember(database, "admin");
+      return postVillageSettings(jsonRequest(admin, { searchScope: "network", introducers: "all_sharing", chosenIntroducerIds: [], serviceEmail: "", ...body }));
+    }
+
+    describe("the admin's Village settings", () => {
+      it("searches everyone, and keeps those results, once the admin says so", async () => {
+        expect((await saveSettings({ searchScope: "everyone" })).status).toBe(200);
+        village.state.searchPeople = [{ full_name: "Global Person", linkedin_url: TARGET_URL }];
+        village.state.searchSource = "global";
+
+        const result = await readSearch();
+
+        expect(village.readRequests(SEARCH_PATH).map(({ body }) => body)).toEqual([{ prompt: "founders", scope: "global" }]);
+        expect(result.people.map(({ fullName, isMember }) => [fullName, isMember])).toEqual([["Global Person", false]]);
+        expect(result.discardedOffNetworkResults).toBe(false);
+      });
+
+      it("drops paths through members the admin didn't choose, and keeps the chosen and outside ones", async () => {
+        const chosen = await createJoinedMember("chosen-member");
+        await createJoinedMember("other-member");
+        village.state.pathsByUrl.set(TARGET_URL, {
+          summary: "s",
+          paths: [
+            { degree: 2, description: "via chosen", introducer: { first_name: "C", last_name: "M", linkedin_url: "https://linkedin.com/in/chosen-member" } },
+            { degree: 2, description: "via other", introducer: { first_name: "O", last_name: "M", linkedin_url: "https://linkedin.com/in/other-member" } },
+            { degree: 2, description: "via stranger", introducer: { first_name: "S", last_name: "T", linkedin_url: "https://linkedin.com/in/stranger" } },
+          ],
+        });
+        expect((await readPaths()).paths).toHaveLength(3);
+
+        expect((await saveSettings({ introducers: "chosen", chosenIntroducerIds: [chosen.userId] })).status).toBe(200);
+
+        expect((await readPaths()).paths.map(({ description }) => description).toSorted()).toEqual(["via chosen", "via stranger"]);
+      });
+
+      it("refuses 'chosen members' with nobody chosen, or only someone who doesn't share", async () => {
+        const outsider = await createSignedInMember(database);
+
+        expect((await saveSettings({ introducers: "chosen", chosenIntroducerIds: [] })).status).toBe(422);
+        expect((await saveSettings({ introducers: "chosen", chosenIntroducerIds: [outsider.userId] })).status).toBe(422);
+      });
+
+      it("is for admins only, and audited", async () => {
+        const response = await postVillageSettings(jsonRequest(member, { searchScope: "everyone", introducers: "all_sharing", chosenIntroducerIds: [], serviceEmail: "" }));
+        expect(response.status).toBe(403);
+
+        await saveSettings({ serviceEmail: "Village@Example.com" });
+        const [entry] = await database.select().from(adminAuditEntry).where(eq(adminAuditEntry.action, AUDIT_ACTIONS.villageSettingsChanged));
+        expect(entry?.detail).toContain("village@example.com");
+      });
+    });
 
     describe("searching", () => {
       it("searches the member's own network scope", async () => {

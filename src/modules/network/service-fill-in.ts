@@ -17,6 +17,7 @@ import { logError } from "../../platform/observability/route-logging.ts";
 import { recordFailedAttempt } from "../../platform/rate-limit/attempt-rate-limit.ts";
 import { JOB_OUTCOMES, runJob } from "../../platform/jobs/runner.ts";
 import { INSTANCE_SETTING_KEYS } from "../../platform/settings/schema.ts";
+import { readVillageSearchSettings } from "./service-settings.ts";
 import { readSettings } from "../../platform/settings/store.ts";
 import {
   createVillageLookupSession,
@@ -56,8 +57,14 @@ export const FILL_IN_OUTCOMES = { found: "found", notFound: "not_found", notAllo
 
 export type FillInOutcome = (typeof FILL_IN_OUTCOMES)[keyof typeof FILL_IN_OUTCOMES];
 
-// The address Village sees for the app's lookup identity: the community's first admin.
+// The address Village sees for the app's lookup identity: the service email an admin set in Settings, or else the
+// community's first admin.
 async function readLookupEmail(database: Database) {
+  const { serviceEmail } = await readVillageSearchSettings(database);
+  return serviceEmail ?? readFirstAdminEmail(database);
+}
+
+export async function readFirstAdminEmail(database: Database) {
   const settings = await readSettings(database, [INSTANCE_SETTING_KEYS.firstAdminUserId]);
   const firstAdminId = settings.get(INSTANCE_SETTING_KEYS.firstAdminUserId);
   const [admin] = await database
