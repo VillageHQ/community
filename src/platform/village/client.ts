@@ -15,6 +15,7 @@ export const NETWORK_SOURCE = "network";
 const MAXIMUM_VILLAGE_APPS = 10;
 const BAD_REQUEST_STATUS = 400;
 const LEAVE_OPERATION = "groups.leave";
+const MINT_OPERATION = "tokens.create";
 const JSON_CONTENT_TYPE = "json";
 
 const villageApps = new Map<string, VillageApp>();
@@ -47,9 +48,15 @@ function isLeaveOutcome({ operation, status }: VillageRequestEvent) {
   return operation === LEAVE_OPERATION && status === BAD_REQUEST_STATUS;
 }
 
+// A 401 on a member's own call is usually their token expiring: the app mints a new one and retries.
+// Only the mint, made with this community's secret key, says whether Village refused the keys.
+function isMemberTokenRefusal({ operation, error }: VillageRequestEvent) {
+  return isVillageError(error, "unauthorized") && operation !== MINT_OPERATION;
+}
+
 // Every call also updates when Village last worked, or the trouble it's in, for the admin's notice.
 function onVillageRequest(event: VillageRequestEvent) {
-  noteVillageOutcome(getDatabase, isLeaveOutcome(event) ? null : event.error);
+  if (!isMemberTokenRefusal(event)) noteVillageOutcome(getDatabase, isLeaveOutcome(event) ? null : event.error);
   logVillageFailure(event);
 }
 

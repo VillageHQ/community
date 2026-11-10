@@ -265,7 +265,7 @@ It doesn't exist yet. Build the template by hand, then swap the placeholder in [
 **Vercel**
 
 - The button clones a public repo.
-- **Timed jobs run once a day.** `vercel.json` has one Cron Job at 09:00 UTC, the most Vercel's free plan allows (a more frequent schedule fails the deploy there). Without `CRON_SECRET`, Vercel's call has no secret and the app refuses it, so the jobs never run: add it under **Settings**, **Environment Variables** and redeploy.
+- **Timed jobs run once a day.** `vercel.json` has one Cron Job at 09:00 UTC, the most Vercel's free plan allows (a more frequent schedule fails the deploy there). Without `CRON_SECRET`, Vercel's call has no secret and the app refuses it, so the jobs never run: add it under **Settings**, **Environment Variables** and redeploy. Don't also set `JOBS_TICK_SECRET` there: the app checks that one first, so Vercel's call would be refused.
 - The button provisions Neon only. We have not seen it work.
 - Next.js documents `register` as running once per server instance, and Vercel documents `instrumentation.ts` for tracing, but neither says exactly when it runs on Vercel's functions. Check the first deploy's logs for `Migrations applied.`.
 - A frozen function can't run background retries, so a failed migration retries on the next cold start.

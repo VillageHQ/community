@@ -413,7 +413,8 @@ describe("the job board", () => {
     expect(elsewhere.status).toBe(403);
     expect(await elsewhere.json()).toMatchObject({ code: "job_company_not_yours", message: expect.stringContaining("Stripe Example") });
     expect((await call(postManual, founder, { company: "Gridwise" })).status).toBe(403);
-    expect((await call(postLink, founder, { company: "stripe example", link: "https://boards.greenhouse.io/ok-own" })).status).toBe(200);
+    expect((await call(postLink, founder, { company: "  stripe   EXAMPLE ", link: "https://boards.greenhouse.io/ok-own" })).status).toBe(200);
+    expect((await readMemberSources(database, founder.userId)).map(({ company }) => company)).toEqual(["Stripe Example"]);
 
     await database.update(memberProfile).set({ company: null }).where(eq(memberProfile.userId, other.userId));
     const noCompany = await call(postManual, other, { company: "Ledgerline" });
