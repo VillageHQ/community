@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, ChevronsUpDown, LogOut, Moon, ShieldCheck, UserRound, X } from "lucide-react";
+import { ChevronRight, ChevronsUpDown, Database, LogOut, Moon, ShieldCheck, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DropdownMenu } from "radix-ui";
 
@@ -66,6 +66,12 @@ export function SidebarUserMenu({ member }: { member: ShellMember }) {
             <Link href={ROUTES.editCard}>
               <UserRound aria-hidden="true" />
               My card
+            </Link>
+          </DropdownMenu.Item>
+          <DropdownMenu.Item asChild className={MENU_ITEM}>
+            <Link href={ROUTES.yourData}>
+              <Database aria-hidden="true" />
+              Your data
             </Link>
           </DropdownMenu.Item>
           <DropdownMenu.CheckboxItem
@@ -141,6 +147,13 @@ export function PhoneUserMenu({ member, adminBadgeCount }: PhoneUserMenuProps) {
               <Link href={ROUTES.editCard} className={`${SHEET_ROW} hover:bg-muted`}>
                 <UserRound aria-hidden="true" />
                 My card
+                <ChevronRight aria-hidden="true" className="ml-auto" />
+              </Link>
+            </Dialog.Close>
+            <Dialog.Close asChild>
+              <Link href={ROUTES.yourData} className={`${SHEET_ROW} hover:bg-muted`}>
+                <Database aria-hidden="true" />
+                Your data
                 <ChevronRight aria-hidden="true" className="ml-auto" />
               </Link>
             </Dialog.Close>

@@ -65,6 +65,7 @@ type FakeVillageState = {
   mintedEmails: Map<string, string>;
   unparsableBodyPaths: Set<string>;
   leftMembers: Set<string>;
+  cancelledMembers: Set<string>;
   groupCreatorIds: Set<string>;
   isLeaveStrict: boolean;
   delayMsByPath: Map<string, number>;
@@ -92,6 +93,7 @@ export function createFakeVillageState(): FakeVillageState {
     mintedEmails: new Map(),
     unparsableBodyPaths: new Set(),
     leftMembers: new Set(),
+    cancelledMembers: new Set(),
     groupCreatorIds: new Set(),
     isLeaveStrict: false,
     delayMsByPath: new Map(),
@@ -282,6 +284,11 @@ function respondToAuthenticated(
   if (path === "/v2/people/enrich") {
     const profile = state.profilesByUrl.get(readObjectField(body, "linkedin_url").replace(/\/$/, ""));
     return profile ? respondWithData(response, 200, profile) : respondWithError(response, 404, "not_found");
+  }
+  if (path === "/v2/user/cancel" && method === "POST") {
+    state.cancelledMembers.add(externalId);
+    state.linkedMembers.delete(externalId);
+    return respondWithData(response, 200, { success: true, message: "User cancelled" });
   }
   const linked = state.linkedMembers.get(externalId);
   if (path === "/v2/user/status") return respondWithData(response, 200, toVillageUserStatus(state, externalId, linked));

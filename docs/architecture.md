@@ -102,6 +102,7 @@ Some effects have to cross a boundary without an import. The route, which may im
 - **Blocks.** `setMemberBlocked(context, body, onBlocked)` runs the effect in its own transaction. The block route passes `runMemberBlockedEffects`, which runs every module's `onMemberBlocked` hook.
 - **Removals.** `removeMember(context, body, onRemoved)` works the same way through `onMemberRemoved`.
 - **Open asks.** `readMemberPaths(context, slug, readOpenAsks)` takes the reader as an argument. The paths route passes the one from intros.
+- **Who can message me.** `startConversation` and `sendMessage` take a `MessagePermission`. The routes pass `mayMessage` from `shell/message-policy.ts`, which reads the recipient's choice and, for "only people I was introduced to", the intros between the two.
 - **Offers as messages.** `offerHelp(context, body, deliver)` saves the note on the ask, then calls `deliver`. The offer route passes `sendOfferAsMessage` from `shell/ask-offer-delivery.ts`, which checks that messages is on and sends the note as a DM.
 
 ## Where things live
@@ -118,6 +119,9 @@ Some placements aren't obvious:
 | `village_monthly_usage`, monthly cap, its warning emails | `platform/village/` | The cap applies to every paid call, including the nightly fill-in. |
 | `member_lookup`, `member_fill_in` | `members/schema.ts` | The card reads them whatever else is on. Network makes the Village calls and saves through members. |
 | Reclaim and reinvite | `admin/service-roster.ts` | They hold the roster lock and call group departure. |
+| `member_privacy` | `members/schema.ts` | Directory reads, messages and intros all check it. |
+| The real delete | `shell/account-deletion.ts` | It erases rows in every module in one transaction, in a fixed order, after Village is asked to remove the member. Each module's part is its own `service-erasure.ts`. |
+| `ask_tally` | `asks/schema.ts` | A deleted account's asks, as anonymous counts the partner report adds in. |
 | Reports | `admin/service-reports.ts` | Feature routes like `/api/feed/report` call it. |
 | Credit usage | `network/reads-credits.ts` | It only reads Village usage. |
 | `/admin/credits`, `/api/admin/village/*` | Network | The admin URL is cosmetic. |

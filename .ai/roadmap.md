@@ -25,7 +25,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] Project notes: vision, personas, journeys, this roadmap and the parity map — project-notes — open pull request — [spec](features/project-notes/SPEC.md)
 - [ ] The Your data page: export, real delete, privacy switches, the required "accept intro asks" question — your-data — open pull request, waits for the owner's yes (it deletes personal data) — [PR #20](https://github.com/VillageHQ/community/pull/20)
 - [ ] The new look: serif headings, hairline edges, no "Network by Village" on member screens — look-theme — open pull request — [PR #26](https://github.com/VillageHQ/community/pull/26) · [spec](features/look-theme/SPEC.md)
-- [ ] Demo mode for sales: a made-up community, one-click demo sign-in, nightly reset — demo-mode — being built, no pull request yet
+- [x] Demo mode for sales: a made-up community, one-click demo sign-in, nightly reset — [demo-mode](features/demo-mode/SPEC.md) — merged, [PR #25](https://github.com/VillageHQ/community/pull/25)
 - [ ] One marketing website, "Founderhall by Village", in `site/` — one-site — open pull request — [PR #23](https://github.com/VillageHQ/community/pull/23)
 - [ ] Two preview bugs: helpers emailed but missing from Today, and matching on common words — preview-fixes — open pull request — [PR #22](https://github.com/VillageHQ/community/pull/22)
 
@@ -101,7 +101,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Sessions — Better Auth, `src/platform/auth/session.ts` (Community)
 - **done** · Sign out — `src/platform/auth/sign-out.ts` (Community)
 - **done** · Roles — `src/platform/auth/roles.ts`, admin role in Manage (Community)
-- **open** · Demo login — the demo-mode build
+- **open** · Demo login — the demo-mode build ([PR #25](https://github.com/VillageHQ/community/pull/25))
 - **done** · Passwords / OAuth / SSO / 2FA / recovery — password, reset and admin recovery (Community); OAuth, SSO and 2FA are on the "gaps neither product had" list
 
 ### Member onboarding and profile
@@ -262,7 +262,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Mobile — phone tab bar (Community)
 
 ### Demo mode
-- **open** · Demo seed — the demo-mode build
-- **open** · Long intro history seed — the demo-mode build
-- **open** · Demo login and banner — the demo-mode build
-- **open** · Nightly reset — the demo-mode build
+- **open** · Demo seed — the demo-mode build ([PR #25](https://github.com/VillageHQ/community/pull/25))
+- **open** · Long intro history seed — the demo-mode build ([PR #25](https://github.com/VillageHQ/community/pull/25))
+- **open** · Demo login and banner — the demo-mode build ([PR #25](https://github.com/VillageHQ/community/pull/25))
+- **open** · Nightly reset — the demo-mode build ([PR #25](https://github.com/VillageHQ/community/pull/25))

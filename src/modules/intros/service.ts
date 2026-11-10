@@ -7,6 +7,7 @@ import { isAwaitingTarget, isConsentTokenLive, readLiveConsentHash } from "./rea
 import { isTargetOptedOut } from "./opt-out.ts";
 import { isTargetRefusingRequester, issueConsent, saveConsentLink } from "./service-consent.ts";
 import { memberBlock, memberNetwork, memberProfile } from "../members/schema.ts";
+import { readAcceptsIntroAsks } from "../members/service-privacy.ts";
 import type { Transaction } from "../../platform/database/client.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
@@ -155,6 +156,13 @@ export async function createIntroRequest(context: RequestContext, body: CreateIn
       CONFLICT_STATUS,
       INTRO_ERROR_CODES.blockedByYou,
       "You blocked this member. Unblock them to ask for an intro.",
+    );
+  }
+  if (!(await readAcceptsIntroAsks(database, asked.introducerId))) {
+    throw new RequestError(
+      CONFLICT_STATUS,
+      INTRO_ERROR_CODES.notTakingAsks,
+      `${asked.introducerName} doesn't take intro asks here. Try someone else on the list.`,
     );
   }
   const isWithheld =
