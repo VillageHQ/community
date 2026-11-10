@@ -24,7 +24,9 @@ Five intro bugs, each with a failing test first, then the fix. Nothing else.
   works as before ("the connector will connect you"). The asker's or connector's own address is refused.
 - (3) The expiry email goes to the asker only, and never says who didn't answer (the asker can't tell a connector's
   silence from the person asked). The connector reminder skips withheld or blocked asks.
-- (4) Only a connector's own no (state `declined`) hides them; it stays hidden for that asker and that person.
+- (4) An ask that ended in a no hides that connector for that asker and that person. Both kinds of no count (the
+  connector's and the person asked's), because the asker sees them the same way: hiding only after a connector's no
+  would tell the asker who said no. After the person's own no, new asks to them are refused anyway.
 - (5) A new `target_answer` column holds the answer; rows from before it fall back to the old reading.
 
 ## Out

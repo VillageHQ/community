@@ -26,7 +26,7 @@ import {
   type Intro,
 } from "@/modules/intros/contract";
 import { introsManifest } from "@/modules/intros/manifest";
-import { sendDueConnectorReminders } from "@/modules/intros/connector-reminder";
+import { sendDueConnectorReminders, sendDueExpiryEmails } from "@/modules/intros/quiet-intro-emails";
 import { expireDueIntros } from "@/modules/intros/reads";
 import { readIntroReport } from "@/modules/intros/reads-report";
 import { sendDueTargetReminders } from "@/modules/intros/target-reminder";
@@ -1322,6 +1322,7 @@ describe("double opt-in intros", () => {
     async function askedDaysAgo(days: number) {
       configureResend();
       const intro = await ask();
+      await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThan(0), EVENTUALLY);
       await database.update(introRequest).set({ createdAt: new Date(Date.now() - days * MILLISECONDS_PER_DAY) }).where(eq(introRequest.id, intro.id));
       await sendDueEmails(database, process.env);
       resend.reset();
@@ -1344,6 +1345,7 @@ describe("double opt-in intros", () => {
       expect(runs.reduce((total, { reminded }) => total + reminded, 0)).toBe(1);
       const reminders = await readSentTo(jonas.email);
       expect(reminders).toHaveLength(1);
+      expect(JSON.stringify(reminders[0]?.body)).toContain("only reminder");
       expect(JSON.stringify(reminders[0]?.body)).toContain("Amara");
       expect(await readSentTo(amara.email)).toEqual([]);
     });
@@ -1360,8 +1362,9 @@ describe("double opt-in intros", () => {
       await makeIntroOverdue(database, intro.id);
 
       await expireDueIntros(database, null);
-      await expireDueIntros(database, null);
       await call(postBoard, amara, {});
+      await Promise.all([sendDueExpiryEmails(database, process.env), sendDueExpiryEmails(database, process.env)]);
+      await sendDueExpiryEmails(database, process.env);
 
       expect((await readRow(intro.id)).state).toBe(INTRO_STATES.expired);
       const toAsker = await readSentTo(amara.email);
@@ -1375,11 +1378,13 @@ describe("double opt-in intros", () => {
     it("sends the asker one email when it expires while the person asked never answered", async () => {
       configureResend();
       const { intro } = await askAndReachTarget();
+      await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThan(0), EVENTUALLY);
       await sendDueEmails(database, process.env);
       resend.reset();
       await makeIntroOverdue(database, intro.id);
 
-      await expireDueIntros(database, null);
+      await call(postBoard, amara, {});
+      await sendDueExpiryEmails(database, process.env);
 
       expect(await readSentTo(amara.email)).toHaveLength(1);
     });

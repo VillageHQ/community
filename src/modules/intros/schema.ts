@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
-import { INTRO_DECLINE_KINDS, INTRO_LIMITS, INTRO_OUTCOMES, INTRO_RESULTS, INTRO_STATES, OPEN_INTRO_STATES } from "./contract.ts";
+import { CONSENT_ANSWERS, INTRO_DECLINE_KINDS, INTRO_LIMITS, INTRO_OUTCOMES, INTRO_RESULTS, INTRO_STATES, OPEN_INTRO_STATES } from "./contract.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 
 const MILLISECOND_PRECISION = 3;
@@ -57,6 +57,13 @@ export const introRequest = pgTable(
     outcomeReminderAt: introTimestamp("outcome_reminder_at"),
     // When the one reminder to the person asked was claimed. Set once, so it never goes twice.
     targetReminderAt: introTimestamp("target_reminder_at"),
+    // When the one reminder to a connector who hadn't answered was claimed. Set once, so it never goes twice.
+    connectorReminderAt: introTimestamp("connector_reminder_at"),
+    // When the one "closed without an answer" email to the asker was claimed. Set once, so it never goes twice.
+    expiryEmailAt: introTimestamp("expiry_email_at"),
+    // What the person asked answered on this intro (yes, no thanks, stop all), so a later stop-all on another intro
+    // never rewrites what this link shows. Null before they answered, and on rows from before this column.
+    targetAnswer: text("target_answer"),
     // The ask this intro came from, if any. No foreign key: asks is another module, and an intro outlives its ask.
     askId: uuid("ask_id"),
     // The connector offered it ("I know someone") instead of being asked. It counts toward no allowance or cap.
@@ -84,6 +91,7 @@ export const introRequest = pgTable(
       "intro_request_target_email_while_open",
       sql`${table.targetEmail} is null or ${table.state} in (${toSqlLiterals([INTRO_STATES.askingTarget, INTRO_STATES.targetAgreed])})`,
     ),
+    check("intro_request_target_answer_known", sql`${table.targetAnswer} is null or ${table.targetAnswer} in (${toSqlLiterals(Object.values(CONSENT_ANSWERS))})`),
     check(
       "intro_request_outcome_known",
       sql`${table.outcome} is null or (${table.state} = '${sql.raw(INTRO_STATES.completed)}' and ${table.outcome} in (${toSqlLiterals(Object.values(INTRO_OUTCOMES))}))`,

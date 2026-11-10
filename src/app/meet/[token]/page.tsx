@@ -79,7 +79,13 @@ export default modulePage(introsManifest, async function IntroConsentPage({ para
   if (consent.view === CONSENT_VIEWS.answered) {
     return (
       <SplitLayout community={community} note={note}>
-        <AnsweredMessage answer={consent.answer} isRepeat names={{ ...consent, joinsByEmail: false }} communityName={community.name} />
+        <AnsweredMessage
+          answer={consent.answer}
+          isRepeat
+          names={{ ...consent, joinsByEmail: false }}
+          communityName={community.name}
+          hasStoppedAllSince={consent.hasStoppedAllSince}
+        />
       </SplitLayout>
     );
   }
