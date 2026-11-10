@@ -11,12 +11,13 @@
   `target_reminder_at` empty. One transaction claims it, saves a new consent link and queues the email (dedupe key
   `intro-target-reminder-<id>`). A claimed row is never claimed again.
 - **Email check.** `src/platform/email/dns-check.ts` reads the domain from `RESEND_FROM_ADDRESS` and looks up SPF on
-  `send.<domain>`, DKIM at `resend._domainkey.<domain>`, DMARC on the domain or its parent. A lookup that fails is
+  `send.<domain>`, DKIM at `resend._domainkey.<domain>`, DMARC on the domain or its registered domain (two-part
+  suffixes like co.uk are recognised). A lookup that fails is
   "No answer", never "Missing". "Send a test to me" queues kind `email_test` to the admin's own address.
 - **Village settings.** Instance settings `village_search_scope`, `village_introducers`,
   `village_chosen_introducer_ids` (JSON), `village_service_email`. "Everyone" sends `scope: "global"` and keeps those
-  results; they name no path. "Chosen" drops paths whose introducer is a non-chosen member (paths through
-  non-members stay) and refuses "I know someone" from a non-chosen member.
+  results; they name no path. "Chosen" drops paths whose introducer is a non-chosen member, takes non-chosen members off
+  a path's starters (paths through non-members stay), and refuses "I know someone" from a non-chosen member.
 - **Follow-ups.** `email_outbox.expires_at`: the sender skips a row past it. Sign-in and reset emails expire a minute
   before their link. `next_attempt_at` defaults to `date_trunc('milliseconds', now())`: the rounded default put rows
   up to half a millisecond in the future, which made the one-click header test flaky.

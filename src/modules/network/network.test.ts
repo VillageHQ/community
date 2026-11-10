@@ -499,6 +499,25 @@ describe("the member network API", () => {
         expect((await readPaths()).paths.map(({ description }) => description).toSorted()).toEqual(["via chosen", "via stranger"]);
       });
 
+      it("never offers a member the admin didn't choose as the starter on an outsider's path", async () => {
+        const chosen = await createJoinedMember("chosen-member");
+        await createJoinedMember("other-member");
+        const otherMember = { first_name: "Test", last_name: "Member", linkedin_url: "https://linkedin.com/in/other-member" };
+        village.state.pathsByUrl.set(TARGET_URL, {
+          summary: "s",
+          paths: [{ degree: 3, description: "outsider via other", introducer: { first_name: "Out", last_name: "Sider", linkedin_url: "https://linkedin.com/in/outsider" }, starter: otherMember }],
+        });
+        const before = await readPaths();
+        expect(before.connectors.some(({ member }) => member !== null)).toBe(true);
+
+        await saveSettings({ introducers: "chosen", chosenIntroducerIds: [chosen.userId] });
+        await database.delete(memberPathResult);
+
+        const { connectors, paths } = await readPaths();
+        expect(connectors.filter(({ member }) => member !== null)).toEqual([]);
+        expect(paths.flatMap(({ starters }) => starters).some(({ isMember }) => isMember)).toBe(false);
+      });
+
       it("refuses 'chosen members' with nobody chosen, or only someone who doesn't share", async () => {
         const outsider = await createSignedInMember(database);
 

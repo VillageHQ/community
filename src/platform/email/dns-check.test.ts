@@ -70,6 +70,17 @@ describe("the email setup check", () => {
     expect(two.lines[0]).toMatchObject({ status: "missing", found: expect.stringContaining("Only one is allowed") });
   });
 
+  it("puts DMARC on the registered domain, never on a suffix like co.uk", async () => {
+    const resolver = stubResolver({});
+
+    const check = await checkSendingDomain("example.co.uk", resolver, NOW);
+    const nested = await checkSendingDomain("mail.example.co.uk", resolver, NOW);
+
+    expect(check.lines[2]?.toAdd?.name).toBe("_dmarc.example.co.uk");
+    expect(nested.lines[2]?.toAdd?.name).toBe("_dmarc.example.co.uk");
+    expect(resolver.asked).not.toContain("_dmarc.co.uk");
+  });
+
   it("says when DNS didn't answer, instead of calling a record missing", async () => {
     const check = await checkSendingDomain("example.com", stubResolver({}, { "send.example.com": "ESERVFAIL" }), NOW);
 

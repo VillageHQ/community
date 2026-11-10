@@ -436,8 +436,9 @@ function fetchVillagePathsOrNull(
   );
 }
 
-// With "chosen members" on, a path through any other member is dropped, so that member is never offered or asked as a
-// connector. Paths through people who aren't members (the viewer's own contacts) stay.
+// With "chosen members" on, no other member is ever offered or asked as a connector: a path whose introducer is one is
+// dropped, and one who is a starter (the way to an outside introducer) is taken off the path. Paths through people who
+// aren't members (the viewer's own contacts) stay.
 async function keepChosenIntroducers(database: Database, villagePaths: VillagePaths | null): Promise<VillagePaths | null> {
   if (!villagePaths) return villagePaths;
   const { introducers, chosenIntroducerIds } = await readVillageSearchSettings(database);
@@ -448,10 +449,10 @@ async function keepChosenIntroducers(database: Database, villagePaths: VillagePa
     .where(isNotNull(memberNetwork.linkedinSlug));
   const chosen = new Set(chosenIntroducerIds);
   const unchosenSlugs = new Set(members.flatMap(({ id, linkedinSlug }) => (linkedinSlug && !chosen.has(id) ? [linkedinSlug] : [])));
-  const paths = villagePaths.paths.filter(({ introducer }) => {
-    const slug = introducer ? readLinkedinSlug(introducer.profile.linkedin_url) : null;
-    return !slug || !unchosenSlugs.has(slug);
-  });
+  const isUnchosen = (linkedinUrl: string | null | undefined) => unchosenSlugs.has(readLinkedinSlug(linkedinUrl) ?? "");
+  const paths = villagePaths.paths
+    .filter(({ introducer }) => !isUnchosen(introducer?.profile.linkedin_url))
+    .map((path) => ({ ...path, starters: path.starters.filter(({ is_current_user, profile }) => is_current_user || !isUnchosen(profile.linkedin_url)) }));
   return { ...villagePaths, paths };
 }
 

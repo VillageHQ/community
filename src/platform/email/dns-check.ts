@@ -28,10 +28,15 @@ export function readSendingDomain(fromAddress: string) {
   return DOMAIN_SHAPE.test(domain) ? domain : null;
 }
 
-// mail.example.com → example.com. Good enough for DMARC's fallback to the parent domain; a suffix like .co.uk needs
-// the record on the sending domain itself, which this checks first.
+// Two-part suffixes like co.uk or com.au: the registered domain is then the last three labels.
+const SECOND_LEVEL_SUFFIX = /^(?:ac|co|com|edu|gov|net|org|ltd|plc|or|ne|go)$/;
+
+// mail.example.com → example.com, mail.example.co.uk → example.co.uk: where DMARC's fallback looks. Good enough
+// without a public-suffix list, and the sending domain itself is always checked first.
 function readParentDomain(domain: string) {
-  return domain.split(".").slice(-2).join(".");
+  const labels = domain.split(".");
+  const isTwoPartSuffix = labels.length >= 3 && labels.at(-1)!.length === 2 && SECOND_LEVEL_SUFFIX.test(labels.at(-2)!);
+  return labels.slice(isTwoPartSuffix ? -3 : -2).join(".");
 }
 
 function shorten(text: string) {
