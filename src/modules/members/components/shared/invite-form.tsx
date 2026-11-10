@@ -8,17 +8,20 @@ import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import type { IssuedInvite } from "@/modules/members/contract-invites";
+import { PROFILE_LIMITS } from "@/modules/members/contract-profile";
 
 import { createInviteRequest, INVITE_QUERY_KEYS } from "@/modules/members/queries-invites";
 import { IssuedLink } from "./issued-link";
 
 const EMAIL_FIELD = "email";
+const COHORT_FIELD = "cohort";
 const EMAIL_CONFIGURED_HINT = "We'll email them the link, and you get a copy to share yourself.";
 const EMAIL_NOT_CONFIGURED_HINT = "You'll get a personal link to copy and send them yourself.";
 
-function readSubmittedEmail(event: FormEvent<HTMLFormElement>) {
+function readSubmittedInvite(event: FormEvent<HTMLFormElement>) {
   event.preventDefault();
-  return String(new FormData(event.currentTarget).get(EMAIL_FIELD));
+  const form = new FormData(event.currentTarget);
+  return { email: String(form.get(EMAIL_FIELD)), cohort: String(form.get(COHORT_FIELD) ?? "") };
 }
 
 type InviteFormProps = {
@@ -43,7 +46,7 @@ export function InviteForm({ isEmailConfigured, issued, onIssued }: InviteFormPr
     <div className="grid gap-4">
       <form
         ref={formRef}
-        onSubmit={(event) => createMutation.mutate(readSubmittedEmail(event))}
+        onSubmit={(event) => createMutation.mutate(readSubmittedInvite(event))}
         className="grid gap-4"
       >
         <FormError message={createMutation.error?.message ?? null} />
@@ -55,6 +58,14 @@ export function InviteForm({ isEmailConfigured, issued, onIssued }: InviteFormPr
           placeholder="amara@example.com"
           hint={isEmailConfigured ? EMAIL_CONFIGURED_HINT : EMAIL_NOT_CONFIGURED_HINT}
           required
+        />
+        <FormField
+          name={COHORT_FIELD}
+          label="Cohort (optional)"
+          autoComplete="off"
+          placeholder="Fund II"
+          maxLength={PROFILE_LIMITS.cohort}
+          hint="It goes on their card. They can change it later."
         />
         <Button type="submit" size="lg" disabled={createMutation.isPending} className="max-sm:w-full sm:justify-self-start">
           <Send aria-hidden="true" />

@@ -162,7 +162,7 @@ async function renewExpiredInvite(connection: DatabaseOrTransaction, context: Re
   return rotateInvite(connection, context, open.id);
 }
 
-export async function createInvite(context: RequestContext, email: string) {
+export async function createInvite(context: RequestContext, email: string, cohort: string | null = null) {
   const { database, member } = context;
   const inviter = await readInviter(context);
   const token = createInviteToken();
@@ -177,6 +177,7 @@ export async function createInvite(context: RequestContext, email: string) {
         invitedByUserId: inviter.id,
         invitedByName: inviter.name,
         expiresAt: readInviteExpiry(),
+        cohort,
       })
       .onConflictDoNothing({ target: invite.email, where: OPEN_INVITE })
       .returning();
@@ -185,7 +186,10 @@ export async function createInvite(context: RequestContext, email: string) {
       const queuedEmailId = await queueInviteEmail(transaction, context, branding, created, token);
       return { row: created, token, message: "Invite created.", queuedEmailId };
     }
-    const { rotated, token: renewedToken } = await renewExpiredInvite(transaction, context, email);
+    const renewal = await renewExpiredInvite(transaction, context, email);
+    const { token: renewedToken } = renewal;
+    // A cohort given now replaces the old one; none keeps it.
+    const rotated = cohort ? ((await transaction.update(invite).set({ cohort }).where(eq(invite.id, renewal.rotated.id)).returning())[0] ?? renewal.rotated) : renewal.rotated;
     await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteResent, email);
     const queuedEmailId = await queueInviteEmail(transaction, context, branding, rotated, renewedToken);
     return { row: rotated, token: renewedToken, message: "Invite renewed.", queuedEmailId };

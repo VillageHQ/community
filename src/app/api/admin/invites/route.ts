@@ -7,6 +7,6 @@ const CREATED_STATUS = 201;
 export const POST = membersRoutes.member(
   "invite-create",
   createInviteBodySchema,
-  async (context, { email }) => Response.json(await createInvite(context, email), { status: CREATED_STATUS }),
+  async (context, { email, cohort }) => Response.json(await createInvite(context, email, cohort), { status: CREATED_STATUS }),
   { adminOnly: true },
 );

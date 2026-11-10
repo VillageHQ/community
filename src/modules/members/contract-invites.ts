@@ -4,6 +4,7 @@ import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_PASSWORD_LENGTH } from "../../platform
 import { removeNullBytes } from "../../platform/text/safe-text.ts";
 import { INVITE_EMAIL_STATUSES, INVITE_STATES } from "./contract-invite-state.ts";
 import { nameSchema } from "../../platform/auth/member-name.ts";
+import { PROFILE_LIMITS } from "./contract-profile.ts";
 
 const MAXIMUM_EMAIL_LENGTH = 254;
 
@@ -24,6 +25,14 @@ export const createInviteBodySchema = z.object({
     .max(MAXIMUM_EMAIL_LENGTH, "This email address is too long.")
     .pipe(z.email("Enter a valid email address."))
     .transform((email) => email.toLowerCase()),
+  // Optional, as on a CSV line: it goes on the new member's card.
+  cohort: z
+    .string()
+    .overwrite(removeNullBytes)
+    .trim()
+    .max(PROFILE_LIMITS.cohort, `Keep the cohort under ${PROFILE_LIMITS.cohort} characters.`)
+    .optional()
+    .transform((cohort) => cohort || null),
 });
 
 export const inviteIdBodySchema = z.object({ inviteId: z.uuid("This invite changed. Reload the page.") });

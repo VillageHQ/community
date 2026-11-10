@@ -25,8 +25,8 @@ export function inviteListQuery(page: number, filter: InviteFilter) {
   });
 }
 
-export function createInviteRequest(email: string) {
-  return postRequest(API_ROUTES.invites, { email }, issuedInviteSchema);
+export function createInviteRequest({ email, cohort }: { email: string; cohort: string }) {
+  return postRequest(API_ROUTES.invites, { email, cohort }, issuedInviteSchema);
 }
 
 export function resendInviteRequest(inviteId: string) {
