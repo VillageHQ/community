@@ -8,6 +8,7 @@ import { isActiveMember } from "@/platform/auth/member-status";
 import { readSettings } from "@/platform/settings/store";
 
 import { memberProfile } from "../members/schema";
+import { logoOfCompanyColumn } from "../members/reads-pictures";
 
 import { PUBLIC_BOARD_SETTING, readToolLabel, type BoardCompany, type BoardJob, type JobSourceView, type PublicJob, type SourceJob } from "./contract";
 import { jobPosting, jobSource } from "./schema";
@@ -36,6 +37,7 @@ export async function readBoardJobs(database: DatabaseOrTransaction, companySlug
       postedAt: jobPosting.postedAt,
       company: jobSource.company,
       companySlug: jobSource.companySlug,
+      companyLogoUrl: logoOfCompanyColumn(jobSource.company, jobSource.memberId),
       memberId: user.id,
       memberName: user.name,
     })

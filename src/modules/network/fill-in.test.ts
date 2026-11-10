@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { memberFillIn, memberLookup, memberNetwork, memberProfile } from "@/modules/members/schema";
-import { readMemberProfile } from "@/modules/members/service-profile";
+import { readAvatarUrl, readMemberProfile, saveAvatar } from "@/modules/members/service-profile";
 import { readDirectory } from "@/modules/members/reads-directory";
 import { FILL_IN_FIELDS } from "@/modules/members/contract-fill-in";
 import { saveVillageKeys } from "@/platform/village/settings";
@@ -21,6 +21,10 @@ import { POST as postProfile } from "@/app/api/profile/route";
 import { POST as postFillInRun } from "@/app/api/admin/village/fill-in/run/route";
 
 import { runFillIn } from "./service-fill-in";
+import { readCompanyDomain, readSafeImageUrl, toFilledProfile } from "./rules-fill-in";
+
+const FILLED_FACE = "https://images.example.com/riley-example.jpg";
+const FILLED_LOGO = "https://images.example.com/logo.png";
 
 const APP_URL = "http://localhost:3000";
 const BY_EMAIL_PATH = "/v2/people/enrich/by-email";
@@ -154,9 +158,47 @@ describe("profile fill-in", () => {
 
     const profile = await readMemberProfile(database, member.userId);
     expect(profile?.shown).toMatchObject({ title: "Founder", company: "Example Co", location: "Porto" });
-    expect(profile?.shown.filledFields).toEqual([FILL_IN_FIELDS.company, FILL_IN_FIELDS.headline, FILL_IN_FIELDS.face]);
+    expect(profile?.shown.filledFields).toEqual([FILL_IN_FIELDS.company, FILL_IN_FIELDS.headline, FILL_IN_FIELDS.face, FILL_IN_FIELDS.companyLogo]);
     const directory = await readDirectory(database, { search: "", tag: "", page: 1 });
     expect(directory.members.find(({ id }) => id === member.userId)).toMatchObject({ title: "Founder", company: "Example Co" });
+  });
+
+  it("draws the filled-in face everywhere until the member uploads a photo, and the logo only beside the company Village found", async () => {
+    await recordTermsBasis();
+    await runFillIn(database, process.env);
+    const listed = async () => (await readDirectory(database, { search: "", tag: "", page: 1 })).members.find(({ id }) => id === member.userId);
+
+    expect(await readAvatarUrl(database, member.userId)).toBe(FILLED_FACE);
+    expect(await listed()).toMatchObject({ avatarUrl: FILLED_FACE, companyLogoUrl: FILLED_LOGO });
+    expect((await readMemberProfile(database, member.userId))?.shown).toMatchObject({ imageUrl: FILLED_FACE, companyLogoUrl: FILLED_LOGO });
+
+    // The same company in other words keeps the logo; another company drops it, and the logo never stands in as a face.
+    expect((await postProfile(post(member, { company: "  example co " }))).status).toBe(200);
+    expect(await listed()).toMatchObject({ companyLogoUrl: FILLED_LOGO });
+    expect((await postProfile(post(member, { company: "Another Co" }))).status).toBe(200);
+    expect(await listed()).toMatchObject({ company: "Another Co", companyLogoUrl: null, avatarUrl: FILLED_FACE });
+    expect((await readMemberProfile(database, member.userId))?.shown.companyLogoUrl).toBeNull();
+
+    await saveAvatar(database, member.userId, Buffer.from("not really a picture"), "image/png");
+    const uploaded = await readAvatarUrl(database, member.userId);
+    expect(uploaded).toMatch(/\/avatar\?v=\d+$/);
+    expect(await listed()).toMatchObject({ avatarUrl: uploaded });
+    expect((await readMemberProfile(database, member.userId))?.shown.imageUrl).toBe(uploaded);
+  });
+
+  it("keeps the company's website and accepts the app's own demo pictures, never another kind of link", async () => {
+    const profile = createFakeProfile();
+    const filled = toFilledProfile({
+      ...profile,
+      avatar: "/demo/faces/riley-example.svg",
+      work_relevant: { title: "Founder", company: { name: "Example Co", domain: "WWW.Example.COM", image_url: "javascript:alert(1)" } },
+    });
+    expect(filled).toMatchObject({ [FILL_IN_FIELDS.face]: "/demo/faces/riley-example.svg", [FILL_IN_FIELDS.companyDomain]: "example.com" });
+    expect(filled[FILL_IN_FIELDS.companyLogo]).toBeUndefined();
+    expect(readSafeImageUrl("/demo/../secrets.svg")).toBeUndefined();
+    expect(readSafeImageUrl("//evil.example/x.svg")).toBeUndefined();
+    expect(readSafeImageUrl("http://images.example.com/x.png")).toBeUndefined();
+    expect(readCompanyDomain("not a domain")).toBeUndefined();
   });
 
   it("never looks up a member who said don't look me up, and removes what was filled in", async () => {

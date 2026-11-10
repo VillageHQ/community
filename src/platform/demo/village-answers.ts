@@ -1,8 +1,9 @@
-import { DEMO_OUTSIDERS, DEMO_PEOPLE, toDemoSlug, type DemoOutsider } from "./people.ts";
+import { DEMO_OUTSIDERS, DEMO_PEOPLE, toDemoEmail, toDemoSlug, type DemoOutsider, type DemoPerson } from "./people.ts";
+import { toDemoDomain, toDemoFaceUrl, toDemoLogoUrl } from "./pictures.ts";
 
 // Canned, made-up Village answers for demo mode, in the shapes Village's API uses. No key is checked and nothing is
-// stored: every member is connected and synced, search returns the same invented people, and every path runs through
-// a demo member who shares their network.
+// stored: every member is connected and synced, search returns the same invented people, every path runs through
+// a demo member who shares their network, and the profile fill-in finds each demo member with a drawn face and logo.
 
 const TOKEN_PREFIX = "demo-token.";
 const TIMESTAMP = "2026-01-01T00:00:00.000Z";
@@ -65,9 +66,14 @@ function toSearchPerson(person: DemoOutsider, index: number) {
     headline: `${person.title} at ${person.company}`,
     about_me: null,
     location: { city: person.location, state: null, country: null },
-    work_relevant: { title: person.title, start_date: TIMESTAMP, end_date: null, company: { id: index + 1, name: person.company } },
+    work_relevant: {
+      title: person.title,
+      start_date: TIMESTAMP,
+      end_date: null,
+      company: { id: index + 1, name: person.company, domain: toDemoDomain(person.company), image_url: toDemoLogoUrl(person.company) },
+    },
     education_relevant: null,
-    image_url: "",
+    image_url: toDemoFaceUrl(person.name),
     relationship_cached: { id: `relationship-${index}`, linkedin_identifier: person.slug, paths: { count: 1, avatars: [], team_only: false }, warmth_score: 2 },
     last_enrichment_at: TIMESTAMP,
   };
@@ -95,13 +101,13 @@ function toPaths(linkedinUrl: string, callerEmail: string) {
     ...splitName(connector.name),
     linkedin_url: `${LINKEDIN_PREFIX}${toDemoSlug(connector)}`,
     headline: `${connector.title} at ${connector.company}`,
-    avatar: "",
+    avatar: toDemoFaceUrl(connector.name),
     title: connector.title,
     company: connector.company,
   };
   const why = `${connector.name.split(" ")[0]} worked with ${target.name.split(" ")[0]} for two years and they still talk.`;
   return {
-    person: { linkedin_url: linkedinUrl, avatar: "", village_url: "", ...splitName(target.name), full_name: target.name, headline: `${target.title} at ${target.company}` },
+    person: { linkedin_url: linkedinUrl, avatar: toDemoFaceUrl(target.name), village_url: "", ...splitName(target.name), full_name: target.name, headline: `${target.title} at ${target.company}` },
     summary: { score: 2, score_label: "Strong", description: `A warm path through ${connector.name}.` },
     count: 1,
     paths: [
@@ -123,6 +129,31 @@ function toPaths(linkedinUrl: string, callerEmail: string) {
       },
     ],
   };
+}
+
+// The public profile the fill-in finds for a demo member: their own card, with a drawn face and company logo.
+export function toDemoProfile(person: DemoPerson) {
+  return {
+    full_name: person.name,
+    linkedin_url: `${LINKEDIN_PREFIX}${toDemoSlug(person)}`,
+    avatar: toDemoFaceUrl(person.name),
+    headline: `${person.title} at ${person.company}`,
+    location: { city: person.location, state: null, country: null },
+    work_relevant: {
+      title: person.title,
+      start_date: TIMESTAMP,
+      end_date: null,
+      company: { id: null, name: person.company, domain: toDemoDomain(person.company), image_url: toDemoLogoUrl(person.company) },
+    },
+    work_history: [],
+    last_enrichment_at: TIMESTAMP,
+  };
+}
+
+function findDemoPerson(body: unknown) {
+  const email = readField(body, "email").toLowerCase();
+  const slug = readSlug(readField(body, "linkedin_url"));
+  return DEMO_PEOPLE.find((person) => (email && toDemoEmail(person) === email) || (slug && toDemoSlug(person) === slug)) ?? null;
 }
 
 async function readBody(request: Request): Promise<unknown> {
@@ -183,8 +214,12 @@ export async function answerDemoVillage(request: Request): Promise<Response> {
       const paths = toPaths(readField(body, "linkedin_url"), callerEmail);
       return paths ? data(paths, { counts: { total: { value: paths.paths.length } } }) : notFound();
     }
+    case "/v2/people/enrich":
+    case "/v2/people/enrich/by-email": {
+      const person = findDemoPerson(body);
+      return person ? data(toDemoProfile(person)) : notFound();
+    }
     default:
-      // Enrichment and anything else: nobody found, so the profile fill-in never invents details.
       return notFound();
   }
 }

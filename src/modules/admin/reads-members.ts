@@ -8,7 +8,7 @@ import type { Database } from "../../platform/database/client.ts";
 import { isReclaimedEmail } from "../../platform/auth/reclaimed-email.ts";
 import { isActiveMember, isBanActive, isBanInEffect } from "../../platform/auth/member-status.ts";
 import { toContainsPattern } from "../members/reads-directory.ts";
-import { toAvatarUrl } from "../members/service-profile.ts";
+import { filledFaceColumn, toShownFaceUrl } from "../members/reads-pictures.ts";
 import { linkedinUrl } from "@villagehq/sdk";
 import { readVillageStatus } from "../network/contract-village-status.ts";
 import {
@@ -65,6 +65,7 @@ function selectMembers(database: Database) {
       banned: user.banned,
       banExpires: user.banExpires,
       avatarUpdatedAt: memberAvatar.updatedAt,
+      filledFace: filledFaceColumn(user.id),
       inviteId: invite.id,
       removedAt: memberRemoval.removedAt,
       keepsContent: memberRemoval.keepsContent,
@@ -99,7 +100,7 @@ function toAdminMember(row: MemberRow) {
     id: row.id,
     name: row.name,
     email: isReclaimed ? null : row.email,
-    avatarUrl: toAvatarUrl(row.id, row.avatarUpdatedAt),
+    avatarUrl: toShownFaceUrl(row.id, row.avatarUpdatedAt, row.filledFace),
     isAdmin: row.role === MEMBER_ROLES.admin,
     joinedAt: row.createdAt.toISOString(),
     isEmailConfirmed: row.emailVerified,

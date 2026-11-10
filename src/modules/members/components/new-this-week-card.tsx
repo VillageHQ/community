@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CompanyName } from "@/components/company-name";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,7 @@ const RAIL_AVATAR_SIZE_PX = 44;
 type NewMember = Awaited<ReturnType<typeof readNewMembers>>["newMembers"][number];
 
 function NewMemberRow({ member }: { member: NewMember }) {
-  const { id, name, title, company, avatarUrl } = member;
+  const { id, name, title, company, avatarUrl, companyLogoUrl } = member;
   return (
     <li className="flex flex-wrap items-center gap-3">
       <Avatar stableId={id} name={name} imageUrl={avatarUrl} sizePx={RAIL_AVATAR_SIZE_PX} />
@@ -20,7 +21,9 @@ function NewMemberRow({ member }: { member: NewMember }) {
         <Link href={`${ROUTES.members}/${id}`} className="type-label wrap-anywhere hover:underline">
           {name}
         </Link>
-        <div className="type-micro font-medium wrap-anywhere text-muted-foreground">{company ?? title ?? "New member"}</div>
+        <div className="type-micro font-medium wrap-anywhere text-muted-foreground">
+          {company ? <CompanyName company={company} logoUrl={companyLogoUrl} logoSizePx={14} /> : (title ?? "New member")}
+        </div>
       </div>
       <MemberConversationSlot
         memberId={id}

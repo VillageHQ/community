@@ -9,6 +9,8 @@ import { jobPosting, jobSource } from "@/modules/job-board/schema";
 import { readRequesterState } from "@/modules/intros/contract";
 import { memberAvatar, memberBlock, memberFillIn, memberLookup, memberNetwork, memberProfile, memberTag } from "@/modules/members/schema";
 import { readFillInSettings } from "@/modules/members/service-fill-in";
+import { FILL_IN_FIELDS } from "@/modules/members/contract-fill-in";
+import { isFilledLogoShown } from "@/modules/members/rules-fill-in";
 import { readPrivacy } from "@/modules/members/service-privacy";
 import { directMessage } from "@/modules/messages/schema";
 import { adminAuditEntry } from "@/platform/audit/schema";
@@ -60,6 +62,21 @@ async function readIntros(database: Database, memberId: string) {
 
 // Everything this community stores about one member, as they would want to take it with them. It never holds another
 // member's email, private notes or messages.
+type FilledInLine = { field: string; value: string; hiddenAt: Date | null };
+
+function readPictureLinks(lines: readonly FilledInLine[], ownCompany: string | null, hasUploadedPhoto: boolean) {
+  const line = (field: string) => lines.find((candidate) => candidate.field === field && candidate.value !== "");
+  const face = line(FILL_IN_FIELDS.face);
+  const logo = line(FILL_IN_FIELDS.companyLogo);
+  const company = line(FILL_IN_FIELDS.company);
+  return {
+    face: face ? { url: face.value, isShown: face.hiddenAt === null && !hasUploadedPhoto } : null,
+    companyLogo: logo
+      ? { url: logo.value, isShown: logo.hiddenAt === null && isFilledLogoShown(ownCompany, company?.hiddenAt === null ? company.value : null) }
+      : null,
+  };
+}
+
 export async function readMemberExport(database: Database, memberId: string) {
   const [[account], branding, privacy, fillInSettings] = await Promise.all([
     database
@@ -131,6 +148,8 @@ export async function readMemberExport(database: Database, memberId: string) {
     tags: tags.map(({ tag }) => tag),
     photo: avatar ? { contentType: avatar.contentType, updatedAt: avatar.updatedAt, dataBase64: Buffer.from(avatar.bytes).toString("base64") } : null,
     filledInFromPublicProfiles: filledIn,
+    // The links to the pictures public profiles found, and whether each is on show.
+    picturesFromPublicProfiles: readPictureLinks(filledIn, profile?.company ?? null, avatar !== undefined),
     privacy: {
       hiddenFromDirectory: privacy.isHidden,
       whoCanMessageMe: privacy.messagePolicy,

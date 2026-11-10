@@ -8,14 +8,14 @@ import { memberAvatar, memberProfile, memberTag } from "./schema.ts";
 import { type Directory, type DirectoryFilters, normalizeTag } from "./contract-profile.ts";
 import { EMPTY_DIRECTORY_FILTERS } from "./rules-directory-url.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
-import { toAvatarUrl } from "./service-profile.ts";
+import { companyLogoColumn, shownFaceColumns, toShownFaceUrl } from "./reads-pictures.ts";
 import { FILL_IN_FIELDS } from "./contract-fill-in.ts";
 import { shownFillInColumn } from "./service-fill-in.ts";
 import { isListedMember } from "./service-privacy.ts";
 
 export const DIRECTORY_PAGE_SIZE = 12;
 
-// Lists show a filled-in role, company and face where the member left theirs empty.
+// Lists show a filled-in role, company and face where the member left theirs empty, and the company's logo by its rule.
 const filledTitle = shownFillInColumn(FILL_IN_FIELDS.title);
 const filledCompany = shownFillInColumn(FILL_IN_FIELDS.company);
 const filledFace = shownFillInColumn(FILL_IN_FIELDS.face);
@@ -23,9 +23,6 @@ const filledFace = shownFillInColumn(FILL_IN_FIELDS.face);
 const shownTitle = sql<string | null>`coalesce(nullif(${memberProfile.title}, ''), ${filledTitle.line.value})`;
 const shownCompany = sql<string | null>`coalesce(nullif(${memberProfile.company}, ''), ${filledCompany.line.value})`;
 
-function toListAvatarUrl(memberId: string, avatarUpdatedAt: Date | null, filledFaceUrl: string | null) {
-  return toAvatarUrl(memberId, avatarUpdatedAt) ?? filledFaceUrl;
-}
 const MAXIMUM_POPULAR_TAGS = 6;
 const MAXIMUM_NEW_MEMBERS = 3;
 const MAXIMUM_NEIGHBOURS = 6;
@@ -177,6 +174,7 @@ export async function readDirectory(database: Database, filters: Partial<Directo
       cohort: memberProfile.cohort,
       avatarUpdatedAt: memberAvatar.updatedAt,
       filledFaceUrl: filledFace.line.value,
+      companyLogoUrl: companyLogoColumn(user.id),
     })
     .from(user)
     .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
@@ -199,7 +197,7 @@ export async function readDirectory(database: Database, filters: Partial<Directo
   return {
     members: rows.map(({ avatarUpdatedAt, filledFaceUrl, ...member }) => ({
       ...member,
-      avatarUrl: toListAvatarUrl(member.id, avatarUpdatedAt, filledFaceUrl),
+      avatarUrl: toShownFaceUrl(member.id, avatarUpdatedAt, filledFaceUrl),
       tags: tagsByMember.get(member.id) ?? [],
     })),
     matchCount,
@@ -213,11 +211,12 @@ export async function readDirectory(database: Database, filters: Partial<Directo
 
 export function readMemberNeighbours(database: Database, excludedMemberId: string) {
   return database
-    .select({ id: user.id, name: user.name })
+    .select({ id: user.id, name: user.name, ...shownFaceColumns(user.id) })
     .from(user)
     .where(and(ne(user.id, excludedMemberId), isActiveMember(), isListedMember()))
     .orderBy(desc(user.createdAt), asc(user.id))
-    .limit(MAXIMUM_NEIGHBOURS);
+    .limit(MAXIMUM_NEIGHBOURS)
+    .then((rows) => rows.map(({ id, name, avatarUpdatedAt, filledFace }) => ({ id, name, imageUrl: toShownFaceUrl(id, avatarUpdatedAt, filledFace) })));
 }
 
 export async function readNewMembers(database: Database, excludedMemberId: string, now = new Date()) {
@@ -233,22 +232,27 @@ export async function readNewMembers(database: Database, excludedMemberId: strin
       .select({
         id: user.id,
         name: user.name,
-        title: memberProfile.title,
-        company: memberProfile.company,
+        title: shownTitle,
+        company: shownCompany,
         avatarUpdatedAt: memberAvatar.updatedAt,
+        filledFaceUrl: filledFace.line.value,
+        companyLogoUrl: companyLogoColumn(user.id),
       })
       .from(user)
       .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
       .leftJoin(memberAvatar, eq(memberAvatar.userId, user.id))
+      .leftJoin(filledTitle.line, filledTitle.joinCondition)
+      .leftJoin(filledCompany.line, filledCompany.joinCondition)
+      .leftJoin(filledFace.line, filledFace.joinCondition)
       .where(isNewAndActive)
       .orderBy(desc(user.createdAt), asc(user.id))
       .limit(MAXIMUM_NEW_MEMBERS),
   ]);
   return {
     newCount: counted?.newCount ?? 0,
-    newMembers: rows.map(({ avatarUpdatedAt, ...member }) => ({
+    newMembers: rows.map(({ avatarUpdatedAt, filledFaceUrl, ...member }) => ({
       ...member,
-      avatarUrl: toAvatarUrl(member.id, avatarUpdatedAt),
+      avatarUrl: toShownFaceUrl(member.id, avatarUpdatedAt, filledFaceUrl),
     })),
   };
 }

@@ -217,7 +217,7 @@ export function buildSampleItems(now = new Date()): TodayItems {
       {
         id: "00000000-0000-4000-8000-000000000001",
         title: "Who knows a good fractional CFO for a seed-stage startup?",
-        author: { id: "sample-asker", name: "Priya Shah" },
+        author: { id: "sample-asker", name: "Priya Shah", avatarUrl: null },
         listedAt: at,
         matchedWords: ["finance"],
         why: null,

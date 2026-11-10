@@ -1,5 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 
+import { toDemoFaceUrl, toDemoLogoUrl } from "../platform/demo/pictures.ts";
+
 const TOKEN_PREFIX = "fake-token.";
 const FAKE_REQUEST_ID = "req_fake";
 const FAKE_TIMESTAMP = "2026-01-01T00:00:00.000Z";
@@ -21,7 +23,8 @@ type RecordedRequest = {
 type FakeFailure = { status: number; type: string };
 type FakeNetworkStatus = "not_connected" | "syncing" | "ready" | "needs_attention";
 type FakeVillageUser = { status: FakeNetworkStatus; email?: string };
-type FakeRelationship = { first_name: string; last_name: string; linkedin_url: string; headline?: string };
+// Pictures default to the bundled made-up drawings (public/demo/) for the person's name; set "" for none.
+type FakeRelationship = { first_name: string; last_name: string; linkedin_url: string; headline?: string; avatar?: string };
 type FakeScoreMeta = { title: string; description: string };
 type FakePath = {
   degree: number;
@@ -32,9 +35,9 @@ type FakePath = {
   introducerMeta?: FakeScoreMeta[];
   starterMeta?: FakeScoreMeta[];
 };
-type FakeTarget = { first_name?: string; last_name?: string; full_name?: string };
+type FakeTarget = { first_name?: string; last_name?: string; full_name?: string; avatar?: string };
 type FakePaths = { summary: string; paths: FakePath[]; target?: FakeTarget };
-type FakePerson = { full_name: string; linkedin_url: string; headline?: string };
+type FakePerson = { full_name: string; linkedin_url: string; headline?: string; image_url?: string; company?: string };
 export type FakeProfile = {
   full_name: string;
   linkedin_url: string;
@@ -183,10 +186,11 @@ function readObjectField(body: unknown, field: string) {
 }
 
 function toVillageProfile(profile: FakeRelationship) {
-  return { headline: "Headline", avatar: "", title: "Title", company: "Company", ...profile };
+  const avatar = toDemoFaceUrl(`${profile.first_name} ${profile.last_name}`);
+  return { headline: "Headline", avatar, title: "Title", company: "Company", ...profile };
 }
 
-function toVillageSearchPerson({ full_name, linkedin_url, headline }: FakePerson, id: number) {
+function toVillageSearchPerson({ full_name, linkedin_url, headline, image_url = toDemoFaceUrl(full_name), company = "Company" }: FakePerson, id: number) {
   const [first_name = "", ...lastNames] = full_name.split(" ");
   return {
     id,
@@ -197,9 +201,9 @@ function toVillageSearchPerson({ full_name, linkedin_url, headline }: FakePerson
     headline,
     about_me: null,
     location: { city: "City", state: null, country: "Country" },
-    work_relevant: { title: "Title", start_date: FAKE_TIMESTAMP, end_date: null, company: { id, name: "Company" } },
+    work_relevant: { title: "Title", start_date: FAKE_TIMESTAMP, end_date: null, company: { id, name: company, image_url: toDemoLogoUrl(company) } },
     education_relevant: null,
-    image_url: "",
+    image_url,
     relationship_cached: { id: "relationship", linkedin_identifier: "", paths: { count: 0, avatars: [], team_only: false }, warmth_score: 0 },
     last_enrichment_at: FAKE_TIMESTAMP,
   };
@@ -232,7 +236,7 @@ const DEFAULT_FAKE_TARGET: FakeTarget = { first_name: "Target", last_name: "Pers
 
 function toVillagePaths({ summary, paths, target = DEFAULT_FAKE_TARGET }: FakePaths) {
   return {
-    person: { linkedin_url: "", avatar: "", village_url: "", first_name: "", last_name: "", full_name: "", ...target },
+    person: { linkedin_url: "", avatar: toDemoFaceUrl(target.full_name ?? ""), village_url: "", first_name: "", last_name: "", full_name: "", ...target },
     summary: { score: 1, score_label: "Okay", description: summary },
     count: paths.length,
     paths: paths.map(({ degree, description, introducer, starter, isStarterCurrentUser, introducerMeta, starterMeta }) => ({

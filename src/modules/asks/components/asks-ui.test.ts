@@ -19,7 +19,7 @@ const ASK: BoardAsk = {
   category: ASK_CATEGORIES.hire,
   kind: ASK_KINDS.ask,
   listedAt: "2026-11-05T12:00:00.000Z",
-  author: { id: "maya", name: "Maya Okafor", title: null, company: null, avatarUrl: null },
+  author: { id: "maya", name: "Maya Okafor", title: null, company: null, avatarUrl: null, companyLogoUrl: null },
   target: null,
   offerCount: 0,
   isMine: false,

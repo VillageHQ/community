@@ -6,7 +6,6 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberAvatar, memberProfile, memberTag, memberNetwork } from "./schema.ts";
 import type { ImageContentType } from "../../platform/image-rules.ts";
-import { API_ROUTES } from "../../platform/http/routes.ts";
 import { saveMemberLinkedinUrl } from "./service-linkedin.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import { type RequestContext } from "../../platform/http/request-context.ts";
@@ -16,14 +15,12 @@ import { parseExternalUrl } from "./rules-external-url.ts";
 import { normalizeTag, type ProfileBody } from "./contract-profile.ts";
 import { readShownCard } from "./rules-fill-in.ts";
 import { readShownFillIn } from "./service-fill-in.ts";
+import { filledFaceColumn, toAvatarUrl, toShownFaceUrl } from "./reads-pictures.ts";
 
 const UNPROCESSABLE_STATUS = 422;
 const NULL_BYTE = "\0";
 
-export function toAvatarUrl(memberId: string, updatedAt: Date | null) {
-  if (!updatedAt) return null;
-  return `${API_ROUTES.members}/${encodeURIComponent(memberId)}/avatar?v=${updatedAt.getTime()}`;
-}
+export { toAvatarUrl };
 
 async function readLinkedinSlugOf(database: Database, memberId: string) {
   const [network] = await database
@@ -96,12 +93,14 @@ export async function readAvatar(database: Database, memberId: string) {
   return { bytes: avatar.bytes, contentType: avatar.contentType, version: String(avatar.updatedAt.getTime()) };
 }
 
+// The face every screen draws for the member: their uploaded photo, else the face public profiles found.
 export async function readAvatarUrl(database: Database, memberId: string) {
-  const [avatar] = await database
-    .select({ updatedAt: memberAvatar.updatedAt })
-    .from(memberAvatar)
-    .where(eq(memberAvatar.userId, memberId));
-  return toAvatarUrl(memberId, avatar?.updatedAt ?? null);
+  const [row] = await database
+    .select({ updatedAt: memberAvatar.updatedAt, filledFace: filledFaceColumn(user.id) })
+    .from(user)
+    .leftJoin(memberAvatar, eq(memberAvatar.userId, user.id))
+    .where(eq(user.id, memberId));
+  return toShownFaceUrl(memberId, row?.updatedAt ?? null, row?.filledFace ?? null);
 }
 
 export async function readMemberProfile(database: Database, memberId: string) {

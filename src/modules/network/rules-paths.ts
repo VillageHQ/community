@@ -10,6 +10,7 @@ import { readLinkedinSlug } from "../members/contract-linkedin.ts";
 import { namesMatch } from "./rules-name-match.ts";
 import { CONNECTOR_LIMITS, type Connector, type NetworkPath, type NetworkPaths } from "./contract.ts";
 import { COMMUNITY_MEMBER_LABEL } from "../../platform/text/labels.ts";
+import { readSafeImageUrl } from "./rules-fill-in.ts";
 
 const DIRECT_DEGREE = 1;
 const DIRECT_CONNECTION_PATTERN = /(\p{Extended_Pictographic}\s*)?Direct connection/gu;
@@ -57,11 +58,19 @@ function readProfileMember(profile: PathProfile, reachableMembers: ReachableMemb
   return readTrustedMember(readProfileName(profile), readLinkedinSlug(profile.linkedin_url), reachableMembers);
 }
 
+// A member's own face wins; anyone else gets the picture Village has of them, when it is a safe link.
+export function readPersonImageUrl(member: Pick<ReachableMember, "avatarUrl"> | null | undefined, villagePicture: string | null | undefined) {
+  if (member) return member.avatarUrl;
+  return readSafeImageUrl(villagePicture) ?? null;
+}
+
 function describePerson(profile: PathProfile, reachableMembers: ReachableMembers) {
+  const member = readProfileMember(profile, reachableMembers);
   return {
     name: readProfileName(profile),
     linkedinSlug: readLinkedinSlug(profile.linkedin_url),
-    isMember: readProfileMember(profile, reachableMembers) !== null,
+    isMember: member !== null,
+    imageUrl: readPersonImageUrl(member, profile.avatar),
   };
 }
 
@@ -74,6 +83,12 @@ export function readTargetName(villagePaths: VillagePaths | null) {
   if (!person) return null;
   const name = person.full_name || readProfileName(person);
   return cleanVillageText(name, CONNECTOR_LIMITS.nameLength) || null;
+}
+
+export function readTargetImageUrl(villagePaths: VillagePaths | null, targetSlug: string, reachableMembers: ReachableMembers) {
+  const person = villagePaths?.person;
+  const member = readTrustedMember(readTargetName(villagePaths), targetSlug, reachableMembers);
+  return readPersonImageUrl(member, person?.avatar || person?.image_url);
 }
 
 export function readPathSlugs(villagePaths: VillagePaths | null) {
@@ -90,11 +105,12 @@ export function readPathSlugs(villagePaths: VillagePaths | null) {
 type ConnectorFacts = {
   profile: PathProfile;
   reason: string;
-  throughName: string | null;
+  through: PathProfile | null;
   reachableMembers: ReachableMembers;
 };
 
-function toConnector({ profile, reason, throughName, reachableMembers }: ConnectorFacts): ConnectorDraft | null {
+function toConnector({ profile, reason, through, reachableMembers }: ConnectorFacts): ConnectorDraft | null {
+  const throughName = through ? readProfileName(through) : null;
   const member = readProfileMember(profile, reachableMembers);
   const name = cleanVillageText(member?.name ?? readProfileName(profile), CONNECTOR_LIMITS.nameLength);
   if (!name) return null;
@@ -104,6 +120,8 @@ function toConnector({ profile, reason, throughName, reachableMembers }: Connect
     linkedinSlug: readLinkedinSlug(profile.linkedin_url),
     reason,
     throughName,
+    imageUrl: readPersonImageUrl(member, profile.avatar),
+    throughImageUrl: through ? readPersonImageUrl(readProfileMember(through, reachableMembers), through.avatar) : null,
     member: member ? { id: member.id, avatarUrl: member.avatarUrl } : null,
   };
 }
@@ -137,7 +155,7 @@ function readPathConnector(
 
   if (asksThroughIntroducer && readProfileMember(introducerProfile, reachableMembers)) {
     const reason = readIntroducerReason(path, introducerName, targetName);
-    return toConnector({ profile: introducerProfile, reason, throughName: null, reachableMembers });
+    return toConnector({ profile: introducerProfile, reason, through: null, reachableMembers });
   }
 
   const starters = path.starters.filter(({ is_current_user, profile }) => {
@@ -150,12 +168,12 @@ function readPathConnector(
   if (starter && asksThroughIntroducer) {
     const throughName = introducerName;
     const reason = readStarterReason(starter, throughName, targetName);
-    return toConnector({ profile: starter.profile, reason, throughName, reachableMembers });
+    return toConnector({ profile: starter.profile, reason, through: introducerProfile, reachableMembers });
   }
   if (!asksThroughIntroducer) return null;
 
   const reason = readIntroducerReason(path, introducerName, targetName);
-  return toConnector({ profile: introducerProfile, reason, throughName: null, reachableMembers });
+  return toConnector({ profile: introducerProfile, reason, through: null, reachableMembers });
 }
 
 function readConnectorKey({ linkedinSlug, name }: ConnectorDraft) {
@@ -206,6 +224,7 @@ export function describeMemberPaths(
     isTargetMember,
     isCached,
     targetName: readTargetName(villagePaths),
+    targetImageUrl: readTargetImageUrl(villagePaths, targetSlug, reachableMembers),
     targetMemberId: readTrustedMember(readTargetName(villagePaths), targetSlug, reachableMembers)?.id ?? null,
     isViewer: targetSlug === viewerSlug,
     isDirectConnection: !isTargetMember && paths.some(({ degree }) => degree === DIRECT_DEGREE),

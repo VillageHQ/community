@@ -9,7 +9,10 @@ import { feedManifest } from "@/modules/feed/manifest";
 import { introRequest } from "@/modules/intros/schema";
 import { introsManifest } from "@/modules/intros/manifest";
 import { jobBoardManifest } from "@/modules/job-board/manifest";
-import { invite, memberNetwork, memberProfile, memberTag } from "@/modules/members/schema";
+import { invite, memberFillIn, memberLookup, memberNetwork, memberProfile, memberTag } from "@/modules/members/schema";
+import { FILL_IN_BASES, LOOKUP_STATUSES } from "@/modules/members/contract-fill-in";
+import { saveFillInSettings } from "@/modules/members/service-fill-in";
+import { toFilledProfile } from "@/modules/network/rules-fill-in";
 import { createInviteToken, hashInviteToken } from "@/modules/members/service-invite-token";
 import { messagesManifest } from "@/modules/messages/manifest";
 import { conversation, conversationReadCursor, directMessage } from "@/modules/messages/schema";
@@ -19,7 +22,8 @@ import { user } from "@/platform/database/auth-schema";
 import type { Transaction } from "@/platform/database/client";
 import { communityBranding } from "@/platform/branding/schema";
 import { DEMO_COMMUNITY, DEMO_DATA_HOME, DEMO_INVITEES, DEMO_OUTSIDERS, DEMO_PEOPLE, toDemoEmail, toDemoSlug, type DemoPerson } from "@/platform/demo/people";
-import { DEMO_VILLAGE_GROUP, DEMO_VILLAGE_KEYS } from "@/platform/demo/village-answers";
+import { DEMO_VILLAGE_GROUP, DEMO_VILLAGE_KEYS, toDemoProfile } from "@/platform/demo/village-answers";
+import { toDemoDomain, toDemoLogoUrl } from "@/platform/demo/pictures";
 import type { Environment } from "@/platform/environment";
 import { saveModuleState } from "@/platform/modules/enablement";
 import { saveSettings } from "@/platform/settings/store";
@@ -485,6 +489,38 @@ async function seedMessages(transaction: Transaction, ids: Ids, ago: ReturnType<
   ]);
 }
 
+// The profile fill-in has run for everyone: a drawn face and company logo each. Lena said "Don't look me up", so she
+// keeps her initials. Public profiles still list Grace at her last company, so her card (Ledgerline) shows no logo.
+const FILL_IN_REFUSED = "lena.fischer";
+const FILL_IN_OLDER_COMPANY = { key: "grace.kim", company: "Countwise" } as const;
+const FILL_IN_TERMS_DAYS_AGO = 200;
+const FILLED_IN_DAYS_AGO = 20;
+
+function toDemoFilledProfile(demoPerson: DemoPerson) {
+  const profile = toDemoProfile(demoPerson);
+  if (demoPerson.key !== FILL_IN_OLDER_COMPANY.key) return toFilledProfile(profile);
+  const { company } = FILL_IN_OLDER_COMPANY;
+  return toFilledProfile({
+    ...profile,
+    work_relevant: { ...profile.work_relevant, company: { name: company, domain: toDemoDomain(company), image_url: toDemoLogoUrl(company) } },
+  });
+}
+
+async function seedFillIn(transaction: Transaction, ids: Ids, ago: ReturnType<typeof makeClock>) {
+  await saveFillInSettings(transaction, { basis: FILL_IN_BASES.terms, termsDate: ago(FILL_IN_TERMS_DAYS_AGO).toISOString().slice(0, 10) });
+  const filledAt = ago(FILLED_IN_DAYS_AGO);
+  for (const demoPerson of DEMO_PEOPLE) {
+    const userId = ids.get(demoPerson.key) ?? "";
+    if (demoPerson.key === FILL_IN_REFUSED) {
+      await transaction.insert(memberLookup).values({ userId, refusedAt: filledAt });
+      continue;
+    }
+    await transaction.insert(memberLookup).values({ userId, status: LOOKUP_STATUSES.found, lookedUpAt: filledAt });
+    const lines = Object.entries(toDemoFilledProfile(demoPerson)).map(([field, value]) => ({ userId, field, value, filledAt }));
+    if (lines.length > 0) await transaction.insert(memberFillIn).values(lines);
+  }
+}
+
 async function seedSettings(transaction: Transaction, environment: Environment, ids: Ids, now: Date) {
   await transaction.insert(communityBranding).values({ ...DEMO_COMMUNITY, savedAt: now });
   await saveSettings(transaction, {
@@ -505,6 +541,7 @@ export async function seedDemo(transaction: Transaction, environment: Environmen
   const ago = makeClock(now);
   const ids = await seedMembers(transaction, ago);
   await seedSettings(transaction, environment, ids, now);
+  await seedFillIn(transaction, ids, ago);
   await seedInvites(transaction, ids, ago);
   await seedIntros(transaction, ids, ago);
   await seedAsks(transaction, ids, ago);

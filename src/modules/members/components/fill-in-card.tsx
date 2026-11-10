@@ -61,6 +61,12 @@ function LineValue({ line }: { line: FilledLine }) {
   );
 }
 
+function readReplacedNote(field: FillInField) {
+  if (field === FILL_IN_FIELDS.face) return "Your own photo is shown instead.";
+  if (field === FILL_IN_FIELDS.companyLogo) return "Not shown: your card names another company, or hides the one public profiles found.";
+  return "Your own words are shown instead.";
+}
+
 function FilledLineRow({ line, isReplaced }: { line: FilledLine; isReplaced: boolean }) {
   const router = useRouter();
   const visibility = useMutation({ mutationFn: setLineHidden, onSuccess: () => router.refresh() });
@@ -76,7 +82,7 @@ function FilledLineRow({ line, isReplaced }: { line: FilledLine; isReplaced: boo
           </span>
           {line.isHidden ? <Tag>Hidden from your card</Tag> : null}
           {!line.isHidden && isReplaced ? (
-            <span className="type-small text-foreground-soft">{IMAGE_FIELDS.has(line.field) ? "Another picture is shown instead." : "Your own words are shown instead."}</span>
+            <span className="type-small text-foreground-soft">{readReplacedNote(line.field)}</span>
           ) : null}
         </div>
         <Button

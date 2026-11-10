@@ -74,6 +74,8 @@ export const networkSearchResultSchema = z.object({
       linkedinSlug: z.string().nullable(),
       isMember: z.boolean(),
       memberId: z.string().nullable(),
+      // A member's own face, else the picture Village has of them.
+      imageUrl: z.string().nullable(),
     }),
   ),
   discardedOffNetworkResults: z.boolean(),
@@ -87,6 +89,7 @@ const pathPersonSchema = z.object({
   name: z.string(),
   linkedinSlug: z.string().nullable(),
   isMember: z.boolean(),
+  imageUrl: z.string().nullable(),
 });
 
 const connectorSchema = z.object({
@@ -95,6 +98,9 @@ const connectorSchema = z.object({
   linkedinSlug: z.string().nullable(),
   reason: z.string(),
   throughName: z.string().nullable(),
+  // The connector's face (a member's own, else Village's picture) and the face of the person they go through.
+  imageUrl: z.string().nullable(),
+  throughImageUrl: z.string().nullable(),
   member: z.object({ id: z.string(), avatarUrl: z.string().nullable() }).nullable(),
   openAsk: z.object({ id: z.uuid(), state: z.string() }).nullable(),
 });
@@ -106,6 +112,7 @@ export const networkPathsSchema = z.object({
   isTargetMember: z.boolean(),
   isCached: z.boolean(),
   targetName: z.string().nullable(),
+  targetImageUrl: z.string().nullable(),
   targetMemberId: z.string().nullable(),
   isViewer: z.boolean(),
   isDirectConnection: z.boolean(),

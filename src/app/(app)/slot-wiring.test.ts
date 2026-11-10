@@ -20,6 +20,8 @@ const CONNECTOR = {
   linkedinSlug: "jonas-lindqvist",
   reason: "Both worked at Corvane Logistics.",
   throughName: null,
+  imageUrl: null,
+  throughImageUrl: null,
   member: { id: "jonas", avatarUrl: null },
   openAsk: null,
 };

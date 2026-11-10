@@ -34,7 +34,7 @@ import {
 import { cleanVillageText } from "./rules-connector-reason.ts";
 import { CREDIT_CALL_KINDS, readDailyLookupsLeft, withCreditCall } from "../../platform/village/credit-ledger.ts";
 import { readLinkedinSlug } from "../members/contract-linkedin.ts";
-import {
+import { readPersonImageUrl,
   describeMemberPaths,
   readConnectors,
   readPathSlugs,
@@ -393,6 +393,7 @@ export async function searchMemberNetwork(
       linkedinSlug,
       isMember: member !== null,
       memberId: member?.id ?? null,
+      imageUrl: readPersonImageUrl(member, person.image_url),
     };
   });
 

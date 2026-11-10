@@ -8,7 +8,7 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { comment, post, reaction } from "./schema.ts";
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
-import { toAvatarUrl } from "../members/service-profile.ts";
+import { filledFaceColumn, shownCompanyColumn, toShownFaceUrl } from "../members/reads-pictures.ts";
 import { isAdminMember } from "../../platform/auth/roles.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import { type SessionMember } from "../../platform/http/request-context.ts";
@@ -35,6 +35,7 @@ type AuthorRow = {
   authorTitle: string | null;
   authorCompany: string | null;
   authorAvatarUpdatedAt: Date | null;
+  authorFilledFace: string | null;
   authorBanned: boolean | null;
   authorBanExpires: Date | null;
 };
@@ -43,20 +44,21 @@ const AUTHOR_COLUMNS = {
   authorId: user.id,
   authorName: user.name,
   authorTitle: memberProfile.title,
-  authorCompany: memberProfile.company,
+  authorCompany: shownCompanyColumn(user.id),
   authorAvatarUpdatedAt: memberAvatar.updatedAt,
+  authorFilledFace: filledFaceColumn(user.id),
   authorBanned: user.banned,
   authorBanExpires: user.banExpires,
 };
 
 function toAuthor(row: AuthorRow) {
-  const { authorId, authorName, authorTitle, authorCompany, authorAvatarUpdatedAt, authorBanned, authorBanExpires } = row;
+  const { authorId, authorName, authorTitle, authorCompany, authorAvatarUpdatedAt, authorFilledFace, authorBanned, authorBanExpires } = row;
   return {
     id: authorId,
     name: authorName,
     title: authorTitle,
     company: authorCompany,
-    avatarUrl: toAvatarUrl(authorId, authorAvatarUpdatedAt),
+    avatarUrl: toShownFaceUrl(authorId, authorAvatarUpdatedAt, authorFilledFace),
     isBanned: isBanActive({ banned: authorBanned, banExpires: authorBanExpires }),
   };
 }

@@ -39,12 +39,12 @@ function WaysIn({ linkedinSlug }: { linkedinSlug: string }) {
   return (
     <span className="flex flex-col items-end gap-1.5">
       <span aria-hidden="true" className="inline-flex">
-        {paths.connectors.slice(0, STACKED_CONNECTORS).map(({ name, linkedinSlug: connectorSlug, member }) => (
+        {paths.connectors.slice(0, STACKED_CONNECTORS).map(({ name, linkedinSlug: connectorSlug, member, imageUrl }) => (
           <Avatar
             key={connectorSlug ?? name}
             stableId={member?.id ?? connectorSlug ?? name}
             name={name}
-            imageUrl={member?.avatarUrl}
+            imageUrl={imageUrl}
             sizePx={STACKED_CONNECTOR_SIZE_PX}
             className="-ml-2 shadow-[0_0_0_2px_var(--card)] first:ml-0"
           />
@@ -83,7 +83,7 @@ export function PersonResult({ person, isSelected, panelId, onSelect }: PersonRe
   if (!linkedinSlug) {
     return (
       <div className="flex min-h-[92px] items-center gap-3.5 rounded-card bg-card px-[18px] py-4 shadow-panel">
-        <Avatar stableId={stableId} name={fullName} sizePx={RESULT_AVATAR_SIZE_PX} />
+        <Avatar stableId={stableId} name={fullName} imageUrl={person.imageUrl} sizePx={RESULT_AVATAR_SIZE_PX} />
         <ResultText person={person} />
         <span className="type-micro shrink-0 text-muted-foreground">No profile to look up</span>
       </div>
@@ -103,7 +103,7 @@ export function PersonResult({ person, isSelected, panelId, onSelect }: PersonRe
         onClick={() => onSelect(isSelected ? null : linkedinSlug)}
         className="flex min-w-0 flex-1 flex-wrap items-center gap-3.5 rounded-card py-4 pr-2 pl-[18px]"
       >
-        <Avatar stableId={stableId} name={fullName} sizePx={RESULT_AVATAR_SIZE_PX} />
+        <Avatar stableId={stableId} name={fullName} imageUrl={person.imageUrl} sizePx={RESULT_AVATAR_SIZE_PX} />
         <ResultText person={person} />
         <span className="ml-auto shrink-0">
           <WaysIn linkedinSlug={linkedinSlug} />

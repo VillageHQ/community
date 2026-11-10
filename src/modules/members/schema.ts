@@ -201,6 +201,6 @@ export const memberFillIn = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.field] }),
-    check("member_fill_in_field", sql`${table.field} in ('title', 'company', 'location', 'headline', 'face', 'company_logo')`),
+    check("member_fill_in_field", sql`${table.field} in ('title', 'company', 'location', 'headline', 'face', 'company_logo', 'company_domain')`),
   ],
 );

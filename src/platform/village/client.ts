@@ -136,6 +136,7 @@ const pathProfileSchema = z.object({
   last_name: z.string().nullish(),
   linkedin_url: z.string().nullish(),
   headline: z.string().nullish(),
+  avatar: z.string().nullish(),
 });
 
 const scoreMetaSchema = z.array(z.object({ title: z.string().nullish(), description: z.string().nullish() })).nullish();
@@ -145,6 +146,8 @@ const pathTargetSchema = z.object({
   last_name: z.string().nullish(),
   full_name: z.string().nullish(),
   headline: z.string().nullish(),
+  avatar: z.string().nullish(),
+  image_url: z.string().nullish(),
 });
 
 const pathSummarySchema = z.object({
@@ -186,7 +189,7 @@ export function createVillageLookupSession(connection: VillageConnection, email:
   return { village: readVillageApp(connection).as({ id: LOOKUP_IDENTITY_ID, email, grant: "public" }), deadlineAtMs: connection.deadlineAtMs };
 }
 
-const companySchema = z.object({ name: z.string().nullish(), image_url: z.string().nullish() }).nullish();
+const companySchema = z.object({ name: z.string().nullish(), domain: z.string().nullish(), image_url: z.string().nullish() }).nullish();
 const workSchema = z.object({ title: z.string().nullish(), company: companySchema }).nullish();
 
 export const villageProfileSchema = z.object({

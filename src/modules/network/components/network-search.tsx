@@ -58,7 +58,7 @@ function PathsPanel({ person, linkedinSlug, viewer, panelId }: PathsPanelProps) 
         loadingMessage={`Finding who knows ${readFirstName(person.fullName)}…`}
         failure={NetworkFailure}
       >
-        <PersonPaths linkedinSlug={linkedinSlug} personName={person.fullName} viewer={viewer} />
+        <PersonPaths linkedinSlug={linkedinSlug} personName={person.fullName} personImageUrl={person.imageUrl} viewer={viewer} />
       </QueryBoundary>
     </section>
   );
@@ -204,11 +204,12 @@ function SearchHeader({ welcome, initialPrompt, onSearch }: SearchHeaderProps) {
         <div className="type-lead flex flex-wrap items-center gap-3 text-foreground-soft">
           {welcome.neighbours.length > 0 ? (
             <span aria-hidden="true" className="inline-flex">
-              {welcome.neighbours.slice(0, STACKED_FACES).map(({ id, name }) => (
+              {welcome.neighbours.slice(0, STACKED_FACES).map(({ id, name, imageUrl }) => (
                 <Avatar
                   key={id}
                   stableId={id}
                   name={name}
+                  imageUrl={imageUrl}
                   sizePx={28}
                   className="-ml-1.5 shadow-[0_0_0_2px_var(--background)] first:ml-0"
                 />

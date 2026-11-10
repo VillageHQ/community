@@ -6,7 +6,7 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberAvatar, memberProfile, memberNetwork } from "../members/schema.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
-import { toAvatarUrl } from "../members/service-profile.ts";
+import { filledFaceColumn, shownCompanyColumn, toShownFaceUrl } from "../members/reads-pictures.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import type { ReachableMember } from "./rules-paths.ts";
 
@@ -22,10 +22,11 @@ export async function readReachableMembers(database: Database, linkedinSlugs: re
       id: user.id,
       name: user.name,
       title: memberProfile.title,
-      company: memberProfile.company,
+      company: shownCompanyColumn(user.id),
       linkedinSlug: memberNetwork.linkedinSlug,
       linkedinConfirmedSlug: memberNetwork.linkedinConfirmedSlug,
       avatarUpdatedAt: memberAvatar.updatedAt,
+      filledFace: filledFaceColumn(user.id),
     })
     .from(memberNetwork)
     .innerJoin(user, eq(user.id, memberNetwork.userId))
@@ -42,14 +43,14 @@ export async function readReachableMembers(database: Database, linkedinSlugs: re
     );
 
   const reachableMembers = new Map<string, ReachableMember>();
-  for (const { linkedinSlug, linkedinConfirmedSlug, id, name, title, company, avatarUpdatedAt } of members) {
+  for (const { linkedinSlug, linkedinConfirmedSlug, id, name, title, company, avatarUpdatedAt, filledFace } of members) {
     if (!linkedinSlug) continue;
     const headline = [title, company].filter(Boolean).join(", ") || null;
     reachableMembers.set(linkedinSlug, {
       id,
       name: removeBidiControls(name),
       headline: headline && removeBidiControls(headline),
-      avatarUrl: toAvatarUrl(id, avatarUpdatedAt),
+      avatarUrl: toShownFaceUrl(id, avatarUpdatedAt, filledFace),
       isLinkedinConfirmed: linkedinConfirmedSlug === linkedinSlug,
     });
   }

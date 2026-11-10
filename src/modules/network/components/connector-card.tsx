@@ -114,7 +114,7 @@ export function ConnectorCard(props: ConnectorSlotProps) {
       }
     >
       <div className="flex items-center gap-3">
-        <Avatar stableId={member?.id ?? linkedinSlug ?? name} name={name} imageUrl={member?.avatarUrl} sizePx={CONNECTOR_AVATAR_SIZE_PX} />
+        <Avatar stableId={member?.id ?? linkedinSlug ?? name} name={name} imageUrl={connector.imageUrl} sizePx={CONNECTOR_AVATAR_SIZE_PX} />
         <div className="min-w-0">
           <h3 className="text-base leading-[22px] font-bold wrap-anywhere">
             <ConnectorHeading connector={connector} />
