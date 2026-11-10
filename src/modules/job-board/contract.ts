@@ -91,6 +91,7 @@ export const JOB_BOARD_ERROR_CODES = {
   manualLimit: "job_manual_limit",
   tooSoon: "job_pull_too_soon",
   notManual: "job_source_not_manual",
+  hiddenByAdmin: "job_source_hidden_by_admin",
 } as const;
 
 const httpLinkSchema = z
@@ -163,6 +164,7 @@ export type JobSourceView = {
   slug: string | null;
   sourceUrl: string | null;
   hidden: boolean;
+  hiddenByAdmin: boolean;
   lastPulledAt: string | null;
   lastError: string | null;
   jobCount: number;

@@ -76,6 +76,7 @@ async function readSources(database: DatabaseOrTransaction, where: SQL | undefin
       slug: jobSource.slug,
       sourceUrl: jobSource.sourceUrl,
       hidden: jobSource.hidden,
+      hiddenByAdmin: jobSource.hiddenByAdmin,
       lastPulledAt: jobSource.lastPulledAt,
       lastError: jobSource.lastError,
       jobCount: count(jobPosting.id),

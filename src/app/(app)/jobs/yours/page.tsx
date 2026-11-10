@@ -34,7 +34,7 @@ export default modulePage(jobBoardManifest, async function YourJobsPage() {
           {sources.map((source) => {
             const manualJobs = (jobsBySource.get(source.id) ?? []).filter(({ isManual }) => isManual);
             return (
-              <SourceCard key={source.id} source={source} canRemove showMember={false}>
+              <SourceCard key={source.id} source={source} isAdminView={false}>
                 {manualJobs.length > 0 ? (
                   <ul className="grid gap-2">
                     {manualJobs.map((job) => (

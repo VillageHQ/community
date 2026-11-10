@@ -1,5 +1,5 @@
 {
-  "id": "1aba5b89-73fa-42e4-89ee-f20529ac08e8",
+  "id": "6c448712-de75-4f82-ad11-e104681fbd24",
   "prevId": "ea34f1bf-0b0a-4e9b-8231-9ca7bf11270b",
   "version": "7",
   "dialect": "postgresql",
@@ -3176,6 +3176,13 @@
           "notNull": true,
           "default": false
         },
+        "hidden_by_admin": {
+          "name": "hidden_by_admin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "last_pulled_at": {
           "name": "last_pulled_at",
           "type": "timestamp (3) with time zone",
@@ -3250,6 +3257,10 @@
         "job_source_tool_known": {
           "name": "job_source_tool_known",
           "value": "\"job_source\".\"tool\" in ('greenhouse', 'lever', 'ashby', 'workable', 'smartrecruiters', 'recruitee', 'breezy', 'rippling', 'teamtailor', 'bamboohr', 'personio', 'jobvite', 'manual')"
+        },
+        "job_source_admin_hide_is_hidden": {
+          "name": "job_source_admin_hide_is_hidden",
+          "value": "not \"job_source\".\"hidden_by_admin\" or \"job_source\".\"hidden\""
         },
         "job_source_feed_has_slug": {
           "name": "job_source_feed_has_slug",

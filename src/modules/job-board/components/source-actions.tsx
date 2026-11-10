@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button";
 import { JOB_BOARD_API_ROUTES } from "../contract";
 import { useJobAction } from "./use-job-action";
 
-type SourceActionsProps = { sourceId: string; company: string; hidden: boolean; canPull: boolean; canRemove: boolean };
+type SourceActionsProps = { sourceId: string; company: string; hidden: boolean; canPull: boolean; canToggleHidden: boolean; canRemove: boolean };
 
-export function SourceActions({ sourceId, company, hidden, canPull, canRemove }: SourceActionsProps) {
+export function SourceActions({ sourceId, company, hidden, canPull, canToggleHidden, canRemove }: SourceActionsProps) {
   const pull = useJobAction<{ sourceId: string }>(JOB_BOARD_API_ROUTES.pull);
   const hide = useJobAction<{ sourceId: string; hidden: boolean }>(JOB_BOARD_API_ROUTES.hide);
   const remove = useJobAction<{ sourceId: string }>(JOB_BOARD_API_ROUTES.remove);
@@ -37,19 +37,21 @@ export function SourceActions({ sourceId, company, hidden, canPull, canRemove }:
             {pull.isPending ? "Pulling…" : "Pull now"}
           </Button>
         ) : null}
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={isBusy}
-          onClick={() => {
-            resetOthers();
-            hide.mutate({ sourceId, hidden: !hidden });
-          }}
-        >
-          {hidden ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />}
-          {hidden ? "Show" : "Hide"}
-          <span className="sr-only"> {company}&apos;s jobs</span>
-        </Button>
+        {canToggleHidden ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isBusy}
+            onClick={() => {
+              resetOthers();
+              hide.mutate({ sourceId, hidden: !hidden });
+            }}
+          >
+            {hidden ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />}
+            {hidden ? "Show" : "Hide"}
+            <span className="sr-only"> {company}&apos;s jobs</span>
+          </Button>
+        ) : null}
         {canRemove ? (
           <Button
             variant="quiet"

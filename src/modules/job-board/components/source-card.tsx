@@ -16,9 +16,11 @@ function describeStatus(source: JobSourceView) {
   return `${jobs}. Last checked ${formatDateAndTimeUtc(source.lastPulledAt)}.`;
 }
 
-type SourceCardProps = { source: JobSourceView; canRemove: boolean; showMember: boolean; children?: ReactNode };
+// The admin page shows every source; a founder sees only their own, and can't show again what an admin hid.
+type SourceCardProps = { source: JobSourceView; isAdminView: boolean; children?: ReactNode };
 
-export function SourceCard({ source, canRemove, showMember, children }: SourceCardProps) {
+export function SourceCard({ source, isAdminView, children }: SourceCardProps) {
+  const isLockedByAdmin = source.hiddenByAdmin && !isAdminView;
   return (
     <Card className="grid gap-3.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -27,7 +29,7 @@ export function SourceCard({ source, canRemove, showMember, children }: SourceCa
           {source.hidden ? (
             <Tag tone="gold">
               <EyeOff aria-hidden="true" />
-              Hidden
+              {source.hiddenByAdmin ? "Hidden by an admin" : "Hidden"}
             </Tag>
           ) : null}
           <Tag>{source.toolLabel}</Tag>
@@ -35,7 +37,7 @@ export function SourceCard({ source, canRemove, showMember, children }: SourceCa
       </div>
       <p className="type-small text-foreground-soft">
         {describeStatus(source)}
-        {showMember ? ` Linked by ${source.memberName}.` : null}
+        {isAdminView ? ` Linked by ${source.memberName}.` : null}
         {source.sourceUrl ? (
           <>
             {" "}
@@ -52,8 +54,18 @@ export function SourceCard({ source, canRemove, showMember, children }: SourceCa
           </span>
         </p>
       ) : null}
+      {isLockedByAdmin ? (
+        <p className="type-small text-foreground-soft">An admin hid these jobs from every board. Ask an admin if you think that&apos;s a mistake.</p>
+      ) : null}
       {children}
-      <SourceActions sourceId={source.id} company={source.company} hidden={source.hidden} canPull={source.slug !== null} canRemove={canRemove} />
+      <SourceActions
+        sourceId={source.id}
+        company={source.company}
+        hidden={source.hidden}
+        canPull={source.slug !== null}
+        canToggleHidden={!isLockedByAdmin}
+        canRemove={!isAdminView}
+      />
     </Card>
   );
 }

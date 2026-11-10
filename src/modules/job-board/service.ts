@@ -28,6 +28,7 @@ import { detectBoard, describeLinkProblem } from "./rules-feeds";
 import { jobPosting, jobSource } from "./schema";
 import { pullSource, type PullOutcome } from "./service-pull";
 
+const FORBIDDEN_STATUS = 403;
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const UNPROCESSABLE_STATUS = 422;
@@ -79,7 +80,7 @@ export async function linkSource(context: RequestContext, body: z.infer<typeof l
     await assertSourceAllowance(transaction, context.member.id);
     const [created] = await transaction
       .insert(jobSource)
-      .values({ memberId: context.member.id, company: body.company, companySlug: toCompanySlug(body.company), tool: board.tool, slug: board.slug, sourceUrl: body.link })
+      .values({ memberId: context.member.id, company: body.company, companySlug: toCompanySlug(body.company), tool: board.tool, slug: board.slug, sourceUrl: board.link })
       .returning();
     return created;
   });
@@ -120,7 +121,13 @@ export async function pullSourceNow(context: RequestContext, sourceId: string) {
 
 export async function setSourceHidden(context: RequestContext, body: z.infer<typeof hideSourceBodySchema>) {
   const { source, isOwner } = await readOwnSource(context, body.sourceId, { adminToo: true });
-  await context.database.update(jobSource).set({ hidden: body.hidden }).where(eq(jobSource.id, source.id));
+  const isAdmin = isAdminMember(context.member);
+  // An admin's Hide sticks: the founder can't show the jobs again, only an admin can.
+  if (!body.hidden && source.hiddenByAdmin && !isAdmin) {
+    throw new RequestError(FORBIDDEN_STATUS, JOB_BOARD_ERROR_CODES.hiddenByAdmin, "An admin hid these jobs, so only an admin can show them again.");
+  }
+  const hiddenByAdmin = body.hidden && (source.hiddenByAdmin || (isAdmin && !isOwner));
+  await context.database.update(jobSource).set({ hidden: body.hidden, hiddenByAdmin }).where(eq(jobSource.id, source.id));
   if (!isOwner) logAdminAction(body.hidden ? "job_source_hidden" : "job_source_shown", context.member.id, source.id);
   return { message: body.hidden ? `${source.company}'s jobs are hidden from every board.` : `${source.company}'s jobs are back on the board.` };
 }

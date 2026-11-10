@@ -27,6 +27,8 @@ export const jobSource = pgTable(
     slug: text("slug"),
     sourceUrl: text("source_url"),
     hidden: boolean("hidden").notNull().default(false),
+    // Hidden by an admin: only an admin shows it again.
+    hiddenByAdmin: boolean("hidden_by_admin").notNull().default(false),
     lastPulledAt: jobTimestamp("last_pulled_at"),
     // The last pull's problem in plain words. Null after a pull that worked.
     lastError: text("last_error"),
@@ -36,6 +38,7 @@ export const jobSource = pgTable(
     index("job_source_member_idx").on(table.memberId),
     index("job_source_company_slug_idx").on(table.companySlug),
     check("job_source_tool_known", sql`${table.tool} in (${TOOL_LIST})`),
+    check("job_source_admin_hide_is_hidden", sql`not ${table.hiddenByAdmin} or ${table.hidden}`),
     check("job_source_feed_has_slug", sql`(${table.tool} = 'manual') = (${table.slug} is null)`),
   ],
 );

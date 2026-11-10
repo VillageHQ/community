@@ -327,13 +327,18 @@ function toUrl(raw: string) {
   }
 }
 
-// The first tool whose link this is, and the board's name in it.
-export function detectBoard(raw: string): { tool: FeedTool; slug: string } | null {
+// The first tool whose link this is, the board's name in it, and the link as a clean https:// address to show.
+export function detectBoard(raw: string): { tool: FeedTool; slug: string; link: string } | null {
   const url = toUrl(raw);
-  if (!url) return null;
+  if (!url || (url.protocol !== "https:" && url.protocol !== "http:")) return null;
   for (const tool of Object.keys(TOOL_READERS) as FeedTool[]) {
     const slug = TOOL_READERS[tool].slug(url);
-    if (slug) return { tool, slug };
+    if (slug) {
+      url.protocol = "https:";
+      url.username = "";
+      url.password = "";
+      return { tool, slug, link: url.href };
+    }
   }
   return null;
 }

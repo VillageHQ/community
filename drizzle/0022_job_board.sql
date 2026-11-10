@@ -21,10 +21,12 @@ CREATE TABLE "job_source" (
 	"slug" text,
 	"source_url" text,
 	"hidden" boolean DEFAULT false NOT NULL,
+	"hidden_by_admin" boolean DEFAULT false NOT NULL,
 	"last_pulled_at" timestamp (3) with time zone,
 	"last_error" text,
 	"created_at" timestamp (3) with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "job_source_tool_known" CHECK ("job_source"."tool" in ('greenhouse', 'lever', 'ashby', 'workable', 'smartrecruiters', 'recruitee', 'breezy', 'rippling', 'teamtailor', 'bamboohr', 'personio', 'jobvite', 'manual')),
+	CONSTRAINT "job_source_admin_hide_is_hidden" CHECK (not "job_source"."hidden_by_admin" or "job_source"."hidden"),
 	CONSTRAINT "job_source_feed_has_slug" CHECK (("job_source"."tool" = 'manual') = ("job_source"."slug" is null))
 );
 --> statement-breakpoint

@@ -53,7 +53,7 @@ export default modulePage(jobBoardManifest, async function AdminJobsPage() {
             <CardDescription>No company has linked its hiring tool yet. Members do it from Jobs › Your company&apos;s jobs.</CardDescription>
           ) : null}
           {sources.map((source) => (
-            <SourceCard key={source.id} source={source} canRemove={false} showMember />
+            <SourceCard key={source.id} source={source} isAdminView />
           ))}
         </div>
         <div className="grid gap-5">

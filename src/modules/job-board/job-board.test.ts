@@ -111,7 +111,7 @@ function readFixture(tool: FeedTool) {
 
 describe("the feed readers", () => {
   it.each(Object.entries(LINKS).flatMap(([tool, pairs]) => pairs.map(([link, slug]) => ({ tool, link, slug }))))("find $tool's board in $link", ({ tool, link, slug }) => {
-    expect(detectBoard(link)).toEqual({ tool, slug });
+    expect(detectBoard(link)).toMatchObject({ tool, slug, link: expect.stringMatching(/^https:\/\//) });
   });
 
   it.each([
@@ -337,6 +337,33 @@ describe("the job board", () => {
 
     expect((await call(postRemove, founder, sourceBody)).status).toBe(200);
     expect(await readAllSources(database)).toEqual([]);
+  });
+
+  it("keeps an admin's Hide: only an admin shows the jobs again", async () => {
+    const { source } = await linkGreenhouse();
+    const sourceBody = { sourceId: source.id };
+    await call(postHide, admin, { ...sourceBody, hidden: true });
+
+    const answer = await call(postHide, founder, { ...sourceBody, hidden: false });
+    expect(answer.status).toBe(403);
+    expect(await answer.json()).toMatchObject({ message: "An admin hid these jobs, so only an admin can show them again." });
+    expect((await call(postHide, founder, { ...sourceBody, hidden: true })).status).toBe(200);
+    expect((await readMemberSources(database, founder.userId))[0]).toMatchObject({ hidden: true, hiddenByAdmin: true });
+
+    expect((await call(postHide, admin, { ...sourceBody, hidden: false })).status).toBe(200);
+    expect((await readMemberSources(database, founder.userId))[0]).toMatchObject({ hidden: false, hiddenByAdmin: false });
+    expect((await call(postHide, founder, { ...sourceBody, hidden: true })).status).toBe(200);
+    expect((await call(postHide, founder, { ...sourceBody, hidden: false })).status).toBe(200);
+  });
+
+  it("saves the careers link as a clean https:// address, never as typed", async () => {
+    await call(postLink, founder, { company: "No Scheme", link: "boards.greenhouse.io/ok-noscheme" });
+    await call(postLink, founder, { company: "Tricky", link: "javascript:alert(document.domain);'@boards.greenhouse.io/ok-tricky?'" });
+
+    const links = (await readMemberSources(database, founder.userId)).map(({ sourceUrl }) => sourceUrl);
+    expect(links).toHaveLength(2);
+    for (const link of links) expect(link).toMatch(/^https:\/\/boards\.greenhouse\.io\//);
+    expect(links.join(" ")).not.toContain("javascript");
   });
 
   it("removes only hand-added jobs, and only the founder's", async () => {
