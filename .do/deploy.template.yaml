@@ -28,3 +28,11 @@ spec:
           scope: RUN_TIME
           type: SECRET
           value: change-me
+        # One long-running server: it calls its own jobs endpoint every minute (the weekly email,
+        # reminders, email retries and the nightly tasks). PORT matches http_port, so the call finds the app.
+        - key: PORT
+          scope: RUN_TIME
+          value: "8080"
+        - key: JOBS_SELF_TICK
+          scope: RUN_TIME
+          value: "true"

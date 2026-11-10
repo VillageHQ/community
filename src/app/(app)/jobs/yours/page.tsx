@@ -9,6 +9,7 @@ import { JOB_BOARD_LIMITS, JOB_BOARD_PAGE_TITLES } from "@/modules/job-board/con
 import { jobBoardManifest } from "@/modules/job-board/manifest";
 import { readMemberCompany, readMemberSources, readSourceJobs } from "@/modules/job-board/reads";
 import { requireMember } from "@/platform/auth/session";
+import { isAdminMember } from "@/platform/auth/roles";
 import { getDatabase } from "@/platform/database/client";
 import { modulePage } from "@/platform/modules/module-page";
 
@@ -56,7 +57,7 @@ export default modulePage(jobBoardManifest, async function YourJobsPage() {
         <Card className="grid gap-3.5">
           <CardTitle>Link your company</CardTitle>
           {canAddMore ? (
-            <LinkSourceForm defaultCompany={company} />
+            <LinkSourceForm defaultCompany={company} isCompanyFixed={!isAdminMember(member)} />
           ) : (
             <CardDescription>You&apos;ve linked {JOB_BOARD_LIMITS.sourcesPerMember} sources, the most one member can. Remove one to link another.</CardDescription>
           )}

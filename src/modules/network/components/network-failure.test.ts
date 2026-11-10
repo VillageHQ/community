@@ -30,4 +30,22 @@ describe("a network failure", () => {
     expect(screen.getByRole("button", { name: "Check again" })).toBeTruthy();
     expect(screen.queryByText("Raw server words")).toBeNull();
   });
+
+  it.each([NETWORK_ERROR_CODES.unavailable, NETWORK_ERROR_CODES.timedOut, NETWORK_ERROR_CODES.keysRejected])(
+    "shows a calm 'search is unavailable' when Village fails (%s), never an error",
+    (code) => {
+      render(
+        createElement(
+          QueryClientProvider,
+          { client: new QueryClient() },
+          createElement(NetworkFailure, { error: new RequestFailure(BAD_GATEWAY_STATUS, "Raw server words", code), resetErrorBoundary: vi.fn() }),
+        ),
+      );
+
+      expect(screen.getByRole("heading", { name: "Search is unavailable right now" })).toBeTruthy();
+      expect(screen.getByText(/Your admin can see this/)).toBeTruthy();
+      expect(screen.queryByText("That didn't work")).toBeNull();
+      expect(screen.queryByText("Raw server words")).toBeNull();
+    },
+  );
 });

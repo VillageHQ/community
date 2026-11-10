@@ -26,6 +26,7 @@ import { jobBoardManifest } from "@/modules/job-board/manifest";
 import { readAllSources, readBoardCompanies, readBoardJobs, readMemberSources } from "@/modules/job-board/reads";
 import { detectBoard, parseFeed, TOOL_READERS } from "@/modules/job-board/rules-feeds";
 import { jobSource } from "@/modules/job-board/schema";
+import { memberProfile } from "@/modules/members/schema";
 import { fetchBoard, pullDueSources } from "@/modules/job-board/service-pull";
 import { user } from "@/platform/database/auth-schema";
 import { saveModuleState } from "@/platform/modules/enablement";
@@ -234,6 +235,10 @@ describe("the job board", () => {
     await saveModuleState(database, jobBoardManifest, true);
     [founder, other, admin] = await Promise.all([createSignedInMember(database), createSignedInMember(database), createSignedInMember(database, "admin")]);
     await database.update(user).set({ name: FOUNDER_NAME }).where(eq(user.id, founder.userId));
+    await database.insert(memberProfile).values([
+      { userId: founder.userId, company: "Stripe Example" },
+      { userId: other.userId, company: "Ledgerline" },
+    ]);
   });
 
   async function linkGreenhouse(slug = "ok-stripe") {
@@ -267,9 +272,9 @@ describe("the job board", () => {
 
   it("filters every board by company", async () => {
     await linkGreenhouse();
-    const manual = await call(postManual, founder, { company: "Ledgerline" });
+    const manual = await call(postManual, other, { company: "Ledgerline" });
     const { id } = (await manual.json()) as { id: string };
-    await call(postAddJob, founder, { sourceId: id, title: "Founding designer", location: "London", url: "https://ledgerline.example/jobs/1" });
+    await call(postAddJob, other, { sourceId: id, title: "Founding designer", location: "London", url: "https://ledgerline.example/jobs/1" });
     await call(postPublicSwitch, admin, { isPublic: true });
 
     expect((await readBoardCompanies(database)).map(({ name, jobCount }) => [name, jobCount])).toEqual([
@@ -357,8 +362,8 @@ describe("the job board", () => {
   });
 
   it("saves the careers link as a clean https:// address, never as typed", async () => {
-    await call(postLink, founder, { company: "No Scheme", link: "boards.greenhouse.io/ok-noscheme" });
-    await call(postLink, founder, { company: "Tricky", link: "javascript:alert(document.domain);'@boards.greenhouse.io/ok-tricky?'" });
+    await call(postLink, founder, { company: "Stripe Example", link: "boards.greenhouse.io/ok-noscheme" });
+    await call(postLink, founder, { company: "Stripe Example", link: "javascript:alert(document.domain);'@boards.greenhouse.io/ok-tricky?'" });
 
     const links = (await readMemberSources(database, founder.userId)).map(({ sourceUrl }) => sourceUrl);
     expect(links).toHaveLength(2);
@@ -367,7 +372,7 @@ describe("the job board", () => {
   });
 
   it("removes only hand-added jobs, and only the founder's", async () => {
-    const manual = (await (await call(postManual, founder, { company: "Ledgerline" })).json()) as { id: string };
+    const manual = (await (await call(postManual, founder, { company: "Stripe Example" })).json()) as { id: string };
     await call(postAddJob, founder, { sourceId: manual.id, title: "Founding designer", url: "https://ledgerline.example/jobs/1" });
     const [job] = await readBoardJobs(database, null);
     if (!job) throw new Error("no job");
@@ -378,15 +383,46 @@ describe("the job board", () => {
   });
 
   it("refuses a hand-added job whose link isn't a web address", async () => {
-    const manual = (await (await call(postManual, founder, { company: "Ledgerline" })).json()) as { id: string };
+    const manual = (await (await call(postManual, founder, { company: "Stripe Example" })).json()) as { id: string };
 
     expect((await call(postAddJob, founder, { sourceId: manual.id, title: "Designer", url: "javascript:alert(1)" })).status).toBe(422);
   });
 
   it(`stops at ${JOB_BOARD_LIMITS.sourcesPerMember} sources a member`, async () => {
-    for (let index = 0; index < JOB_BOARD_LIMITS.sourcesPerMember; index += 1) await call(postManual, founder, { company: `Company ${index}` });
+    for (let index = 0; index < JOB_BOARD_LIMITS.sourcesPerMember; index += 1) await call(postManual, founder, { company: "Stripe Example" });
 
-    expect((await call(postManual, founder, { company: "One too many" })).status).toBe(409);
+    expect((await call(postManual, founder, { company: "Stripe Example" })).status).toBe(409);
+  });
+
+  it("takes each careers link once, so no job shows twice, even after two quick clicks", async () => {
+    await linkGreenhouse();
+    const again = await call(postLink, founder, { company: "Stripe Example", link: "https://boards.greenhouse.io/ok-stripe/" });
+    expect(again.status).toBe(409);
+    expect(await again.json()).toMatchObject({ code: "job_link_taken", message: "This careers link is already on the board, for Stripe Example." });
+    const byAdmin = await call(postLink, admin, { company: "Anyone", link: "https://job-boards.greenhouse.io/ok-stripe" });
+    expect(byAdmin.status).toBe(409);
+
+    const twice = await Promise.all([1, 2].map(() => call(postLink, founder, { company: "Stripe Example", link: "https://jobs.lever.co/ok-twice" })));
+    expect(twice.map(({ status }) => status).sort()).toEqual([200, 409]);
+    expect(await readAllSources(database)).toHaveLength(2);
+    expect(await readBoardJobs(database, null)).toHaveLength(6);
+  });
+
+  it("lets a founder add jobs only for the company on their card, and an admin for any", async () => {
+    const elsewhere = await call(postLink, founder, { company: "Gridwise", link: "https://boards.greenhouse.io/ok-gridwise" });
+    expect(elsewhere.status).toBe(403);
+    expect(await elsewhere.json()).toMatchObject({ code: "job_company_not_yours", message: expect.stringContaining("Stripe Example") });
+    expect((await call(postManual, founder, { company: "Gridwise" })).status).toBe(403);
+    expect((await call(postLink, founder, { company: "  stripe   EXAMPLE ", link: "https://boards.greenhouse.io/ok-own" })).status).toBe(200);
+    expect((await readMemberSources(database, founder.userId)).map(({ company }) => company)).toEqual(["Stripe Example"]);
+
+    await database.update(memberProfile).set({ company: null }).where(eq(memberProfile.userId, other.userId));
+    const noCompany = await call(postManual, other, { company: "Ledgerline" });
+    expect(noCompany.status).toBe(403);
+    expect(await noCompany.json()).toMatchObject({ code: "job_company_missing" });
+
+    expect((await call(postLink, admin, { company: "Gridwise", link: "https://boards.greenhouse.io/ok-gridwise" })).status).toBe(200);
+    expect((await call(postManual, admin, { company: "Tallyhealth" })).status).toBe(200);
   });
 
   it("takes a banned founder's jobs off every board", async () => {

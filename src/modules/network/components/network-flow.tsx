@@ -11,6 +11,7 @@ import { NETWORK_STAGES, type NetworkStatus } from "@/modules/network/contract";
 import { ConsentStep } from "./consent-step";
 import { EmailConfirmationNotice } from "@/modules/members/components/shared/email-confirmation-notice";
 import { LinkedinWelcome } from "./linkedin-step";
+import { NetworkFailure } from "./network-failure";
 import { NetworkSkeleton } from "./network-skeleton";
 import { networkStatusQuery } from "@/modules/network/queries";
 import { NetworkSearch } from "./network-search";
@@ -98,7 +99,7 @@ function CurrentStage({ welcome }: { welcome: WelcomeContext }) {
 
 export function NetworkFlow({ welcome }: { welcome: WelcomeContext }) {
   return (
-    <QueryBoundary loadingMessage="Checking your network…" fallback={<NetworkSkeleton />}>
+    <QueryBoundary loadingMessage="Checking your network…" fallback={<NetworkSkeleton />} failure={NetworkFailure}>
       <CurrentStage welcome={welcome} />
     </QueryBoundary>
   );

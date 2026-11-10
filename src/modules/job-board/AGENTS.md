@@ -17,6 +17,7 @@ Rules:
 - A pull that works replaces the pulled jobs. A pull that fails keeps the last good jobs and saves its problem in plain words on the source. Jobs added by hand (`is_manual`) are never touched by a pull.
 - Each source is pulled at most once an hour by the job, and Pull now at most once a minute.
 - The member who linked a source pulls, hides, removes and adds by hand. An admin may pull and hide any source, never remove it or add to it.
+- One source per careers link (tool and board name, without case) in the whole community, checked under a lock, so no job shows twice. A founder links or adds jobs only for the company on their card; an admin may add any company.
 - Every board reads only sources that aren't hidden, from founders who are active members (`isActiveMember`).
 - The public board, the widget's frame (`/api/job-board/embed`) and `readPublicJobs` show only company, title, location and the apply link: never who shared it. They answer 404 until an admin turns the public board on.
 - The frame is the only response any site may frame: `next.config.mjs` skips the framing headers for that one path and gives it `frame-ancestors *`. It reads no session and sets no cookie. Keep it that way.

@@ -12,7 +12,7 @@ Village search, sync, the community group and intro paths. Toggleable. The only 
 - `components/village-disclosure.tsx`: "What Village receives", on the member's card page. Update it when a call sends Village something new.
 - `slots.tsx`: `ConnectorAskSlot` and `ConnectorPromiseSlot`. Intros fills them, so network never imports intros.
 
-The Village client (a thin layer over `@villagehq/sdk`), credentials, credit ledger and error mapping live in `src/platform/village`.
+The Village client (a thin layer over `@villagehq/sdk`), credentials, credit ledger and error mapping live in `src/platform/village`. `health.ts` there records when Village last answered and any trouble since (down, or keys refused); every admin page shows it, and members see "Search is unavailable right now".
 
 Rules:
 

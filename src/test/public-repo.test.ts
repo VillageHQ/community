@@ -32,8 +32,8 @@ function readDigitalOceanSetupToken() {
 }
 
 describe("the deploy buttons", () => {
-  it("prompt for the setup token and nothing else, so email stays optional", () => {
-    expect(readRepositoryFile("README.md")).toContain("&env=SETUP_TOKEN&");
+  it("prompt for the setup token (and on Vercel the cron secret) and nothing else, so email stays optional", () => {
+    expect(readRepositoryFile("README.md")).toContain("&env=SETUP_TOKEN%2CCRON_SECRET&");
     expect(readRepositoryFile(".do/deploy.template.yaml")).not.toContain("RESEND");
   });
 

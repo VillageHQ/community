@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { readVillageHealth } from "@/platform/village/health";
 import { memberDailyUsage } from "@/platform/village/schema";
 import { memberNetwork } from "@/modules/members/schema";
 import { memberPathResult } from "@/modules/network/schema";
@@ -303,6 +304,16 @@ describe("the final review fixes", () => {
 
       expect(status.stage).toBe(NETWORK_STAGES.ready);
       expect(village.readRequests(TOKEN_PATH)).toHaveLength(mintsBefore + 1);
+    });
+
+    it("doesn't tell the admin the keys were refused when only a member's token expired", async () => {
+      const member = await createJoinedMember("poller");
+      village.state.bearerRejectionsLeft = 1;
+
+      await readStatus(member);
+
+      await vi.waitFor(async () => expect((await readVillageHealth(database)).lastOkAt).not.toBeNull());
+      expect((await readVillageHealth(database)).trouble).toBeNull();
     });
 
     it("reuses the fresh token afterward", async () => {

@@ -22,6 +22,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - order: waiting on an unfinished item = hidden · each open item waiting on it = +1, at most +2 · touching the files of an open pull request = ranked after it
 
 ## Now (in flight)
+- [ ] Running-the-app fixes from the final check: timed jobs on every host, a Village-down notice, one job source per careers link — fix-ops — open pull request — [spec](features/fix-ops/SPEC.md)
 - [ ] Project notes: vision, personas, journeys, this roadmap and the parity map — project-notes — open pull request — [spec](features/project-notes/SPEC.md)
 - [ ] The Your data page: export, real delete, privacy switches, the required "accept intro asks" question — your-data — open pull request, waits for the owner's yes (it deletes personal data) — [PR #20](https://github.com/VillageHQ/community/pull/20)
 - [ ] The new look: serif headings, hairline edges, no "Network by Village" on member screens — look-theme — open pull request — [PR #26](https://github.com/VillageHQ/community/pull/26) · [spec](features/look-theme/SPEC.md)
