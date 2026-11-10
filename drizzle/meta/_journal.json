@@ -148,6 +148,13 @@
       "when": 1794294775653,
       "tag": "0021_today_weekly",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794296510287,
+      "tag": "0022_job_board",
+      "breakpoints": true
     }
   ]
 }

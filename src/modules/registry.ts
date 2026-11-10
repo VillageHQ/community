@@ -6,6 +6,7 @@ import { adminManifest } from "./admin/manifest";
 import { asksModule } from "./asks/integration";
 import { feedModule } from "./feed/integration";
 import { introsModule } from "./intros/integration";
+import { jobBoardModule } from "./job-board/integration";
 import { membersManifest } from "./members/manifest";
 import { messagesModule } from "./messages/integration";
 import { networkModule } from "./network/integration";
@@ -18,5 +19,6 @@ export const MODULES: readonly ModuleIntegration[] = [
   networkModule,
   introsModule,
   asksModule,
+  jobBoardModule,
   { manifest: adminManifest },
 ];

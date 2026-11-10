@@ -1,6 +1,19 @@
+import { createRequire } from "node:module";
+
 import { describe, expect, it } from "vitest";
 
 import { nextConfig } from "../../next.config.mjs";
+
+// The matcher Next itself uses for header sources. It ships without types.
+const { pathToRegexp } = createRequire(import.meta.url)("next/dist/compiled/path-to-regexp") as {
+  pathToRegexp: (source: string, keys: unknown[], options: { strict: boolean; sensitive: boolean; delimiter: string }) => RegExp;
+};
+
+const WIDGET_FRAME_PATH = "/api/job-board/embed";
+
+function matchesSource(source: string, path: string) {
+  return pathToRegexp(source, [], { strict: true, sensitive: false, delimiter: "/" }).test(path);
+}
 
 async function readSecurityHeaders() {
   const [rule] = await nextConfig.headers();
@@ -8,10 +21,23 @@ async function readSecurityHeaders() {
 }
 
 describe("security headers", () => {
-  it("apply to every path", async () => {
+  it.each(["/", "/members", "/api/job-board/widget.js", "/api/job-board/embed/extra", "/public/jobs", "/admin/jobs"])("apply to %s", async (path) => {
     const [rule] = await nextConfig.headers();
 
-    expect(rule?.source).toBe("/:path*");
+    expect(matchesSource(rule?.source ?? "", path)).toBe(true);
+  });
+
+  it("let any site frame the job widget's frame, and only it", async () => {
+    const rules = await nextConfig.headers();
+    const [everyPath] = rules;
+    const frameRule = rules.find(({ source }) => source === WIDGET_FRAME_PATH);
+    const policy = frameRule?.headers.find(({ key }) => key === "Content-Security-Policy")?.value;
+
+    expect(matchesSource(everyPath?.source ?? "", WIDGET_FRAME_PATH)).toBe(false);
+    expect(policy).toContain("frame-ancestors *");
+    expect(policy).toContain("script-src 'self'");
+    expect(frameRule?.headers.some(({ key }) => key === "X-Frame-Options")).toBe(false);
+    expect(rules.filter(({ headers }) => headers.some(({ value }) => value.includes("frame-ancestors *")))).toHaveLength(1);
   });
 
   it("block framing", async () => {

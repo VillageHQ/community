@@ -21,6 +21,7 @@ const ALLOWED_MODULE_IMPORTS: Readonly<Record<string, readonly string[]>> = {
   network: ["members"],
   intros: ["members", "network"],
   asks: ["members"],
+  "job-board": ["members"],
   admin: ["members", "messages", "feed", "network", "intros", "asks"],
 };
 

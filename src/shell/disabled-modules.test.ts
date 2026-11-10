@@ -100,7 +100,8 @@ describe("the shell with modules off", () => {
     });
 
     it("hides the credits tab", async () => {
-      expect((await readAdminTabFacts(database, ENVIRONMENT)).hiddenTabHrefs).toEqual(["/admin/credits"]);
+      // Jobs is off by default, so its tab is hidden too.
+      expect((await readAdminTabFacts(database, ENVIRONMENT)).hiddenTabHrefs).toEqual(["/admin/credits", "/admin/jobs"]);
     });
 
     it("doesn't count an out-of-credits notice", async () => {

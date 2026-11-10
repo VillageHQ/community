@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { NavigationBadge } from "@/shell/navigation-links";
 import { CHIP_CLASSES } from "@/components/ui/chip";
 import type { AdminTabFacts } from "@/shell/admin-badges";
+import { JOB_BOARD_PAGES } from "@/modules/job-board/contract";
 import { ROUTES } from "@/platform/http/routes";
 
 type AdminTab = { label: string; href: string; readBadge: (facts: AdminTabFacts) => number; badgeDescription: (count: number) => string };
@@ -38,6 +39,7 @@ const ADMIN_TABS: AdminTab[] = [
     readBadge: ({ creditsBadge }) => creditsBadge,
     badgeDescription: () => "Out of Village credits",
   },
+  { label: "Jobs", href: JOB_BOARD_PAGES.admin, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Features", href: ROUTES.adminFeatures, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Weekly email", href: ROUTES.adminWeeklyEmail, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Settings", href: ROUTES.adminSettings, readBadge: () => 0, badgeDescription: () => "" },
