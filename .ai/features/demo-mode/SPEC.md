@@ -1,6 +1,12 @@
-# Demo mode
+---
+id: demo-mode
+status: building
+waits-on: []
+touches: ["src/platform/demo/", "src/shell/demo-seed.ts", "src/shell/demo-reset.ts", "src/app/api/demo/"]
+checks: ["src/shell/demo.test.ts"]
+---
 
-Status: building
+# Demo mode
 
 What it does now.
 
