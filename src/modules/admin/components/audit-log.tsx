@@ -88,6 +88,7 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.chatDisconnected]: ({ detail }) => `disconnected ${detail} and deleted its token`,
   [AUDIT_ACTIONS.perksSaved]: () => "saved the perks marketplace",
   [AUDIT_ACTIONS.perksRemoved]: () => "removed the perks marketplace",
+  [AUDIT_ACTIONS.villageSettingsChanged]: ({ detail }) => `changed the Village settings: ${detail}`,
 };
 
 function readFillInBasisSentence(detail: string) {

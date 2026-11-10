@@ -98,21 +98,41 @@ function readNeedSection(needs: NonNullable<PartnerReport["needs"]>, periods: Pa
   };
 }
 
+// Shown only when members wrote a cohort on their card: intros by the cohort of the member who asked.
+function readCohortSection(intros: IntroReport[]): ReportSection | null {
+  const cohorts = new Map<string, string>();
+  for (const { byCohort } of intros) for (const { key, label } of byCohort) if (!cohorts.has(key)) cohorts.set(key, label);
+  if (cohorts.size === 0) return null;
+  const read = (intro: IntroReport, key: string) => intro.byCohort.find((row) => row.key === key);
+  return {
+    id: "cohorts",
+    title: "Intros by cohort",
+    description: "By the cohort of the member who asked, as written on their card. Members with no cohort aren't in this table.",
+    rows: [...cohorts].flatMap(([key, label]) => [
+      introRow(intros, `${label}: asked for`, (intro) => read(intro, key)?.asked ?? 0),
+      introRow(intros, `${label}: introduced`, (intro) => read(intro, key)?.introduced ?? 0),
+    ]),
+  };
+}
+
 export function readPeriodSections(report: PartnerReport): ReportSection[] {
-  const intros = report.intros ? readIntroSections(report.periods.map(({ key }) => report.intros!.periods[key]), report.intros.namedConnectors) : [];
+  const periodIntros = report.intros ? report.periods.map(({ key }) => report.intros!.periods[key]) : null;
+  const intros = periodIntros ? readIntroSections(periodIntros, report.intros!.namedConnectors) : [];
+  const cohorts = periodIntros ? readCohortSection(periodIntros) : null;
   const needs = report.needs ? readNeedSection(report.needs, report.periods) : null;
-  return [...intros, ...(needs ? [needs] : [])];
+  return [...intros, ...(cohorts ? [cohorts] : []), ...(needs ? [needs] : [])];
 }
 
 // The community's numbers today. They aren't per period: a count of members or invites is a snapshot.
 export function readCommunitySection({ community }: PartnerReport): ReportSection {
-  const { members, sharing, synced, invites, windows, isNetworkOn } = community;
+  const { members, sharing, synced, invites, windows, isNetworkOn, cohortMembers } = community;
   return {
     id: "community",
     title: "Community",
     description: "As of today. An active member posted, replied, reacted, sent a message or asked for an intro.",
     rows: [
       { label: "Members", values: [members], isStrong: true },
+      ...cohortMembers.map(({ label, members: cohortCount }) => ({ label: `Members in ${label}`, values: [cohortCount] })),
       ...(isNetworkOn
         ? [
             { label: "Agreed to share their network", values: [sharing] },

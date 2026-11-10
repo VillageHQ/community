@@ -7,7 +7,8 @@ type SignInLinkEmailFacts = { link: string; communityName: string; accentColor: 
 
 export function renderSignInLinkEmail({ link, communityName, accentColor }: SignInLinkEmailFacts) {
   const community = toSingleLine(communityName);
-  const subject = `Your ${community} sign-in link`;
+  // "Your sign-in link for …", never "Your … sign-in link": the default name is "Your community".
+  const subject = `Your sign-in link for ${community}`;
   const opening = `Someone asked to sign in to ${community} with this address. If that was you, open this link and press the button.`;
   const warning = "It works once and lasts 15 minutes. If it wasn't you, ignore this email and nothing changes.";
   const html = [

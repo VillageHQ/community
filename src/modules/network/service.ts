@@ -16,6 +16,7 @@ import { isActiveMember } from "../../platform/auth/member-status.ts";
 import {
   createVillageGroup,
   createVillageSession,
+  GLOBAL_SOURCE,
   joinVillageGroup,
   leaveVillageGroup,
   mintVillageToken,
@@ -51,7 +52,8 @@ import {
   type NetworkStage,
   type NetworkStatus,
 } from "./contract.ts";
-import { deleteVillageGroup, readVillageGroup, saveVillageGroup } from "./service-settings.ts";
+import { deleteVillageGroup, readVillageGroup, readVillageSearchSettings, saveVillageGroup } from "./service-settings.ts";
+import { INTRODUCER_RULES, SEARCH_SCOPES } from "./contract-village-settings.ts";
 import { readVillageKeys, saveVillageKeys, type VillageKeys } from "../../platform/village/settings.ts";
 import { readReachableMembers } from "./reads-reachable-members.ts";
 import { resolveVillageApiUrl, resolveVillageAppUrl } from "../../platform/village/urls.ts";
@@ -356,12 +358,16 @@ export async function searchMemberNetwork(
   await requireTrustedVillageUser(context, network, session);
 
   const spender = { database, environment: context.environment, memberId: member.id };
+  // "Everyone" shows people beyond the members' networks too. They name no path: paths come only from the paths
+  // lookup, which keeps to members who share.
+  const { searchScope } = await readVillageSearchSettings(database);
+  const scope = searchScope === SEARCH_SCOPES.everyone ? GLOBAL_SOURCE : NETWORK_SOURCE;
   const { people, source } = await withCreditCall(spender, CREDIT_CALL_KINDS.search, () =>
-    searchVillageNetwork(session, prompt),
+    searchVillageNetwork(session, prompt, scope),
   ).catch((error: unknown) => {
     throw toSearchCutOffError(error);
   });
-  if (source !== NETWORK_SOURCE) {
+  if (source !== NETWORK_SOURCE && scope === NETWORK_SOURCE) {
     console.log(
       JSON.stringify({ level: "info", scope: "village", event: "off_network_results_discarded" }),
     );
@@ -430,6 +436,32 @@ function fetchVillagePathsOrNull(
   );
 }
 
+// With "chosen members" on, no other member is ever offered or asked as a connector: a path whose introducer is one is
+// dropped, and one who is a starter (the way to an outside introducer) is taken off the path. Paths through people who
+// aren't members (the viewer's own contacts) stay.
+async function keepChosenIntroducers(database: Database, villagePaths: VillagePaths | null): Promise<VillagePaths | null> {
+  if (!villagePaths) return villagePaths;
+  const { introducers, chosenIntroducerIds } = await readVillageSearchSettings(database);
+  if (introducers !== INTRODUCER_RULES.chosen) return villagePaths;
+  const members = await database
+    .select({ id: memberNetwork.userId, linkedinSlug: memberNetwork.linkedinSlug })
+    .from(memberNetwork)
+    .where(isNotNull(memberNetwork.linkedinSlug));
+  const chosen = new Set(chosenIntroducerIds);
+  const unchosenSlugs = new Set(members.flatMap(({ id, linkedinSlug }) => (linkedinSlug && !chosen.has(id) ? [linkedinSlug] : [])));
+  const isUnchosen = (linkedinUrl: string | null | undefined) => unchosenSlugs.has(readLinkedinSlug(linkedinUrl) ?? "");
+  const paths = villagePaths.paths
+    .filter(({ introducer }) => !isUnchosen(introducer?.profile.linkedin_url))
+    .map((path) => ({ ...path, starters: path.starters.filter(({ is_current_user, profile }) => is_current_user || !isUnchosen(profile.linkedin_url)) }));
+  return { ...villagePaths, paths };
+}
+
+// False only when the admin limited intros to chosen members and this member isn't one of them.
+export async function canMemberIntroduce(database: Database, memberId: string) {
+  const { introducers, chosenIntroducerIds } = await readVillageSearchSettings(database);
+  return introducers !== INTRODUCER_RULES.chosen || chosenIntroducerIds.includes(memberId);
+}
+
 async function readPathsFacts(
   { database, member }: RequestContext,
   villagePaths: VillagePaths | null,
@@ -461,6 +493,7 @@ async function describePathsForViewer(
   isCached: boolean,
   readOpenAsks: OpenAsksReader,
 ) {
+  villagePaths = await keepChosenIntroducers(context.database, villagePaths);
   const facts = await readPathsFacts(context, villagePaths, network, targetSlug, isCached);
   const openAsks = await readOpenAsks(context.database, context.member.id, targetSlug);
   const connectors = readConnectors(villagePaths, facts).map((connector) => ({
@@ -512,7 +545,7 @@ export async function readAskableConnectors(context: RequestContext, targetSlug:
     throw new RequestError(UNPROCESSABLE_STATUS, CONNECTOR_ERROR_CODES.ownTarget, "That's you. No intro needed.");
   }
 
-  const cachedPaths = await readCachedPaths(database, member.id, targetSlug);
+  const cachedPaths = await keepChosenIntroducers(database, (await readCachedPaths(database, member.id, targetSlug)) ?? null);
   if (!cachedPaths) return null;
 
   const facts = await readPathsFacts(context, cachedPaths, network, targetSlug, true);

@@ -88,6 +88,21 @@ describe("profile fill-in", () => {
     expect(await database.select().from(memberFillIn)).toEqual([]);
   });
 
+  it("looks up as the first admin by default", async () => {
+    await recordTermsBasis();
+    await runFillIn(database, process.env);
+
+    expect(village.state.mintedEmails.get("community-profile-fill-in")).toBe(admin.email);
+  });
+
+  it("looks up as the service email once the admin sets one", async () => {
+    await saveSettings(database, { [INSTANCE_SETTING_KEYS.villageServiceEmail]: "village@example.com" });
+    await recordTermsBasis();
+    await runFillIn(database, process.env);
+
+    expect(village.state.mintedEmails.get("community-profile-fill-in")).toBe("village@example.com");
+  });
+
   it("refuses a member who isn't an admin from recording the basis", async () => {
     expect((await postFillInBasis(post(member, { basis: "terms", termsDate: "2026-01-15" }))).status).toBe(403);
   });

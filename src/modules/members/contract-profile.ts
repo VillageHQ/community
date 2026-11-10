@@ -4,10 +4,16 @@ import { nameSchema } from "../../platform/auth/member-name.ts";
 import { removeNullBytes } from "../../platform/text/safe-text.ts";
 import { parseExternalUrl } from "./rules-external-url.ts";
 
+// The directory's "updated" filter: cards saved within this many days.
+export const UPDATED_WITHIN_DAYS = [7, 30, 90] as const;
+
 export const PROFILE_LIMITS = {
   title: 80,
   company: 80,
   location: 80,
+  stage: 80,
+  sector: 80,
+  cohort: 80,
   bio: 280,
   canHelpWith: 160,
   needs: 160,
@@ -49,6 +55,9 @@ export const profileBodySchema = z.object({
   title: optionalText("your role", PROFILE_LIMITS.title),
   company: optionalText("your company", PROFILE_LIMITS.company),
   location: optionalText("your location", PROFILE_LIMITS.location),
+  stage: optionalText("your stage", PROFILE_LIMITS.stage),
+  sector: optionalText("your sector", PROFILE_LIMITS.sector),
+  cohort: optionalText("your cohort", PROFILE_LIMITS.cohort),
   bio: optionalText("your line about yourself", PROFILE_LIMITS.bio),
   canHelpWith: optionalText("what you can help with", PROFILE_LIMITS.canHelpWith),
   needs: optionalText("what you need", PROFILE_LIMITS.needs),
@@ -88,6 +97,11 @@ export const directoryFiltersSchema = z.object({
     .max(PROFILE_LIMITS.search, `Keep your search under ${PROFILE_LIMITS.search} characters.`)
     .default(""),
   tag: z.string().overwrite(removeNullBytes).trim().max(PROFILE_LIMITS.tag).default(""),
+  stage: z.string().overwrite(removeNullBytes).trim().max(PROFILE_LIMITS.stage).default(""),
+  sector: z.string().overwrite(removeNullBytes).trim().max(PROFILE_LIMITS.sector).default(""),
+  cohort: z.string().overwrite(removeNullBytes).trim().max(PROFILE_LIMITS.cohort).default(""),
+  // 0 is any time.
+  updatedWithinDays: z.union([z.literal(0), ...UPDATED_WITHIN_DAYS.map((days) => z.literal(days))]).default(0),
   page: z.number().int().min(1).default(1),
 });
 
@@ -99,6 +113,9 @@ export const directoryMemberSchema = z.object({
   title: z.string().nullable(),
   company: z.string().nullable(),
   canHelpWith: z.string().nullable(),
+  stage: z.string().nullable(),
+  sector: z.string().nullable(),
+  cohort: z.string().nullable(),
   avatarUrl: z.string().nullable(),
   tags: z.array(z.string()),
 });
@@ -112,6 +129,8 @@ export const directorySchema = z.object({
   page: z.number(),
   pageCount: z.number(),
   popularTags: z.array(z.object({ label: z.string(), value: z.string() })),
+  // The values active members use, for the stage, sector and cohort filters.
+  filterOptions: z.object({ stage: z.array(z.string()), sector: z.array(z.string()), cohort: z.array(z.string()) }),
 });
 
 export type Directory = z.infer<typeof directorySchema>;

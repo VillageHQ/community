@@ -49,19 +49,23 @@ describe("the card form", () => {
 
 describe("the directory URL", () => {
   it("round-trips the filters", () => {
-    const filters = { search: "ada lovelace", tag: "fintech", page: 3 };
+    const filters = { search: "ada lovelace", tag: "fintech", stage: "Seed", sector: "Climate", cohort: "Fund II", updatedWithinDays: 30 as const, page: 3 };
     const queryString = toDirectoryQueryString(filters);
 
     expect(parseDirectoryFilters(Object.fromEntries(new URLSearchParams(queryString)))).toEqual(filters);
   });
 
   it("stays clean with no filters", () => {
-    expect(toDirectoryQueryString({ search: "", tag: "", page: 1 })).toBe("");
+    expect(toDirectoryQueryString({ search: "", tag: "", stage: "", sector: "", cohort: "", updatedWithinDays: 0, page: 1 })).toBe("");
   });
 
   it("falls back to page one for a nonsense page", () => {
     expect(parseDirectoryFilters({ page: "-4" }).page).toBe(1);
     expect(parseDirectoryFilters({ page: "abc" }).page).toBe(1);
+  });
+
+  it("reads an unknown 'updated' value as any time", () => {
+    expect(parseDirectoryFilters({ updated: "5" }).updatedWithinDays).toBe(0);
   });
 
   it("strips a NUL byte from the URL", () => {

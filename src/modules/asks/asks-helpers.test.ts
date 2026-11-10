@@ -1,4 +1,6 @@
 import { and, eq } from "drizzle-orm";
+import { INSTANCE_SETTING_KEYS } from "@/platform/settings/schema";
+import { saveSettings } from "@/platform/settings/store";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST as postReportDelete } from "@/app/api/admin/reports/delete-content/route";
@@ -319,6 +321,18 @@ describe("asks that reach helpers", () => {
       expect((await call(postKnowSomeone, noor, { askId, note: "Hi" })).status).toBe(NOT_FOUND_STATUS);
       expect((await call(postKnowSomeone, amara, { askId, note: "Hi" })).status).toBe(UNPROCESSABLE_STATUS);
       expect(await database.select().from(introRequest)).toEqual([]);
+    });
+
+    it("is closed to a member the admins didn't choose as an introducer", async () => {
+      const { id: askId } = await post(amara);
+      await saveSettings(database, {
+        [INSTANCE_SETTING_KEYS.villageIntroducers]: "chosen",
+        [INSTANCE_SETTING_KEYS.villageChosenIntroducerIds]: JSON.stringify([jonas.userId]),
+      });
+
+      expect((await call(postKnowSomeone, noor, { askId, note: "Hi" })).status).toBe(403);
+      expect((await call(postKnowSomeone, jonas, { askId, note: "Clara and I worked together." })).status).toBe(OK_STATUS);
+      expect((await database.select({ introducerId: introRequest.introducerId }).from(introRequest)).map(({ introducerId }) => introducerId)).toEqual([jonas.userId]);
     });
   });
 

@@ -1,0 +1,19 @@
+ ✓ src/app/api/sign-in-link/route.test.ts > signing in by emailed link > never sends a link that died while it waited to be retried 201ms
+ ✓ src/modules/intros/intros-consent.test.ts > double opt-in intros > the target's yes > with Resend and an address from the connector > the reminder on day 4 > sends nothing before day 4 317ms
+ ✓ src/modules/intros/intros-consent.test.ts > double opt-in intros > the target's yes > with Resend and an address from the connector > the reminder on day 4 > sends exactly one, with a link that works, however often the job runs 186ms
+ ✓ src/modules/intros/intros-consent.test.ts > double opt-in intros > the target's yes > with Resend and an address from the connector > the reminder on day 4 > sends none once the person answered 155ms
+ ✓ src/modules/members/members.test.ts > the member directory > filtering by stage, sector, cohort and freshness > matches a whole value, whatever the case 180ms
+ ✓ src/modules/members/members.test.ts > the member directory > filtering by stage, sector, cohort and freshness > combines the filters with each other and the search 52ms
+ ✓ src/modules/members/members.test.ts > the member directory > filtering by stage, sector, cohort and freshness > keeps only cards updated in the window 49ms
+ ✓ src/modules/members/members.test.ts > the member directory > filtering by stage, sector, cohort and freshness > offers the values active members use, once each 35ms
+ ✓ src/modules/members/members.test.ts > the member directory > filtering by stage, sector, cohort and freshness > refuses a window it doesn't offer 31ms
+ ✓ src/app/api/admin/email/email-routes.test.ts > the admin's email setup > shows the records the sending domain is missing 132ms
+ ✓ src/app/api/admin/email/email-routes.test.ts > the admin's email setup > says email is off instead of checking 25ms
+ ✓ src/app/api/admin/email/email-routes.test.ts > the admin's email setup > sends a test to the admin's own address only, through the outbox 50ms
+ ✓ src/app/api/admin/email/email-routes.test.ts > the admin's email setup > is for admins only 27ms
+ ✓ src/platform/email/dns-check.test.ts > the email setup check > reads the domain from the sender 1ms
+ ✓ src/platform/email/dns-check.test.ts > the email setup check > shows every missing record, and the record to add 1ms
+ ✓ src/platform/email/dns-check.test.ts > the email setup check > passes a domain with all three, finding DMARC on the parent domain 0ms
+ ✓ src/platform/email/dns-check.test.ts > the email setup check > flags an SPF record without Resend's include, and two SPF records 0ms
+ ✓ src/platform/email/dns-check.test.ts > the email setup check > says when DNS didn't answer, instead of calling a record missing 0ms
+      Tests  18 passed | 158 skipped (176)

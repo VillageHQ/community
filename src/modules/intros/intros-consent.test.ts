@@ -26,6 +26,8 @@ import {
   type Intro,
 } from "@/modules/intros/contract";
 import { introsManifest } from "@/modules/intros/manifest";
+import { sendDueTargetReminders } from "@/modules/intros/target-reminder";
+import { sendDueEmails } from "@/platform/email/outbox-sender";
 import { introConsentLink, introOptOut, introRequest } from "@/modules/intros/schema";
 import { saveVillageGroup } from "@/modules/network/service-settings";
 import { networkPathsSchema } from "@/modules/network/contract";
@@ -629,6 +631,57 @@ describe("double opt-in intros", () => {
         expect(body).toContain(TARGET_EMAIL);
         expect(body).toContain(link);
         expect(body).not.toContain("freight");
+      });
+
+      describe("the reminder on day 4", () => {
+        async function emailedDaysAgo(days: number) {
+          configureResend();
+          const { intro, token } = await askAndReachTarget();
+          expect((await emailTarget(intro.id, token)).status).toBe(OK_STATUS);
+          const emailedAt = new Date(Date.now() - days * MILLISECONDS_PER_DAY);
+          await database.update(introRequest).set({ consentEmailAt: emailedAt }).where(eq(introRequest.id, intro.id));
+          await sendDueEmails(database, process.env);
+          resend.reset();
+          return { intro, token };
+        }
+
+        async function readReminders() {
+          await sendDueEmails(database, process.env);
+          return resend.state.emails.filter(({ body }) => JSON.stringify(body).includes("only reminder"));
+        }
+
+        it("sends nothing before day 4", async () => {
+          await emailedDaysAgo(3.9);
+
+          expect(await sendDueTargetReminders(database, process.env)).toEqual({ reminded: 0 });
+          expect(await readReminders()).toEqual([]);
+        });
+
+        it("sends exactly one, with a link that works, however often the job runs", async () => {
+          const { intro } = await emailedDaysAgo(4);
+
+          const runs = await Promise.all([sendDueTargetReminders(database, process.env), sendDueTargetReminders(database, process.env)]);
+          await sendDueTargetReminders(database, process.env, new Date(Date.now() + MILLISECONDS_PER_DAY));
+
+          expect(runs.reduce((total, { reminded }) => total + reminded, 0)).toBe(1);
+          const reminders = await readReminders();
+          expect(reminders).toHaveLength(1);
+          const sent = JSON.stringify(reminders[0]?.body);
+          expect(sent).toContain(TARGET_EMAIL);
+          expect(sent).not.toContain("freight");
+          const newToken = sent.match(/\/meet\/([A-Za-z0-9_-]{43})/)?.[1] ?? "";
+          expect(await readLinkHashes(intro.id)).toHaveLength(2);
+          expect((await answer(newToken)).status).toBe(OK_STATUS);
+          expect((await readRow(intro.id)).state).toBe(INTRO_STATES.targetAgreed);
+        });
+
+        it("sends none once the person answered", async () => {
+          const { token } = await emailedDaysAgo(5);
+          await answer(token, CONSENT_ANSWERS.noThanks);
+
+          expect(await sendDueTargetReminders(database, process.env)).toEqual({ reminded: 0 });
+          expect(await readReminders()).toEqual([]);
+        });
       });
 
       it("joins them with one email to both, then closes as introduced", async () => {

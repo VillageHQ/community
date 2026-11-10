@@ -99,7 +99,15 @@ async function composeEmail(database: Database, environment: Environment, email:
   return { ...base, html: `${email.html}${htmlFooter}`, text: `${email.text}${textFooter}`, headers };
 }
 
+function isExpired(email: ClaimedEmail) {
+  return email.expiresAt !== null && email.expiresAt.getTime() <= Date.now();
+}
+
 async function deliver(database: Database, environment: Environment, config: ResendConfig, email: ClaimedEmail) {
+  if (isExpired(email)) {
+    await finish(database, email, OUTBOX_STATUSES.skipped, "Expired before it could be sent.");
+    return OUTBOX_STATUSES.skipped;
+  }
   try {
     if (!(await isEmailWanted(database, { kind: email.kind, to: email.toEmail, memberId: email.memberId }))) {
       await finish(database, email, OUTBOX_STATUSES.skipped);

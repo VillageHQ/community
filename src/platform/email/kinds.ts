@@ -13,12 +13,14 @@ export const EMAIL_KINDS = {
   introAsked: "intro_asked",
   introUpdate: "intro_update",
   introDeclined: "intro_declined",
+  introTargetReminder: "intro_target_reminder",
   directMessage: "direct_message",
   weeklyEmail: "weekly_email",
   creditWarning: "credit_warning",
   connectNudge: "connect_nudge",
   askHelper: "ask_helper",
   partnerReport: "partner_report",
+  emailTest: "email_test",
 } as const;
 
 export type EmailKind = (typeof EMAIL_KINDS)[keyof typeof EMAIL_KINDS];
@@ -31,6 +33,8 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.introAsked]: EMAIL_TOPICS.intros,
   [EMAIL_KINDS.introUpdate]: EMAIL_TOPICS.intros,
   [EMAIL_KINDS.introDeclined]: EMAIL_TOPICS.intros,
+  // To the person asked, who isn't a member and has no switch. Sent once; the page it links to has "stop all asks".
+  [EMAIL_KINDS.introTargetReminder]: null,
   [EMAIL_KINDS.directMessage]: EMAIL_TOPICS.messages,
   [EMAIL_KINDS.weeklyEmail]: EMAIL_TOPICS.weekly,
   [EMAIL_KINDS.creditWarning]: null,
@@ -38,6 +42,8 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.askHelper]: EMAIL_TOPICS.asks,
   // Sent by an admin to people outside the community, who have no member switch. The send itself skips addresses that bounced.
   [EMAIL_KINDS.partnerReport]: null,
+  // An admin's "Send a test to me" from Settings.
+  [EMAIL_KINDS.emailTest]: null,
 };
 
 export const EMAIL_TOPIC_LABELS: Record<EmailTopic, { title: string; description: string }> = {

@@ -352,7 +352,7 @@ export async function acceptInvite(database: Database, token: string, { name, pa
         .update(invite)
         .set({ acceptedAt: now })
         .where(and(eq(invite.tokenHash, tokenHash), OPEN_INVITE, gt(invite.expiresAt, now)))
-        .returning({ id: invite.id, email: invite.email, company: invite.company, emailOutboxId: invite.emailOutboxId });
+        .returning({ id: invite.id, email: invite.email, company: invite.company, cohort: invite.cohort, emailOutboxId: invite.emailOutboxId });
       if (!claimed) return null;
       // Accepted from the copied link: a still-queued invite email would only carry a used link.
       await cancelInviteEmail(transaction, claimed);
@@ -371,7 +371,7 @@ export async function acceptInvite(database: Database, token: string, { name, pa
         providerId: CREDENTIAL_PROVIDER_ID,
         password: passwordHash,
       });
-      await transaction.insert(memberProfile).values({ userId, company: claimed.company });
+      await transaction.insert(memberProfile).values({ userId, company: claimed.company, cohort: claimed.cohort });
       await transaction.update(invite).set({ acceptedUserId: userId }).where(eq(invite.id, claimed.id));
       return { userId, email: claimed.email };
     });

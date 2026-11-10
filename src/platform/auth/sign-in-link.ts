@@ -5,7 +5,7 @@ import type { Database } from "../database/client.ts";
 import { readBranding } from "../branding/branding.ts";
 import { renderSignInLinkEmail, SIGN_IN_LINK_LIFETIME_SECONDS } from "../email/sign-in-link-email.ts";
 import { EMAIL_KINDS } from "../email/kinds.ts";
-import { queueEmail } from "../email/outbox.ts";
+import { queueEmail, readLinkEmailExpiry } from "../email/outbox.ts";
 import { sendQueuedEmailNow } from "../email/outbox-sender.ts";
 import { readResendConfig } from "../email/resend.ts";
 import type { Environment } from "../environment.ts";
@@ -69,6 +69,7 @@ async function sendSignInLink(database: Database, environment: Environment, { em
     kind: EMAIL_KINDS.signInLink,
     to: recipient.email,
     memberId: recipient.id,
+    expiresAt: readLinkEmailExpiry(SIGN_IN_LINK_LIFETIME_SECONDS),
     ...renderSignInLinkEmail({ link: toSignInLinkUrl(environment, token), communityName, accentColor }),
   });
   await sendQueuedEmailNow(database, environment, queuedId);
