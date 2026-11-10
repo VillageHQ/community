@@ -57,6 +57,15 @@ describe("matching asks to helpers", () => {
     expect(findMatchedWords("Need help with anything", words)).toEqual([]);
   });
 
+  it("matches a hyphenated word to the joined one, either way, and simple word forms", () => {
+    expect(findMatchedWords("Fundraising for our seed round", readWords("Fund-raising and pricing"))).toEqual(["fund-raising"]);
+    expect(findMatchedWords("Help with fund-raising", readWords("fundraising"))).toEqual(["fundraising"]);
+    expect(findMatchedWords("We are hiring engineers", readWords("hire, engineer"))).toEqual(["hire", "engineer"]);
+    expect(findMatchedWords("Raising a round", readWords("raised two rounds"))).toEqual(["raised", "rounds"]);
+    expect(findMatchedWords("Need marketing help", readWords("markets in Europe"))).toEqual(["markets"]);
+    expect(findMatchedWords("Seed round", readWords("speed"))).toEqual([]);
+  });
+
   it("drops everyday words and keeps real skills", () => {
     expect([...readWords("First hires, team help with anything")]).toEqual(["hires"]);
     expect(findMatchedWords("Our first team offsite", readWords("first team building"))).toEqual([]);

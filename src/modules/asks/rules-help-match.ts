@@ -30,17 +30,38 @@ const COMMON_WORDS = new Set(
   ).split(" "),
 );
 
+const HYPHENATED_WORD = /[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)+/gu;
+
+function isCounted(word: string) {
+  return word.length >= MINIMUM_WORD_LENGTH && !COMMON_WORDS.has(word) && !/^\p{N}+$/u.test(word);
+}
+
+// Each word, and each hyphenated word whole too ("fund-raising"), so it can match the joined spelling.
 export function readWords(text: string | null | undefined) {
+  const lower = (text ?? "").toLowerCase();
   const words = new Set<string>();
-  for (const word of (text ?? "").toLowerCase().split(/[^\p{L}\p{N}]+/u)) {
-    if (word.length >= MINIMUM_WORD_LENGTH && !COMMON_WORDS.has(word) && !/^\p{N}+$/u.test(word)) words.add(word);
+  for (const word of lower.split(/[^\p{L}\p{N}]+/u)) {
+    if (isCounted(word)) words.add(word);
+  }
+  for (const word of lower.match(HYPHENATED_WORD) ?? []) {
+    if (isCounted(word.replaceAll("-", ""))) words.add(word);
   }
   return words;
 }
 
-// Plural and singular count as the same word: "investors" matches "investor".
+// Simple word forms count as one word, with no dictionary: "investors" matches "investor", "hiring" matches
+// "hire", "raised" matches "raising", and "fund-raising" matches "fundraising". A stem keeps 3 letters at least.
+const MINIMUM_STEM_LENGTH = 3;
+
+function strip(word: string, ending: string, replacement = "") {
+  return word.endsWith(ending) && word.length - ending.length >= MINIMUM_STEM_LENGTH ? `${word.slice(0, -ending.length)}${replacement}` : null;
+}
+
 function stem(word: string) {
-  return word.length > MINIMUM_WORD_LENGTH + 1 && word.endsWith("s") ? word.slice(0, -1) : word;
+  let base = word.replaceAll("-", "");
+  base = strip(base, "ies", "y") ?? (base.endsWith("ss") ? base : (strip(base, "es") ?? strip(base, "s"))) ?? base;
+  base = strip(base, "ing") ?? strip(base, "ed") ?? base;
+  return strip(base, "e") ?? base;
 }
 
 // The helper's own words that the ask shares, in the helper's order, so the reason names their skill.
