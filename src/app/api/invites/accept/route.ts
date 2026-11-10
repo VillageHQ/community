@@ -12,6 +12,7 @@ import { logError } from "@/platform/observability/route-logging";
 import { hasTrustedOrigin, readSessionMember } from "@/platform/http/member-route";
 import { NETWORK_ERROR_CODES } from "@/modules/network/contract";
 import { membersRoutes } from "@/modules/members/routes";
+import { isDemoEmail, isDemoMode } from "@/platform/demo/mode";
 
 const CREATED_STATUS = 201;
 const FORBIDDEN_STATUS = 403;
@@ -93,6 +94,11 @@ export const POST = membersRoutes.open(
         NETWORK_ERROR_CODES.invalidRequest,
         fields.error.issues[0]?.message ?? "The form is invalid.",
       );
+    }
+
+    // A demo only ever holds made-up people: a real address here would stop the demo from starting next time.
+    if (isDemoMode(process.env) && !isDemoEmail(invite.email)) {
+      return respondMessage(FORBIDDEN_STATUS, INVITE_ERROR_CODES.unusable, "This is a demo, so only made-up example.com addresses can join.");
     }
 
     const accepted = await acceptInvite(database, submitted.data.token, fields.data);

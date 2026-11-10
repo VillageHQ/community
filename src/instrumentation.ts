@@ -1,12 +1,24 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
-  const [{ migrateOnBoot }, { getDatabase }, { sealVillageSecretOnBoot }, { startSelfTick }] = await Promise.all([
+  const [{ migrateOnBoot }, { resolveMigrationPlan }, { getDatabase }, { sealVillageSecretOnBoot }, { startSelfTick }, { isDemoMode }] = await Promise.all([
     import("./platform/database/migrate-on-boot"),
+    import("./platform/database/migration-plan"),
     import("./platform/database/client"),
     import("./platform/village/settings"),
     import("./platform/jobs/self-tick"),
+    import("./platform/demo/mode"),
   ]);
-  await migrateOnBoot(process.env, undefined, () => sealVillageSecretOnBoot(getDatabase(), process.env));
+  const isDemo = isDemoMode(process.env);
+  // Demo mode: before anything can call out, every server-side fetch goes through the demo's guard.
+  if (isDemo) (await import("./platform/demo/outbound")).installDemoFetchGuard(process.env);
+
+  const bootDemo = async () => (await import("./shell/demo-reset")).bootDemo(getDatabase(), process.env);
+
+  await migrateOnBoot(process.env, undefined, async () => {
+    await sealVillageSecretOnBoot(getDatabase(), process.env);
+    if (isDemo) await bootDemo();
+  });
+  if (isDemo && !resolveMigrationPlan(process.env).shouldRun) await bootDemo();
   startSelfTick(process.env);
 }

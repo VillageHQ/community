@@ -7,6 +7,8 @@ import type { ScheduledJob } from "@/platform/jobs/runner";
 import { readEnabledIds } from "./enabled-modules";
 import { CHAT_POSTS_JOB_NAME, runChatPosts, WEEKLY_EMAIL_JOB_NAME } from "./chat-posts";
 import { runWeeklyEmails } from "./weekly-email";
+import { DEMO_RESET_JOB } from "./demo-reset";
+import { isDemoMode } from "@/platform/demo/mode";
 
 const MINUTE_MS = 60_000;
 
@@ -22,5 +24,7 @@ export async function readScheduledJobs(database: Database): Promise<ScheduledJo
   const enabledIds = await readEnabledIds(database);
   const moduleJobs = MODULES.flatMap(({ manifest, jobs }) => (jobs && enabledIds.has(manifest.id) ? jobs : []));
   // The weekly email runs before the outbox sender, so what it queues goes out in the same tick.
-  return [...SHELL_JOBS, ...PLATFORM_JOBS, ...moduleJobs];
+  // The demo's nightly reset exists only with DEMO_MODE=true.
+  const demoJobs = isDemoMode(process.env) ? [DEMO_RESET_JOB] : [];
+  return [...demoJobs, ...SHELL_JOBS, ...PLATFORM_JOBS, ...moduleJobs];
 }

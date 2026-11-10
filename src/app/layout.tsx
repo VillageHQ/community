@@ -4,11 +4,13 @@ import { cookies } from "next/headers";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 
+import { DemoBanner } from "@/components/demo-banner";
 import { SkipLink } from "@/components/skip-link";
 import { RunsOnVillageProvider } from "@/components/village-mark";
 import { readRunsOnVillageSafely } from "@/shell/enabled-modules";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { toRootMetadata } from "@/platform/branding/page-metadata";
+import { isDemoMode } from "@/platform/demo/mode";
 import { renderAccentCss } from "@/platform/design/accent";
 import { DARK_CLASS, parseTheme, SYSTEM_THEME_SCRIPT, THEME_COOKIE, THEMES } from "@/platform/design/theme";
 
@@ -37,6 +39,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <SkipLink />
+        {isDemoMode(process.env) ? <DemoBanner /> : null}
         <RunsOnVillageProvider value={runsOnVillage}>{children}</RunsOnVillageProvider>
       </body>
     </html>
