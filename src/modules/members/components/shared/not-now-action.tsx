@@ -19,7 +19,7 @@ function finishOnboarding() {
 }
 
 function goHome() {
-  window.location.assign(ROUTES.feed);
+  window.location.assign(ROUTES.landing);
 }
 
 export function FinishOnboardingButton({ label = NOT_NOW_LABEL }: { label?: string }) {

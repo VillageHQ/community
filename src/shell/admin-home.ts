@@ -51,7 +51,7 @@ export function readAdminHomeItems(facts: AdminTabFacts, { pendingInvites, stuck
       ? { id: ADMIN_HOME_ITEMS.invites, label: `${plural(pendingInvites, "invite", "invites")} not accepted yet`, href: `${ROUTES.adminMembers}#${INVITE_LIST_ID}`, isUrgent: false }
       : null,
     stuckIntros > 0
-      ? { id: ADMIN_HOME_ITEMS.stuckIntros, label: `${plural(stuckIntros, "intro", "intros")} asked, no answer`, href: ROUTES.adminReport, isUrgent: false }
+      ? { id: ADMIN_HOME_ITEMS.stuckIntros, label: `${plural(stuckIntros, "older intro", "older intros")} still waiting for an answer`, href: ROUTES.adminReport, isUrgent: false }
       : null,
     facts.setupStepsLeft > 0
       ? { id: ADMIN_HOME_ITEMS.setup, label: `${plural(facts.setupStepsLeft, "setup step", "setup steps")} left`, href: ROUTES.adminSetup, isUrgent: false }
