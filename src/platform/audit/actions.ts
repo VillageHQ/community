@@ -41,6 +41,13 @@ export const AUDIT_ACTIONS = {
   connectNudgeSent: "connect_nudge_sent",
   partnerReportSent: "partner_report_sent",
   partnerReportMarkedShared: "partner_report_marked_shared",
+  chatConnected: "chat_connected",
+  chatChannelChosen: "chat_channel_chosen",
+  chatPaused: "chat_paused",
+  chatResumed: "chat_resumed",
+  chatDisconnected: "chat_disconnected",
+  perksSaved: "perks_saved",
+  perksRemoved: "perks_removed",
   villageSettingsChanged: "village_settings_changed",
 } as const;
 

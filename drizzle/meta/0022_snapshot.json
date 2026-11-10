@@ -1,5 +1,5 @@
 {
-  "id": "928eb933-003f-4c78-b7bf-603c5341325d",
+  "id": "66968db4-7dc8-4e57-8204-ac0a730eb5af",
   "prevId": "ea34f1bf-0b0a-4e9b-8231-9ca7bf11270b",
   "version": "7",
   "dialect": "postgresql",
@@ -760,7 +760,7 @@
           "type": "timestamp (3) with time zone",
           "primaryKey": false,
           "notNull": true,
-          "default": "date_trunc('milliseconds', now())"
+          "default": "now()"
         },
         "last_error": {
           "name": "last_error",
@@ -784,12 +784,6 @@
         "dedupe_key": {
           "name": "dedupe_key",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp (3) with time zone",
           "primaryKey": false,
           "notNull": false
         }
@@ -2055,6 +2049,197 @@
       },
       "isRLSEnabled": false
     },
+    "public.chat_connection": {
+      "name": "chat_connection",
+      "schema": "",
+      "columns": {
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signing_secret": {
+          "name": "signing_secret",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "account_name": {
+          "name": "account_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "channel_id": {
+          "name": "channel_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "channel_name": {
+          "name": "channel_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_paused": {
+          "name": "is_paused",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_refused": {
+          "name": "is_refused",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "last_post_at": {
+          "name": "last_post_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error_at": {
+          "name": "last_error_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "connected_at": {
+          "name": "connected_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "posts_from_at": {
+          "name": "posts_from_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chat_connection_kind_known": {
+          "name": "chat_connection_kind_known",
+          "value": "\"chat_connection\".\"kind\" in ('slack', 'discord')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.chat_post": {
+      "name": "chat_post",
+      "schema": "",
+      "columns": {
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ref": {
+          "name": "ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "chat_post_kind_chat_connection_kind_fk": {
+          "name": "chat_post_kind_chat_connection_kind_fk",
+          "tableFrom": "chat_post",
+          "tableTo": "chat_connection",
+          "columnsFrom": [
+            "kind"
+          ],
+          "columnsTo": [
+            "kind"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "chat_post_kind_ref_pk": {
+          "name": "chat_post_kind_ref_pk",
+          "columns": [
+            "kind",
+            "ref"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chat_post_status_known": {
+          "name": "chat_post_status_known",
+          "value": "\"chat_post\".\"status\" in ('sending', 'sent', 'failed')"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.comment": {
       "name": "comment",
       "schema": "",
@@ -2833,12 +3018,6 @@
         },
         "outcome_reminder_at": {
           "name": "outcome_reminder_at",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "target_reminder_at": {
-          "name": "target_reminder_at",
           "type": "timestamp (3) with time zone",
           "primaryKey": false,
           "notNull": false
@@ -3666,24 +3845,6 @@
         },
         "website": {
           "name": "website",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "stage": {
-          "name": "stage",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sector": {
-          "name": "sector",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cohort": {
-          "name": "cohort",
           "type": "text",
           "primaryKey": false,
           "notNull": false

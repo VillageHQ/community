@@ -81,6 +81,13 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.connectNudgeSent]: ({ detail }) => `reminded ${detail} to connect their network`,
   [AUDIT_ACTIONS.partnerReportSent]: ({ detail }) => `emailed the partner report to ${detail}`,
   [AUDIT_ACTIONS.partnerReportMarkedShared]: () => "marked the partner report as shared",
+  [AUDIT_ACTIONS.chatConnected]: ({ detail }) => `connected ${detail}`,
+  [AUDIT_ACTIONS.chatChannelChosen]: ({ detail }) => `chose where new asks are posted: ${detail}`,
+  [AUDIT_ACTIONS.chatPaused]: ({ detail }) => `paused posting to ${detail}`,
+  [AUDIT_ACTIONS.chatResumed]: ({ detail }) => `turned posting to ${detail} back on`,
+  [AUDIT_ACTIONS.chatDisconnected]: ({ detail }) => `disconnected ${detail} and deleted its token`,
+  [AUDIT_ACTIONS.perksSaved]: () => "saved the perks marketplace",
+  [AUDIT_ACTIONS.perksRemoved]: () => "removed the perks marketplace",
   [AUDIT_ACTIONS.villageSettingsChanged]: ({ detail }) => `changed the Village settings: ${detail}`,
 };
 

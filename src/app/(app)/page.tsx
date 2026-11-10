@@ -27,6 +27,8 @@ import { feedQuery } from "@/modules/feed/queries";
 import { membersManifest } from "@/modules/members/manifest";
 import { feedManifest } from "@/modules/feed/manifest";
 import { networkManifest } from "@/modules/network/manifest";
+import { perksManifest } from "@/modules/perks/manifest";
+import { readPerksUrl } from "@/modules/perks/service";
 import { readEnabledIds } from "@/shell/enabled-modules";
 import { isTodayEmpty, readTodayItems, type TodayItems } from "@/shell/today";
 import { TodayList } from "@/shell/today-list";
@@ -51,7 +53,7 @@ export default modulePage(membersManifest, async function HomePage() {
   const enabledIds = await readEnabledIds(database);
   const isFeedOn = enabledIds.has(feedManifest.id);
   const isNetworkOn = enabledIds.has(networkManifest.id);
-  const [community, networkProgress, setupProgress, profile, avatarUrl, feedPage, today, lookupState] = await Promise.all([
+  const [community, networkProgress, setupProgress, profile, avatarUrl, feedPage, today, lookupState, perksUrl] = await Promise.all([
     readBrandingForPage(),
     isNetworkOn ? readNetworkProgress(database, member) : null,
     isAdmin ? readSetupProgress(database) : null,
@@ -60,7 +62,9 @@ export default modulePage(membersManifest, async function HomePage() {
     isFeedOn ? readFeedPage(database, member, null) : null,
     readTodayItems(database, member.id, enabledIds),
     isNetworkOn ? readLookupState(database, member.id) : null,
+    enabledIds.has(perksManifest.id) ? readPerksUrl(database) : null,
   ]);
+  const perksCommunityName = perksUrl ? community.name : null;
   const lookupQuestion = lookupState?.needsAnswer ? <LookupQuestionCard communityName={community.name} /> : null;
 
   const nextSteps = selectNextSteps({
@@ -82,7 +86,7 @@ export default modulePage(membersManifest, async function HomePage() {
         {greeting}
         <div className="grid max-w-[640px] gap-5">
           {lookupQuestion}
-          <TodayList today={today} nextSteps={nextSteps} />
+          <TodayList today={today} nextSteps={nextSteps} perksCommunityName={perksCommunityName} />
         </div>
       </>
     );
@@ -97,7 +101,7 @@ export default modulePage(membersManifest, async function HomePage() {
       {greeting}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_296px] lg:gap-7">
         <aside aria-label="For you" className="lg:sticky lg:top-9 lg:order-2">
-          <TodayList today={today} nextSteps={nextSteps} />
+          <TodayList today={today} nextSteps={nextSteps} perksCommunityName={perksCommunityName} />
         </aside>
         <div className="grid gap-5 lg:order-1">
           {lookupQuestion}

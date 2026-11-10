@@ -152,8 +152,15 @@
     {
       "idx": 22,
       "version": "7",
-      "when": 1794296578754,
-      "tag": "0022_small_gaps",
+      "when": 1794296878006,
+      "tag": "0022_chat_perks",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794299966088,
+      "tag": "0023_small_gaps",
       "breakpoints": true
     }
   ]

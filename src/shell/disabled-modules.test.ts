@@ -100,7 +100,8 @@ describe("the shell with modules off", () => {
     });
 
     it("hides the credits tab", async () => {
-      expect((await readAdminTabFacts(database, ENVIRONMENT)).hiddenTabHrefs).toEqual(["/admin/credits"]);
+      // Perks and Slack and Discord start off, so their tabs are hidden too.
+      expect((await readAdminTabFacts(database, ENVIRONMENT)).hiddenTabHrefs).toEqual(["/admin/credits", "/admin/perks", "/admin/chat"]);
     });
 
     it("doesn't count an out-of-credits notice", async () => {

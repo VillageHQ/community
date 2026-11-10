@@ -138,10 +138,15 @@ export async function readActiveMemberCount(database: Database) {
   return row?.memberCount ?? 0;
 }
 
+// Who the directory lists. Posts outside the app (Slack, Discord) name only members it lists; others are "a member".
+export function isListedInDirectory(now = new Date()) {
+  return isActiveMember(now);
+}
+
 export async function readDirectory(database: Database, filters: Partial<DirectoryFilters>, now = new Date()): Promise<Directory> {
   const { search, tag, stage, sector, cohort, updatedWithinDays, page } = { ...EMPTY_DIRECTORY_FILTERS, ...filters };
   const conditions = and(
-    isActiveMember(),
+    isListedInDirectory(now),
     matchesSearch(database, search),
     matchesTag(database, tag),
     matchesValue(memberProfile.stage, stage),
