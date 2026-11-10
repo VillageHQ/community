@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, eq, gt, inArray, isNotNull, notExists, or } from "drizzle-orm";
+import { z } from "zod";
 
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { user } from "../../platform/database/auth-schema.ts";
@@ -23,7 +24,7 @@ export function readLiveConsentHash(token: string) {
   return isInviteTokenShape(token) ? hashInviteToken(token) : null;
 }
 
-function selectActiveJoinedMemberIds(connection: DatabaseOrTransaction, now: Date) {
+export function selectActiveJoinedMemberIds(connection: DatabaseOrTransaction, now: Date) {
   return connection
     .select({ userId: memberNetwork.userId })
     .from(memberNetwork)
@@ -49,9 +50,9 @@ function hasConsentLink(connection: DatabaseOrTransaction, tokenHash: string) {
   return inArray(introRequest.id, linkedIntros);
 }
 
-export function isAwaitingTarget(connection: DatabaseOrTransaction, now: Date) {
+// Open, not withheld, not past its deadline, between two active joined members with no block either way.
+export function isLiveBetweenMembers(connection: DatabaseOrTransaction, now: Date) {
   return and(
-    eq(introRequest.state, INTRO_STATES.askingTarget),
     eq(introRequest.isWithheld, false),
     gt(introRequest.expiresAt, now),
     inArray(introRequest.requesterId, selectActiveJoinedMemberIds(connection, now)),
@@ -60,20 +61,33 @@ export function isAwaitingTarget(connection: DatabaseOrTransaction, now: Date) {
   );
 }
 
+export function isAwaitingTarget(connection: DatabaseOrTransaction, now: Date) {
+  return and(eq(introRequest.state, INTRO_STATES.askingTarget), isLiveBetweenMembers(connection, now));
+}
+
 // Any link the connector made for this intro works while the intro waits on the target. A newer link never closes an
 // older one that may already be forwarded.
 export function isConsentTokenLive(connection: DatabaseOrTransaction, tokenHash: string, now: Date) {
   return and(hasConsentLink(connection, tokenHash), isAwaitingTarget(connection, now));
 }
 
-type TargetAnswerFacts = Pick<typeof introRequest.$inferSelect, "state" | "targetAgreedAt" | "targetLinkedinSlug">;
+type TargetAnswerFacts = Pick<typeof introRequest.$inferSelect, "state" | "targetAgreedAt" | "targetLinkedinSlug" | "targetAnswer">;
+
+const consentAnswerSchema = z.enum(CONSENT_ANSWERS);
+
+async function isTargetSlugOptedOut(database: Database, environment: Environment, targetSlug: string) {
+  return isSlugHashOptedOut(database, await hashTargetSlug(database, environment, targetSlug));
+}
 
 // What the target already answered, read back from the intro, or null when they never answered (expired, withdrawn).
+// The saved answer wins, so a later stop-all on another intro never rewrites a "no thanks" given here. Rows from before
+// answers were saved fall back to reading the state and the opt-out list.
 export async function readSettledAnswer(database: Database, environment: Environment, intro: TargetAnswerFacts): Promise<ConsentAnswer | null> {
+  const saved = consentAnswerSchema.safeParse(intro.targetAnswer);
+  if (saved.success) return saved.data;
   if (intro.targetAgreedAt) return CONSENT_ANSWERS.yes;
   if (intro.state !== INTRO_STATES.targetDeclined) return null;
-  const isOptedOut = await isSlugHashOptedOut(database, await hashTargetSlug(database, environment, intro.targetLinkedinSlug));
-  return isOptedOut ? CONSENT_ANSWERS.stopAllAsks : CONSENT_ANSWERS.noThanks;
+  return (await isTargetSlugOptedOut(database, environment, intro.targetLinkedinSlug)) ? CONSENT_ANSWERS.stopAllAsks : CONSENT_ANSWERS.noThanks;
 }
 
 // The intro a link belongs to, live or not. Null only for a token nobody issued.
@@ -104,7 +118,9 @@ async function readAnsweredView(context: ConsentViewContext, intro: typeof intro
   const answer = await readSettledAnswer(context.database, context.environment, intro);
   if (!answer) return { view: CONSENT_VIEWS.closed };
   const { requesterName } = await readConsentParticipants(context.database, intro.requesterId);
-  return { view: CONSENT_VIEWS.answered, answer, requesterName, introducerName: intro.introducerName, targetName: intro.targetName };
+  // A "no thanks" here, then a stop-all on another intro: the page says both, in the order they happened.
+  const hasStoppedAllSince = answer === CONSENT_ANSWERS.noThanks && (await isTargetSlugOptedOut(context.database, context.environment, intro.targetLinkedinSlug));
+  return { view: CONSENT_VIEWS.answered, answer, hasStoppedAllSince, requesterName, introducerName: intro.introducerName, targetName: intro.targetName };
 }
 
 export async function readConsentView(context: ConsentViewContext, token: string) {
@@ -146,5 +162,7 @@ export async function readConsentView(context: ConsentViewContext, token: string
     note: readWhyTheyWrote(row.note, row.introducerName, row.targetName),
     closesAt: row.expiresAt.toISOString(),
     joinsByEmail: row.targetEmail !== null && readResendConfig(context.environment) !== null,
+    // A forwarded link: the app has no address for them, so the yes asks for one and the app joins them by email.
+    asksForEmail: row.targetEmail === null && readResendConfig(context.environment) !== null,
   };
 }

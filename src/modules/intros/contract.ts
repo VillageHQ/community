@@ -10,6 +10,11 @@ export const OUTCOME_PROMPT_AFTER_DAYS = 14;
 export const OUTCOME_REMINDER_AFTER_DAYS = 3;
 // The one reminder to the person asked, this many days after the app last emailed them.
 export const TARGET_REMINDER_AFTER_DAYS = 4;
+// The one reminder to a connector who hasn't answered, this many days after the ask.
+export const CONNECTOR_REMINDER_AFTER_DAYS = 4;
+// The asker's "closed without an answer" email goes only for asks that expired within this many days, so turning the
+// email on never mails people about old asks.
+export const EXPIRY_EMAIL_WINDOW_DAYS = 2;
 export const OUTCOME_PROMPT_WINDOW_DAYS = 45;
 export const CONSENT_TOKEN_MAXIMUM_LENGTH = 128;
 
@@ -139,13 +144,16 @@ const slugSchema = z.string().trim().toLowerCase().min(1).max(INTRO_LIMITS.slugL
 
 export const introNoteSchema = feedTextSchema("your note", INTRO_LIMITS.noteLength);
 
-export const declineReasonSchema = z
+// An empty note may come as "", as null (what the browser sends) or not at all. All mean no note.
+const declineReasonTextSchema = z
   .string()
   .overwrite(removeNullBytes)
   .overwrite(removeBidiControls)
   .trim()
   .max(INTRO_LIMITS.declineReasonLength, `Keep your reason under ${INTRO_LIMITS.declineReasonLength} characters.`)
   .transform((reason) => reason || null);
+
+export const declineReasonSchema = z.union([z.null(), declineReasonTextSchema]);
 
 export const createIntroBodySchema = z.object({
   targetSlug: slugSchema,
@@ -175,15 +183,19 @@ export const introOutcomeBodySchema = z
   })
   .transform(({ results, ...body }) => ({ ...body, results: body.outcome === INTRO_OUTCOMES.helped ? [...new Set(results)] : [] }));
 
+const targetEmailSchema = z.email("Enter an email address, like clara@example.com.").trim().toLowerCase().max(INTRO_LIMITS.emailLength);
+
+// `targetEmail` comes with a yes on a forwarded link, when the app has no address for the person asked.
 export const consentAnswerBodySchema = z.object({
   token: z.string().max(CONSENT_TOKEN_MAXIMUM_LENGTH),
   answer: z.enum(CONSENT_ANSWERS),
+  targetEmail: targetEmailSchema.optional(),
 });
 
 export const consentEmailBodySchema = z.object({
   introId: z.uuid(),
   token: z.string().max(CONSENT_TOKEN_MAXIMUM_LENGTH),
-  targetEmail: z.email("Enter an email address, like clara@example.com.").trim().toLowerCase().max(INTRO_LIMITS.emailLength),
+  targetEmail: targetEmailSchema,
 });
 
 export const markIntrosSeenBodySchema = z.object({ introId: z.uuid().nullable().default(null) });

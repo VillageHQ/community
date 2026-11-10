@@ -26,6 +26,9 @@ import {
   type Intro,
 } from "@/modules/intros/contract";
 import { introsManifest } from "@/modules/intros/manifest";
+import { sendDueConnectorReminders, sendDueExpiryEmails } from "@/modules/intros/quiet-intro-emails";
+import { expireDueIntros } from "@/modules/intros/reads";
+import { readIntroReport } from "@/modules/intros/reads-report";
 import { sendDueTargetReminders } from "@/modules/intros/target-reminder";
 import { sendDueEmails } from "@/platform/email/outbox-sender";
 import { introConsentLink, introOptOut, introRequest } from "@/modules/intros/schema";
@@ -1243,6 +1246,192 @@ describe("double opt-in intros", () => {
       await new Promise((resolve) => setTimeout(resolve, EMAIL_SETTLE_MS));
 
       expect(resend.state.emails).toEqual([]);
+    });
+  });
+
+  describe("a forwarded link, when the app has no address for the person asked", () => {
+    const FORWARDED_EMAIL = "clara.forwarded@outside.test";
+
+    function answerYesWithEmail(token: string, targetEmail: string) {
+      return call(answerRoute.POST, null, { token, answer: CONSENT_ANSWERS.yes, targetEmail });
+    }
+
+    it("asks for their email on the yes page when email is on", async () => {
+      configureResend();
+      const { token } = await askAndReachTarget();
+
+      expect(await renderPage(token)).toContain("Your email");
+    });
+
+    it("doesn't ask for an email when the community sends none", async () => {
+      const { token } = await askAndReachTarget();
+
+      expect(await renderPage(token)).not.toContain("Your email");
+    });
+
+    it("joins them with one email to both, tells the connector, and counts the intro as made", async () => {
+      configureResend();
+      const { intro, token } = await askAndReachTarget();
+      await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThan(0), EVENTUALLY);
+      resend.reset();
+
+      expect((await answerYesWithEmail(token, FORWARDED_EMAIL)).status).toBe(OK_STATUS);
+
+      await vi.waitFor(async () => expect((await readRow(intro.id)).state).toBe(INTRO_STATES.completed), EVENTUALLY);
+      await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThanOrEqual(2), EVENTUALLY);
+      await new Promise((resolve) => setTimeout(resolve, EMAIL_SETTLE_MS));
+      const joining = resend.state.emails.filter(({ body }) => JSON.stringify(body).includes(FORWARDED_EMAIL));
+      expect(joining).toHaveLength(1);
+      expect(JSON.stringify(joining)).toContain(amara.email);
+      const toConnector = resend.state.emails.filter(({ body }) => JSON.stringify(body).includes(jonas.email));
+      expect(JSON.stringify(toConnector)).toContain("they're connected");
+      expect((await readRow(intro.id)).targetEmail).toBeNull();
+      expect((await readIntroReport(database, { from: null, to: null })).introduced).toBe(1);
+    });
+
+    it("refuses the asker's or the connector's own address", async () => {
+      configureResend();
+      const { intro, token } = await askAndReachTarget();
+
+      expect((await answerYesWithEmail(token, amara.email)).status).toBe(UNPROCESSABLE_STATUS);
+      expect((await answerYesWithEmail(token, jonas.email)).status).toBe(UNPROCESSABLE_STATUS);
+      expect((await readRow(intro.id)).state).toBe(INTRO_STATES.askingTarget);
+    });
+
+    it("says what's wrong with an address the browser let through", async () => {
+      configureResend();
+      const { token } = await askAndReachTarget();
+
+      const response = await answerYesWithEmail(token, "clara@outside");
+
+      expect(response.status).toBe(UNPROCESSABLE_STATUS);
+      expect(JSON.stringify(await response.json())).toContain("Enter an email address");
+    });
+
+    it("keeps the address the connector already gave", async () => {
+      configureResend();
+      const { intro, token } = await askAndReachTarget();
+      await call(postEmail, jonas, { introId: intro.id, token, targetEmail: TARGET_EMAIL });
+      resend.reset();
+
+      await answerYesWithEmail(token, FORWARDED_EMAIL);
+
+      await vi.waitFor(async () => expect((await readRow(intro.id)).state).toBe(INTRO_STATES.completed), EVENTUALLY);
+      const body = JSON.stringify(resend.state.emails.map(({ body: sent }) => sent));
+      expect(body).toContain(TARGET_EMAIL);
+      expect(body).not.toContain(FORWARDED_EMAIL);
+    });
+  });
+
+  describe("an intro nobody answers", () => {
+    async function readSentTo(email: string) {
+      await sendDueEmails(database, process.env);
+      return resend.state.emails.filter(({ body }) => JSON.stringify((body as { to?: unknown }).to).includes(email));
+    }
+
+    async function askedDaysAgo(days: number) {
+      configureResend();
+      const intro = await ask();
+      await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThan(0), EVENTUALLY);
+      await database.update(introRequest).set({ createdAt: new Date(Date.now() - days * MILLISECONDS_PER_DAY) }).where(eq(introRequest.id, intro.id));
+      await sendDueEmails(database, process.env);
+      resend.reset();
+      return intro;
+    }
+
+    it("reminds the connector nothing before day 4", async () => {
+      await askedDaysAgo(3.9);
+
+      expect(await sendDueConnectorReminders(database, process.env)).toEqual({ reminded: 0 });
+      expect(await readSentTo(jonas.email)).toEqual([]);
+    });
+
+    it("reminds the connector exactly once, however often the job runs", async () => {
+      await askedDaysAgo(4);
+
+      const runs = await Promise.all([sendDueConnectorReminders(database, process.env), sendDueConnectorReminders(database, process.env)]);
+      await sendDueConnectorReminders(database, process.env, new Date(Date.now() + MILLISECONDS_PER_DAY));
+
+      expect(runs.reduce((total, { reminded }) => total + reminded, 0)).toBe(1);
+      const reminders = await readSentTo(jonas.email);
+      expect(reminders).toHaveLength(1);
+      expect(JSON.stringify(reminders[0]?.body)).toContain("only reminder");
+      expect(JSON.stringify(reminders[0]?.body)).toContain("Amara");
+      expect(await readSentTo(amara.email)).toEqual([]);
+    });
+
+    it("sends the connector no reminder once they answered", async () => {
+      const intro = await askedDaysAgo(5);
+      await call(postTransition, jonas, { introId: intro.id, action: INTRO_ACTIONS.accept });
+
+      expect(await sendDueConnectorReminders(database, process.env)).toEqual({ reminded: 0 });
+    });
+
+    it("sends the asker one kind email when it expires, without saying who didn't answer", async () => {
+      const intro = await askedDaysAgo(1);
+      await makeIntroOverdue(database, intro.id);
+
+      await expireDueIntros(database, null);
+      await call(postBoard, amara, {});
+      await Promise.all([sendDueExpiryEmails(database, process.env), sendDueExpiryEmails(database, process.env)]);
+      await sendDueExpiryEmails(database, process.env);
+
+      expect((await readRow(intro.id)).state).toBe(INTRO_STATES.expired);
+      const toAsker = await readSentTo(amara.email);
+      expect(toAsker).toHaveLength(1);
+      const sent = JSON.stringify(toAsker[0]?.body);
+      expect(sent).toContain("Clara");
+      expect(sent).not.toContain("Jonas");
+      expect(await readSentTo(jonas.email)).toEqual([]);
+    });
+
+    it("sends the asker one email when it expires while the person asked never answered", async () => {
+      configureResend();
+      const { intro } = await askAndReachTarget();
+      await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThan(0), EVENTUALLY);
+      await sendDueEmails(database, process.env);
+      resend.reset();
+      await makeIntroOverdue(database, intro.id);
+
+      await call(postBoard, amara, {});
+      await sendDueExpiryEmails(database, process.env);
+
+      expect(await readSentTo(amara.email)).toHaveLength(1);
+    });
+  });
+
+  describe("a connector who said no", () => {
+    it("leaves the asker's paths to that person", async () => {
+      const intro = await ask();
+      await call(postTransition, jonas, { introId: intro.id, action: INTRO_ACTIONS.decline, reason: null });
+
+      const names = (await lookUpPaths(amara)).connectors.map(({ name }) => name);
+
+      expect(names).not.toContain("Jonas Lindqvist");
+      expect(names).toContain("Noor Haddad");
+    });
+
+    it("still shows for other people, and for other askers", async () => {
+      const intro = await ask();
+      await call(postTransition, jonas, { introId: intro.id, action: INTRO_ACTIONS.decline, reason: null });
+
+      expect((await lookUpPaths(amara, OTHER_SLUG)).connectors.map(({ name }) => name)).toContain("Jonas Lindqvist");
+      expect((await lookUpPaths(bystander)).connectors.map(({ name }) => name)).toContain("Jonas Lindqvist");
+    });
+  });
+
+  describe("a link answered no thanks, opened again after a later stop-all", () => {
+    it("shows the no thanks given on it, and the stop as a later step", async () => {
+      const first = await askAndReachTarget();
+      await answer(first.token, CONSENT_ANSWERS.noThanks);
+      const later = await askAndReachTarget(noor);
+      await answer(later.token, CONSENT_ANSWERS.stopAllAsks);
+
+      expect(await readAnswer(await answer(first.token))).toEqual({ answer: CONSENT_ANSWERS.noThanks, isRepeat: true });
+      const page = await renderPage(first.token);
+      expect(page).toContain("You said no thanks");
+      expect(page).toContain("Later, you stopped all intro requests");
+      expect(await renderPage(later.token)).toContain("You&#x27;ve stopped intro requests");
     });
   });
 

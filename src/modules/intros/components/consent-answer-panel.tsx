@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { Check, CircleCheck, HandHeart, Hand, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import { ConfirmAction } from "@/components/confirm-action";
 import { EmptyState } from "@/components/empty-state";
@@ -10,6 +10,8 @@ import { FormError } from "@/components/form-error";
 import { QueryProvider } from "@/components/query-provider";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { CONSENT_ANSWERS, type ConsentAnswer } from "@/modules/intros/contract";
 import { answerConsentRequest } from "@/modules/intros/queries";
 import { readFirstName } from "@/platform/design/avatar-identity";
@@ -25,6 +27,7 @@ type OpenConsent = {
   note: string;
   closesAt: string;
   joinsByEmail: boolean;
+  asksForEmail: boolean;
 };
 
 type ConsentAnswerPanelProps = { token: string; communityName: string; consent: OpenConsent };
@@ -54,13 +57,14 @@ function readAnswerMessage(answer: ConsentAnswer, { requesterName, introducerNam
 }
 
 // Shown when this link was already answered: a second tap, a refresh, or another link for the same intro.
-function readRepeatMessage(answer: ConsentAnswer, { requesterName }: AnswerNames, communityName: string) {
+function readRepeatMessage(answer: ConsentAnswer, { requesterName }: AnswerNames, communityName: string, hasStoppedAllSince: boolean) {
   const requesterFirst = readFirstName(requesterName);
+  const laterStop = hasStoppedAllSince ? ` Later, you stopped all intro requests from ${communityName}, so you won't get any more.` : "";
   const messages: Record<ConsentAnswer, { title: string; description: string }> = {
     [CONSENT_ANSWERS.yes]: { title: "You already said yes", description: `You said yes to meeting ${requesterFirst}. There's nothing more you need to do.` },
     [CONSENT_ANSWERS.noThanks]: {
       title: "You already said no thanks",
-      description: `Nothing more happens. ${requesterFirst} isn't told who answered. There's nothing more you need to do.`,
+      description: `You said no thanks to meeting ${requesterFirst}, so this intro didn't go ahead. ${requesterFirst} isn't told who answered.${laterStop} There's nothing more you need to do.`,
     },
     [CONSENT_ANSWERS.stopAllAsks]: {
       title: "You've stopped intro requests",
@@ -70,10 +74,18 @@ function readRepeatMessage(answer: ConsentAnswer, { requesterName }: AnswerNames
   return messages[answer];
 }
 
-type AnsweredMessageProps = { answer: ConsentAnswer; isRepeat: boolean; names: AnswerNames & { joinsByEmail: boolean }; communityName: string };
+type AnsweredMessageProps = {
+  answer: ConsentAnswer;
+  isRepeat: boolean;
+  names: AnswerNames & { joinsByEmail: boolean };
+  communityName: string;
+  hasStoppedAllSince?: boolean;
+};
 
-export function AnsweredMessage({ answer, isRepeat, names, communityName }: AnsweredMessageProps) {
-  const { title, description } = isRepeat ? readRepeatMessage(answer, names, communityName) : readAnswerMessage(answer, names, communityName);
+export function AnsweredMessage({ answer, isRepeat, names, communityName, hasStoppedAllSince = false }: AnsweredMessageProps) {
+  const { title, description } = isRepeat
+    ? readRepeatMessage(answer, names, communityName, hasStoppedAllSince)
+    : readAnswerMessage(answer, names, communityName);
   const heading = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!isRepeat) heading.current?.focus();
@@ -116,20 +128,32 @@ function StopAllAsks({ communityName, answer, isPending, errorMessage }: { commu
 }
 
 function ConsentQuestion({ token, communityName, consent }: ConsentAnswerPanelProps) {
-  const { requesterName, requesterHeadline, introducerName, targetName, note, closesAt, joinsByEmail } = consent;
+  const { requesterName, requesterHeadline, introducerName, targetName, note, closesAt, joinsByEmail, asksForEmail } = consent;
   const requesterFirst = readFirstName(requesterName);
   const introducerFirst = readFirstName(introducerName);
-  const answerMutation = useMutation({ mutationFn: (answer: ConsentAnswer) => answerConsentRequest({ token, answer }) });
+  const [targetEmail, setTargetEmail] = useState("");
+  const emailId = useId();
+  const emailHintId = useId();
+  const answerMutation = useMutation({
+    mutationFn: (answer: ConsentAnswer) =>
+      answerConsentRequest({ token, answer, ...(answer === CONSENT_ANSWERS.yes && asksForEmail ? { targetEmail: targetEmail.trim() } : {}) }),
+  });
   const [isStopFailure, setIsStopFailure] = useState(false);
+  const willJoinByEmail = joinsByEmail || asksForEmail;
 
   if (answerMutation.data) {
     const { answer: saved, isRepeat } = answerMutation.data;
-    return <AnsweredMessage answer={saved} isRepeat={isRepeat} names={consent} communityName={communityName} />;
+    return <AnsweredMessage answer={saved} isRepeat={isRepeat} names={{ ...consent, joinsByEmail: willJoinByEmail }} communityName={communityName} />;
   }
 
   function answer(choice: ConsentAnswer) {
     setIsStopFailure(choice === CONSENT_ANSWERS.stopAllAsks);
     answerMutation.mutate(choice);
+  }
+
+  function sayYes(event: FormEvent) {
+    event.preventDefault();
+    answer(CONSENT_ANSWERS.yes);
   }
   const errorMessage = answerMutation.error?.message ?? null;
 
@@ -156,10 +180,27 @@ function ConsentQuestion({ token, communityName, consent }: ConsentAnswerPanelPr
         </div>
       </section>
 
-      <div className="grid gap-3">
+      <form onSubmit={sayYes} className="grid gap-3">
+        {asksForEmail ? (
+          <div className="grid gap-2">
+            <Label htmlFor={emailId}>Your email</Label>
+            <Input
+              id={emailId}
+              type="email"
+              required
+              autoComplete="email"
+              value={targetEmail}
+              aria-describedby={emailHintId}
+              onChange={(event) => setTargetEmail(event.target.value)}
+            />
+            <p id={emailHintId} className="type-small text-muted-foreground">
+              Only for a yes: we send one email to you and {requesterFirst} together, then delete your address. Not needed for no thanks.
+            </p>
+          </div>
+        ) : null}
         {isStopFailure ? null : <FormError message={errorMessage} />}
         <div className="grid gap-2.5 sm:grid-cols-2">
-          <Button type="button" size="hero" disabled={answerMutation.isPending} onClick={() => answer(CONSENT_ANSWERS.yes)}>
+          <Button type="submit" size="hero" disabled={answerMutation.isPending}>
             <Check aria-hidden="true" />
             Yes, introduce us
           </Button>
@@ -171,13 +212,13 @@ function ConsentQuestion({ token, communityName, consent }: ConsentAnswerPanelPr
         <ul className="type-note grid gap-1.5 text-foreground-soft">
           <li>
             If you say yes,{" "}
-            {joinsByEmail ? `we email you and ${requesterFirst} once, so you can take it from there.` : `${introducerFirst} connects you with one message.`}
+            {willJoinByEmail ? `we email you and ${requesterFirst} once, so you can take it from there.` : `${introducerFirst} connects you with one message.`}
           </li>
           <li>
             If you say no, {requesterFirst} isn&apos;t told who answered. {introducerFirst} sees your answer.
           </li>
         </ul>
-      </div>
+      </form>
 
       <StopAllAsks communityName={communityName} answer={answer} isPending={answerMutation.isPending} errorMessage={isStopFailure ? errorMessage : null} />
 
