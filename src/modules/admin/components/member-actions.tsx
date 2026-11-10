@@ -13,6 +13,7 @@ import { readFirstName } from "@/platform/design/avatar-identity";
 
 import { ConfirmDialog } from "@/modules/admin/components/confirm-dialog";
 import { RemoveMemberDialog } from "@/modules/admin/components/remove-member-dialog";
+import { DELETE_ACCOUNT_ICON, DeleteAccountDialog } from "@/modules/admin/components/delete-account-dialog";
 import { clearLinkedinRequest, confirmLinkedinRequest, confirmMemberRequest } from "@/modules/members/queries-invites";
 import { IssuedLink } from "@/modules/members/components/shared/issued-link";
 import {
@@ -312,6 +313,22 @@ function RemovalActions({ member, viewerId, manageButtonRef, fallbackFocusId, on
   );
 }
 
+function DeleteAccountActions({ member, viewerId, manageButtonRef, fallbackFocusId, onDone }: MemberActionContext) {
+  if (member.id === viewerId) return null;
+  if (member.isErased) return <ActionGroup title="Deleted" note="This account was deleted. Nothing personal is left, and it can't come back." />;
+  return (
+    <ActionGroup title="Delete account and data" note="When a member asks to be deleted. This is for good, unlike Remove.">
+      <DeleteAccountDialog
+        member={{ id: member.id, name: member.name }}
+        trigger={<ActionButton label="Delete account and data" icon={DELETE_ACCOUNT_ICON} variant="destructive" />}
+        returnFocusRef={manageButtonRef}
+        fallbackFocusId={fallbackFocusId}
+        onDone={onDone}
+      />
+    </ActionGroup>
+  );
+}
+
 export function MemberActions(context: MemberActionContext) {
   const { member } = context;
   const isNetworkOn = useIsModuleEnabled(networkManifest.id);
@@ -319,9 +336,10 @@ export function MemberActions(context: MemberActionContext) {
     <div className="grid gap-2.5 pt-1">
       {member.isRemoved ? null : <RoleActions {...context} />}
       {member.isRemoved ? null : <EmailActions {...context} />}
-      {isNetworkOn || member.isInVillageGroup || member.hasStaleVillageMembership ? <VillageActions {...context} /> : null}
+      {!member.isErased && (isNetworkOn || member.isInVillageGroup || member.hasStaleVillageMembership) ? <VillageActions {...context} /> : null}
       {member.isRemoved ? null : <LinkedinActions {...context} />}
-      <RemovalActions {...context} />
+      {member.isErased ? null : <RemovalActions {...context} />}
+      <DeleteAccountActions {...context} />
     </div>
   );
 }

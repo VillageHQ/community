@@ -41,6 +41,8 @@ export const AUDIT_ACTIONS = {
   connectNudgeSent: "connect_nudge_sent",
   partnerReportSent: "partner_report_sent",
   partnerReportMarkedShared: "partner_report_marked_shared",
+  accountDeleted: "account_deleted",
+  introAsksAnswered: "intro_asks_answered",
   chatConnected: "chat_connected",
   chatChannelChosen: "chat_channel_chosen",
   chatPaused: "chat_paused",

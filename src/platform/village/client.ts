@@ -235,3 +235,23 @@ export async function readVillageProfile(session: VillageSession, linkedinUrl: s
     throw error;
   }
 }
+
+// TODO(@villagehq/sdk): the SDK has no call for POST /v2/user/cancel yet, so this sends it with the member's own token.
+// Village deactivates that user and revokes every token it has. Minting the token first is safe: Village reactivates a
+// cancelled user only on a token request, and this cancel comes after it.
+const DEFAULT_VILLAGE_API_URL = "https://api.village.ai";
+const USER_CANCEL_PATH = "/v2/user/cancel";
+
+export async function cancelVillageUser(connection: VillageConnection, identity: VillageIdentity) {
+  const token = await mintVillageToken(connection, identity);
+  const remainingMs = connection.deadlineAtMs - Date.now();
+  if (remainingMs <= 0) throw new VillageError({ code: "timeout", message: "No time was left to call Village." });
+  const apiUrl = (connection.apiUrl ?? DEFAULT_VILLAGE_API_URL).replace(/\/+$/, "");
+  const response = await fetch(`${apiUrl}${USER_CANCEL_PATH}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    signal: AbortSignal.timeout(Math.min(VILLAGE_TIMEOUTS_MS.default, remainingMs)),
+  });
+  await response.body?.cancel();
+  if (!response.ok) throw new VillageError({ code: "server", message: `Village answered ${response.status} to the user cancel.` });
+}

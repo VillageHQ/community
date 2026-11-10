@@ -247,9 +247,9 @@ describe("reliable email", () => {
       const conversationId = await seedConversation(database, senderId, recipientId);
       const context = createRequestContext(database, readEnvironment(), { id: senderId, email: "jonas@example.com" });
 
-      await sendMessage(context, { conversationId, clientKey: randomUUID(), body: "Hi there" });
+      await sendMessage(context, { conversationId, clientKey: randomUUID(), body: "Hi there" }, async () => true);
       await vi.waitFor(() => expect(resend.state.emails).toHaveLength(1), EVENTUALLY);
-      await sendMessage(context, { conversationId, clientKey: randomUUID(), body: "One more thing" });
+      await sendMessage(context, { conversationId, clientKey: randomUUID(), body: "One more thing" }, async () => true);
 
       expect(await readRows()).toHaveLength(1);
       expect(readBodies()[0]?.subject).toBe("Jonas sent you a message");
@@ -263,7 +263,7 @@ describe("reliable email", () => {
       const conversationId = await seedConversation(database, senderId, recipientId);
       const context = createRequestContext(database, readEnvironment(), { id: senderId, email: "jonas@example.com" });
 
-      await sendMessage(context, { conversationId, clientKey: randomUUID(), body: "Hi there" });
+      await sendMessage(context, { conversationId, clientKey: randomUUID(), body: "Hi there" }, async () => true);
 
       expect(await readRows()).toEqual([]);
     });

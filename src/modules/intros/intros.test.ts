@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { user } from "@/platform/database/auth-schema";
 import { introRequest } from "@/modules/intros/schema";
-import { memberBlock, memberNetwork } from "@/modules/members/schema";
+import { memberBlock, memberNetwork, memberPrivacy } from "@/modules/members/schema";
 import { memberPathResult } from "@/modules/network/schema";
 import {
   CONSENT_ANSWERS,
@@ -758,6 +758,14 @@ describe("intro requests", () => {
         await createIntro();
 
         expect(await (await ask()).json()).toMatchObject({ code: INTRO_ERROR_CODES.duplicate });
+      });
+
+      it("refuses an ask to a connector who said they don't take intro asks", async () => {
+        await lookUpPaths();
+        await database.insert(memberPrivacy).values({ userId: jonas.userId, acceptsIntroAsks: false, introAsksAnsweredAt: new Date() });
+
+        expect(await (await ask()).json()).toMatchObject({ code: INTRO_ERROR_CODES.notTakingAsks });
+        expect(await database.select().from(introRequest)).toEqual([]);
       });
 
       it("tells a member who blocked the connector themselves, because that hides nothing", async () => {

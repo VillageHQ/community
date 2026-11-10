@@ -25,3 +25,4 @@ Rules:
 - Offers are private. Answers are public under the ask and reportable.
 - A removed member's asks, offers and answers leave every read through `isActiveMember`. Unbanning brings them back.
 - Reports are saved and resolved by `admin/service-reports`, and stay resolvable with this module off.
+- `service-erasure.ts`, `ask_tally`: a deleted account's asks become anonymous tally rows the partner report adds in.

@@ -59,8 +59,8 @@ const REMOVED_GROUP_NOTES: Record<GroupDepartureOutcome, (firstName: string) => 
 };
 
 function RemovedNote({ member }: { member: AdminMember }) {
-  const { isRemoved, isInVillageGroup, hasStaleVillageMembership, villageLeaveOutcome, name } = member;
-  if (!isRemoved) return null;
+  const { isRemoved, isErased, isInVillageGroup, hasStaleVillageMembership, villageLeaveOutcome, name } = member;
+  if (!isRemoved || isErased) return null;
   const outcome = villageLeaveOutcome ?? (isInVillageGroup || hasStaleVillageMembership ? GROUP_DEPARTURE_OUTCOMES.failed : null);
   if (!outcome) return null;
   return (
@@ -85,9 +85,11 @@ function MemberTags({ member, isViewer }: { member: AdminMember; isViewer: boole
       ) : (
         <Tag>Member</Tag>
       )}
-      {member.isRemoved ? <Tag tone="destructive">Removed</Tag> : null}
-      <Tag tone={member.isEmailConfirmed ? "sage" : "gold"}>{member.isEmailConfirmed ? "Email confirmed" : "Email not confirmed"}</Tag>
-      {isNetworkOn ? <Tag tone={village.tone}>Village: {village.label}</Tag> : null}
+      {member.isErased ? <Tag tone="destructive">Deleted</Tag> : member.isRemoved ? <Tag tone="destructive">Removed</Tag> : null}
+      {member.isErased ? null : (
+        <Tag tone={member.isEmailConfirmed ? "sage" : "gold"}>{member.isEmailConfirmed ? "Email confirmed" : "Email not confirmed"}</Tag>
+      )}
+      {isNetworkOn && !member.isErased ? <Tag tone={village.tone}>Village: {village.label}</Tag> : null}
     </div>
   );
 }

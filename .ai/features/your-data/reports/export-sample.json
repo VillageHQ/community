@@ -1,0 +1,74 @@
+{
+  "format": {
+    "name": "community-member-export",
+    "version": 1
+  },
+  "exportedAt": "2026-11-10T08:08:15.261Z",
+  "community": "Your community",
+  "account": {
+    "id": "bce50b55-af4c-4bd0-a0e7-047d4348e42c",
+    "name": "Dana Example",
+    "email": "dana@example.com",
+    "emailVerified": false,
+    "role": "user",
+    "createdAt": "2026-11-10T08:06:57.856Z"
+  },
+  "profile": {
+    "title": null,
+    "company": null,
+    "location": null,
+    "bio": "PROOFBIO Dana builds freight tools",
+    "canHelpWith": null,
+    "needs": null,
+    "website": null,
+    "updatedAt": "2026-11-10T08:08:14.857Z",
+    "onboardingCompletedAt": "2026-11-10T08:07:31.767Z"
+  },
+  "tags": [],
+  "photo": null,
+  "filledInFromPublicProfiles": [],
+  "privacy": {
+    "hiddenFromDirectory": false,
+    "whoCanMessageMe": "anyone",
+    "acceptsIntroAsks": false
+  },
+  "consent": {
+    "introAsks": {
+      "answer": false,
+      "at": "2026-11-10T08:07:31.663Z",
+      "where": "onboarding"
+    },
+    "profileFillIn": {
+      "communityBasis": null,
+      "termsDate": null,
+      "agreedAt": null,
+      "refusedAt": null,
+      "lastLookedUpAt": null,
+      "lastLookupResult": null
+    },
+    "networkSharing": {
+      "agreedAt": null,
+      "joinedGroupAt": null,
+      "villageLinkedAt": null
+    },
+    "creditInPartnerReports": false
+  },
+  "network": null,
+  "blocks": [],
+  "posts": [],
+  "replies": [],
+  "reactions": [],
+  "asks": [],
+  "offersYouMade": [],
+  "answersYouWrote": [],
+  "intros": [],
+  "messagesYouSent": [],
+  "emailTopicsTurnedOff": [],
+  "weeklyEmails": [],
+  "yourActionsInTheAuditLog": [
+    {
+      "action": "intro_asks_answered",
+      "at": "2026-11-10T08:07:31.666Z"
+    }
+  ]
+}
