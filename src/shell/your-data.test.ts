@@ -20,6 +20,7 @@ import { ask, askAnswer, askOffer, askTally } from "@/modules/asks/schema";
 import { reaction } from "@/modules/feed/schema";
 import { INTRO_STATES } from "@/modules/intros/contract";
 import { introRequest } from "@/modules/intros/schema";
+import { jobPosting, jobSource } from "@/modules/job-board/schema";
 import { directorySchema, ONBOARDING_STEPS } from "@/modules/members/contract-profile";
 import { DELETED_MEMBER_NAME, MESSAGE_POLICIES } from "@/modules/members/contract-privacy";
 import { invite, memberAvatar, memberFillIn, memberLookup, memberNetwork, memberPrivacy, memberProfile, memberRemoval, memberTag } from "@/modules/members/schema";
@@ -153,6 +154,12 @@ describe("your data and the real delete", () => {
       acceptedAt: new Date(),
       acceptedUserId: dana.userId,
     });
+
+    const [source] = await database
+      .insert(jobSource)
+      .values({ memberId: dana.userId, company: "Erasewell Freight", companySlug: "erasewell-freight", tool: "manual" })
+      .returning({ id: jobSource.id });
+    await database.insert(jobPosting).values({ sourceId: source!.id, externalId: "1", title: "Erasewell Freight ops lead", isManual: true });
 
     const danaPost = await seedPost(database, { authorId: dana.userId, body: DANA_WORDS.post });
     await seedComment(database, { postId: danaPost, authorId: omar.userId, body: "Omar's reply under Dana's post" });

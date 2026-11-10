@@ -1,10 +1,11 @@
 import "server-only";
 
-import { and, asc, eq, or } from "drizzle-orm";
+import { and, asc, eq, inArray, or } from "drizzle-orm";
 
 import { ask, askAnswer, askOffer } from "@/modules/asks/schema";
 import { comment, post, reaction } from "@/modules/feed/schema";
 import { introRequest } from "@/modules/intros/schema";
+import { jobPosting, jobSource } from "@/modules/job-board/schema";
 import { readRequesterState } from "@/modules/intros/contract";
 import { memberAvatar, memberBlock, memberFillIn, memberLookup, memberNetwork, memberProfile, memberTag } from "@/modules/members/schema";
 import { readFillInSettings } from "@/modules/members/service-fill-in";
@@ -70,6 +71,16 @@ export async function readMemberExport(database: Database, memberId: string) {
     readFillInSettings(database),
   ]);
   const [profile] = await database.select().from(memberProfile).where(eq(memberProfile.userId, memberId));
+  const jobSources = await database
+    .select({ id: jobSource.id, company: jobSource.company, tool: jobSource.tool, sourceUrl: jobSource.sourceUrl, hidden: jobSource.hidden, createdAt: jobSource.createdAt })
+    .from(jobSource)
+    .where(eq(jobSource.memberId, memberId));
+  const jobs = jobSources.length === 0
+    ? []
+    : await database
+        .select({ sourceId: jobPosting.sourceId, title: jobPosting.title, location: jobPosting.location, url: jobPosting.url, isManual: jobPosting.isManual })
+        .from(jobPosting)
+        .where(inArray(jobPosting.sourceId, jobSources.map(({ id }) => id)));
   const [avatar] = await database.select().from(memberAvatar).where(eq(memberAvatar.userId, memberId));
   const [network] = await database.select().from(memberNetwork).where(eq(memberNetwork.userId, memberId));
   const [lookup] = await database.select().from(memberLookup).where(eq(memberLookup.userId, memberId));
@@ -150,6 +161,8 @@ export async function readMemberExport(database: Database, memberId: string) {
     messagesYouSent: messages,
     emailTopicsTurnedOff: optOuts,
     weeklyEmails: weekly,
+    hiringToolsYouLinked: jobSources,
+    jobsFromYourHiringTools: jobs,
     yourActionsInTheAuditLog: activity,
   };
 }

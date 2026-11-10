@@ -11,6 +11,7 @@ import { ask } from "@/modules/asks/schema";
 import { eraseMemberFeed, ERASED_TEXT } from "@/modules/feed/service-erasure";
 import { anonymizeMemberIntros } from "@/modules/intros/service-erasure";
 import { introRequest } from "@/modules/intros/schema";
+import { jobSource } from "@/modules/job-board/schema";
 import { DELETED_MEMBER_NAME } from "@/modules/members/contract-privacy";
 import { eraseMemberAccount, matchesWord, readEmailPattern, readErasureFacts, readNamePattern, type ErasureFacts } from "@/modules/members/service-erasure";
 import { toContainsPattern } from "@/modules/members/reads-directory";
@@ -145,6 +146,8 @@ async function eraseEverything(transaction: Transaction, facts: ErasureFacts, ac
   await eraseMemberMessages(transaction, memberId);
   await resolveOpenReportsAgainstMember(transaction, memberId, actorId, REPORT_RESOLUTIONS.memberRemoved);
 
+  // Hiring tools they linked, and the jobs pulled or added through them.
+  await transaction.delete(jobSource).where(eq(jobSource.memberId, memberId));
   await transaction.delete(memberPathResult).where(eq(memberPathResult.userId, memberId));
   await transaction.delete(memberConnectNudge).where(eq(memberConnectNudge.userId, memberId));
   await transaction.delete(memberDailyUsage).where(eq(memberDailyUsage.userId, memberId));
