@@ -35,6 +35,10 @@ export const AUDIT_ACTIONS = {
   askAnswerRemoved: "ask_answer_removed",
   askAllowanceChanged: "ask_allowance_changed",
   introAsksStopped: "intro_asks_stopped",
+  fillInBasisChanged: "fill_in_basis_changed",
+  fillInRunStarted: "fill_in_run_started",
+  monthlyCapChanged: "monthly_cap_changed",
+  connectNudgeSent: "connect_nudge_sent",
   partnerReportSent: "partner_report_sent",
   partnerReportMarkedShared: "partner_report_marked_shared",
 } as const;

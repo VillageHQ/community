@@ -1,7 +1,7 @@
 // Every email the app sends. A kind with a topic is optional: it carries unsubscribe headers,
 // honours the member's switch for that topic and skips the do-not-send list. A kind without
 // one is transactional: the person needs it to get in or back in.
-export const EMAIL_TOPICS = { intros: "intros", messages: "messages", asks: "asks" } as const;
+export const EMAIL_TOPICS = { intros: "intros", messages: "messages", network: "network", asks: "asks" } as const;
 
 export type EmailTopic = (typeof EMAIL_TOPICS)[keyof typeof EMAIL_TOPICS];
 
@@ -14,6 +14,8 @@ export const EMAIL_KINDS = {
   introUpdate: "intro_update",
   introDeclined: "intro_declined",
   directMessage: "direct_message",
+  creditWarning: "credit_warning",
+  connectNudge: "connect_nudge",
   askHelper: "ask_helper",
   partnerReport: "partner_report",
 } as const;
@@ -29,6 +31,8 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.introUpdate]: EMAIL_TOPICS.intros,
   [EMAIL_KINDS.introDeclined]: EMAIL_TOPICS.intros,
   [EMAIL_KINDS.directMessage]: EMAIL_TOPICS.messages,
+  [EMAIL_KINDS.creditWarning]: null,
+  [EMAIL_KINDS.connectNudge]: EMAIL_TOPICS.network,
   [EMAIL_KINDS.askHelper]: EMAIL_TOPICS.asks,
   // Sent by an admin to people outside the community, who have no member switch. The send itself skips addresses that bounced.
   [EMAIL_KINDS.partnerReport]: null,
@@ -37,6 +41,7 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
 export const EMAIL_TOPIC_LABELS: Record<EmailTopic, { title: string; description: string }> = {
   [EMAIL_TOPICS.intros]: { title: "Intro asks", description: "When someone asks you for an intro, or answers yours." },
   [EMAIL_TOPICS.messages]: { title: "Direct messages", description: "When someone messages you. At most one email per conversation every 15 minutes." },
+  [EMAIL_TOPICS.network]: { title: "Network reminders", description: "An admin's reminder to connect your network. At most one every 30 days." },
   [EMAIL_TOPICS.asks]: { title: "Asks you could help with", description: "When someone posts an ask you may be able to help with. One email per ask." },
 };
 

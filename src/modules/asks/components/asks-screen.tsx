@@ -13,7 +13,7 @@ import { Chip } from "@/components/ui/chip";
 import { Tag } from "@/components/ui/tag";
 import { ASK_KINDS, ASKS_PAGE, type AskCategory, type AskKind } from "@/modules/asks/contract";
 import { askCountsQuery } from "@/modules/asks/queries";
-import { ASK_VIEWS, parseAskBoardFilters, toAskBoardQueryString, type AskBoardFilters, type AskView } from "@/modules/asks/rules-board-url";
+import { ASK_VIEWS, parseAskBoardFilters, parseAskDraft, toAskBoardQueryString, type AskBoardFilters, type AskView } from "@/modules/asks/rules-board-url";
 
 import { AskBoard } from "./ask-board";
 import { AskComposer } from "./ask-composer";
@@ -71,9 +71,11 @@ function CategoryChips({ category, kind, onChange }: CategoryChipsProps) {
 }
 
 export function AsksScreen({ isViewerAdmin }: { isViewerAdmin: boolean }) {
-  const filters = parseAskBoardFilters(Object.fromEntries(useSearchParams()));
+  const searchParams = Object.fromEntries(useSearchParams());
+  const filters = parseAskBoardFilters(searchParams);
   const deferredFilters = useDeferredValue(filters);
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(() => parseAskDraft(searchParams));
+  const [isComposerOpen, setIsComposerOpen] = useState(draftTitle !== null);
   const [notice, setNotice] = useState<string | null>(null);
   const openComposer = () => setIsComposerOpen(true);
   const seeYourAsks = () => applyFilters({ view: ASK_VIEWS.yours, category: null, kind: null });
@@ -121,9 +123,11 @@ export function AsksScreen({ isViewerAdmin }: { isViewerAdmin: boolean }) {
       <AskComposer
         isOpen={isComposerOpen}
         onOpenChange={setIsComposerOpen}
+        draftTitle={draftTitle ?? ""}
         onSeeYourAsks={seeYourAsks}
         onPosted={(kind, helperCount) => {
           setIsComposerOpen(false);
+          setDraftTitle(null);
           setNotice(describePosted(kind, helperCount));
           seeEverything();
         }}

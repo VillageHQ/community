@@ -17,6 +17,7 @@ import { LOW_LOOKUPS_LEFT, type Connector } from "@/modules/network/contract";
 
 import { MemberConversationSlot } from "@/modules/members/slots";
 import { ConnectorPromiseSlot } from "@/modules/network/slots";
+import { AskCommunityLink, readIntroAskDraft, useCanAskCommunity } from "./ask-community-link";
 import { ConnectorCard } from "./connector-card";
 import { networkPathsQuery } from "@/modules/network/queries";
 
@@ -99,16 +100,26 @@ function DirectConnectionNote({ targetName, targetSlug }: { targetName: string; 
   );
 }
 
+function readNoWayInAdvice(canAskCommunity: boolean, isFeedOn: boolean) {
+  if (canAskCommunity) return "Ask the community, or try someone else.";
+  return isFeedOn ? "Ask the community in the feed, or try someone else." : "Try someone else.";
+}
+
 function NoWayIn({ targetName }: { targetName: string }) {
   const isFeedOn = useIsModuleEnabled(HOME_FEED_MODULE_ID);
+  const canAskCommunity = useCanAskCommunity();
   return (
     <div role="status" className="grid justify-items-center gap-2 rounded-field bg-muted px-5 py-7 text-center">
       <MessageCirclePlus aria-hidden="true" className="size-8 text-brand-emphasis" />
       <p className="type-h3">No warm way in yet</p>
       <p className="type-small text-foreground-soft">
-        Nobody&apos;s network reaches {readFirstName(targetName)} right now. {isFeedOn ? "Ask the community in the feed, or try someone else." : "Try someone else."}
+        Nobody&apos;s network reaches {readFirstName(targetName)} right now. {readNoWayInAdvice(canAskCommunity, isFeedOn)}
       </p>
-      {isFeedOn ? (
+      {canAskCommunity ? (
+        <div className="mt-2">
+          <AskCommunityLink draft={readIntroAskDraft(targetName)} />
+        </div>
+      ) : isFeedOn ? (
         <Button asChild variant="soft" size="sm" className="mt-2">
           <Link href={ROUTES.feed}>Ask in the feed</Link>
         </Button>

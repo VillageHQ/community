@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, exists, gte, ilike, inArray, min, ne, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, gte, ilike, inArray, min, ne, or, sql } from "drizzle-orm";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
@@ -8,8 +8,22 @@ import { memberAvatar, memberProfile, memberTag } from "./schema.ts";
 import { type Directory, type DirectoryFilters, normalizeTag } from "./contract-profile.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { toAvatarUrl } from "./service-profile.ts";
+import { FILL_IN_FIELDS } from "./contract-fill-in.ts";
+import { shownFillInColumn } from "./service-fill-in.ts";
 
 export const DIRECTORY_PAGE_SIZE = 12;
+
+// Lists show a filled-in role, company and face where the member left theirs empty.
+const filledTitle = shownFillInColumn(FILL_IN_FIELDS.title);
+const filledCompany = shownFillInColumn(FILL_IN_FIELDS.company);
+const filledFace = shownFillInColumn(FILL_IN_FIELDS.face);
+
+const shownTitle = sql<string | null>`coalesce(nullif(${memberProfile.title}, ''), ${filledTitle.line.value})`;
+const shownCompany = sql<string | null>`coalesce(nullif(${memberProfile.company}, ''), ${filledCompany.line.value})`;
+
+function toListAvatarUrl(memberId: string, avatarUpdatedAt: Date | null, filledFaceUrl: string | null) {
+  return toAvatarUrl(memberId, avatarUpdatedAt) ?? filledFaceUrl;
+}
 const MAXIMUM_POPULAR_TAGS = 6;
 const MAXIMUM_NEW_MEMBERS = 3;
 const MAXIMUM_NEIGHBOURS = 6;
@@ -90,14 +104,18 @@ export async function readDirectory(database: Database, { search, tag, page }: D
     .select({
       id: user.id,
       name: user.name,
-      title: memberProfile.title,
-      company: memberProfile.company,
+      title: shownTitle,
+      company: shownCompany,
       canHelpWith: memberProfile.canHelpWith,
       avatarUpdatedAt: memberAvatar.updatedAt,
+      filledFaceUrl: filledFace.line.value,
     })
     .from(user)
     .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
     .leftJoin(memberAvatar, eq(memberAvatar.userId, user.id))
+    .leftJoin(filledTitle.line, filledTitle.joinCondition)
+    .leftJoin(filledCompany.line, filledCompany.joinCondition)
+    .leftJoin(filledFace.line, filledFace.joinCondition)
     .where(conditions)
     .orderBy(asc(user.name), asc(user.id))
     .limit(DIRECTORY_PAGE_SIZE)
@@ -110,9 +128,9 @@ export async function readDirectory(database: Database, { search, tag, page }: D
   ]);
 
   return {
-    members: rows.map(({ avatarUpdatedAt, ...member }) => ({
+    members: rows.map(({ avatarUpdatedAt, filledFaceUrl, ...member }) => ({
       ...member,
-      avatarUrl: toAvatarUrl(member.id, avatarUpdatedAt),
+      avatarUrl: toListAvatarUrl(member.id, avatarUpdatedAt, filledFaceUrl),
       tags: tagsByMember.get(member.id) ?? [],
     })),
     matchCount,

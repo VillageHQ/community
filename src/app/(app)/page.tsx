@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/page-header";
 import { getDatabase } from "@/platform/database/client";
 import { readSetupProgress } from "@/shell/admin-setup";
 import { readBrandingForPage } from "@/platform/branding/branding";
+import { readLookupState } from "@/modules/members/service-fill-in";
+import { LookupQuestionCard } from "@/modules/members/components/lookup-question-card";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { readResendConfig } from "@/platform/email/resend";
@@ -53,17 +55,20 @@ export default modulePage(membersManifest, async function FeedPage() {
   const isAdmin = isAdminMember(member);
   const enabledIds = await readEnabledIds(database);
   const isFeedOn = enabledIds.has(feedManifest.id);
-  const [community, networkProgress, setupProgress, { newCount, newMembers }, profile, avatarUrl, feedPage, waitingIntros] =
+  const isNetworkOn = enabledIds.has(networkManifest.id);
+  const [community, networkProgress, setupProgress, { newCount, newMembers }, profile, avatarUrl, feedPage, waitingIntros, lookupState] =
     await Promise.all([
       readBrandingForPage(),
-      enabledIds.has(networkManifest.id) ? readNetworkProgress(database, member) : null,
+      isNetworkOn ? readNetworkProgress(database, member) : null,
       isAdmin ? readSetupProgress(database) : null,
       readNewMembers(database, member.id),
       readMemberProfile(database, member.id),
       readAvatarUrl(database, member.id),
       isFeedOn ? readFeedPage(database, member, null) : null,
       enabledIds.has(introsManifest.id) ? readWaitingIntros(database, member.id) : [],
+      isNetworkOn ? readLookupState(database, member.id) : null,
     ]);
+  const lookupQuestion = lookupState?.needsAnswer ? <LookupQuestionCard communityName={community.name} /> : null;
 
   const nextSteps = selectNextSteps({
     setupProgress,
@@ -83,6 +88,7 @@ export default modulePage(membersManifest, async function FeedPage() {
       <>
         {greeting}
         <div className="grid max-w-[640px] gap-5">
+          {lookupQuestion}
           {waitingIntros.length > 0 ? <WaitingOnYouCard intros={waitingIntros} /> : null}
           {nextSteps.map((nextStep) => (
             <NextStepCard key={nextStep.title} nextStep={nextStep} />
@@ -101,6 +107,7 @@ export default modulePage(membersManifest, async function FeedPage() {
       {greeting}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_296px] lg:gap-7">
         <div className="grid gap-5">
+          {lookupQuestion}
           {nextSteps
             .filter(({ isUrgent }) => isUrgent)
             .map((nextStep) => (

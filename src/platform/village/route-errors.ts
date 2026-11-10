@@ -4,7 +4,7 @@ import { isVillageError, type VillageErrorCode } from "@villagehq/sdk";
 
 import type { Database } from "../database/client.ts";
 import { respondWithError, type FriendlyError } from "../http/member-route.ts";
-import { DailyLimitReachedError } from "./credit-ledger.ts";
+import { DailyLimitReachedError, MonthlyCapReachedError } from "./credit-ledger.ts";
 import { VILLAGE_ERROR_CODES } from "./error-codes.ts";
 import { recordVillageOutOfCredits } from "./settings.ts";
 
@@ -64,6 +64,13 @@ export async function respondToVillageError(database: Database, error: unknown) 
       status: TOO_MANY_REQUESTS_STATUS,
       code: VILLAGE_ERROR_CODES.dailyLimitReached,
       message: `You reached today's limit of ${error.limit} Village lookups. Try again tomorrow.`,
+    });
+  }
+  if (error instanceof MonthlyCapReachedError) {
+    return respondWithError({
+      status: TOO_MANY_REQUESTS_STATUS,
+      code: VILLAGE_ERROR_CODES.monthlyCapReached,
+      message: "This community has used this month's Village credits. Lookups start again on the 1st, or sooner if an admin raises the cap.",
     });
   }
   return null;

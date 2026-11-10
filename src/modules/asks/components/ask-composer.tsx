@@ -55,9 +55,9 @@ function KindChoice({ kind, onChange }: { kind: AskKind; onChange: (kind: AskKin
   );
 }
 
-function AskForm({ onPosted, allowance }: { onPosted: OnPosted; allowance: AskAllowance }) {
+function AskForm({ onPosted, allowance, draftTitle }: { onPosted: OnPosted; allowance: AskAllowance; draftTitle: string }) {
   const [kind, setKind] = useState<AskKind>(ASK_KINDS.ask);
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(draftTitle);
   const [detail, setDetail] = useState("");
   const [targetLinkedin, setTargetLinkedin] = useState("");
   const [category, setCategory] = useState<AskCategory | null>(null);
@@ -158,9 +158,11 @@ function AskForm({ onPosted, allowance }: { onPosted: OnPosted; allowance: AskAl
   );
 }
 
-function AskFormOrLimit({ onPosted, onSeeYourAsks }: { onPosted: OnPosted; onSeeYourAsks: () => void }) {
+type AskFormOrLimitProps = { onPosted: OnPosted; onSeeYourAsks: () => void; draftTitle: string };
+
+function AskFormOrLimit({ onPosted, onSeeYourAsks, draftTitle }: AskFormOrLimitProps) {
   const { data } = useSuspenseQuery(ownAsksQuery());
-  if (data.openCount < ASK_LIMITS.openPerMember) return <AskForm onPosted={onPosted} allowance={data.allowance} />;
+  if (data.openCount < ASK_LIMITS.openPerMember) return <AskForm onPosted={onPosted} allowance={data.allowance} draftTitle={draftTitle} />;
   return (
     <div className="grid gap-4">
       <Alert variant="info" role="none">
@@ -175,9 +177,15 @@ function AskFormOrLimit({ onPosted, onSeeYourAsks }: { onPosted: OnPosted; onSee
   );
 }
 
-type AskComposerProps = { isOpen: boolean; onOpenChange: (isOpen: boolean) => void; onPosted: OnPosted; onSeeYourAsks: () => void };
+type AskComposerProps = {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onPosted: OnPosted;
+  onSeeYourAsks: () => void;
+  draftTitle?: string;
+};
 
-export function AskComposer({ isOpen, onOpenChange, onPosted, onSeeYourAsks }: AskComposerProps) {
+export function AskComposer({ isOpen, onOpenChange, onPosted, onSeeYourAsks, draftTitle = "" }: AskComposerProps) {
   return (
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -195,7 +203,7 @@ export function AskComposer({ isOpen, onOpenChange, onPosted, onSeeYourAsks }: A
             </Dialog.Close>
           </div>
           <QueryBoundary loadingMessage="Just a moment…">
-            <AskFormOrLimit onPosted={onPosted} onSeeYourAsks={onSeeYourAsks} />
+            <AskFormOrLimit onPosted={onPosted} onSeeYourAsks={onSeeYourAsks} draftTitle={draftTitle} />
           </QueryBoundary>
         </Dialog.Content>
       </Dialog.Portal>

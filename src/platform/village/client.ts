@@ -157,3 +157,78 @@ export async function readVillagePaths(session: VillageSession, linkedinUrl: str
   if (parsed.success) return parsed.data;
   throw new VillageError({ code: "invalid_response", status: 200, message: "Village's paths weren't in the expected shape." });
 }
+
+// Profile fill-in runs as one "public" identity of the app, never as a member, so a lookup can't
+// create a Village user or touch anyone's network.
+const LOOKUP_IDENTITY_ID = "community-profile-fill-in";
+const LOOKUP_MODE = "cached_first";
+
+export function createVillageLookupSession(connection: VillageConnection, email: string): VillageSession {
+  return { village: readVillageApp(connection).as({ id: LOOKUP_IDENTITY_ID, email, grant: "public" }), deadlineAtMs: connection.deadlineAtMs };
+}
+
+const companySchema = z.object({ name: z.string().nullish(), image_url: z.string().nullish() }).nullish();
+const workSchema = z.object({ title: z.string().nullish(), company: companySchema }).nullish();
+
+export const villageProfileSchema = z.object({
+  linkedin_url: z.string().nullish(),
+  avatar: z.string().nullish(),
+  headline: z.string().nullish(),
+  location: z.object({ city: z.string().nullish(), state: z.string().nullish(), country: z.string().nullish() }).nullish(),
+  work_relevant: workSchema,
+  work_history: z.array(workSchema).nullish(),
+  last_enrichment_at: z.string().nullish(),
+});
+
+export type VillageProfile = z.infer<typeof villageProfileSchema>;
+
+function parseVillageProfile(profile: unknown) {
+  const parsed = villageProfileSchema.safeParse(profile);
+  if (parsed.success) return parsed.data;
+  throw new VillageError({ code: "invalid_response", status: 200, message: "Village's profile wasn't in the expected shape." });
+}
+
+const ERROR_CODE_BY_STATUS: Record<number, VillageError["code"]> = {
+  400: "bad_request",
+  401: "unauthorized",
+  402: "out_of_credits",
+  403: "forbidden",
+  404: "not_found",
+  409: "conflict",
+  422: "validation",
+  429: "rate_limited",
+};
+
+const SERVER_ERROR_STATUS = 500;
+const NOT_FOUND_STATUS = 404;
+const TIMEOUT_ERROR_NAME = "TimeoutError";
+
+function toLookupError(status: number) {
+  const code = ERROR_CODE_BY_STATUS[status] ?? (status >= SERVER_ERROR_STATUS ? "server" : "bad_request");
+  return new VillageError({ code, status, message: `Village answered the email lookup with ${status}.` });
+}
+
+// TODO(@villagehq/sdk): the SDK has no call for POST /v2/people/enrich/by-email, so this goes through
+// its typed client. That keeps the key, the JSON guard and the failure log; Village's 404 means nobody.
+export async function readVillageProfileByEmail(session: VillageSession, email: string) {
+  const signal = AbortSignal.timeout(withinDeadline(session).timeoutMs ?? VILLAGE_TIMEOUTS_MS.default);
+  const { data, response } = await session.village.api
+    .POST("/v2/people/enrich/by-email", { body: { email, mode: LOOKUP_MODE }, signal })
+    .catch((cause: unknown) => {
+      if (isVillageError(cause)) throw cause;
+      const isTimeout = cause instanceof Error && cause.name === TIMEOUT_ERROR_NAME;
+      throw new VillageError({ code: isTimeout ? "timeout" : "network", message: isTimeout ? "Village took too long to answer." : "Couldn't reach Village.", cause });
+    });
+  if (response.status === NOT_FOUND_STATUS) return null;
+  if (!response.ok || !data) throw toLookupError(response.status);
+  return parseVillageProfile(data.data);
+}
+
+export async function readVillageProfile(session: VillageSession, linkedinUrl: string) {
+  try {
+    return parseVillageProfile(await session.village.people.enrich(linkedinUrl, withinDeadline(session)));
+  } catch (error) {
+    if (isVillageError(error, "not_found")) return null;
+    throw error;
+  }
+}

@@ -39,7 +39,7 @@ export function Avatar({ stableId, name, imageUrl, sizePx = DEFAULT_AVATAR_SIZE_
         className,
       )}
     >
-      {imageUrl ? <AvatarPrimitive.Image src={imageUrl} alt="" className="size-full object-cover" /> : null}
+      {imageUrl ? <AvatarPrimitive.Image src={imageUrl} alt="" referrerPolicy="no-referrer" className="size-full object-cover" /> : null}
       <AvatarPrimitive.Fallback className="flex size-full items-center justify-center">
         {readInitials(name)}
       </AvatarPrimitive.Fallback>

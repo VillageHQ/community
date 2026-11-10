@@ -14,3 +14,11 @@ export const memberPathResult = pgTable(
   },
   (table) => [primaryKey({ columns: [table.userId, table.linkedinSlug] })],
 );
+
+// When an admin last reminded this member to connect their network. One reminder per 30 days.
+export const memberConnectNudge = pgTable("member_connect_nudge", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  lastSentAt: timestamp("last_sent_at", { withTimezone: true }).notNull(),
+});

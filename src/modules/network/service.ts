@@ -355,7 +355,8 @@ export async function searchMemberNetwork(
   const { session } = await connectMember(context, keys);
   await requireTrustedVillageUser(context, network, session);
 
-  const { people, source } = await withCreditCall(database, member.id, CREDIT_CALL_KINDS.search, () =>
+  const spender = { database, environment: context.environment, memberId: member.id };
+  const { people, source } = await withCreditCall(spender, CREDIT_CALL_KINDS.search, () =>
     searchVillageNetwork(session, prompt),
   ).catch((error: unknown) => {
     throw toSearchCutOffError(error);
@@ -422,8 +423,7 @@ function fetchVillagePathsOrNull(
   linkedinSlug: string,
 ) {
   return withCreditCall(
-    context.database,
-    context.member.id,
+    { database: context.database, environment: context.environment, memberId: context.member.id },
     CREDIT_CALL_KINDS.path,
     () => readVillagePaths(session, linkedinUrl(linkedinSlug)),
     isPersonKnown,
