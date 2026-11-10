@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, gte, isNull, notExists, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, notExists, or, sql } from "drizzle-orm";
 import { QueryBuilder } from "drizzle-orm/pg-core";
 
 import { user } from "../../platform/database/auth-schema.ts";
@@ -23,10 +23,11 @@ function authorHasNoBlock() {
   return notExists(block);
 }
 
-// Open asks (not updates) by active members, posted since `since`, oldest first. Only what any member sees on the
+// Open asks (not updates) by active members, posted since `since`: the newest 50, returned oldest first, so a busy
+// community never holds new asks back behind ones already posted. Only what any member sees on the
 // board: the title and the author's name.
 export async function readAsksForChat(database: Database, since: Date, now = new Date()) {
-  return database
+  const newest = await database
     .select({
       id: ask.id,
       title: ask.title,
@@ -37,6 +38,7 @@ export async function readAsksForChat(database: Database, since: Date, now = new
     .from(ask)
     .innerJoin(user, eq(user.id, ask.authorId))
     .where(and(eq(ask.kind, ASK_KINDS.ask), isNull(ask.closedAt), gte(ask.createdAt, since), isActiveMember(now), authorHasNoBlock()))
-    .orderBy(asc(ask.createdAt), asc(ask.id))
+    .orderBy(desc(ask.createdAt), desc(ask.id))
     .limit(MAXIMUM_ASKS);
+  return newest.toReversed();
 }

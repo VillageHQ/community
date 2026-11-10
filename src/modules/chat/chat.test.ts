@@ -13,7 +13,7 @@ import { ask } from "@/modules/asks/schema";
 import { memberBlock } from "@/modules/members/schema";
 import { chatManifest } from "@/modules/chat/manifest";
 import { chatConnection, chatPost } from "@/modules/chat/schema";
-import { isSlackSignatureValid, signSlackBody } from "@/modules/chat/rules";
+import { composeAskPost, isSlackSignatureValid, signSlackBody } from "@/modules/chat/rules";
 import { user } from "@/platform/database/auth-schema";
 import { jobLease } from "@/platform/jobs/schema";
 import { saveModuleState } from "@/platform/modules/enablement";
@@ -219,6 +219,32 @@ describe("Slack and Discord", () => {
       expect(fake.posts).toEqual([]);
     });
 
+    it("never holds new asks back behind ones already posted in a busy community", async () => {
+      await connectSlack();
+      const author = await createSignedInMember(database);
+      for (let index = 1; index <= 55; index += 1) await postAsk(author.userId, `Busy ask ${index}`);
+      await runChatPosts(database, process.env);
+      await postAsk(author.userId, "The newest ask");
+
+      await runChatPosts(database, process.env);
+
+      expect(fake.posts.some(({ text }) => text.includes("The newest ask"))).toBe(true);
+    });
+
+    it("doesn't post what came in while the token was refused once a new one is pasted", async () => {
+      await connectSlack();
+      const author = await createSignedInMember(database);
+      fake.revoke("slack");
+      await postAsk(author.userId, "Asked while the token was revoked");
+      await runChatPosts(database, process.env);
+      fake.restore("slack");
+      await call(postSlackConnect, admin, { token: FAKE_SLACK_TOKEN, signingSecret: FAKE_SLACK_SIGNING_SECRET });
+
+      await runChatPosts(database, process.env);
+
+      expect(fake.posts).toEqual([]);
+    });
+
     it("posts nothing with the module off", async () => {
       await connectSlack();
       const author = await createSignedInMember(database);
@@ -290,11 +316,27 @@ describe("Slack and Discord", () => {
       expect(await database.select().from(ask)).toHaveLength(1);
     });
 
+    it("refuses a command without the connected workspace's id", async () => {
+      const response = await signedSlashCommand({ user_id: "U0MEMBER", text: "No team", team_id: "" });
+
+      expect((await response.json()).text).toContain("another Slack workspace");
+      expect(await database.select().from(ask)).toEqual([]);
+    });
+
     it("answers 404 with the module off", async () => {
       await saveModuleState(database, chatManifest, false);
 
       expect((await signedSlashCommand({ user_id: "U0MEMBER", text: "Hi" })).status).toBe(404);
     });
+  });
+});
+
+describe("the post text", () => {
+  it("can't hide a link or mention anyone on Discord, or add markup on Slack", () => {
+    const facts = { community: "Northwind", authorName: "Priya", title: "[Free money](https://evil.example) @everyone <!channel>", url: "https://app.example.com/asks" };
+
+    expect(composeAskPost("discord", facts)).toContain(String.raw`\[Free money\]\(https://evil.example\) @` + "​everyone");
+    expect(composeAskPost("slack", facts)).toContain("&lt;!channel&gt;");
   });
 });
 

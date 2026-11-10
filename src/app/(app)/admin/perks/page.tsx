@@ -1,6 +1,5 @@
 import { CircleCheck, EyeOff } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { CardDescription } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
@@ -38,9 +37,10 @@ export default modulePage(perksManifest, async function AdminPerksPage() {
           {url ? (
             <CardDescription>
               Members see Perks in the menu, on Today and at{" "}
-              <Link href={PERKS_PAGE} className="font-bold text-brand-emphasis underline hover:no-underline">
+              {/* A full page load, so /perks's own Content-Security-Policy header applies. */}
+              <a href={PERKS_PAGE} className="font-bold text-brand-emphasis underline hover:no-underline">
                 {PERKS_PAGE}
-              </Link>
+              </a>
               . Saved address: <span className="font-mono wrap-anywhere">{url}</span>
             </CardDescription>
           ) : (

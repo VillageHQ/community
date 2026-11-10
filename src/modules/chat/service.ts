@@ -137,7 +137,9 @@ async function saveConnection(context: RequestContext, saved: SavedConnection, c
       isRefused: false,
       lastError: null,
       lastErrorAt: null,
-      ...(old ? {} : { connectedAt: new Date(), postsFromAt: new Date() }),
+      // Any new token starts posting from now, so a reconnect never posts what came in while it was broken.
+      postsFromAt: new Date(),
+      ...(old ? {} : { connectedAt: new Date() }),
     };
     await transaction
       .insert(chatConnection)
@@ -182,7 +184,7 @@ export async function chooseSlackChannel(context: RequestContext, channelId: str
   await withAdminTransaction(database, member.id, async (transaction) => {
     await transaction
       .update(chatConnection)
-      .set({ channelId: channel.id, channelName: channel.name, lastError: null, lastErrorAt: null })
+      .set({ channelId: channel.id, channelName: channel.name, lastError: null, lastErrorAt: null, postsFromAt: sql`now()` })
       .where(eq(chatConnection.kind, CHAT_KINDS.slack));
     await recordAdminAction(transaction, member.id, { action: AUDIT_ACTIONS.chatChannelChosen, detail: `Slack #${channel.name}` });
   });

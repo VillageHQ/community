@@ -92,7 +92,7 @@ type AnswerFacts = { database: Database; environment: Environment; token: string
 async function answerCommand({ database, environment, token, accountId, isPaused }: AnswerFacts, command: SlackCommand) {
   const community = (await readBranding(database)).name;
   const appUrl = resolveAppUrl(environment);
-  if (accountId && command.teamId && command.teamId !== accountId) return "This app is connected to another Slack workspace.";
+  if (accountId && command.teamId !== accountId) return "This app is connected to another Slack workspace.";
   if (isPaused) return `${community} has paused its Slack app. Post your ask in the app: ${appUrl}${ASKS_PAGE}`;
   if (!(await isModuleEnabled(database, asksManifest))) return `${community} has turned off asks, so there's nowhere to post this.`;
   if (!command.text) return "Write your ask after the command, in one line: /ask an intro to a hospital buyer in the US";

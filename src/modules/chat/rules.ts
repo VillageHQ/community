@@ -7,7 +7,8 @@ import { CHAT_API_ROUTES, CHAT_KINDS, CHAT_LIMITS, type ChatKind } from "./contr
 
 const SLACK_MARKUP = /[&<>]/g;
 const SLACK_ENTITIES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;" };
-const DISCORD_MARKDOWN = /([*_~`|\\])/g;
+// Masked links ([text](url)) too, so a title can't hide where a link goes.
+const DISCORD_MARKDOWN = /([*_~`|\\[\]()])/g;
 const ZERO_WIDTH_SPACE = "​";
 const WHITESPACE = /\s+/g;
 const SIGNATURE_VERSION = "v0";

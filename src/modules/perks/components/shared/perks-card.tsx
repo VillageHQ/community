@@ -1,5 +1,4 @@
 import { Gift } from "lucide-react";
-import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -16,7 +15,8 @@ export function PerksCard({ communityName }: { communityName: string }) {
       </CardTitle>
       <p className="type-small mt-1.5 text-foreground-soft">Deals for {communityName} members, run by BuiltFirst.</p>
       <Button asChild variant="outline" size="sm" className="mt-3.5 w-full">
-        <Link href={PERKS_PAGE}>See the perks</Link>
+        {/* A full page load, so /perks's own Content-Security-Policy header applies. */}
+        <a href={PERKS_PAGE}>See the perks</a>
       </Button>
     </Card>
   );
