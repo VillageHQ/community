@@ -30,9 +30,9 @@ async function signIn(returnPath: string, formData: FormData): Promise<SignInSta
   return INITIAL_STATE;
 }
 
-type SignInFieldsProps = { state: SignInState; passwordRef?: Ref<HTMLInputElement> };
+type SignInFieldsProps = { state: SignInState; passwordRef?: Ref<HTMLInputElement>; onEmailChange?: (email: string) => void };
 
-export function SignInFields({ state, passwordRef }: SignInFieldsProps) {
+export function SignInFields({ state, passwordRef, onEmailChange }: SignInFieldsProps) {
   const hasError = Boolean(state.errorMessage);
   const describedByError = hasError ? ERROR_ID : undefined;
   return (
@@ -44,6 +44,7 @@ export function SignInFields({ state, passwordRef }: SignInFieldsProps) {
         type="email"
         autoComplete="email"
         defaultValue={state.email}
+        onChange={onEmailChange ? (event) => onEmailChange(event.target.value) : undefined}
         aria-invalid={hasError || undefined}
         aria-describedby={describedByError}
         required
@@ -62,16 +63,18 @@ export function SignInFields({ state, passwordRef }: SignInFieldsProps) {
   );
 }
 
-export function SignInForm({ returnPath = ROUTES.landing }: { returnPath?: string | null }) {
+type SignInFormProps = { returnPath?: string | null; initialEmail?: string; onEmailChange?: (email: string) => void };
+
+export function SignInForm({ returnPath = ROUTES.landing, initialEmail = "", onEmailChange }: SignInFormProps) {
   const [state, formAction, isPending] = useActionState(
     (_previousState: SignInState, formData: FormData) => signIn(returnPath ?? ROUTES.landing, formData),
-    INITIAL_STATE,
+    { ...INITIAL_STATE, email: initialEmail },
   );
   const passwordRef = useFocusOnFailure(state);
 
   return (
     <form action={formAction} className="grid gap-5">
-      <SignInFields state={state} passwordRef={passwordRef} />
+      <SignInFields state={state} passwordRef={passwordRef} onEmailChange={onEmailChange} />
       <Button type="submit" size="lg" disabled={isPending}>
         {isPending ? "Signing in…" : "Sign in"}
       </Button>
@@ -83,12 +86,14 @@ export function SignInForm({ returnPath = ROUTES.landing }: { returnPath?: strin
 }
 
 // With email on, the emailed link comes first and the password form waits behind a button.
+// The typed email carries across both forms.
 export function SignInChoice({ returnPath, isLinkOn }: { returnPath?: string | null; isLinkOn: boolean }) {
   const [isPasswordShown, setIsPasswordShown] = useState(false);
+  const [email, setEmail] = useState("");
   if (!isLinkOn || isPasswordShown) {
     return (
       <div className="grid gap-5">
-        <SignInForm returnPath={returnPath} />
+        <SignInForm returnPath={returnPath} initialEmail={email} onEmailChange={setEmail} />
         {isLinkOn ? (
           <Button type="button" variant="quiet" className="justify-self-center" onClick={() => setIsPasswordShown(false)}>
             Email me a sign-in link instead
@@ -99,7 +104,7 @@ export function SignInChoice({ returnPath, isLinkOn }: { returnPath?: string | n
   }
   return (
     <div className="grid gap-5">
-      <SignInLinkForm />
+      <SignInLinkForm initialEmail={email} onEmailChange={setEmail} />
       <Button type="button" variant="quiet" className="justify-self-center font-medium underline underline-offset-2 hover:bg-transparent" onClick={() => setIsPasswordShown(true)}>
         Sign in with a password instead
       </Button>

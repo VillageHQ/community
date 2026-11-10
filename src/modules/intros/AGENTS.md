@@ -1,6 +1,7 @@
 # Intros
 
-A member asks another member for an introduction to someone in their network. The connector says yes or no. On a yes, the person being introduced says yes or no thanks on a public page. Only then does one message join them. About a week later, the requester is asked if it helped. Toggleable. Needs network.
+A member asks another member for an introduction to someone in their network. The connector says yes or no. On a yes, the person being introduced says yes or no thanks on a public page.
+Only then does one message join them. A week later the requester is asked if it helped. Toggleable. Needs network.
 
 - `contract.ts`: states, allowed moves and limits. `INTRO_TRANSITIONS` is the state machine. `REQUESTER_STATES` is what a requester may see of each state.
 - `service.ts`: create an ask, move it, issue a new consent link, email the link, record an outcome.

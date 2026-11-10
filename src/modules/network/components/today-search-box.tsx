@@ -29,7 +29,7 @@ export function TodaySearchBox({ communityName }: { communityName: string }) {
           title="Describe who you want to meet."
           aria-describedby={HINT_ID}
           placeholder="A buyer at a hospital group…"
-          className="min-h-12 flex-1 px-4"
+          className="min-h-12 min-w-0 flex-1 px-4 text-ellipsis"
         />
         <Button type="submit">Find</Button>
       </div>

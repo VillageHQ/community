@@ -1,8 +1,8 @@
 # Asks
 
-Members post what they need, or an update (a win), and others step in. Toggleable, on by default, and needs no Village account.
+Members post a need or an update (a win); others step in. Toggleable, on by default, no Village needed.
 
-- `manifest.ts`: identity, nav entry and owned paths. `integration.ts`: the badge, and the block and removal hooks.
+- `manifest.ts`: identity, nav and owned paths. `integration.ts`: the badge, and the block and removal hooks.
 - `contract.ts`: limits, API paths, Zod schemas and shapes. Client-safe.
 - `schema.ts`: `ask` (kind `ask` or `update`, optional target), `ask_offer`, `ask_helper`, `ask_answer`.
 - `service.ts`: create, offer, answer, close, renew, mark seen, remove, the allowance setting. Admin calls `removeAskWithin` and `removeAnswerWithin` from the report queue.
@@ -10,9 +10,9 @@ Members post what they need, or an update (a win), and others step in. Toggleabl
 - `reads.ts`: the board, your own asks, the badge count, the reportable copies, word matching and the allowance inputs.
 - `limits.ts`: posting rate limits. `rules-*.ts`: pure state, time and URL rules.
 - `queries.ts`: client requests. `components/`: the UI. `components/shared/`: the Today cards (asks you could help with, your asks).
-- `rules-help-match.ts`: the one word-matching rule (a stop-word and everyday-word list, at least 3 letters, plural equals singular). Routing and the Today list both use it, so they can't disagree.
+- `rules-help-match.ts`: the one word-matching rule (stop and everyday words out, at least 3 letters, simple word forms and hyphenated words match). Routing and Today share it.
 - `reads-could-help.ts`: the asks (not updates) a member was routed to, plus open asks whose words meet their "can help with" words or tags. The Today page and the weekly email read them.
-- `schema-skip.ts`, `service-skip.ts`, `contract-today.ts`: `ask_skip`, a member's "not for me", which only hides an ask from their Today page and weekly email.
+- `schema-skip.ts`, `service-skip.ts`, `contract-today.ts`: `ask_skip`, a member's "not for me": it hides an ask from their Today and weekly email only.
 
 Rules:
 
@@ -24,5 +24,5 @@ Rules:
 - Every read goes through `hasNoBlockBetween`, in both directions. A block also deletes offers between the two members.
 - Offers are private. Answers are public under the ask and reportable.
 - A removed member's asks, offers and answers leave every read through `isActiveMember`. Unbanning brings them back.
-- Reports are saved and resolved by `admin/service-reports`, and stay resolvable with this module off.
+- Reports are resolved by `admin/service-reports`, also with this module off.
 - `service-erasure.ts`, `ask_tally`: a deleted account's asks become anonymous tally rows the partner report adds in.

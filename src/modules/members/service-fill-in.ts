@@ -9,17 +9,21 @@ import type { Database, DatabaseOrTransaction } from "../../platform/database/cl
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../../platform/settings/schema.ts";
 import { saveSettings } from "../../platform/settings/store.ts";
-import { memberFillIn, memberLookup, memberNetwork } from "./schema.ts";
+import { memberFillIn, memberLookup, memberNetwork, memberProfile } from "./schema.ts";
+import { readShownCard } from "./rules-fill-in.ts";
 import {
   FILL_IN_BASES,
+  FILL_IN_FIELD_LABELS,
   FILL_IN_FIELD_VALUES,
   FILL_IN_FIELDS,
   FILL_IN_REFRESH_DAYS,
+  LINES_TO_CHECK_DAYS,
   LOOKUP_STATUSES,
   type FillInBasis,
   type FillInBasisBody,
   type FillInField,
   type FilledLine,
+  type LineToCheck,
   type LookupStatus,
 } from "./contract-fill-in.ts";
 
@@ -260,4 +264,22 @@ export async function readFilledMemberCount(database: Database) {
     .innerJoin(user, eq(user.id, memberFillIn.userId))
     .where(isActiveMember());
   return row?.memberCount ?? 0;
+}
+
+const WORDED_FIELDS: ReadonlySet<FillInField> = new Set([FILL_IN_FIELDS.title, FILL_IN_FIELDS.company, FILL_IN_FIELDS.location, FILL_IN_FIELDS.headline]);
+
+// The filled-in words on the member's card that arrived this past week: on show (not hidden, and not
+// replaced by the member's own words). Photos and logos are left out; the card shows them.
+export async function readLinesToCheck(database: Database, memberId: string, now = new Date()): Promise<LineToCheck[]> {
+  const [[own], shown] = await Promise.all([
+    database.select({ title: memberProfile.title, company: memberProfile.company, location: memberProfile.location }).from(memberProfile).where(eq(memberProfile.userId, memberId)),
+    readShownFillIn(database, memberId),
+  ]);
+  const card = readShownCard({ title: own?.title ?? null, company: own?.company ?? null, location: own?.location ?? null, avatarUrl: null }, shown);
+  const since = now.getTime() - LINES_TO_CHECK_DAYS * DAY_MS;
+  return card.filledFields.flatMap((field) => {
+    const line = shown.get(field);
+    if (!line || !WORDED_FIELDS.has(field) || line.filledAt.getTime() < since) return [];
+    return [{ field, label: FILL_IN_FIELD_LABELS[field], value: line.value }];
+  });
 }

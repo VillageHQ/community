@@ -57,6 +57,28 @@ describe("matching asks to helpers", () => {
     expect(findMatchedWords("Need help with anything", words)).toEqual([]);
   });
 
+  it("matches a hyphenated word to the joined one, either way, and simple word forms", () => {
+    expect(findMatchedWords("Fundraising for our seed round", readWords("Fund-raising and pricing"))).toEqual(["fund-raising"]);
+    expect(findMatchedWords("Help with fund-raising", readWords("fundraising"))).toEqual(["fundraising"]);
+    expect(findMatchedWords("We are hiring engineers", readWords("hire, engineer"))).toEqual(["hire", "engineer"]);
+    expect(findMatchedWords("Raising a round", readWords("raised two rounds"))).toEqual(["raised", "rounds"]);
+    expect(findMatchedWords("Need marketing help", readWords("markets in Europe"))).toEqual(["markets"]);
+    expect(findMatchedWords("Seed round", readWords("speed"))).toEqual([]);
+    expect(findMatchedWords("Building care software", readWords("pricing and building"))).toEqual(["building"]);
+    expect(findMatchedWords("Code reviews", readWords("coding"))).toEqual(["coding"]);
+  });
+
+  it("doesn't pair words that only look alike", () => {
+    const pairs: [string, string][] = [["Selling a car", "care"], ["Our plans for Europe", "planes"], ["Stats for the board", "state"], ["Fees for our fund", "feed"]];
+    for (const [ask, helper] of pairs) {
+      expect(findMatchedWords(ask, readWords(helper)), `${ask} / ${helper}`).toEqual([]);
+    }
+  });
+
+  it("names a hyphenated skill once, not its parts as well", () => {
+    expect(findMatchedWords("Polishing our fund-raising deck", readWords("fund-raising"))).toEqual(["fund-raising"]);
+  });
+
   it("drops everyday words and keeps real skills", () => {
     expect([...readWords("First hires, team help with anything")]).toEqual(["hires"]);
     expect(findMatchedWords("Our first team offsite", readWords("first team building"))).toEqual([]);

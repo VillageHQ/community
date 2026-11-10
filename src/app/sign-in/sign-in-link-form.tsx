@@ -24,11 +24,21 @@ async function requestLink(_previousState: LinkState, formData: FormData): Promi
   return { sentMessage: null, errorMessage: error.status === TOO_MANY_REQUESTS_STATUS ? TOO_MANY_MESSAGE : FAILED_MESSAGE };
 }
 
-export function SignInLinkForm() {
+type SignInLinkFormProps = { initialEmail?: string; onEmailChange?: (email: string) => void };
+
+export function SignInLinkForm({ initialEmail = "", onEmailChange }: SignInLinkFormProps) {
   const [state, formAction, isPending] = useActionState(requestLink, INITIAL_STATE);
   return (
     <form action={formAction} className="grid gap-5">
-      <FormField name="email" label="Email" type="email" autoComplete="email" required />
+      <FormField
+        name="email"
+        label="Email"
+        type="email"
+        autoComplete="email"
+        defaultValue={initialEmail}
+        onChange={onEmailChange ? (event) => onEmailChange(event.target.value) : undefined}
+        required
+      />
       <FormError message={state.errorMessage} />
       {state.sentMessage ? <Alert variant="success">{state.sentMessage}</Alert> : null}
       <Button type="submit" size="lg" disabled={isPending}>

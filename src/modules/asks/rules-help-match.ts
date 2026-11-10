@@ -30,25 +30,52 @@ const COMMON_WORDS = new Set(
   ).split(" "),
 );
 
+const HYPHENATED_WORD = /[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)+/gu;
+
+function isCounted(word: string) {
+  return word.length >= MINIMUM_WORD_LENGTH && !COMMON_WORDS.has(word) && !/^\p{N}+$/u.test(word);
+}
+
+// Each word, and each hyphenated word whole too ("fund-raising"), so it can match the joined spelling.
 export function readWords(text: string | null | undefined) {
+  const lower = (text ?? "").toLowerCase();
   const words = new Set<string>();
-  for (const word of (text ?? "").toLowerCase().split(/[^\p{L}\p{N}]+/u)) {
-    if (word.length >= MINIMUM_WORD_LENGTH && !COMMON_WORDS.has(word) && !/^\p{N}+$/u.test(word)) words.add(word);
+  for (const word of lower.split(/[^\p{L}\p{N}]+/u)) {
+    if (isCounted(word)) words.add(word);
+  }
+  for (const word of lower.match(HYPHENATED_WORD) ?? []) {
+    if (isCounted(word.replaceAll("-", ""))) words.add(word);
   }
   return words;
 }
 
-// Plural and singular count as the same word: "investors" matches "investor".
-function stem(word: string) {
-  return word.length > MINIMUM_WORD_LENGTH + 1 && word.endsWith("s") ? word.slice(0, -1) : word;
+// Simple word forms count as one word, with no dictionary: "investors" matches "investor", "hiring" matches
+// "hire", "raised" matches "raising", and "fund-raising" matches "fundraising". A stem keeps 3 letters at least.
+// Kept narrow on purpose: "care" never becomes "car", "planes" never "plan", and "-eed" words ("feed") keep their "ed".
+const MINIMUM_STEM_LENGTH = 3;
+const ES_PLURAL = /(?:s|x|z|ch|sh)es$/;
+
+function strip(word: string, ending: string, replacement = "") {
+  return word.endsWith(ending) && word.length - ending.length >= MINIMUM_STEM_LENGTH ? `${word.slice(0, -ending.length)}${replacement}` : null;
 }
 
-// The helper's own words that the ask shares, in the helper's order, so the reason names their skill.
+function singular(word: string) {
+  if (word.endsWith("ss")) return word;
+  return strip(word, "ies", "y") ?? (ES_PLURAL.test(word) ? strip(word, "es") : null) ?? strip(word, "s") ?? word;
+}
+
+// The forms a word may stand for: "hiring" is "hir" or "hire", so it meets "hire" but "care" stays "care".
+function readForms(word: string) {
+  const base = singular(word.replaceAll("-", ""));
+  const root = strip(base, "ing") ?? (base.endsWith("eed") ? null : strip(base, "ed"));
+  return root ? [root, `${root}e`] : [base];
+}
+
+// The helper's own words that the ask shares, in the helper's order, so the reason names their skill. A matched
+// hyphenated word ("fund-raising") is named alone, without its parts.
 export function findMatchedWords(askText: string, helperWords: ReadonlySet<string>) {
-  const askStems = new Set([...readWords(askText)].map(stem));
-  const matched = new Set<string>();
-  for (const word of helperWords) {
-    if (!COMMON_WORDS.has(word) && askStems.has(stem(word))) matched.add(word);
-  }
-  return [...matched];
+  const askForms = new Set([...readWords(askText)].flatMap(readForms));
+  const matched = [...helperWords].filter((word) => !COMMON_WORDS.has(word) && readForms(word).some((form) => askForms.has(form)));
+  const partsOfMatched = new Set(matched.filter((word) => word.includes("-")).flatMap((word) => word.split("-")));
+  return matched.filter((word) => !partsOfMatched.has(word));
 }

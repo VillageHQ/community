@@ -21,6 +21,7 @@ import { readRateLimitClientKey } from "@/platform/http/client-ip";
 import { createRequestContext } from "@/platform/http/request-context";
 import { RequestError } from "@/platform/http/request-error";
 import { isModuleEnabled } from "@/platform/modules/enablement";
+import { runAfterResponse } from "@/platform/observability/after-response";
 import { logError } from "@/platform/observability/route-logging";
 import { recordFailedAttempt } from "@/platform/rate-limit/attempt-rate-limit";
 
@@ -32,6 +33,11 @@ const PAYLOAD_TOO_LARGE_STATUS = 413;
 const TOO_MANY_REQUESTS_STATUS = 429;
 const BAD_SIGNATURE_LIMIT = 10;
 const RATE_LIMIT_PREFIX = "slack-command:";
+// Slack drops a slash command's answer after 3 seconds. Past this, the member hears "posting…" at once and the
+// result follows to the command's response_url.
+const SLACK_REPLY_WITHIN_MS = 2_500;
+export const SLACK_POSTING_NOTE = "Posting your ask… You'll see a message here when it's up.";
+export const SLACK_POSTING_FAILED = "Something went wrong and your ask wasn't posted. Try /ask again in a minute.";
 
 function plainAnswer(status: number, text: string) {
   return new Response(text, { status, headers: { "content-type": "text/plain; charset=utf-8" } });
@@ -71,11 +77,35 @@ export function toSlackAskBody(words: string): CreateAskBody {
   };
 }
 
-type SlackCommand = { teamId: string; userId: string; text: string };
+type SlackCommand = { teamId: string; userId: string; text: string; responseUrl: string };
 
 function readCommand(body: string): SlackCommand {
   const form = new URLSearchParams(body);
-  return { teamId: form.get("team_id") ?? "", userId: form.get("user_id") ?? "", text: (form.get("text") ?? "").trim() };
+  return { teamId: form.get("team_id") ?? "", userId: form.get("user_id") ?? "", text: (form.get("text") ?? "").trim(), responseUrl: form.get("response_url") ?? "" };
+}
+
+function waitUpTo(milliseconds: number) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const elapsed = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), milliseconds);
+  });
+  return { elapsed, stop: () => clearTimeout(timer) };
+}
+
+// The answer once posting is done, sent where Slack said to: a failure says so instead of going quiet.
+async function sendLateAnswer(environment: Environment, responseUrl: string, answering: Promise<string>) {
+  let text: string;
+  try {
+    text = await answering;
+  } catch (error) {
+    logError("slack-ask-late", error);
+    text = SLACK_POSTING_FAILED;
+  }
+  try {
+    await createChatClient({ environment }).slack.respond(responseUrl, text);
+  } catch (error) {
+    logError("slack-ask-follow-up", error);
+  }
 }
 
 // The ask is already saved, so a failure finding helpers must not look like a failed post.
@@ -121,8 +151,10 @@ async function answerCommand({ database, environment, token, accountId, isPaused
   return `Posted to ${community}. <${appUrl}${ASKS_PAGE}|See the asks>`;
 }
 
+type SlackCommandOptions = { replyWithinMs?: number };
+
 // Slack's /ask. No session: the request's signature, made with the app's signing secret, says it's Slack.
-export async function answerSlackCommand(database: Database, environment: Environment, request: Request) {
+export async function answerSlackCommand(database: Database, environment: Environment, request: Request, { replyWithinMs = SLACK_REPLY_WITHIN_MS }: SlackCommandOptions = {}) {
   const secrets = await readChatSecrets(database, environment, CHAT_KINDS.slack);
   if (!secrets?.signingSecret || !secrets.token) return plainAnswer(NOT_FOUND_STATUS, "Slack isn't connected here.");
 
@@ -138,5 +170,12 @@ export async function answerSlackCommand(database: Database, environment: Enviro
   }
 
   const facts = { database, environment, token: secrets.token, accountId: secrets.row.accountId, isPaused: secrets.row.isPaused };
-  return slackAnswer(await answerCommand(facts, readCommand(body)));
+  const command = readCommand(body);
+  const answering = answerCommand(facts, command);
+  const timer = waitUpTo(replyWithinMs);
+  const quick = await Promise.race([answering, timer.elapsed]).finally(timer.stop);
+  if (quick !== null) return slackAnswer(quick);
+
+  runAfterResponse(() => sendLateAnswer(environment, command.responseUrl, answering));
+  return slackAnswer(SLACK_POSTING_NOTE);
 }

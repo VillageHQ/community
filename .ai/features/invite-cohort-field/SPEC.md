@@ -1,6 +1,6 @@
 ---
 id: invite-cohort-field
-status: idea
+status: building
 waits-on: []
 size:
 touches: ["src/modules/admin/components/invite-manager.tsx"]

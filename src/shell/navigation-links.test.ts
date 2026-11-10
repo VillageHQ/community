@@ -17,6 +17,11 @@ import { SidebarNavigation, TabBar } from "./navigation-links";
 const location = vi.hoisted(() => ({ pathname: "/" }));
 
 vi.mock("next/navigation", () => ({ usePathname: () => location.pathname }));
+// Marks the app's own links, so a test can tell them from a plain full-page link.
+vi.mock("next/link", async () => {
+  const { createElement: create } = await import("react");
+  return { default: (props: Record<string, unknown>) => create("a", { ...props, "data-app-link": "" }) };
+});
 
 function stubUnreadCount(unreadCount: number) {
   vi.stubGlobal(
@@ -164,5 +169,21 @@ describe("the phone tab bar", () => {
     renderTabBar([messagesManifest.id, "members", networkManifest.id, introsManifest.id, asksManifest.id, "admin"]);
 
     expect(readTabNames()).toEqual(["Home", "Messages", "Members", "Meet", "More"]);
+  });
+});
+
+describe("the Perks entry", () => {
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  // Its page frames the marketplace under its own security policy, which only a full page load applies.
+  it("loads the whole page, while other entries navigate inside the app", () => {
+    stubUnreadCount(0);
+    renderWithClient(createElement(SidebarNavigation, { items: buildShellNavigation(), isAdmin: false, badges: {} }));
+
+    expect(screen.getByRole("link", { name: /Perks/ }).hasAttribute("data-app-link")).toBe(false);
+    expect(screen.getByRole("link", { name: /Messages/ }).hasAttribute("data-app-link")).toBe(true);
   });
 });

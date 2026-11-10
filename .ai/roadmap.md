@@ -22,25 +22,29 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - order: waiting on an unfinished item = hidden · each open item waiting on it = +1, at most +2 · touching the files of an open pull request = ranked after it
 
 ## Now (in flight)
-- [ ] Running-the-app fixes from the final check: timed jobs on every host, a Village-down notice, one job source per careers link — fix-ops — open pull request — [spec](features/fix-ops/SPEC.md)
-- [ ] Project notes: vision, personas, journeys, this roadmap and the parity map — project-notes — open pull request — [spec](features/project-notes/SPEC.md)
-- [ ] The Your data page: export, real delete, privacy switches, the required "accept intro asks" question — your-data — open pull request, waits for the owner's yes (it deletes personal data) — [PR #20](https://github.com/VillageHQ/community/pull/20)
-- [ ] The new look: serif headings, hairline edges, no "Network by Village" on member screens — look-theme — open pull request — [PR #26](https://github.com/VillageHQ/community/pull/26) · [spec](features/look-theme/SPEC.md)
-- [x] Demo mode for sales: a made-up community, one-click demo sign-in, nightly reset — [demo-mode](features/demo-mode/SPEC.md) — merged, [PR #25](https://github.com/VillageHQ/community/pull/25)
-- [ ] One marketing website, "Founderhall by Village", in `site/` — one-site — open pull request — [PR #23](https://github.com/VillageHQ/community/pull/23)
-- [ ] Two preview bugs: helpers emailed but missing from Today, and matching on common words — preview-fixes — open pull request — [PR #22](https://github.com/VillageHQ/community/pull/22)
+- [ ] The small known bugs: sign-in keeps the typed email, switched-off pages answer 404, Today's "Check your card", Perks from the menu, Slack /ask follow-up, hyphenated words in matching, cohort on a single invite, long fund names on phones — fix-small — open pull request — [charter](features/fix-small/CHARTER.md)
+- [x] Intro fixes from the final check: empty "no" note, the yes on a forwarded link, reminders for quiet intros, a connector who said no, the "no thanks" page — fix-intros — merged, [PR #27](https://github.com/VillageHQ/community/pull/27)
+- [x] Running-the-app fixes from the final check: timed jobs on every host, a Village-down notice, one job source per careers link — fix-ops — merged, [PR #29](https://github.com/VillageHQ/community/pull/29) · [spec](features/fix-ops/SPEC.md)
 
-- [ ] Intro fixes from the final check: empty-note no, a forwarded yes joins by email, connector reminder and expiry email, a connector who said no leaves the paths, the "no thanks" page — fix-intros — open pull request — [charter](features/fix-intros/CHARTER.md) (covers [declined-connector-paths](features/declined-connector-paths/SPEC.md) and [no-thanks-wording](features/no-thanks-wording/SPEC.md))
 
 ## Next (queued)
-- [ ] Perks from the in-app menu skips the Perks page's security policy (client-side navigation) — (from chat-perks) — [spec](features/perks-menu-csp/SPEC.md)
-- [ ] Slack /ask has no follow-up when posting takes more than 3 seconds — (from chat-perks) — [spec](features/slack-ask-slow-reply/SPEC.md)
-- [ ] The sign-in password form clears the typed email — (from small-gaps) — [spec](features/sign-in-keeps-email/SPEC.md)
-- [ ] A switched-off module answers 200, not 404 — [spec](features/module-off-404/SPEC.md)
-- [ ] Single invites have no cohort field — (from small-gaps) — [spec](features/invite-cohort-field/SPEC.md)
-- [ ] Filled-in lines to confirm on Today and in the weekly email, and a jobs card on Today — parity — [spec](features/profile-confirm-lines/SPEC.md)
+- [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
 - [ ] Intros from a profile without Village, and the finer intro rules — parity — [spec](features/intros-from-profile/SPEC.md)
 - [ ] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
+
+### From the final check of the merged app (2026-11-10), not covered by another part
+- [ ] On a phone, Intros and Asks hide behind "More": put them on the bottom bar (5 of the simulated buyers named it)
+- [ ] A forwarded invite lets the wrong person in until an admin checks, and their messages stay after the lock: hold new members back until their email is confirmed
+- [ ] The connector's "email them for me" option hides after the first view, and comes back only behind "Make a new link"
+- [ ] The weekly email's answer page shows no "done" after an answer is saved
+- [ ] "Did it help?" saves only after a second tap, so a member who taps "Yes" and leaves counts as not answered; Today doesn't ask it either
+- [ ] One block stops all of that member's asks from posting to Slack or Discord, and nobody is told
+- [ ] With no email set up, a forgotten password means removing and re-inviting the member
+- [ ] A public answer on an ask doesn't notify the asker (only offers do)
+- [ ] A locked member's ask still counts in the partner report's asks by need
+- [ ] Reporting the note on an already-declined intro answers 404
+- [ ] A removed member sees "You have been banned from this application. Please contact support"
+- [ ] Text slips: the "Invite someone" link on Admin → Members goes nowhere; "sam's network"; "help with investor"; two different member counts in the welcome steps; "Continue to the feed" with the feed off; a double footer; "Logistics's jobs"
 
 ## Later (someday / deferred)
 - [ ] Admin console home, member-view switch, mail page lists and asks admin page — parity — [spec](features/admin-console/SPEC.md)
@@ -53,6 +57,12 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - Gaps neither product had (merge plan): Google/Microsoft sign-in and SSO, groups inside one community, CRM export, events, other languages.
 
 ## Done
+- [x] 2026-11-10 — The merged look: serif headings, flat sheets, fund name only, one way to ask — [PR #26](https://github.com/VillageHQ/community/pull/26) · [spec](features/look-theme/SPEC.md)
+- [x] 2026-11-10 — Demo mode for sales: a made-up community, one-click demo sign-in, nightly reset — [PR #25](https://github.com/VillageHQ/community/pull/25) · [spec](features/demo-mode/SPEC.md)
+- [x] 2026-11-10 — Project notes: vision, personas, journeys, this roadmap and the parity map — [PR #24](https://github.com/VillageHQ/community/pull/24) · [spec](features/project-notes/SPEC.md)
+- [x] 2026-11-10 — One marketing website, "Founderhall by Village", in `site/` — [PR #23](https://github.com/VillageHQ/community/pull/23)
+- [x] 2026-11-10 — Two preview bugs: helpers emailed but missing from Today, and matching on common words — [PR #22](https://github.com/VillageHQ/community/pull/22)
+- [x] 2026-11-10 — The Your data page: export, real delete, privacy switches, the required "accept intro asks" question — [PR #20](https://github.com/VillageHQ/community/pull/20)
 - [x] 2026-11-10 — Directory filters, intro reminder, email setup check, Village settings and four follow-ups — [PR #19](https://github.com/VillageHQ/community/pull/19)
 - [x] 2026-11-10 — Job board: hiring tools, hourly pull, public board and website widget — [PR #21](https://github.com/VillageHQ/community/pull/21)
 - [x] 2026-11-10 — Slack and Discord posts, Slack /ask, Perks — [PR #18](https://github.com/VillageHQ/community/pull/18)
@@ -72,7 +82,7 @@ Every Founderhall feature, once, in the order of the Founderhall inventory. **do
 reason, or the owner's later brief where it says so) · **open** = not on main yet (with its spec or build). Checked against the code on main on 2026-11-10.
 
 ### Marketing site
-- **open** · One-page marketing site — Community's `site/` page is on main; Founderhall's fund-first story comes with the one-site build
+- **done** · One-page marketing site — `site/`, "Founderhall by Village" (PR #23)
 - **dropped** · Animated phone replay / motion — GSAP is not open source (merge plan revision 8); `site/` keeps Community's own tour
 - **dropped** · Pricing table — the owner's one-site brief (no prices on the page) overrides the merge plan, which kept pricing
 - **open** · Sign-up form — [site-signup](features/site-signup/SPEC.md)
@@ -102,17 +112,17 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Sessions — Better Auth, `src/platform/auth/session.ts` (Community)
 - **done** · Sign out — `src/platform/auth/sign-out.ts` (Community)
 - **done** · Roles — `src/platform/auth/roles.ts`, admin role in Manage (Community)
-- **open** · Demo login — the demo-mode build ([PR #25](https://github.com/VillageHQ/community/pull/25))
+- **done** · Demo login — one-click demo sign-in (PR #25)
 - **done** · Passwords / OAuth / SSO / 2FA / recovery — password, reset and admin recovery (Community); OAuth, SSO and 2FA are on the "gaps neither product had" list
 
 ### Member onboarding and profile
 - **open** · Welcome step 1 — card fields are all optional: [welcome-questions](features/welcome-questions/SPEC.md)
-- **open** · Welcome step 2: privacy — the lookup question (PR #16) and share-network step (Community) are on main; hide me and the required "accept intro asks" come with [PR #20](https://github.com/VillageHQ/community/pull/20)
+- **done** · Welcome step 2: privacy — the lookup question (PR #16), the share-network step (Community), hide me and the required "accept intro asks" (PR #20)
 - **done** · Profile fields — `src/modules/members/schema.ts` (stage, sector, cohort, can help with…), own words win (PR #16, PR #19)
 - **done** · Inline field edit — a form on Your card (Community), not in place
 - **done** · Source labels — filled-in label and date on the profile (PR #16)
 - **done** · Hide Village lines — `/api/profile/fill-in`, hides survive refreshes (PR #16)
-- **open** · Confirm Village facts on Today — Today's card is never filled: [profile-confirm-lines](features/profile-confirm-lines/SPEC.md)
+- **open** · Confirm Village facts on Today — "Check your card" lists this week's filled-in lines with a link to fix or hide them (fix-small); no one-tap Right / Hide / Fix: [profile-confirm-lines](features/profile-confirm-lines/SPEC.md)
 - **done** · Faces and company logos — face and logo fill-in (PR #16)
 - **done** · Our jobs on My profile — `/jobs/yours` (PR #21)
 - **done** · Photo upload — `/api/profile/avatar` (Community)
@@ -121,7 +131,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Member directory — `/members` (Community)
 - **open** · Search and filters — stage, sector, cohort, freshness (PR #19); no city filter: [search-without-village](features/search-without-village/SPEC.md)
 - **open** · Member profile page — Message only; no "Ask for an intro" or "Who X can introduce you to": [intros-from-profile](features/intros-from-profile/SPEC.md)
-- **open** · Visibility — emails stay hidden (Community); hide from the directory comes with [PR #20](https://github.com/VillageHQ/community/pull/20)
+- **done** · Visibility — emails stay hidden (Community); hide from the directory (PR #20)
 - **done** · Jobs link — a Jobs entry in the navigation (PR #21) instead of a directory link
 
 ### Village integration
@@ -173,19 +183,19 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **open** · Intro threads with guests — [reply-by-email](features/reply-by-email/SPEC.md)
 - **done** · DM email notifications — `src/modules/messages/email.ts`, 15-minute batch (PR #13)
 - **open** · Reply by email — the weekly email only: [reply-by-email](features/reply-by-email/SPEC.md)
-- **open** · "Who can message me" — [PR #20](https://github.com/VillageHQ/community/pull/20)
+- **done** · "Who can message me" — privacy switches (PR #20)
 - **done** · Admins can't read DMs — no admin route to threads (Community)
 - **done** · Max message 4,000 chars — `MESSAGE_LIMITS` (Community)
 
 ### Notifications and the weekly email
-- **open** · Today (member home) — `src/shell/today.ts` (PR #17); no jobs card, the lines-to-confirm card stays empty: [profile-confirm-lines](features/profile-confirm-lines/SPEC.md)
+- **open** · Today (member home) — `src/shell/today.ts` (PR #17), "Check your card" filled (fix-small); no jobs card: [profile-confirm-lines](features/profile-confirm-lines/SPEC.md)
 - **done** · Weekly digest — `src/shell/weekly-email.ts`, day, hour and time zone (PR #17)
 - **open** · Digest reply codes — HELP, SKIP, YES, NO (PR #17); no RIGHT, HIDE, FIX: [profile-confirm-lines](features/profile-confirm-lines/SPEC.md)
 - **done** · Digest signed links — `/weekly`, one answer per item (PR #17)
 - **done** · Digest preview and test — `/admin/weekly-email` (PR #17)
 - **done** · Email prefs — per topic on Your card, `/api/email/preferences` (PR #13)
 - **done** · One-click unsubscribe — `src/platform/email/unsubscribe.ts` (PR #13)
-- **done** · Other emails — `src/platform/email/kinds.ts`; the delete-request email gives way to the real delete in PR #20
+- **done** · Other emails — `src/platform/email/kinds.ts`; the real delete replaced the delete-request email (PR #20)
 - **dropped** · In-app notification centre / push — Founderhall didn't have one; badges and unread counts (Community)
 
 ### Job board
@@ -211,7 +221,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Slack `/ask` slash command — `src/shell/slack-ask.ts` (PR #18)
 - **done** · Retry and errors — `src/modules/chat/client.ts` (PR #18)
 - **open** · Inbound mail webhook — Resend only (PR #13, PR #17); no Postmark, MIME or shared key: [reply-by-email](features/reply-by-email/SPEC.md)
-- **open** · Exports — partner report CSV and print (PR #14); member JSON comes with [PR #20](https://github.com/VillageHQ/community/pull/20)
+- **done** · Exports — partner report CSV and print (PR #14), member JSON export (PR #20)
 - **done** · Job board widget — (PR #21)
 - **dropped** · Outgoing webhooks / public REST API / Zapier — Founderhall didn't have them
 - **dropped** · Calendar, CRM, Airtable, HubSpot, LinkedIn import — Founderhall didn't have them; CRM export is on the gaps list
@@ -219,7 +229,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 ### Admin
 - **open** · Console home — [admin-console](features/admin-console/SPEC.md)
 - **done** · Members list — `/admin/members` (Community)
-- **done** · Member actions beyond resend — remove, role, unban, reinvite (Community); the admin delete comes with PR #20
+- **done** · Member actions beyond resend — remove, role, unban, reinvite (Community); the admin delete (PR #20)
 - **done** · Invites — the legal basis for fill-in is recorded once for the community (PR #16)
 - **done** · Import members (CSV) — up to 20,000 rows (PR #12)
 - **dropped** · Intro log — merge plan: one partner report instead of separate pages (PR #14)
@@ -231,14 +241,14 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Admin › Integrations — `/admin/chat` (PR #18)
 - **done** · Admin › Job board, Perks — `/admin/jobs` (PR #21), `/admin/perks` (PR #18)
 - **done** · Audit log — `/admin/audit-log` (Community)
-- **open** · Branding — accent, logo, dark mode (Community); "Network by Village" off member screens with the look-theme build
+- **done** · Branding — accent, logo, dark mode (Community); the fund name only on member screens (PR #26)
 - **open** · Founder view switch — [admin-console](features/admin-console/SPEC.md)
 
 ### Privacy, consent, data export and delete
 - **done** · Consent gate for enrichment — the legal basis plus the member's "don't look me up" (PR #16)
-- **open** · "Your data" page — [PR #20](https://github.com/VillageHQ/community/pull/20)
-- **open** · Export my data (JSON) — [PR #20](https://github.com/VillageHQ/community/pull/20)
-- **open** · Ask to delete my account — a real delete in [PR #20](https://github.com/VillageHQ/community/pull/20)
+- **done** · "Your data" page — (PR #20)
+- **done** · Export my data (JSON) — (PR #20)
+- **done** · Ask to delete my account — a real delete (PR #20)
 - **open** · Hosting & data settings — [hosting-data-settings](features/hosting-data-settings/SPEC.md)
 - **done** · Pooling consent — group join on consent (Community)
 - **done** · Do-not-send list — bounces and complaints (PR #13), intro opt-out (PR #10)
@@ -263,7 +273,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Mobile — phone tab bar (Community)
 
 ### Demo mode
-- **open** · Demo seed — the demo-mode build ([PR #25](https://github.com/VillageHQ/community/pull/25))
-- **open** · Long intro history seed — the demo-mode build ([PR #25](https://github.com/VillageHQ/community/pull/25))
-- **open** · Demo login and banner — the demo-mode build ([PR #25](https://github.com/VillageHQ/community/pull/25))
-- **open** · Nightly reset — the demo-mode build ([PR #25](https://github.com/VillageHQ/community/pull/25))
+- **done** · Demo seed — (PR #25)
+- **done** · Long intro history seed — (PR #25)
+- **done** · Demo login and banner — (PR #25)
+- **done** · Nightly reset — (PR #25)

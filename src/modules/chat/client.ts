@@ -10,6 +10,7 @@ import type { SlackChannel } from "./contract";
 // after a short pause; anything else fails at once with words an admin can act on. Tokens are never logged.
 //   SLACK_API_BASE   (default https://slack.com/api)         tests point both at src/test/fake-chat-server.ts
 //   DISCORD_API_BASE (default https://discord.com/api/v10)
+//   SLACK_RESPONSE_BASE (default https://hooks.slack.com): where a slash command's late answer may go
 
 const TRIES = 3;
 const MAXIMUM_WAIT_SECONDS = 30;
@@ -91,6 +92,7 @@ type RetryAfterReader = (response: Response, json: unknown) => number;
 export function createChatClient({ environment, fetcher = fetch, wait = waitFor }: ChatClientOptions) {
   const slackBase = readBase(environment.SLACK_API_BASE, "https://slack.com/api");
   const discordBase = readBase(environment.DISCORD_API_BASE, "https://discord.com/api/v10");
+  const slackResponseBase = readBase(environment.SLACK_RESPONSE_BASE, "https://hooks.slack.com");
 
   async function call(service: string, url: string, init: RequestInit, readRetryAfter: RetryAfterReader): Promise<Answer> {
     let last: ChatError | null = null;
@@ -202,6 +204,18 @@ export function createChatClient({ environment, fetcher = fetch, wait = waitFor 
       },
       async post(token: string, channelId: string, text: string) {
         await slack(token, "chat.postMessage", { channel: channelId, text, unfurl_links: false, unfurl_media: false });
+      },
+      // A slash command's later answer, to the response_url Slack sent with it. Shown only to the member who typed it.
+      // Only Slack's own address is accepted, so a command can't make the app call anywhere else.
+      async respond(responseUrl: string, text: string) {
+        if (!responseUrl.startsWith(`${slackResponseBase}/`)) throw new ChatError("Slack sent no address to answer to.", "bad_response_url");
+        const { status } = await call(
+          "Slack",
+          responseUrl,
+          { method: "POST", headers: { "content-type": "application/json; charset=utf-8" }, body: JSON.stringify({ response_type: "ephemeral", text }) },
+          readSlackRetryAfter,
+        );
+        if (status >= CLIENT_ERROR_STATUS) throw new ChatError(`Slack said ${status} to the follow-up.`, "error", status);
       },
     },
     discord: {

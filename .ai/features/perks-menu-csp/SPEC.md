@@ -1,6 +1,6 @@
 ---
 id: perks-menu-csp
-status: idea
+status: building
 waits-on: []
 size:
 touches: ["src/modules/perks/"]

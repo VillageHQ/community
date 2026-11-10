@@ -1,6 +1,6 @@
 ---
 id: sign-in-keeps-email
-status: idea
+status: building
 waits-on: []
 size:
 touches: ["src/app/sign-in/"]

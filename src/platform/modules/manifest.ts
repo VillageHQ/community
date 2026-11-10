@@ -22,6 +22,9 @@ export type NavigationEntry = {
   icon: LucideIcon;
   section: NavigationSection;
   badge?: string;
+  // A page with its own security headers (set per route in next.config.mjs) only gets them on a full
+  // page load, so its menu entry skips client-side navigation.
+  isFullPageLoad?: boolean;
 };
 
 type ManifestFields = {

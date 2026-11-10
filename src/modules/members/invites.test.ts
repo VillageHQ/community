@@ -81,6 +81,20 @@ describe("admin invites", () => {
       expect(issued.invite).toMatchObject({ email: INVITEE, state: INVITE_STATES.pending });
     });
 
+    it("keeps an optional cohort for the new member's card", async () => {
+      const withCohort = await postCreate(jsonRequest(admin, { email: INVITEE, cohort: "  Fund II " }));
+      const without = await postCreate(jsonRequest(admin, { email: "jonas@tidewell.example", cohort: "" }));
+
+      expect((await readRow(issuedInviteSchema.parse(await withCohort.json()).invite.id)).cohort).toBe("Fund II");
+      expect((await readRow(issuedInviteSchema.parse(await without.json()).invite.id)).cohort).toBeNull();
+    });
+
+    it("refuses a cohort that is too long", async () => {
+      const response = await postCreate(jsonRequest(admin, { email: INVITEE, cohort: "x".repeat(81) }));
+
+      expect(response.status).toBe(422);
+    });
+
     it("stores only a hash of the token", async () => {
       const issued = await createInviteAs(admin);
       const token = readToken(issued.link);

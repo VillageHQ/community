@@ -8,7 +8,9 @@ import type { HelpableAsk } from "@/modules/asks/contract-today";
 import { INTRO_STATES, type Intro } from "@/modules/intros/contract";
 import { introsManifest } from "@/modules/intros/manifest";
 import { readWaitingIntros } from "@/modules/intros/reads";
+import type { LineToCheck } from "@/modules/members/contract-fill-in";
 import { readNewMembers } from "@/modules/members/reads-directory";
+import { readLinesToCheck } from "@/modules/members/service-fill-in";
 import type { Database } from "@/platform/database/client";
 import type { WeeklyEmailItem } from "@/platform/weekly-email/schema";
 import { isAskIntroOn, readAskAllowance } from "@/shell/ask-helpers";
@@ -19,9 +21,8 @@ export type TodayItems = {
   helpableAsks: HelpableAsk[];
   introsToAnswer: Intro[];
   introsToFinish: Intro[];
-  // Filled-in profile lines to confirm. Nothing fills profiles in yet, so this stays empty until
-  // that data exists.
-  profileLines: { field: string; value: string }[];
+  // Words public profiles put on the member's card this past week, to check on Today.
+  profileLines: LineToCheck[];
   ownAsks: OwnAsk[];
   newMembers: Awaited<ReturnType<typeof readNewMembers>>["newMembers"];
   newMemberCount: number;
@@ -39,17 +40,18 @@ async function readOwnAsksForToday(database: Database, memberId: string, now: Da
 export async function readTodayItems(database: Database, memberId: string, enabledIds: ReadonlySet<string>, now = new Date()): Promise<TodayItems> {
   const isAsksOn = enabledIds.has(asksManifest.id);
   const isIntrosOn = enabledIds.has(introsManifest.id);
-  const [helpableAsks, ownAsks, waitingIntros, { newCount, newMembers }] = await Promise.all([
+  const [helpableAsks, ownAsks, waitingIntros, { newCount, newMembers }, profileLines] = await Promise.all([
     isAsksOn ? readAsksYouCouldHelp(database, memberId, now) : [],
     isAsksOn ? readOwnAsksForToday(database, memberId, now) : null,
     isIntrosOn ? readWaitingIntros(database, memberId) : [],
     readNewMembers(database, memberId, now),
+    readLinesToCheck(database, memberId, now),
   ]);
   return {
     helpableAsks,
     introsToAnswer: waitingIntros.filter(({ state }) => state === INTRO_STATES.requested),
     introsToFinish: waitingIntros.filter(({ state }) => state !== INTRO_STATES.requested),
-    profileLines: [],
+    profileLines,
     ownAsks: ownAsks?.asks.filter(({ state }) => state === ASK_STATES.open) ?? [],
     newMembers,
     newMemberCount: newCount,
@@ -69,11 +71,12 @@ export function numberWeeklyItems({ helpableAsks, introsToAnswer }: TodayItems):
   return unnumbered.map((item, index) => ({ ...item, number: index + 1 }));
 }
 
-// Something to answer or finish. New members and your own asks alone don't make an email.
+// Something to answer or finish. New members, your own asks and lines to check alone don't make an
+// email: the weekly email has no way to answer a line yet.
 export function needsMemberThisWeek(items: TodayItems) {
-  return items.helpableAsks.length + items.introsToAnswer.length + items.introsToFinish.length + items.profileLines.length > 0;
+  return items.helpableAsks.length + items.introsToAnswer.length + items.introsToFinish.length > 0;
 }
 
 export function isTodayEmpty(items: TodayItems) {
-  return !needsMemberThisWeek(items) && items.ownAsks.length === 0;
+  return !needsMemberThisWeek(items) && items.ownAsks.length === 0 && items.profileLines.length === 0;
 }

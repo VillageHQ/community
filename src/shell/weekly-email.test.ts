@@ -12,6 +12,7 @@ import { ask, askOffer } from "@/modules/asks/schema";
 import { askSkip } from "@/modules/asks/schema-skip";
 import { INTRO_STATES } from "@/modules/intros/contract";
 import { introRequest } from "@/modules/intros/schema";
+import { memberFillIn } from "@/modules/members/schema";
 import { user } from "@/platform/database/auth-schema";
 import { EMAIL_TOPICS } from "@/platform/email/kinds";
 import { sendDueEmails } from "@/platform/email/outbox-sender";
@@ -158,6 +159,32 @@ describe("the Today home and the weekly email", () => {
       expect(today.helpableAsks.map(({ id, matchedWords }) => ({ id, matchedWords }))).toEqual([{ id: askId, matchedWords: ["fintech"] }]);
       expect(today.introsToAnswer.map(({ id }) => id)).toEqual([introId]);
       expect(isTodayEmpty(today)).toBe(false);
+    });
+
+    it("asks a member to check the lines public profiles just added to their card", async () => {
+      const { quinn } = await seedCommunity();
+      const hour = (hoursAgo: number) => new Date(now.getTime() - hoursAgo * HOUR_MS);
+      await database.insert(memberFillIn).values([
+        { userId: quinn, field: "title", value: "Head of Growth", filledAt: hour(2) },
+        { userId: quinn, field: "location", value: "Lisbon", filledAt: hour(3), hiddenAt: hour(1) },
+        { userId: quinn, field: "headline", value: "Growth at a seed startup", filledAt: hour(20 * 24) },
+        { userId: quinn, field: "face", value: "https://images.example.com/quinn.png", filledAt: hour(2) },
+      ]);
+
+      const today = await readTodayItems(database, quinn, await readEnabledIds(database), now);
+
+      expect(today.profileLines).toEqual([{ field: "title", label: "Role", value: "Head of Growth" }]);
+      expect(isTodayEmpty(today)).toBe(false);
+    });
+
+    it("skips a filled-in line the member's own words replace", async () => {
+      const { quinn } = await seedCommunity();
+      await database.insert(memberFillIn).values({ userId: quinn, field: "company", value: "Filled Co", filledAt: now });
+      await database.execute(sql`update member_profile set company = 'Own Words Ltd' where user_id = ${quinn}`);
+
+      const today = await readTodayItems(database, quinn, await readEnabledIds(database), now);
+
+      expect(today.profileLines).toEqual([]);
     });
 
     it("is calm and empty for a member with nothing this week", async () => {
