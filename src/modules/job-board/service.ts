@@ -99,6 +99,7 @@ async function assertBoardFree(transaction: Transaction, tool: string, slug: str
 
 function describePull(outcome: PullOutcome) {
   if (!outcome.ok) return outcome.error;
+  if (outcome.note) return `Linked. ${outcome.note}`;
   if (outcome.count === 0) return "Linked. The board has no open jobs right now. We check again every hour.";
   return `Linked. We found ${outcome.count} open ${outcome.count === 1 ? "job" : "jobs"}, and check again every hour.`;
 }
@@ -151,6 +152,7 @@ export async function pullSourceNow(context: RequestContext, sourceId: string) {
   assertPullAllowed(source);
   if (!isOwner) logAdminAction("job_source_pulled", context.member.id, source.id);
   const outcome = await pullSource(context.database, context.environment, source);
+  if (outcome.ok && outcome.note) return { ok: true, message: outcome.note };
   return { ok: outcome.ok, message: outcome.ok ? `Pulled. ${outcome.count} open ${outcome.count === 1 ? "job" : "jobs"}.` : outcome.error };
 }
 

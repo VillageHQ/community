@@ -3,13 +3,23 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { ask } from "@/modules/asks/schema";
 import { introRequest } from "@/modules/intros/schema";
+import { PUBLIC_BOARD_SETTING } from "@/modules/job-board/contract";
+import { jobBoardManifest } from "@/modules/job-board/manifest";
+import { jobPosting, jobSource } from "@/modules/job-board/schema";
+import { DEMO_PULL_NOTE, pullDueSources, pullSource } from "@/modules/job-board/service-pull";
+import { chatManifest } from "@/modules/chat/manifest";
+import { feedManifest } from "@/modules/feed/manifest";
+import { perksManifest } from "@/modules/perks/manifest";
 import { INTRO_STATES } from "@/modules/intros/contract";
 import { invite, memberProfile } from "@/modules/members/schema";
 import { session, user } from "@/platform/database/auth-schema";
 import { DEMO_REFUSAL_MESSAGE } from "@/platform/demo/guard";
 import { DEMO_ACCOUNTS, DEMO_EMAIL_NOTE } from "@/platform/demo/mode";
 import { createDemoFetch, DEMO_OUTSIDE_CALL_MESSAGE } from "@/platform/demo/outbound";
+import { DEMO_JOB_SOURCES } from "@/platform/demo/jobs";
 import { DEMO_DATA_HOME, DEMO_PEOPLE } from "@/platform/demo/people";
+import { readEnabledModuleIds } from "@/platform/modules/enablement";
+import { readSettings } from "@/platform/settings/store";
 import { readDataHome } from "@/platform/settings/data-home";
 import { sendDueEmails, sendQueuedEmailNow } from "@/platform/email/outbox-sender";
 import { queueEmail } from "@/platform/email/outbox";
@@ -38,7 +48,7 @@ describe("demo mode", () => {
     );
   }
 
-  async function countRows(table: typeof user | typeof introRequest | typeof ask | typeof invite) {
+  async function countRows(table: typeof user | typeof introRequest | typeof ask | typeof invite | typeof jobSource | typeof jobPosting) {
     const [row] = await database.select({ total: count() }).from(table);
     return row?.total ?? 0;
   }
@@ -79,6 +89,17 @@ describe("demo mode", () => {
     });
   });
 
+  // The job board (public board on) and perks are on with made-up content; the feed and Slack/Discord stay off.
+  async function expectJobsAndPerks() {
+    const enabled = await readEnabledModuleIds(database, [jobBoardManifest, perksManifest, feedManifest, chatManifest]);
+    expect([...enabled].sort()).toEqual([jobBoardManifest.id, perksManifest.id].sort());
+    expect((await readSettings(database, [PUBLIC_BOARD_SETTING])).get(PUBLIC_BOARD_SETTING)).toBe("on");
+    expect(await countRows(jobSource)).toBe(DEMO_JOB_SOURCES.length);
+    expect(await countRows(jobPosting)).toBe(DEMO_JOB_SOURCES.reduce((total, source) => total + source.jobs.length, 0));
+    const links = await database.select({ url: jobSource.sourceUrl, error: jobSource.lastError }).from(jobSource);
+    expect(links.every(({ url, error }) => url?.startsWith("https://") && new URL(url).hostname.endsWith(".example.com") && error === null)).toBe(true);
+  }
+
   describe("with the switch on", () => {
     beforeEach(() => {
       vi.stubEnv("DEMO_MODE", "true");
@@ -97,6 +118,7 @@ describe("demo mode", () => {
       expect(await countRows(invite)).toBeGreaterThan(0);
       expect(await readDataHome(database)).toEqual({ location: DEMO_DATA_HOME.location, contact: { name: DEMO_DATA_HOME.contactName, email: DEMO_DATA_HOME.contactEmail } });
       expect(DEMO_DATA_HOME.contactEmail.endsWith("@example.com")).toBe(true);
+      await expectJobsAndPerks();
       expect(await startDemo(database, DEMO_ENVIRONMENT)).toEqual({ outcome: "ready" });
       expect((await readScheduledJobs(database)).map(({ name }) => name)).toContain(DEMO_RESET_JOB_NAME);
     });
@@ -121,6 +143,7 @@ describe("demo mode", () => {
       const seededAt = new Date("2026-11-09T12:00:00.000Z");
       await resetDemo(database, DEMO_ENVIRONMENT, seededAt);
       await database.delete(ask);
+      await database.delete(jobSource);
       await database.update(memberProfile).set({ title: "Edited by a visitor" });
       await database.update(user).set({ name: "Renamed" }).where(eq(user.email, DEMO_ACCOUNTS.member.email));
 
@@ -135,6 +158,24 @@ describe("demo mode", () => {
       const edited = await database.select({ title: memberProfile.title }).from(memberProfile).where(eq(memberProfile.title, "Edited by a visitor"));
       expect(edited).toEqual([]);
       expect(await countRows(user)).toBe(DEMO_PEOPLE.length);
+      await expectJobsAndPerks();
+    });
+
+    it("never fetches a job feed: the pull skips, keeps the seeded jobs and shows no problem", async () => {
+      await startDemo(database, DEMO_ENVIRONMENT);
+      const jobsBefore = await countRows(jobPosting);
+      await database.update(jobSource).set({ lastPulledAt: null });
+      const fetchSpy = vi.fn(async () => new Response("[]"));
+
+      expect(await pullDueSources(database, DEMO_ENVIRONMENT, { fetch: fetchSpy })).toEqual({ pulled: 0, failed: 0 });
+      const [source] = await database.select().from(jobSource).limit(1);
+      if (!source) throw new Error("The demo seeded no job source.");
+      expect(await pullSource(database, DEMO_ENVIRONMENT, source, { fetch: fetchSpy })).toEqual({ ok: true, count: 0, note: DEMO_PULL_NOTE });
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(await countRows(jobPosting)).toBe(jobsBefore);
+      const problems = await database.select({ error: jobSource.lastError }).from(jobSource);
+      expect(problems.every(({ error }) => error === null)).toBe(true);
     });
 
     it("refuses a database with real members, in plain words, and never resets it", async () => {

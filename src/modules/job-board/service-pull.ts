@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, eq, isNotNull, isNull, lt, notInArray, or, sql } from "drizzle-orm";
 
 import type { Database } from "@/platform/database/client";
+import { isDemoMode } from "@/platform/demo/mode";
 import type { Environment } from "@/platform/environment";
 import { logError } from "@/platform/observability/route-logging";
 
@@ -17,6 +18,8 @@ const USER_AGENT = "Community job board (+https://github.com/VillageHQ/community
 // For tests and local proof only: every feed is read from this origin instead of the tool's own host.
 const FAKE_ORIGIN_VARIABLE = "JOB_FEEDS_FAKE_ORIGIN";
 const UNKNOWN_PROBLEM = "Something went wrong reading the job list. We try again next hour.";
+// In demo mode nothing leaves the server: a pull skips the fetch, keeps the jobs shown and saves no problem.
+export const DEMO_PULL_NOTE = "This is a demo, so the job list isn't read from the hiring tool. The jobs shown stay as they are.";
 
 // A fetch problem, in words a founder understands.
 export class FeedError extends Error {}
@@ -167,10 +170,11 @@ async function savePullError(database: Database, sourceId: string, message: stri
 }
 
 type PullableSource = { id: string; tool: string; slug: string | null };
-export type PullOutcome = { ok: true; count: number } | { ok: false; error: string };
+export type PullOutcome = { ok: true; count: number; note?: string } | { ok: false; error: string };
 
 export async function pullSource(database: Database, environment: Environment, source: PullableSource, options: FetchOptions = {}): Promise<PullOutcome> {
   if (!isFeedTool(source.tool) || !source.slug) return { ok: true, count: 0 };
+  if (isDemoMode(environment)) return { ok: true, count: 0, note: DEMO_PULL_NOTE };
   try {
     const jobs = await fetchBoard(source.tool, source.slug, { url: readFeedAddress(environment, source.tool, source.slug), ...options });
     await savePull(database, source.id, jobs);
@@ -185,6 +189,7 @@ export async function pullSource(database: Database, environment: Environment, s
 
 // Sources with a feed that no pull has touched for an hour, oldest first, a few per tick.
 export async function pullDueSources(database: Database, environment: Environment, options: FetchOptions = {}) {
+  if (isDemoMode(environment)) return { pulled: 0, failed: 0 };
   const dueBefore = new Date(Date.now() - JOB_BOARD_LIMITS.pullEveryMinutes * 60_000);
   const due = await database
     .select({ id: jobSource.id, tool: jobSource.tool, slug: jobSource.slug })
