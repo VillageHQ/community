@@ -23,10 +23,10 @@ describe("the navigation", () => {
     }
   });
 
-  it("lists every primary module in registry order", () => {
+  it("lists every primary module in the owner's order", () => {
     const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false).map(({ label }) => label);
 
-    expect(labels).toEqual(["Feed", "Messages", "Members", "Meet", "Intros", "Asks", "Jobs", "Perks"]);
+    expect(labels).toEqual(["Feed", "Meet", "Intros", "Messages", "Members", "Asks", "Jobs", "Perks"]);
   });
 
   it("hides Admin from members", () => {
