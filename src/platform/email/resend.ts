@@ -12,6 +12,7 @@ type OutgoingEmail = {
   html: string;
   text: string;
   idempotencyKey: string;
+  replyTo?: string | null;
   headers?: Readonly<Record<string, string>>;
 };
 
@@ -36,6 +37,7 @@ export async function sendResendEmail({ apiKey, fromAddress, apiUrl }: ResendCon
       subject: email.subject,
       html: email.html,
       text: email.text,
+      ...(email.replyTo ? { reply_to: email.replyTo } : {}),
       ...(email.headers ? { headers: email.headers } : {}),
     }),
     signal: AbortSignal.timeout(SEND_TIMEOUT_MS),

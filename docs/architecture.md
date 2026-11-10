@@ -17,6 +17,7 @@ src/
     network/    Toggle. Village search, sync, group, paths, credits.
     intros/     Toggle. Warm intros. Needs network.
     asks/       Toggle, off by default. Members post what they need, others offer help.
+                The feed is a toggle too, off by default for a new community.
     admin/      Core. Roster, reports, audit view, health, the features screen.
   platform/     Infrastructure with no product opinion: auth, audit, branding, database,
                 design, email, http, observability, rate-limit, secrets, settings, text, village.
@@ -210,7 +211,7 @@ Three things deliberately keep working:
 - **Leaving Village.** Turning network off doesn't take anyone out of the Village group. `/api/network/leave` stays open with `staysOpenWhenOff`, the only route allowed to use it, and a member still in the group gets a leave card on their own card page.
 - **Departure on removal.** Removing a member still tries to take them out of the group, and the admin keeps the group row for any member still in it.
 
-`/` always renders. With the feed off, it shows next steps and new members, and the nav gets a "Home" entry.
+`/` always renders. It shows the member's week (`shell/today.ts`): asks they could help with, intros waiting on them, their own asks, new members and next steps, ending with "That's everything this week". With the feed on, the feed sits beside it; with the feed off, the nav gets a "Home" entry. The feed starts off for a new community. Migration 0021 stored `on` for every community that already had members, so they kept it.
 
 ## The features screen
 
@@ -330,7 +331,7 @@ Some extras cost more than a line:
 
 The phone tab bar holds five items. With more, the fifth becomes "More", a sheet with the rest, and its badge adds up theirs. Registry order decides what stays on the bar.
 
-There's no scheduler in this deployment. Do work at read time, with `after()` if it shouldn't block the response, as intro expiry does.
+Timed work runs only through the job runner (`platform/jobs`): platform jobs, a module's `jobs` while it's on, and the shell's jobs, like the weekly email, which reads several modules. Work that can happen at read time still should, with `after()` if it shouldn't block the response.
 
 ## Tests
 

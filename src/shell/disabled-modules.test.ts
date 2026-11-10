@@ -96,7 +96,7 @@ describe("the shell with modules off", () => {
       const enabledIds = await readEnabledIds(database);
       const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false, enabledIds).map(({ label }) => label);
 
-      expect(labels).toEqual(["Feed", "Messages", "Members", "Asks"]);
+      expect(labels).toEqual(["Home", "Messages", "Members", "Asks"]);
     });
 
     it("hides the credits tab", async () => {

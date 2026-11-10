@@ -1,0 +1,13 @@
+## Tick 1 (runs the weekly job, then the outbox sends)
+{"outcomes":{"email-outbox":"ran","email-outbox-pruning":"ran","weekly-email":"ran","intro-expiry":"ran","intro-outcome-emails":"ran"}}
+     name      |  week_key  | status | items 
+---------------+------------+--------+-------
+ Ada Admin     | 2026-11-05 | empty  |     0
+ Alex Moreno   | 2026-11-05 | empty  |     0
+ Hana Okafor   | 2026-11-05 | queued |     2
+ Quinn Park    | 2026-11-05 | empty  |     0
+ Rae Lindqvist | 2026-11-05 | empty  |     0
+(5 rows)
+
+## Tick 2, a minute later (the outbox sends; the weekly job is not due again, and would find everyone done)
+{"outcomes":{"email-outbox":"ran","email-outbox-pruning":"not_due","weekly-email":"not_due","intro-expiry":"not_due","intro-outcome-emails":"not_due"}}

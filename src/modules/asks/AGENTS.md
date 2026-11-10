@@ -9,7 +9,9 @@ Members post what they need, or an update (a win), and others step in. Toggleabl
 - `service-helpers.ts`: routing a new ask to helpers and their one email.
 - `reads.ts`: the board, your own asks, the badge count, the reportable copies, word matching and the allowance inputs.
 - `limits.ts`: posting rate limits. `rules-*.ts`: pure state, time and URL rules.
-- `queries.ts`: client requests. `components/`: the UI.
+- `queries.ts`: client requests. `components/`: the UI. `components/shared/`: the Today cards (asks you could help with, your asks).
+- `reads-could-help.ts`, `rules-help-match.ts`: open asks whose words meet a member's "can help with" words or tags (plain word overlap). The Today page and the weekly email read them.
+- `schema-skip.ts`, `service-skip.ts`, `contract-today.ts`: `ask_skip`, a member's "not for me", which only hides an ask from their Today page and weekly email.
 
 Rules:
 

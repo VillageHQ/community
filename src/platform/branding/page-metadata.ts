@@ -7,6 +7,7 @@ type MetadataBranding = { name: string; descriptor: string; logo: { url: string 
 export const PAGE_TITLES = {
   feed: "Feed",
   home: "Home",
+  today: "This week",
   messages: "Messages",
   network: "Network",
   intros: "Intros",
@@ -19,6 +20,7 @@ export const PAGE_TITLES = {
   join: "Your invite",
   confirmEmail: "Confirm your email",
   unsubscribe: "Email settings",
+  weeklyAnswer: "Your weekly email",
   adminMembers: "Members admin",
   adminReports: "Reports",
   adminAuditLog: "Audit log",
@@ -26,6 +28,7 @@ export const PAGE_TITLES = {
   adminCredits: "Credits",
   adminFeatures: "Features",
   adminSettings: "Settings",
+  adminWeeklyEmail: "Weekly email",
   admin: "Admin",
   setup: "Set up",
   signIn: "Sign in",

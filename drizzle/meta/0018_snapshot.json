@@ -1,6 +1,6 @@
 {
   "id": "d3f5022c-dc96-4535-8523-94a200e9fbdc",
-  "prevId": "8a26869b-018e-428a-9c4b-de208da377c7",
+  "prevId": "f88b922a-aa07-484f-b8b0-e91854a6ea7c",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -777,6 +777,12 @@
         },
         "dedupe_key": {
           "name": "dedupe_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reply_to": {
+          "name": "reply_to",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -3757,6 +3763,251 @@
           "columns": [
             "user_id",
             "linkedin_slug"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.weekly_email": {
+      "name": "weekly_email",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "week_key": {
+          "name": "week_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "items": {
+          "name": "items",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outbox_id": {
+          "name": "outbox_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "weekly_email_member_created_idx": {
+          "name": "weekly_email_member_created_idx",
+          "columns": [
+            {
+              "expression": "member_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "weekly_email_member_id_user_id_fk": {
+          "name": "weekly_email_member_id_user_id_fk",
+          "tableFrom": "weekly_email",
+          "tableTo": "user",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "weekly_email_one_per_week": {
+          "name": "weekly_email_one_per_week",
+          "nullsNotDistinct": false,
+          "columns": [
+            "member_id",
+            "week_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "weekly_email_status_known": {
+          "name": "weekly_email_status_known",
+          "value": "\"weekly_email\".\"status\" in ('queued', 'empty', 'not_wanted', 'test')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.weekly_email_action": {
+      "name": "weekly_email_action",
+      "schema": "",
+      "columns": {
+        "weekly_email_id": {
+          "name": "weekly_email_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "item_number": {
+          "name": "item_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "via": {
+          "name": "via",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "weekly_email_action_weekly_email_id_weekly_email_id_fk": {
+          "name": "weekly_email_action_weekly_email_id_weekly_email_id_fk",
+          "tableFrom": "weekly_email_action",
+          "tableTo": "weekly_email",
+          "columnsFrom": [
+            "weekly_email_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "weekly_email_action_weekly_email_id_item_number_pk": {
+          "name": "weekly_email_action_weekly_email_id_item_number_pk",
+          "columns": [
+            "weekly_email_id",
+            "item_number"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "weekly_email_action_via_known": {
+          "name": "weekly_email_action_via_known",
+          "value": "\"weekly_email_action\".\"via\" in ('link', 'reply')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ask_skip": {
+      "name": "ask_skip",
+      "schema": "",
+      "columns": {
+        "ask_id": {
+          "name": "ask_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "member_id": {
+          "name": "member_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ask_skip_ask_id_ask_id_fk": {
+          "name": "ask_skip_ask_id_ask_id_fk",
+          "tableFrom": "ask_skip",
+          "tableTo": "ask",
+          "columnsFrom": [
+            "ask_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ask_skip_member_id_user_id_fk": {
+          "name": "ask_skip_member_id_user_id_fk",
+          "tableFrom": "ask_skip",
+          "tableTo": "user",
+          "columnsFrom": [
+            "member_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ask_skip_ask_id_member_id_pk": {
+          "name": "ask_skip_ask_id_member_id_pk",
+          "columns": [
+            "ask_id",
+            "member_id"
           ]
         }
       },

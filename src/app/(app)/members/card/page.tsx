@@ -38,7 +38,9 @@ import { FillInNowButton } from "@/modules/network/components/fill-in-now-button
 import { VillageDisclosure } from "@/modules/network/components/village-disclosure";
 import { readBrandingForPage } from "@/platform/branding/branding";
 
+// A topic with no module is always offered: the weekly email works whatever is on.
 const TOPIC_MODULES = [
+  { topic: EMAIL_TOPICS.weekly, moduleId: null },
   { topic: EMAIL_TOPICS.intros, moduleId: introsManifest.id },
   { topic: EMAIL_TOPICS.messages, moduleId: messagesManifest.id },
   { topic: EMAIL_TOPICS.network, moduleId: networkManifest.id },
@@ -68,7 +70,7 @@ async function readFillIn(database: ReturnType<typeof getDatabase>, memberId: st
 async function readEmailSettings(database: ReturnType<typeof getDatabase>, memberId: string) {
   if (!readResendConfig(process.env)) return [];
   const [enabledIds, optedOut] = await Promise.all([readEnabledIds(database), readOptedOutTopics(database, memberId)]);
-  return TOPIC_MODULES.filter(({ moduleId }) => enabledIds.has(moduleId)).map(({ topic }) => ({ topic, isOn: !optedOut.has(topic) }));
+  return TOPIC_MODULES.filter(({ moduleId }) => moduleId === null || enabledIds.has(moduleId)).map(({ topic }) => ({ topic, isOn: !optedOut.has(topic) }));
 }
 
 export const metadata: Metadata = { title: PAGE_TITLES.editCard };
