@@ -9,7 +9,8 @@ import { session, user } from "@/platform/database/auth-schema";
 import { DEMO_REFUSAL_MESSAGE } from "@/platform/demo/guard";
 import { DEMO_ACCOUNTS, DEMO_EMAIL_NOTE } from "@/platform/demo/mode";
 import { createDemoFetch, DEMO_OUTSIDE_CALL_MESSAGE } from "@/platform/demo/outbound";
-import { DEMO_PEOPLE } from "@/platform/demo/people";
+import { DEMO_DATA_HOME, DEMO_PEOPLE } from "@/platform/demo/people";
+import { readDataHome } from "@/platform/settings/data-home";
 import { sendDueEmails, sendQueuedEmailNow } from "@/platform/email/outbox-sender";
 import { queueEmail } from "@/platform/email/outbox";
 import { emailOutbox } from "@/platform/email/schema";
@@ -94,6 +95,8 @@ describe("demo mode", () => {
       expect([...states].sort()).toEqual(Object.values(INTRO_STATES).sort());
       expect(await countRows(ask)).toBeGreaterThan(5);
       expect(await countRows(invite)).toBeGreaterThan(0);
+      expect(await readDataHome(database)).toEqual({ location: DEMO_DATA_HOME.location, contact: { name: DEMO_DATA_HOME.contactName, email: DEMO_DATA_HOME.contactEmail } });
+      expect(DEMO_DATA_HOME.contactEmail.endsWith("@example.com")).toBe(true);
       expect(await startDemo(database, DEMO_ENVIRONMENT)).toEqual({ outcome: "ready" });
       expect((await readScheduledJobs(database)).map(({ name }) => name)).toContain(DEMO_RESET_JOB_NAME);
     });

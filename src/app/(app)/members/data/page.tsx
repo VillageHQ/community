@@ -30,6 +30,8 @@ import { introsManifest } from "@/modules/intros/manifest";
 import { messagesManifest } from "@/modules/messages/manifest";
 import { networkManifest } from "@/modules/network/manifest";
 import { VillageDisclosure } from "@/modules/network/components/village-disclosure";
+import { readDataHome } from "@/platform/settings/data-home";
+import { isDataHomeSet, type DataHome } from "@/platform/settings/data-home-api";
 
 export const metadata: Metadata = { title: PAGE_TITLES.yourData };
 
@@ -55,6 +57,32 @@ function Facts({ items }: { items: { term: string; detail: string }[] }) {
           <dd className="type-small text-foreground-soft">{detail}</dd>
         </div>
       ))}
+    </dl>
+  );
+}
+
+// Shown only when an admin filled it in, word for word.
+function DataHomeFacts({ dataHome: { location, contact } }: { dataHome: DataHome }) {
+  if (!isDataHomeSet({ location, contact })) return null;
+  return (
+    <dl className="grid gap-3 border-t border-border pt-3">
+      {location ? (
+        <div className="grid gap-0.5">
+          <dt className="font-bold">Where the data is kept</dt>
+          <dd className="type-small wrap-anywhere text-foreground-soft">As the admins describe it: {location}</dd>
+        </div>
+      ) : null}
+      {contact ? (
+        <div className="grid gap-0.5">
+          <dt className="font-bold">Questions or requests about your data</dt>
+          <dd className="type-small wrap-anywhere text-foreground-soft">
+            {contact.name ? `${contact.name}, at ` : "Write to "}
+            <a className="font-bold text-foreground underline underline-offset-2" href={`mailto:${contact.email}`}>
+              {contact.email}
+            </a>
+          </dd>
+        </div>
+      ) : null}
     </dl>
   );
 }
@@ -130,7 +158,7 @@ export default modulePage(membersManifest, async function YourDataPage() {
     enabledIds.has(id),
   ) as [boolean, boolean, boolean, boolean, boolean];
   const enabled = { isFeedOn, isAsksOn, isIntrosOn, isMessagesOn, isNetworkOn };
-  const [privacy, lookup, [sharing], isReportCreditOn, branding] = await Promise.all([
+  const [privacy, lookup, [sharing], isReportCreditOn, branding, dataHome] = await Promise.all([
     readPrivacy(database, member.id),
     readLookupState(database, member.id),
     database
@@ -139,6 +167,7 @@ export default modulePage(membersManifest, async function YourDataPage() {
       .where(eq(memberNetwork.userId, member.id)),
     readReportCredit(database, member.id),
     readBrandingForPage(),
+    readDataHome(database),
   ]);
 
   return (
@@ -157,6 +186,7 @@ export default modulePage(membersManifest, async function YourDataPage() {
       />
       <Panel titleId="stored-title" title="What is stored, and where">
         <Facts items={readStoredItems(branding.name, enabled)} />
+        <DataHomeFacts dataHome={dataHome} />
       </Panel>
       {isNetworkOn ? (
         <VillageDisclosure isFillInOn={lookup.isAllowed} />

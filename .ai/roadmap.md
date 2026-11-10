@@ -52,7 +52,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] Search and Village fallbacks: member-profile search, search cache, city filter, Village cancel on disconnect — parity — [spec](features/search-without-village/SPEC.md)
 - [ ] The two welcome questions — parity — [spec](features/welcome-questions/SPEC.md)
 - [ ] Invites when email is off: mailto and "Copy all links" — parity — [spec](features/invite-fallbacks/SPEC.md)
-- [ ] Hosting and data settings: region, data-protection contact, agreement link — parity — [spec](features/hosting-data-settings/SPEC.md)
+- [ ] Hosting and data settings: region and data-protection contact (built; the agreement link is still open) — parity — [spec](features/hosting-data-settings/SPEC.md)
 - [ ] Managed-plan sign-up on the website — parity — [spec](features/site-signup/SPEC.md)
 - Gaps neither product had (merge plan): Google/Microsoft sign-in and SSO, groups inside one community, CRM export, events, other languages.
 
@@ -249,7 +249,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · "Your data" page — (PR #20)
 - **done** · Export my data (JSON) — (PR #20)
 - **done** · Ask to delete my account — a real delete (PR #20)
-- **open** · Hosting & data settings — [hosting-data-settings](features/hosting-data-settings/SPEC.md)
+- **done** · Hosting & data settings — where the data is kept and whom to ask, on Settings and Your data; the agreement link is still open: [hosting-data-settings](features/hosting-data-settings/SPEC.md)
 - **done** · Pooling consent — group join on consent (Community)
 - **done** · Do-not-send list — bounces and complaints (PR #13), intro opt-out (PR #10)
 - **done** · Data minimisation of outside emails after 90 days — done differently: the person's email is cleared when the intro closes, and the outbox is pruned daily (PR #10, PR #13)
