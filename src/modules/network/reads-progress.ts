@@ -5,6 +5,7 @@ import { and, count, eq, isNotNull } from "drizzle-orm";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberNetwork } from "../members/schema.ts";
+import { shownFaceColumns, toShownFaceUrl } from "../members/reads-pictures.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { isAdminMember } from "../../platform/auth/roles.ts";
 import { isMemberEmailTrusted } from "../members/service-linkedin.ts";
@@ -44,12 +45,15 @@ export async function readSharingMemberCount(database: Database) {
 
 export async function readWelcomeNeighbours(database: Database, excludedMemberId: string) {
   const neighbours = await database
-    .select({ id: user.id, name: user.name })
+    .select({ id: user.id, name: user.name, ...shownFaceColumns(user.id) })
     .from(memberNetwork)
     .innerJoin(user, eq(user.id, memberNetwork.userId))
     .where(and(isNotNull(memberNetwork.groupJoinedAt), isActiveMember()))
     .limit(MAXIMUM_WELCOME_NEIGHBOURS + 1);
-  return neighbours.filter(({ id }) => id !== excludedMemberId).slice(0, MAXIMUM_WELCOME_NEIGHBOURS);
+  return neighbours
+    .filter(({ id }) => id !== excludedMemberId)
+    .slice(0, MAXIMUM_WELCOME_NEIGHBOURS)
+    .map(({ id, name, avatarUpdatedAt, filledFace }) => ({ id, name, imageUrl: toShownFaceUrl(id, avatarUpdatedAt, filledFace) }));
 }
 
 export async function readPendingLinkCount(database: Database) {

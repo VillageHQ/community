@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/empty-state";
 import { FormError } from "@/components/form-error";
 import { FormField } from "@/components/form-field";
 import { Alert } from "@/components/ui/alert";
+import { MemberLine } from "./member-line";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -57,7 +58,12 @@ function OfferRow({ offer }: { offer: Offer }) {
             {isNew ? <Tag tone="accent">New</Tag> : null}
           </div>
           <p className="type-small wrap-anywhere text-muted-foreground">
-            {memberLine ? `${memberLine} · ` : ""}
+            {memberLine ? (
+              <>
+                <MemberLine member={helper} />
+                {" · "}
+              </>
+            ) : null}
             <time dateTime={createdAt} suppressHydrationWarning>
               Offered {describeAge(createdAt)}
             </time>
@@ -135,7 +141,11 @@ function HelperRow({ askId, helper, canIntro, isOpen }: { askId: string; helper:
           <Link href={`${ROUTES.members}/${person.id}`} className="type-label wrap-anywhere hover:underline">
             {person.name}
           </Link>
-          {memberLine ? <p className="type-small wrap-anywhere text-muted-foreground">{memberLine}</p> : null}
+          {memberLine ? (
+            <p className="type-small wrap-anywhere text-muted-foreground">
+              <MemberLine member={person} />
+            </p>
+          ) : null}
         </div>
       </div>
       <p className="type-small wrap-anywhere text-foreground-soft">{helper.why}</p>

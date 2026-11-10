@@ -7,6 +7,7 @@ import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberProfile, memberTag } from "../members/schema.ts";
+import { shownFaceColumns, toShownFaceUrl } from "../members/reads-pictures.ts";
 import { ASK_KINDS } from "./contract.ts";
 import { helpableAskSchema, type HelpableAsk } from "./contract-today.ts";
 import { hasNoBlockBetween, isOpenAsk } from "./reads.ts";
@@ -38,13 +39,23 @@ function hasNoAnswerFrom(memberId: string) {
   return and(notExists(offered), notExists(skipped));
 }
 
-type CandidateRow = { id: string; title: string; detail: string | null; listedAt: Date; authorId: string; authorName: string; why: string | null };
+type CandidateRow = {
+  id: string;
+  title: string;
+  detail: string | null;
+  listedAt: Date;
+  authorId: string;
+  authorName: string;
+  avatarUpdatedAt: Date | null;
+  filledFace: string | null;
+  why: string | null;
+};
 
 // Asks, not updates, from other members, that this member can still answer. Blocks and removed members are
 // left out, as on the board.
 function selectCandidates(database: Database, memberId: string) {
   return database
-    .select({ id: ask.id, title: ask.title, detail: ask.detail, listedAt: ask.listedAt, authorId: user.id, authorName: user.name, why: askHelper.why })
+    .select({ id: ask.id, title: ask.title, detail: ask.detail, listedAt: ask.listedAt, authorId: user.id, authorName: user.name, ...shownFaceColumns(user.id), why: askHelper.why })
     .from(ask)
     .innerJoin(user, eq(user.id, ask.authorId))
     .leftJoin(askHelper, and(eq(askHelper.askId, ask.id), eq(askHelper.helperId, memberId)));
@@ -73,7 +84,7 @@ export async function readAsksYouCouldHelp(database: Database, memberId: string,
       helpableAskSchema.parse({
         id: row.id,
         title: row.title,
-        author: { id: row.authorId, name: row.authorName },
+        author: { id: row.authorId, name: row.authorName, avatarUrl: toShownFaceUrl(row.authorId, row.avatarUpdatedAt, row.filledFace) },
         listedAt: row.listedAt.toISOString(),
         matchedWords,
         why: row.why,

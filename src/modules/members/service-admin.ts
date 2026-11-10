@@ -16,7 +16,7 @@ import { RequestError } from "../../platform/http/request-error.ts";
 import { type RequestContext } from "../../platform/http/request-context.ts";
 import { REQUEST_ERROR_CODES } from "../../platform/http/error-codes.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
-import { toAvatarUrl } from "./service-profile.ts";
+import { filledFaceColumn, toShownFaceUrl } from "./reads-pictures.ts";
 
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
@@ -39,6 +39,7 @@ export async function readWaitingMembers(database: Database) {
       name: user.name,
       email: user.email,
       avatarUpdatedAt: memberAvatar.updatedAt,
+      filledFace: filledFaceColumn(user.id),
       inviteId: invite.id,
     })
     .from(user)
@@ -47,9 +48,9 @@ export async function readWaitingMembers(database: Database) {
     .where(isWaitingForConfirmation())
     .orderBy(user.createdAt, user.id)
     .limit(MAXIMUM_WAITING_MEMBERS_SHOWN);
-  return rows.map(({ avatarUpdatedAt, ...member }) => ({
+  return rows.map(({ avatarUpdatedAt, filledFace, ...member }) => ({
     ...member,
-    avatarUrl: toAvatarUrl(member.id, avatarUpdatedAt),
+    avatarUrl: toShownFaceUrl(member.id, avatarUpdatedAt, filledFace),
   }));
 }
 

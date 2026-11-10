@@ -30,6 +30,7 @@ import { EmailPreferencesCard } from "@/shell/email-preferences-card";
 import { ReportCreditCard } from "@/modules/members/components/report-credit-card";
 import { readReportCredit } from "@/modules/members/service-report-credit";
 import { readEnabledIds } from "@/shell/enabled-modules";
+import { isFilledLogoShown } from "@/modules/members/rules-fill-in";
 import { FILL_IN_FIELDS, type FilledLine } from "@/modules/members/contract-fill-in";
 import { readFilledLines, readLookupState } from "@/modules/members/service-fill-in";
 import { FillInCard, type OwnWords } from "@/modules/members/components/fill-in-card";
@@ -50,13 +51,13 @@ const TOPIC_MODULES = [
 type Profile = NonNullable<Awaited<ReturnType<typeof readMemberProfile>>>;
 
 function readOwnWords(profile: Profile, lines: readonly FilledLine[]): OwnWords {
-  const hasFace = lines.some(({ field, isHidden }) => field === FILL_IN_FIELDS.face && !isHidden);
+  const filledCompany = lines.find(({ field, isHidden }) => field === FILL_IN_FIELDS.company && !isHidden)?.value;
   return {
     [FILL_IN_FIELDS.title]: Boolean(profile.title),
     [FILL_IN_FIELDS.company]: Boolean(profile.company),
     [FILL_IN_FIELDS.location]: Boolean(profile.location),
     [FILL_IN_FIELDS.face]: profile.avatarUrl !== null,
-    [FILL_IN_FIELDS.companyLogo]: profile.avatarUrl !== null || hasFace,
+    [FILL_IN_FIELDS.companyLogo]: !isFilledLogoShown(profile.company, filledCompany),
   };
 }
 

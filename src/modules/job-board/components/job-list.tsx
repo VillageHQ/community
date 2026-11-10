@@ -1,12 +1,13 @@
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 
+import { CompanyLogo } from "@/components/company-name";
 import { CHIP_CLASSES } from "@/components/ui/chip";
 import { formatShortDate } from "@/platform/text/format-date";
 
 import { COMPANY_PARAM, type BoardCompany, type BoardJob, type PublicJob } from "../contract";
 
-type ListedJob = PublicJob & Partial<Pick<BoardJob, "department" | "postedAt" | "memberId" | "memberName">>;
+type ListedJob = PublicJob & Partial<Pick<BoardJob, "department" | "postedAt" | "memberId" | "memberName" | "companyLogoUrl">>;
 
 export function CompanyFilter({ basePath, companies, selected }: { basePath: string; companies: readonly BoardCompany[]; selected: string | null }) {
   if (companies.length < 2 && selected === null) return null;
@@ -34,12 +35,17 @@ export function JobList({ jobs, memberHref }: { jobs: readonly ListedJob[]; memb
   return (
     <ul className="grid gap-3">
       {jobs.map((job) => {
-        const details = [job.company, job.location, job.department].filter(Boolean).join(" · ");
+        const details = [job.location, job.department].filter(Boolean).join(" · ");
         return (
           <li key={job.id} className="flex flex-wrap items-center justify-between gap-3 rounded-card-phone bg-card p-card-phone shadow-panel sm:rounded-card sm:px-6">
             <div className="min-w-0 flex-1">
               <h2 className="type-h3 wrap-anywhere">{job.title}</h2>
-              <p className="type-small mt-0.5 text-foreground-soft wrap-anywhere">{details}</p>
+              <p className="type-small mt-0.5 text-foreground-soft wrap-anywhere">
+                <CompanyLogo url={job.companyLogoUrl} className="mr-1.5 mt-0 align-[-0.2em]" />
+                {job.company}
+                {job.company && details ? " · " : null}
+                {details}
+              </p>
               {job.memberId && job.memberName && memberHref ? (
                 <p className="type-small mt-0.5 text-foreground-soft">
                   Shared by{" "}

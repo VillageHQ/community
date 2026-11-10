@@ -1,0 +1,2 @@
+ALTER TABLE "member_fill_in" DROP CONSTRAINT "member_fill_in_field";--> statement-breakpoint
+ALTER TABLE "member_fill_in" ADD CONSTRAINT "member_fill_in_field" CHECK ("member_fill_in"."field" in ('title', 'company', 'location', 'headline', 'face', 'company_logo', 'company_domain'));

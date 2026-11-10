@@ -10,6 +10,7 @@ import { useDeferredValue, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
 import { QueryBoundary } from "@/components/query-boundary";
+import { CompanyName } from "@/components/company-name";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
@@ -55,7 +56,7 @@ function goToPage(page: number, filters: DirectoryFilters) {
 }
 
 function MemberCard({ member, viewerId }: { member: DirectoryMember; viewerId: string }) {
-  const { id, name, title, company, canHelpWith, avatarUrl, tags } = member;
+  const { id, name, title, company, companyLogoUrl, canHelpWith, avatarUrl, tags } = member;
   const facts = [member.stage, member.sector, member.cohort].filter(Boolean).join(" · ");
   return (
     <li className="flex">
@@ -65,7 +66,11 @@ function MemberCard({ member, viewerId }: { member: DirectoryMember; viewerId: s
           <div className="min-w-0">
             <h2 className="text-lg leading-6 font-bold tracking-[-0.006em]">{name}</h2>
             {title ? <div className="type-small text-muted-foreground">{title}</div> : null}
-            {company ? <div className="type-small text-muted-foreground">{company}</div> : null}
+            {company ? (
+              <div className="type-small flex text-muted-foreground">
+                <CompanyName company={company} logoUrl={companyLogoUrl} />
+              </div>
+            ) : null}
             {facts ? <div className="type-small text-muted-foreground">{facts}</div> : null}
           </div>
         </div>

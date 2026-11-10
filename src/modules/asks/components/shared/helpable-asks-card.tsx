@@ -5,11 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { FormError } from "@/components/form-error";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { ASKS_PAGE } from "@/modules/asks/contract";
 import { ASK_SKIP_ROUTE, describeWhyYou, skippedAskSchema, type HelpableAsk } from "@/modules/asks/contract-today";
 import { postRequest } from "@/platform/http/post-request";
+
+const RAIL_AVATAR_SIZE_PX = 44;
 
 function HelpableAskRow({ ask }: { ask: HelpableAsk }) {
   const router = useRouter();
@@ -19,11 +22,14 @@ function HelpableAskRow({ ask }: { ask: HelpableAsk }) {
   });
   return (
     <li className="grid gap-2.5">
-      <div className="min-w-0">
-        <p className="type-label wrap-anywhere">“{ask.title}”</p>
-        <p className="type-micro font-medium wrap-anywhere text-muted-foreground">
-          {ask.author.name} · {describeWhyYou(ask)}
-        </p>
+      <div className="flex items-center gap-3">
+        <Avatar stableId={ask.author.id} name={ask.author.name} imageUrl={ask.author.avatarUrl} sizePx={RAIL_AVATAR_SIZE_PX} />
+        <div className="min-w-0">
+          <p className="type-label wrap-anywhere">“{ask.title}”</p>
+          <p className="type-micro font-medium wrap-anywhere text-muted-foreground">
+            {ask.author.name} · {describeWhyYou(ask)}
+          </p>
+        </div>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button asChild size="sm" className="px-4">

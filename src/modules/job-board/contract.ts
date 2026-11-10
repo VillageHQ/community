@@ -148,6 +148,8 @@ export type BoardJob = {
   postedAt: string | null;
   company: string;
   companySlug: string;
+  // A member of this company's logo, when public profiles found one (members' board only).
+  companyLogoUrl: string | null;
   memberId: string;
   memberName: string;
 };

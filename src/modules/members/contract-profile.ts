@@ -117,6 +117,7 @@ export const directoryMemberSchema = z.object({
   sector: z.string().nullable(),
   cohort: z.string().nullable(),
   avatarUrl: z.string().nullable(),
+  companyLogoUrl: z.string().nullable(),
   tags: z.array(z.string()),
 });
 

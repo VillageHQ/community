@@ -3,7 +3,7 @@ import { PROFILE_LIMITS } from "../members/contract-profile.ts";
 import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
 
 type VillageLocation = { city?: string | null; state?: string | null; country?: string | null } | null | undefined;
-type VillageWork = { title?: string | null; company?: { name?: string | null; image_url?: string | null } | null } | null | undefined;
+type VillageWork = { title?: string | null; company?: { name?: string | null; domain?: string | null; image_url?: string | null } | null } | null | undefined;
 
 export type VillageProfileFacts = {
   avatar?: string | null;
@@ -16,6 +16,10 @@ export type VillageProfileFacts = {
 const HEADLINE_LENGTH = 200;
 const IMAGE_URL_LENGTH = 1000;
 const HTTPS_PROTOCOL = "https:";
+// The app's own bundled pictures (demo mode and the test fakes), served from public/demo/.
+const OWN_PICTURE_PATH = /^\/demo\/[a-z0-9-]+(\/[a-z0-9-]+)*\.(svg|png|jpg|webp)$/;
+const DOMAIN_LENGTH = 253;
+const DOMAIN_PATTERN = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 const WHITESPACE = /\s+/g;
 
 function cleanLine(value: string | null | undefined, maximumLength: number) {
@@ -25,15 +29,24 @@ function cleanLine(value: string | null | undefined, maximumLength: number) {
   return line.length > maximumLength ? `${line.slice(0, maximumLength - 1).trimEnd()}…` : line;
 }
 
-// Only an https address is shown as an image, so a lookup can't put another kind of link on a page.
+// Only an https address, or one of the app's own demo pictures, is shown as an image, so a lookup can't put
+// another kind of link on a page.
 export function readSafeImageUrl(value: string | null | undefined) {
   if (!value || value.length > IMAGE_URL_LENGTH) return undefined;
+  if (OWN_PICTURE_PATH.test(value)) return value;
   try {
     const url = new URL(value);
     return url.protocol === HTTPS_PROTOCOL && !url.username && !url.password ? url.href : undefined;
   } catch {
     return undefined;
   }
+}
+
+// A bare website domain ("acme.example"), lower case, or nothing.
+export function readCompanyDomain(value: string | null | undefined) {
+  if (!value || value.length > DOMAIN_LENGTH) return undefined;
+  const domain = value.trim().toLowerCase().replace(/^www\./, "");
+  return DOMAIN_PATTERN.test(domain) ? domain : undefined;
 }
 
 function readPlace(location: VillageLocation) {
@@ -51,6 +64,7 @@ export function toFilledProfile(profile: VillageProfileFacts): Partial<Record<Fi
     [FILL_IN_FIELDS.headline]: cleanLine(profile.headline, HEADLINE_LENGTH),
     [FILL_IN_FIELDS.face]: readSafeImageUrl(profile.avatar),
     [FILL_IN_FIELDS.companyLogo]: readSafeImageUrl(work?.company?.image_url),
+    [FILL_IN_FIELDS.companyDomain]: readCompanyDomain(work?.company?.domain),
   };
   return Object.fromEntries(Object.entries(filled).filter(([, value]) => value));
 }

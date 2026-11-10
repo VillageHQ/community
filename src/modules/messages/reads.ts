@@ -8,7 +8,7 @@ import { memberAvatar, memberProfile, memberBlock } from "../members/schema.ts";
 import { conversation, conversationReadCursor, directMessage, messageReport } from "./schema.ts";
 import { isBanActive } from "../../platform/auth/member-status.ts";
 import { toContainsPattern } from "../members/reads-directory.ts";
-import { toAvatarUrl } from "../members/service-profile.ts";
+import { filledFaceColumn, shownCompanyColumn, toShownFaceUrl } from "../members/reads-pictures.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import { readPeerId } from "./rules-conversation-pair.ts";
 import {
@@ -85,8 +85,9 @@ function readPeers(database: Database, peerIds: string[]) {
       id: user.id,
       name: user.name,
       title: memberProfile.title,
-      company: memberProfile.company,
+      company: shownCompanyColumn(user.id),
       avatarUpdatedAt: memberAvatar.updatedAt,
+      filledFace: filledFaceColumn(user.id),
       banned: user.banned,
       banExpires: user.banExpires,
     })
@@ -98,13 +99,13 @@ function readPeers(database: Database, peerIds: string[]) {
 
 type PeerRow = Awaited<ReturnType<typeof readPeers>>[number];
 
-function toPeer({ id, name, title, company, avatarUpdatedAt, banned, banExpires }: PeerRow): ConversationPeer {
+function toPeer({ id, name, title, company, avatarUpdatedAt, filledFace, banned, banExpires }: PeerRow): ConversationPeer {
   return {
     id,
     name,
     title,
     company,
-    avatarUrl: toAvatarUrl(id, avatarUpdatedAt),
+    avatarUrl: toShownFaceUrl(id, avatarUpdatedAt, filledFace),
     isAvailable: !isBanActive({ banned, banExpires }),
   };
 }
@@ -270,8 +271,9 @@ export async function readInbox(database: Database, viewerId: string, { search, 
       peerId: user.id,
       peerName: user.name,
       peerTitle: memberProfile.title,
-      peerCompany: memberProfile.company,
+      peerCompany: shownCompanyColumn(user.id),
       peerAvatarUpdatedAt: memberAvatar.updatedAt,
+      peerFilledFace: filledFaceColumn(user.id),
       peerBanned: user.banned,
       peerBanExpires: user.banExpires,
       blockedId: memberBlock.blockedId,
@@ -316,6 +318,7 @@ export async function readInbox(database: Database, viewerId: string, { search, 
           title: row.peerTitle,
           company: row.peerCompany,
           avatarUpdatedAt: row.peerAvatarUpdatedAt,
+          filledFace: row.peerFilledFace,
           banned: row.peerBanned,
           banExpires: row.peerBanExpires,
         }),

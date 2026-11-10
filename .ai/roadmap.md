@@ -124,7 +124,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Source labels — filled-in label and date on the profile (PR #16)
 - **done** · Hide Village lines — `/api/profile/fill-in`, hides survive refreshes (PR #16)
 - **open** · Confirm Village facts on Today — "Check your card" lists this week's filled-in lines with a link to fix or hide them (fix-small); no one-tap Right / Hide / Fix: [profile-confirm-lines](features/profile-confirm-lines/SPEC.md)
-- **done** · Faces and company logos — face and logo fill-in (PR #16)
+- **done** · Faces and company logos — the fill-in saved them since PR #16 but only the directory and profile showed the face; now every member screen shows the face, a logo sits before the company (only while it is the company Village found), and outside people in search and paths have pictures: [faces-logos](features/faces-logos/SPEC.md)
 - **done** · Our jobs on My profile — `/jobs/yours` (PR #21)
 - **done** · Photo upload — `/api/profile/avatar` (Community)
 

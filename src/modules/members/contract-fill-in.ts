@@ -9,6 +9,7 @@ export const FILL_IN_FIELDS = {
   headline: "headline",
   face: "face",
   companyLogo: "company_logo",
+  companyDomain: "company_domain",
 } as const;
 
 export type FillInField = (typeof FILL_IN_FIELDS)[keyof typeof FILL_IN_FIELDS];
@@ -22,6 +23,7 @@ export const FILL_IN_FIELD_LABELS: Record<FillInField, string> = {
   [FILL_IN_FIELDS.headline]: "Headline",
   [FILL_IN_FIELDS.face]: "Photo",
   [FILL_IN_FIELDS.companyLogo]: "Company logo",
+  [FILL_IN_FIELDS.companyDomain]: "Company website",
 };
 
 // The legal basis an admin records before anyone is looked up. No basis means fill-in is off.

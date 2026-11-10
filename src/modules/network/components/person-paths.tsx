@@ -26,21 +26,21 @@ const PATH_NODE_SIZE_PX = 44;
 
 type PathNode = { id: string; name: string; label: string; imageUrl?: string | null };
 
-function readPathNodes(connector: Connector, viewer: ConstellationPerson, targetName: string, targetSlug: string): PathNode[] {
+function readPathNodes(connector: Connector, viewer: ConstellationPerson, target: { name: string; slug: string; imageUrl: string | null }): PathNode[] {
   const connectorNode = {
     id: connector.member?.id ?? connector.linkedinSlug ?? connector.name,
     name: connector.name,
     label: readFirstName(connector.name),
-    imageUrl: connector.member?.avatarUrl,
+    imageUrl: connector.imageUrl,
   };
   const throughNodes = connector.throughName
-    ? [{ id: connector.throughName, name: connector.throughName, label: readFirstName(connector.throughName) }]
+    ? [{ id: connector.throughName, name: connector.throughName, label: readFirstName(connector.throughName), imageUrl: connector.throughImageUrl }]
     : [];
   return [
     { id: viewer.id, name: viewer.name, label: YOU_LABEL, imageUrl: viewer.imageUrl },
     connectorNode,
     ...throughNodes,
-    { id: targetSlug, name: targetName, label: readFirstName(targetName) },
+    { id: target.slug, name: target.name, label: readFirstName(target.name), imageUrl: target.imageUrl },
   ];
 }
 
@@ -128,9 +128,9 @@ function NoWayIn({ targetName }: { targetName: string }) {
   );
 }
 
-type PersonPathsProps = { linkedinSlug: string; personName: string; viewer: ConstellationPerson };
+type PersonPathsProps = { linkedinSlug: string; personName: string; personImageUrl?: string | null; viewer: ConstellationPerson };
 
-export function PersonPaths({ linkedinSlug, personName, viewer }: PersonPathsProps) {
+export function PersonPaths({ linkedinSlug, personName, personImageUrl = null, viewer }: PersonPathsProps) {
   const { data: result } = useSuspenseQuery(networkPathsQuery(linkedinSlug));
   const targetName = result.targetName ?? personName;
   const [topConnector] = result.connectors;
@@ -142,7 +142,9 @@ export function PersonPaths({ linkedinSlug, personName, viewer }: PersonPathsPro
       {result.isViewer ? <p className="type-note rounded-field bg-accent p-4 text-accent-foreground">That&apos;s you. No intro needed.</p> : null}
       {result.targetMemberId ? <FellowMemberNote memberId={result.targetMemberId} targetName={targetName} /> : null}
       {result.isDirectConnection ? <DirectConnectionNote targetName={targetName} targetSlug={linkedinSlug} /> : null}
-      {topConnector ? <PathDiagram nodes={readPathNodes(topConnector, viewer, targetName, linkedinSlug)} /> : null}
+      {topConnector ? (
+        <PathDiagram nodes={readPathNodes(topConnector, viewer, { name: targetName, slug: linkedinSlug, imageUrl: result.targetImageUrl ?? personImageUrl })} />
+      ) : null}
       {result.connectors.length > 0 ? (
         <ul aria-label={`People who can intro you to ${targetName}`} className="grid gap-3">
           {result.connectors.map((connector, position) => (

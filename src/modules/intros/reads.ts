@@ -8,7 +8,7 @@ import type { Database } from "../../platform/database/client.ts";
 import { introRequest } from "./schema.ts";
 import { memberAvatar, memberProfile, memberNetwork, memberBlock } from "../members/schema.ts";
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
-import { toAvatarUrl } from "../members/service-profile.ts";
+import { filledFaceColumn, shownCompanyColumn, toShownFaceUrl } from "../members/reads-pictures.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import {
   INTRO_LIFETIME_DAYS,
@@ -108,12 +108,14 @@ function selectIntros(database: Database) {
       requesterBanned: requesterUser.banned,
       requesterBanExpires: requesterUser.banExpires,
       requesterTitle: requesterProfile.title,
-      requesterCompany: requesterProfile.company,
+      requesterCompany: shownCompanyColumn(introRequest.requesterId),
       requesterSlug: requesterNetwork.linkedinSlug,
       requesterAvatarUpdatedAt: requesterAvatar.updatedAt,
+      requesterFilledFace: filledFaceColumn(introRequest.requesterId),
       introducerBanned: introducerUser.banned,
       introducerBanExpires: introducerUser.banExpires,
       introducerAvatarUpdatedAt: introducerAvatar.updatedAt,
+      introducerFilledFace: filledFaceColumn(introRequest.introducerId),
     })
     .from(introRequest)
     .innerJoin(requesterUser, eq(requesterUser.id, introRequest.requesterId))
@@ -204,7 +206,7 @@ function toIntro(row: IntroRow, viewerId: string, now = new Date()): Intro {
       name: removeBidiControls(row.requesterName),
       headline: removeBidiControls([row.requesterTitle, row.requesterCompany].filter(Boolean).join(", ")) || null,
       linkedinSlug: row.requesterSlug,
-      avatarUrl: toAvatarUrl(request.requesterId, row.requesterAvatarUpdatedAt),
+      avatarUrl: toShownFaceUrl(request.requesterId, row.requesterAvatarUpdatedAt, row.requesterFilledFace),
       isAvailable: !isBanActive({ banned: row.requesterBanned, banExpires: row.requesterBanExpires }),
     },
     introducer: {
@@ -212,7 +214,7 @@ function toIntro(row: IntroRow, viewerId: string, now = new Date()): Intro {
       name: request.introducerName,
       headline: request.introducerHeadline,
       linkedinSlug: request.introducerLinkedinSlug,
-      avatarUrl: toAvatarUrl(request.introducerId, row.introducerAvatarUpdatedAt),
+      avatarUrl: toShownFaceUrl(request.introducerId, row.introducerAvatarUpdatedAt, row.introducerFilledFace),
       isAvailable: !isBanActive({ banned: row.introducerBanned, banExpires: row.introducerBanExpires }),
     },
   });

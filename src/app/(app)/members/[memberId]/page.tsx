@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { CompanyLogo } from "@/components/company-name";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -32,6 +33,7 @@ import { modulePage } from "@/platform/modules/module-page";
 export const metadata: Metadata = { title: PAGE_TITLES.profile };
 
 const PROFILE_AVATAR_SIZE_PX = 112;
+const PROFILE_LOGO_SIZE_PX = 20;
 const EXTERNAL_LINK_RELATIONSHIP = "noopener noreferrer nofollow";
 
 function ExternalButton({ href, icon, children }: { href: string; icon: ReactNode; children: ReactNode }) {
@@ -68,7 +70,7 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
   if (!isOwnProfile && !isAdminMember(viewer) && (await isHiddenMember(database, profile.id))) notFound();
   const isBlockedByViewer = !isOwnProfile && (await isBlockedBy(database, viewer.id, profile.id));
   const { shown } = profile;
-  const roleLine = [shown.title, shown.company].filter(Boolean).join(", ");
+  const roleLine = shown.title ? `${shown.title}${shown.company ? ", " : ""}` : "";
   const facts = [profile.stage, profile.sector, profile.cohort].filter(Boolean).join(" · ");
 
   return (
@@ -86,7 +88,17 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
           <Avatar stableId={profile.id} name={profile.name} imageUrl={shown.imageUrl} sizePx={PROFILE_AVATAR_SIZE_PX} />
           <div className="min-w-0 flex-[1_1_240px]">
             <h1 className="type-h1">{profile.name}</h1>
-            {roleLine ? <p className="type-lead mt-1 text-foreground-soft">{roleLine}</p> : null}
+            {roleLine || shown.company ? (
+              <p className="type-lead mt-1 text-foreground-soft">
+                {roleLine}
+                {shown.company ? (
+                  <span className="inline-flex items-center gap-1.5 align-baseline">
+                    <CompanyLogo url={shown.companyLogoUrl} sizePx={PROFILE_LOGO_SIZE_PX} className="self-center" />
+                    {shown.company}
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
             {shown.location ? (
               <p className="type-small mt-1 flex items-center gap-1.5 text-foreground-soft">
                 <MapPin aria-hidden="true" className="size-icon-small shrink-0" />

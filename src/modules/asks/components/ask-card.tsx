@@ -8,6 +8,7 @@ import { ConfirmAction } from "@/components/confirm-action";
 import { ContentMenu, type ContentAction } from "@/components/content-menu";
 import { FormError } from "@/components/form-error";
 import { Alert } from "@/components/ui/alert";
+import { MemberLine } from "./member-line";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/form-field";
@@ -327,7 +328,12 @@ export function AskCard({ ask, canIntro, isViewerAdmin, onSeeYourAsks }: BoardAs
             {ask.author.name}
           </Link>
           <p className="type-small wrap-anywhere text-muted-foreground">
-            {memberLine ? `${memberLine} · ` : ""}
+            {memberLine ? (
+              <>
+                <MemberLine member={ask.author} />
+                {" · "}
+              </>
+            ) : null}
             <time dateTime={ask.listedAt} suppressHydrationWarning>
               {isUpdate ? "Shared" : "Asked"} {describeAge(ask.listedAt)}
             </time>

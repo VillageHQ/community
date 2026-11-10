@@ -139,6 +139,7 @@ const askMemberSchema = z.object({
   title: z.string().nullable(),
   company: z.string().nullable(),
   avatarUrl: z.string().nullable(),
+  companyLogoUrl: z.string().nullable(),
 });
 
 const myOfferSchema = z.object({ note: z.string(), createdAt: timestampSchema });

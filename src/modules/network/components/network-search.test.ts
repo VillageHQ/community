@@ -25,7 +25,7 @@ const WELCOME = {
   notNowHref: ROUTES.feed,
 };
 const SEARCH_RESULT = {
-  people: [{ fullName: "Clara Bergström", headline: "VP", linkedinSlug: "clara", isMember: false, memberId: null }],
+  people: [{ fullName: "Clara Bergström", headline: "VP", linkedinSlug: "clara", isMember: false, memberId: null, imageUrl: null }],
   discardedOffNetworkResults: false,
   dailyLookupsLeft: 40,
 };

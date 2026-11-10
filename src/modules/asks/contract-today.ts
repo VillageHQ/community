@@ -12,7 +12,7 @@ export type SkipAskBody = z.infer<typeof skipAskBodySchema>;
 export const helpableAskSchema = z.object({
   id: z.uuid(),
   title: z.string(),
-  author: z.object({ id: z.string(), name: z.string() }),
+  author: z.object({ id: z.string(), name: z.string(), avatarUrl: z.string().nullable() }),
   listedAt: z.string(),
   matchedWords: z.array(z.string()),
   why: z.string().nullable(),

@@ -7,7 +7,7 @@ import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
 import { memberAvatar, memberBlock, memberProfile, memberTag } from "../members/schema.ts";
-import { toAvatarUrl } from "../members/service-profile.ts";
+import { companyLogoColumn, filledFaceColumn, shownCompanyColumn, toShownFaceUrl } from "../members/reads-pictures.ts";
 import { readSettings } from "../../platform/settings/store.ts";
 import {
   ASK_ALLOWANCE,
@@ -51,10 +51,18 @@ export function isOpenAsk(now: Date) {
   return and(isNull(ask.closedAt), gt(ask.listedAt, readOldestOpenListing(now)));
 }
 
-type MemberRow = { id: string; name: string; title: string | null; company: string | null; avatarUpdatedAt: Date | null };
+type MemberRow = {
+  id: string;
+  name: string;
+  title: string | null;
+  company: string | null;
+  avatarUpdatedAt: Date | null;
+  filledFace: string | null;
+  companyLogoUrl: string | null;
+};
 
-function toAskMember({ id, name, title, company, avatarUpdatedAt }: MemberRow) {
-  return { id, name, title, company, avatarUrl: toAvatarUrl(id, avatarUpdatedAt) };
+function toAskMember({ id, name, title, company, avatarUpdatedAt, filledFace, companyLogoUrl }: MemberRow) {
+  return { id, name, title, company, avatarUrl: toShownFaceUrl(id, avatarUpdatedAt, filledFace), companyLogoUrl };
 }
 
 function selectBoardAsks(database: Database) {
@@ -71,8 +79,10 @@ function selectBoardAsks(database: Database) {
       authorId: user.id,
       authorName: user.name,
       authorTitle: memberProfile.title,
-      authorCompany: memberProfile.company,
+      authorCompany: shownCompanyColumn(ask.authorId),
       authorAvatarUpdatedAt: memberAvatar.updatedAt,
+      authorFilledFace: filledFaceColumn(ask.authorId),
+      authorCompanyLogoUrl: companyLogoColumn(ask.authorId),
     })
     .from(ask)
     .innerJoin(user, eq(user.id, ask.authorId))
@@ -123,8 +133,10 @@ async function readAnswers(database: Database, askIds: string[], viewerId: strin
       authorId: answerAuthor.id,
       authorName: answerAuthor.name,
       authorTitle: memberProfile.title,
-      authorCompany: memberProfile.company,
+      authorCompany: shownCompanyColumn(askAnswer.authorId),
       authorAvatarUpdatedAt: memberAvatar.updatedAt,
+      authorFilledFace: filledFaceColumn(askAnswer.authorId),
+      authorCompanyLogoUrl: companyLogoColumn(askAnswer.authorId),
     })
     .from(askAnswer)
     .innerJoin(answerAuthor, eq(answerAuthor.id, askAnswer.authorId))
@@ -136,7 +148,7 @@ async function readAnswers(database: Database, askIds: string[], viewerId: strin
     const list = answers.get(row.askId) ?? [];
     list.push({
       id: row.id,
-      author: toAskMember({ id: row.authorId, name: row.authorName, title: row.authorTitle, company: row.authorCompany, avatarUpdatedAt: row.authorAvatarUpdatedAt }),
+      author: toAskMember({ id: row.authorId, name: row.authorName, title: row.authorTitle, company: row.authorCompany, avatarUpdatedAt: row.authorAvatarUpdatedAt, filledFace: row.authorFilledFace, companyLogoUrl: row.authorCompanyLogoUrl }),
       body: row.body,
       createdAt: row.createdAt.toISOString(),
       isMine: row.authorId === viewerId,
@@ -181,7 +193,7 @@ export async function readAskBoard(database: Database, { viewerId, category, kin
       category: row.category,
       kind: row.kind,
       listedAt: row.listedAt.toISOString(),
-      author: toAskMember({ id: row.authorId, name: row.authorName, title: row.authorTitle, company: row.authorCompany, avatarUpdatedAt: row.authorAvatarUpdatedAt }),
+      author: toAskMember({ id: row.authorId, name: row.authorName, title: row.authorTitle, company: row.authorCompany, avatarUpdatedAt: row.authorAvatarUpdatedAt, filledFace: row.authorFilledFace, companyLogoUrl: row.authorCompanyLogoUrl }),
       target: toTarget(row.targetSlug, row.targetName),
       offerCount: offerCounts.get(row.id) ?? 0,
       isMine: row.authorId === viewerId,
@@ -206,8 +218,10 @@ async function readOffersOnOwnAsks(database: Database, askIds: string[], viewerI
       helperId: helper.id,
       helperName: helper.name,
       helperTitle: memberProfile.title,
-      helperCompany: memberProfile.company,
+      helperCompany: shownCompanyColumn(askOffer.helperId),
       helperAvatarUpdatedAt: memberAvatar.updatedAt,
+      helperFilledFace: filledFaceColumn(askOffer.helperId),
+      helperCompanyLogoUrl: companyLogoColumn(askOffer.helperId),
     })
     .from(askOffer)
     .innerJoin(helper, eq(helper.id, askOffer.helperId))
@@ -230,8 +244,10 @@ async function readHelpersOnOwnAsks(database: Database, askIds: string[], viewer
       helperId: helper.id,
       helperName: helper.name,
       helperTitle: memberProfile.title,
-      helperCompany: memberProfile.company,
+      helperCompany: shownCompanyColumn(askHelper.helperId),
       helperAvatarUpdatedAt: memberAvatar.updatedAt,
+      helperFilledFace: filledFaceColumn(askHelper.helperId),
+      helperCompanyLogoUrl: companyLogoColumn(askHelper.helperId),
     })
     .from(askHelper)
     .innerJoin(helper, eq(helper.id, askHelper.helperId))
@@ -243,7 +259,7 @@ async function readHelpersOnOwnAsks(database: Database, askIds: string[], viewer
     const list = helpers.get(row.askId) ?? [];
     const isPath = row.reason === ASK_HELPER_REASONS.path;
     list.push({
-      helper: toAskMember({ id: row.helperId, name: row.helperName, title: row.helperTitle, company: row.helperCompany, avatarUpdatedAt: row.helperAvatarUpdatedAt }),
+      helper: toAskMember({ id: row.helperId, name: row.helperName, title: row.helperTitle, company: row.helperCompany, avatarUpdatedAt: row.helperAvatarUpdatedAt, filledFace: row.helperFilledFace, companyLogoUrl: row.helperCompanyLogoUrl }),
       reason: isPath ? ASK_HELPER_REASONS.path : ASK_HELPER_REASONS.words,
       why: row.why,
       canAskForIntro: isPath && row.connectorSlug !== null,
@@ -258,7 +274,7 @@ type OfferRow = Awaited<ReturnType<typeof readOffersOnOwnAsks>>[number];
 function toOffer(row: OfferRow) {
   return {
     id: row.id,
-    helper: toAskMember({ id: row.helperId, name: row.helperName, title: row.helperTitle, company: row.helperCompany, avatarUpdatedAt: row.helperAvatarUpdatedAt }),
+    helper: toAskMember({ id: row.helperId, name: row.helperName, title: row.helperTitle, company: row.helperCompany, avatarUpdatedAt: row.helperAvatarUpdatedAt, filledFace: row.helperFilledFace, companyLogoUrl: row.helperCompanyLogoUrl }),
     note: row.note,
     createdAt: row.createdAt.toISOString(),
     isNew: row.seenAt === null,
