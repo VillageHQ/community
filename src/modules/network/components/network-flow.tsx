@@ -34,7 +34,7 @@ function renderNotConfigured({ isAdmin }: NetworkStatus) {
       icon={KeyRound}
       title="Connect Village"
       description="Paste your Village keys to turn on network search."
-      href={ROUTES.admin}
+      href={ROUTES.adminSetup}
       action="Open admin setup"
     />
   );
@@ -84,7 +84,7 @@ const STAGE_VIEWS: Record<NetworkStatus["stage"], (status: NetworkStatus, welcom
       icon={UsersRound}
       title="Create the community group"
       description="Your network is synced. Create the group so members can join."
-      href={ROUTES.admin}
+      href={ROUTES.adminSetup}
       action="Open admin setup"
     />
   ),

@@ -15,7 +15,7 @@ type AdminTab = { label: string; href: string; readBadge: (facts: AdminTabFacts)
 
 const SETUP_TAB: AdminTab = {
   label: "Setup",
-  href: ROUTES.admin,
+  href: ROUTES.adminSetup,
   readBadge: ({ setupStepsLeft }) => setupStepsLeft,
   badgeDescription: (count) => `${count} setup ${count === 1 ? "step" : "steps"} left`,
 };

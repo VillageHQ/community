@@ -138,7 +138,7 @@ function describeAdminSetup({ doneCount, totalCount, currentStepId }: SetupProgr
     kicker: "Admin setup",
     title: `Let's get ${communityName} ready`,
     description: `${doneCount} of ${totalCount} done. Next: ${nextStepName}.`,
-    action: { label: "Continue setup", href: ROUTES.admin },
+    action: { label: "Continue setup", href: ROUTES.adminSetup },
     progress: { doneCount, totalCount, label: `${doneCount} of ${totalCount} setup steps done` },
     isUrgent: true,
   };

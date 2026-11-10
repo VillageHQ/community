@@ -22,6 +22,7 @@ export const PAGE_TITLES = {
   confirmEmail: "Confirm your email",
   unsubscribe: "Email settings",
   weeklyAnswer: "Your weekly email",
+  adminSetup: "Admin setup",
   adminMembers: "Members admin",
   adminReports: "Reports",
   adminAuditLog: "Audit log",

@@ -26,6 +26,7 @@ import {
 } from "@/modules/members/queries-invites";
 import { IssuedLink } from "@/modules/members/components/shared/issued-link";
 import { ReclaimAction } from "./reclaim-action";
+import { INVITE_LIST_ID } from "@/modules/admin/contract";
 
 const INVITE_AVATAR_SIZE_PX = 44;
 const INVITES_TITLE_ID = "invites-title";
@@ -230,7 +231,7 @@ export function InviteList({ isEmailConfigured, issued, onIssued }: InviteListPr
   const deferredFilter = useDeferredValue(filter);
 
   return (
-    <section aria-labelledby={INVITES_TITLE_ID} className="grid gap-3.5">
+    <section id={INVITE_LIST_ID} aria-labelledby={INVITES_TITLE_ID} className="grid scroll-mt-6 gap-3.5">
       <h2 id={INVITES_TITLE_ID} tabIndex={-1} className="type-h2 outline-none">
         Invites
       </h2>

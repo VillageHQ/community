@@ -102,3 +102,14 @@ export async function readPartnerReportSettings(database: Database) {
 export function joinRecipients(recipients: readonly string[]) {
   return recipients.join(RECIPIENT_SEPARATOR);
 }
+
+// The admin home's top line: this quarter's intros, from the report's own read and period, so the two can't differ.
+// Null while intros are switched off.
+export async function readQuarterIntroLine(database: Database, now = new Date()) {
+  const { isIntrosOn } = await readReportOptions(database);
+  if (!isIntrosOn) return null;
+  const period = readReportPeriods(now)[REPORT_PERIOD_KEYS.thisQuarter];
+  const { periods } = await readIntroReports(database, { [REPORT_PERIOD_KEYS.thisQuarter]: period });
+  const { asked, introduced, helped } = periods[REPORT_PERIOD_KEYS.thisQuarter];
+  return { periodLabel: period.label, asked, introduced, helped };
+}

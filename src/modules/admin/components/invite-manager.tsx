@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import type { IssuedInvite } from "@/modules/members/contract-invites";
+import { INVITE_SECTION_ID } from "@/modules/admin/contract";
 
 import { BulkInviteForm } from "@/modules/members/components/shared/bulk-invite-form";
 import { InviteForm } from "@/modules/members/components/shared/invite-form";
@@ -14,7 +15,6 @@ import { WaitingMembers } from "./waiting-members";
 
 const ISSUED_FROM = { form: "form", list: "list" } as const;
 
-export const INVITE_SECTION_ID = "invite-someone";
 
 type IssuedFrom = { from: (typeof ISSUED_FROM)[keyof typeof ISSUED_FROM]; invite: IssuedInvite };
 

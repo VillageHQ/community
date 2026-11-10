@@ -26,6 +26,7 @@ export const ROUTES = {
   yourData: "/members/data",
   network: "/network",
   admin: "/admin",
+  adminSetup: "/admin/setup",
   adminMembers: "/admin/members",
   adminReports: "/admin/reports",
   adminAuditLog: "/admin/audit-log",
