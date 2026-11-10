@@ -1,6 +1,6 @@
 ---
 id: slack-ask-slow-reply
-status: idea
+status: building
 waits-on: []
 size:
 touches: ["src/shell/slack-ask.ts"]

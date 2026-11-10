@@ -7,6 +7,8 @@ The app's code. The full map, the import rules and the file roles in a module ar
 read it before adding a file.
 
 - `app/`: pages and route handlers. They parse, call one thing, and respond.
+- `proxy.ts`: runs before every page; a page of a switched-off module answers 404 here, because the shared
+  loading screen has already sent 200 by the time the page's own guard runs.
 - `shell/`: code that reads several modules for one screen (navigation, Today, onboarding, the weekly email, the
   setup checklist, scheduled jobs).
 - `modules/`: one folder per feature, each with its own `AGENTS.md`. Core: `members`, `admin`. Switches: `feed`,
