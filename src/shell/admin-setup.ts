@@ -11,6 +11,10 @@ import { membersManifest } from "../modules/members/manifest.ts";
 import { networkManifest } from "../modules/network/manifest.ts";
 import type { ModuleManifest } from "../platform/modules/manifest.ts";
 import { readEnabledIds } from "./enabled-modules.ts";
+import { asksManifest } from "../modules/asks/manifest.ts";
+import { chatManifest } from "../modules/chat/manifest.ts";
+import { CHAT_KINDS } from "../modules/chat/contract.ts";
+import { readChatConnection } from "../modules/chat/service.ts";
 
 export { SETUP_STEPS, type SetupStepId };
 
@@ -94,4 +98,18 @@ export async function readSetupProgress(database: Database) {
     },
     SETUP_STEP_ORDER.filter((stepId) => enabledIds.has(SETUP_STEP_OWNERS[stepId].id)),
   );
+}
+
+// Steps an admin may take, shown after the others. They never count toward "setup complete".
+export const OPTIONAL_SETUP_STEPS = { chat: "chat" } as const;
+
+export type OptionalSetupStep = { id: (typeof OPTIONAL_SETUP_STEPS)[keyof typeof OPTIONAL_SETUP_STEPS]; isDone: boolean; isModuleOn: boolean };
+
+// "Post new asks to your Slack": offered while Asks is on. Done once Slack posts to a channel.
+export async function readOptionalSetupSteps(database: Database): Promise<OptionalSetupStep[]> {
+  const enabledIds = await readEnabledIds(database);
+  if (!enabledIds.has(asksManifest.id)) return [];
+  const isModuleOn = enabledIds.has(chatManifest.id);
+  const slack = isModuleOn ? await readChatConnection(database, CHAT_KINDS.slack) : null;
+  return [{ id: OPTIONAL_SETUP_STEPS.chat, isDone: Boolean(slack?.channelId), isModuleOn }];
 }
