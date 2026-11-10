@@ -90,8 +90,14 @@ export async function readActiveMemberCount(database: Database) {
   return row?.memberCount ?? 0;
 }
 
+// Who the directory lists: active members who didn't choose "hide me from the directory". Posts outside the app
+// (Slack, Discord) name only members it lists; others are "a member".
+export function isListedInDirectory(now = new Date()) {
+  return and(isActiveMember(now), isListedMember());
+}
+
 export async function readDirectory(database: Database, { search, tag, page }: DirectoryFilters): Promise<Directory> {
-  const conditions = and(isActiveMember(), isListedMember(), matchesSearch(database, search), matchesTag(database, tag));
+  const conditions = and(isListedInDirectory(), matchesSearch(database, search), matchesTag(database, tag));
   const [counted] = await database
     .select({ matchCount: count() })
     .from(user)

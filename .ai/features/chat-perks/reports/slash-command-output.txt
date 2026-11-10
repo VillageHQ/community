@@ -1,0 +1,5 @@
+Signed /ask commands sent over real HTTP to the running app (fake Slack holds the users' emails):
+member:            200 {"response_type":"ephemeral","text":"Posted to Your community. <http://localhost:55521/asks|See the asks>"}
+unknown email:     200 {"response_type":"ephemeral","text":"Join Your community first, with the same email as your Slack account: <http://localhost:55521|sign in>, then try /ask again."}
+bad signature:     401 The signature is missing, wrong or too old.
+six minutes old:   401 The signature is missing, wrong or too old.

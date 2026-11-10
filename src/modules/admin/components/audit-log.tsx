@@ -83,6 +83,13 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.partnerReportMarkedShared]: () => "marked the partner report as shared",
   [AUDIT_ACTIONS.accountDeleted]: ({ detail }) => readAccountDeletedSentence(detail),
   [AUDIT_ACTIONS.introAsksAnswered]: ({ detail }) => (detail === "yes" ? "said they take intro asks" : "said they don't take intro asks"),
+  [AUDIT_ACTIONS.chatConnected]: ({ detail }) => `connected ${detail}`,
+  [AUDIT_ACTIONS.chatChannelChosen]: ({ detail }) => `chose where new asks are posted: ${detail}`,
+  [AUDIT_ACTIONS.chatPaused]: ({ detail }) => `paused posting to ${detail}`,
+  [AUDIT_ACTIONS.chatResumed]: ({ detail }) => `turned posting to ${detail} back on`,
+  [AUDIT_ACTIONS.chatDisconnected]: ({ detail }) => `disconnected ${detail} and deleted its token`,
+  [AUDIT_ACTIONS.perksSaved]: () => "saved the perks marketplace",
+  [AUDIT_ACTIONS.perksRemoved]: () => "removed the perks marketplace",
 };
 
 // The detail is "self" or "admin", then what Village said, for example "admin|cancelled". It never names anyone.

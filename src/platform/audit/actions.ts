@@ -43,6 +43,13 @@ export const AUDIT_ACTIONS = {
   partnerReportMarkedShared: "partner_report_marked_shared",
   accountDeleted: "account_deleted",
   introAsksAnswered: "intro_asks_answered",
+  chatConnected: "chat_connected",
+  chatChannelChosen: "chat_channel_chosen",
+  chatPaused: "chat_paused",
+  chatResumed: "chat_resumed",
+  chatDisconnected: "chat_disconnected",
+  perksSaved: "perks_saved",
+  perksRemoved: "perks_removed",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

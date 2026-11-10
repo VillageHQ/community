@@ -16,6 +16,7 @@ import { messageReport } from "../modules/messages/schema.ts";
 import { emailOutbox, emailSuppression } from "../platform/email/schema.ts";
 import { jobLease } from "../platform/jobs/schema.ts";
 import { villageMonthlyUsage } from "../platform/village/schema.ts";
+import { chatConnection } from "../modules/chat/schema.ts";
 
 export function readTestConnectionString() {
   const connectionString = process.env.TEST_DATABASE_URL;
@@ -32,6 +33,7 @@ export async function clearDatabase(database: Database) {
   await database.delete(emailOutbox);
   await database.delete(emailSuppression);
   await database.delete(jobLease);
+  await database.delete(chatConnection);
   await database.delete(villageMonthlyUsage);
   await database.delete(verification);
   await database.delete(moderationRecord);

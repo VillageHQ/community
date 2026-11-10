@@ -19,6 +19,10 @@ const SECRET_LINK_HEADERS = [
 
 const UPLOADED_IMAGE_CONTENT_SECURITY_POLICY = `default-src 'none'; sandbox; ${CONTENT_SECURITY_POLICY}`;
 
+// /perks frames BuiltFirst's marketplace, so that page (and the admin's preview) may frame BuiltFirst and nothing else.
+// Kept in step with PERKS_FRAME_SOURCES in src/modules/perks/contract.ts.
+const PERKS_CONTENT_SECURITY_POLICY = `frame-src https://builtfirst.com https://*.builtfirst.com; ${CONTENT_SECURITY_POLICY}`;
+
 const BUILD_OUTPUT = process.env.COMMUNITY_STANDALONE_BUILD === "true" ? "standalone" : undefined;
 
 export const nextConfig = {
@@ -35,6 +39,8 @@ export const nextConfig = {
       source: "/api/members/:memberId/avatar",
       headers: [{ key: "Content-Security-Policy", value: UPLOADED_IMAGE_CONTENT_SECURITY_POLICY }],
     },
+    { source: "/perks", headers: [{ key: "Content-Security-Policy", value: PERKS_CONTENT_SECURITY_POLICY }] },
+    { source: "/admin/perks", headers: [{ key: "Content-Security-Policy", value: PERKS_CONTENT_SECURITY_POLICY }] },
     { source: "/join/:token", headers: SECRET_LINK_HEADERS },
     { source: "/meet/:token", headers: SECRET_LINK_HEADERS },
     { source: "/confirm-email", headers: SECRET_LINK_HEADERS },
