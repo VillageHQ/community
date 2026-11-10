@@ -76,6 +76,15 @@ describe("security headers", () => {
     },
   );
 
+  it.each(["/perks", "/admin/perks"])("let %s frame BuiltFirst only, and keep the framing rules", async (path) => {
+    const rules = await nextConfig.headers();
+    const policy = rules.find(({ source }) => source === path)?.headers.find(({ key }) => key === "Content-Security-Policy")?.value;
+
+    expect(policy).toContain("frame-src https://builtfirst.com https://*.builtfirst.com;");
+    expect(policy).toContain("frame-ancestors 'none'");
+    expect((await readSecurityHeaders()).get("Content-Security-Policy")).not.toContain("builtfirst");
+  });
+
   it.each(["/join/:token", "/meet/:token", "/confirm-email", "/reset-password"])("keep tokens at %s out of referrers and search engines", async (path) => {
     const rules = await nextConfig.headers();
     const inviteRule = rules.find(({ source }) => source === path);

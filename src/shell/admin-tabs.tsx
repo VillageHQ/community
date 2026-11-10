@@ -8,6 +8,8 @@ import { CHIP_CLASSES } from "@/components/ui/chip";
 import type { AdminTabFacts } from "@/shell/admin-badges";
 import { JOB_BOARD_PAGES } from "@/modules/job-board/contract";
 import { ROUTES } from "@/platform/http/routes";
+import { CHAT_ADMIN_PAGE } from "@/modules/chat/contract";
+import { PERKS_ADMIN_PAGE } from "@/modules/perks/contract";
 
 type AdminTab = { label: string; href: string; readBadge: (facts: AdminTabFacts) => number; badgeDescription: (count: number) => string };
 
@@ -42,6 +44,13 @@ const ADMIN_TABS: AdminTab[] = [
   { label: "Jobs", href: JOB_BOARD_PAGES.admin, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Features", href: ROUTES.adminFeatures, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Weekly email", href: ROUTES.adminWeeklyEmail, readBadge: () => 0, badgeDescription: () => "" },
+  {
+    label: "Slack and Discord",
+    href: CHAT_ADMIN_PAGE,
+    readBadge: ({ chatBadge }) => chatBadge,
+    badgeDescription: () => "A connection needs a look",
+  },
+  { label: "Perks", href: PERKS_ADMIN_PAGE, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Settings", href: ROUTES.adminSettings, readBadge: () => 0, badgeDescription: () => "" },
 ];
 
