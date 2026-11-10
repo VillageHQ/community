@@ -15,7 +15,7 @@ No terminal, no code. It's open source under the AGPL-3.0 licence, and you run y
 
 > **Status:** No button below has been tried on a live platform yet. If a step doesn't match what you see, [tell us](https://github.com/VillageHQ/community/issues).
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity&project-name=community&repository-name=community&env=SETUP_TOKEN&envDescription=Choose%20a%20long%20random%20password%20of%20at%20least%2032%20characters.%20You%20will%20enter%20it%20once%20at%20%2Fsetup%20to%20create%20your%20admin%20account.&envLink=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity%23setup-token&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity&project-name=community&repository-name=community&env=SETUP_TOKEN%2CCRON_SECRET&envDescription=Choose%20two%20different%20long%20random%20passwords%20of%20at%20least%2032%20characters.%20SETUP_TOKEN%20you%20enter%20once%20at%20%2Fsetup%20to%20create%20your%20admin%20account.%20CRON_SECRET%20lets%20Vercel%20run%20the%20weekly%20email%20and%20other%20timed%20jobs.&envLink=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity%23setup-token&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D)
 
 [![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/VillageHQ/community/tree/main)
 
@@ -26,7 +26,7 @@ No terminal, no code. It's open source under the AGPL-3.0 licence, and you run y
 -->
 
 1. Click a button and follow your host's steps. It creates the app and its database for you.
-2. Choose your setup token when asked: a long password you enter once, in the next section. See [Setup token](#setup-token). On DigitalOcean, replace the `change-me` placeholder.
+2. Choose your setup token when asked: a long password you enter once, in the next section. See [Setup token](#setup-token). On DigitalOcean, replace the `change-me` placeholder. Vercel also asks for `CRON_SECRET`: a second long random password (32+ characters) that Vercel sends when it runs the timed jobs. You never type it again.
 3. Wait for the deploy to finish, then open your new site. Your host shows its address.
 
 ### On your own server
@@ -69,7 +69,7 @@ The person opens the link, chooses a name and password, and lands in a short fir
 
 **The weekly email:** Once a week, each member gets one email with what needs them: asks they could help with, intros waiting for their yes, and their own asks. A member with nothing to answer gets nothing. **Admin**, **Weekly email** sets the day, hour and time zone (Thursday 09:00 UTC by default), previews it with your own week or a made-up member, and sends you a test. It needs timed jobs (see `JOBS_SELF_TICK` and `JOBS_TICK_SECRET`). Each item has buttons that open a confirm page. To let members answer by replying with codes like `HELP 1` or `NO 2`, set `RESEND_REPLY_DOMAIN` to a domain Resend receives email on, and add `email.received` to the Resend webhook above. Members turn it off on their card or from the email.
 
-**Timed jobs:** Retries and expiring old intro asks run every minute. Your own server with `install.sh` does this by itself. On other hosts, have a scheduler call `POST /api/jobs/tick` every minute with `Authorization: Bearer <JOBS_TICK_SECRET>` (on Vercel, a Cron Job with `CRON_SECRET` set works), or set `JOBS_SELF_TICK=true` if the app runs as one long-lived server. Without either, emails still go out right away; only the retries wait for the next request that sends email.
+**Timed jobs:** The weekly email, reminders, email retries, expiring old intro asks and the nightly tasks run through the job runner. Every supported setup switches it on by default: your own server with `install.sh` and the DigitalOcean button set `JOBS_SELF_TICK=true`, so the app ticks itself every minute; the Vercel button adds a Cron Job (`vercel.json`) that calls `/api/jobs/tick` once a day with your `CRON_SECRET`, because Vercel's free plan allows no more. Once a day still sends the weekly email, at most a day after its set time. On a paid Vercel plan, change the schedule in `vercel.json` to `* * * * *` for every minute. On any other host, have a scheduler call `POST /api/jobs/tick` every minute with `Authorization: Bearer <JOBS_TICK_SECRET>`, or set `JOBS_SELF_TICK=true` if the app runs as one long-lived server. Without either, emails still go out right away, but the weekly email, reminders and nightly tasks never run.
 
 ## Running your community
 
@@ -240,7 +240,8 @@ With no trusted header, sign-in is limited per account instead: 5 wrong password
 | `CLIENT_IP_HEADER` | No | Header your proxy overwrites with the client IP. Overrides the platform default. |
 | `RESEND_WEBHOOK_SECRET` | No | Signing secret of your Resend webhook. Bounced and complaining addresses stop getting optional email. |
 | `JOBS_TICK_SECRET` | No | Lets a scheduler call `/api/jobs/tick`. 32+ random characters. `CRON_SECRET` works too. |
-| `JOBS_SELF_TICK` | No | `true` makes a long-running server run its own timed jobs every minute. The `install.sh` server sets it. |
+| `CRON_SECRET` | On Vercel | The Vercel button asks for it. Vercel sends it with each cron call. 32+ random characters. |
+| `JOBS_SELF_TICK` | No | `true` makes a long-running server run its own timed jobs every minute. The `install.sh` server and the DigitalOcean template set it. |
 | `DATABASE_CA_CERT` | No | PEM CA used to verify database TLS. Escaped `\n` is accepted. |
 | `DATABASE_TLS_ALLOW_UNVERIFIED` | No | `true` encrypts without verifying when no CA is available. No template sets it. |
 | `MIGRATE_ON_PREVIEW` | No | `true` runs migrations on Vercel previews. |
@@ -253,6 +254,7 @@ It doesn't exist yet. Build the template by hand, then swap the placeholder in [
 
 - `SETUP_TOKEN`: `${{secret(64)}}`
 - `DATABASE_URL`: `${{Postgres.DATABASE_URL}}`
+- `JOBS_SELF_TICK`: `true` (the service runs as one long-lived server, so it ticks its own timed jobs)
 - Healthcheck path: `/api/health`
 - Networking: generate a public domain
 
@@ -261,6 +263,7 @@ It doesn't exist yet. Build the template by hand, then swap the placeholder in [
 **Vercel**
 
 - The button clones a public repo.
+- **Timed jobs run once a day.** `vercel.json` has one Cron Job at 09:00 UTC, the most Vercel's free plan allows (a more frequent schedule fails the deploy there). Without `CRON_SECRET`, Vercel's call has no secret and the app refuses it, so the jobs never run: add it under **Settings**, **Environment Variables** and redeploy.
 - The button provisions Neon only. We have not seen it work.
 - Next.js documents `register` as running once per server instance, and Vercel documents `instrumentation.ts` for tracing, but neither says exactly when it runs on Vercel's functions. Check the first deploy's logs for `Migrations applied.`.
 - A frozen function can't run background retries, so a failed migration retries on the next cold start.
@@ -269,6 +272,7 @@ It doesn't exist yet. Build the template by hand, then swap the placeholder in [
 
 **DigitalOcean**
 
+- **Timed jobs run every minute.** The template sets `JOBS_SELF_TICK=true` and `PORT=8080`, the port the app listens on and the self-tick calls.
 - The button needs a public repo, and supports one service plus a dev database. It prompts for `SETUP_TOKEN` because the template lists a `change-me` placeholder, which the app refuses as too weak.
 - **No `/api/health` check, on purpose.** DigitalOcean [grants `public` rights during deployment](https://docs.digitalocean.com/support/how-do-i-fix-a-permission-denied-for-schema-public-error-in-my-dev-database/), and a failed deployment never gets them. A health check that requires migrations could block that grant, so the template uses the default TCP check. The first deploy may log `permission denied` and recover by itself. Whether dev databases allow migrations at all is unverified.
 - **Database TLS fails closed.** The template binds `DATABASE_CA_CERT` to `${db.CA_CERT}`, which DigitalOcean documents only for managed databases. If it doesn't resolve on a dev database, the app refuses the self-signed certificate, keeps logging the cause, and `/api/health` stays at 503. No template disables verification. Setting `DATABASE_TLS_ALLOW_UNVERIFIED=true` yourself would connect without verifying the server, scoped to this app's database connections.
