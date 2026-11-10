@@ -166,7 +166,9 @@ export async function sendQueuedEmailNow(database: Database, environment: Enviro
   try {
     const { sent } = await sendClaimed(database, environment, id);
     if (sent > 0) return true;
-    const [row] = await database.select({ status: emailOutbox.status }).from(emailOutbox).where(eq(emailOutbox.id, id));
+    const [row] = await database.select({ status: emailOutbox.status, lastError: emailOutbox.lastError }).from(emailOutbox).where(eq(emailOutbox.id, id));
+    // In the demo an email kept in the sending log counts as handled, so screens don't say it's retrying.
+    if (isDemoMode(environment) && row?.lastError === DEMO_EMAIL_NOTE) return true;
     return row?.status === OUTBOX_STATUSES.sent;
   } catch (error) {
     logError("email-outbox", error);

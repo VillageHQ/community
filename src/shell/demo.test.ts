@@ -10,7 +10,7 @@ import { DEMO_REFUSAL_MESSAGE } from "@/platform/demo/guard";
 import { DEMO_ACCOUNTS, DEMO_EMAIL_NOTE } from "@/platform/demo/mode";
 import { createDemoFetch, DEMO_OUTSIDE_CALL_MESSAGE } from "@/platform/demo/outbound";
 import { DEMO_PEOPLE } from "@/platform/demo/people";
-import { sendDueEmails } from "@/platform/email/outbox-sender";
+import { sendDueEmails, sendQueuedEmailNow } from "@/platform/email/outbox-sender";
 import { queueEmail } from "@/platform/email/outbox";
 import { emailOutbox } from "@/platform/email/schema";
 import { EMAIL_KINDS } from "@/platform/email/kinds";
@@ -156,7 +156,11 @@ describe("demo mode", () => {
       await sendDueEmails(database, DEMO_ENVIRONMENT);
 
       const [logged] = await database.select({ status: emailOutbox.status, lastError: emailOutbox.lastError }).from(emailOutbox);
+      await database.delete(emailOutbox);
       expect(logged).toEqual({ status: "skipped", lastError: DEMO_EMAIL_NOTE });
+      // Sent at once (an invite, a test email): handled, so no screen says it's retrying.
+      const queuedId = await queueEmail(database, DEMO_ENVIRONMENT, { kind: EMAIL_KINDS.invite, to: "ruby.haas@example.com", memberId: null, subject: "Join", html: "<p>Join</p>", text: "Join" });
+      expect(await sendQueuedEmailNow(database, DEMO_ENVIRONMENT, queuedId)).toBe(true);
       expect(fetchSpy).not.toHaveBeenCalled();
       fetchSpy.mockRestore();
     });
