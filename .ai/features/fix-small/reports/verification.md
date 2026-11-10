@@ -1,6 +1,6 @@
 # Verification: fix-small (independent)
 
-Branch `absi-agent/fix-small`, run on 2026-11-10 against `next dev` on port 55643 using the demo database `app` (made-up data only). Screenshots are in `reports/verify/`.
+Run on 2026-11-10 against `next dev` on port 55643 using the demo database `app` (made-up data only). Screenshots are in `reports/verify/`.
 
 | # | Item | Result | Evidence |
 |---|------|--------|----------|
