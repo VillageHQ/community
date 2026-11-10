@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, ilike, isNull, like, ne, or, sql } from "drizzle-orm";
+import { and, eq, isNull, like, ne, or, sql } from "drizzle-orm";
 
 import { contentReport } from "@/modules/admin/schema";
 import { REPORT_RESOLUTIONS } from "@/modules/admin/contract";
@@ -72,7 +72,7 @@ async function deleteOutboxCopies(transaction: Transaction, { memberId, email }:
   const naming = namePattern ? [matchesWord(emailOutbox.subject, namePattern), matchesWord(emailOutbox.text, namePattern), matchesWord(emailOutbox.html, namePattern)] : [];
   await transaction
     .delete(emailOutbox)
-    .where(or(eq(emailOutbox.memberId, memberId), ilike(emailOutbox.toEmail, email), matchesWord(emailOutbox.text, emailPattern), matchesWord(emailOutbox.html, emailPattern), ...naming));
+    .where(or(eq(emailOutbox.memberId, memberId), eq(sql`lower(${emailOutbox.toEmail})`, email), matchesWord(emailOutbox.text, emailPattern), matchesWord(emailOutbox.html, emailPattern), ...naming));
 }
 
 // Audit and moderation copies keep what happened and when, never who it was or what they wrote.
