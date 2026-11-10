@@ -5,6 +5,7 @@ import { and, asc, eq, or } from "drizzle-orm";
 import { ask, askAnswer, askOffer } from "@/modules/asks/schema";
 import { comment, post, reaction } from "@/modules/feed/schema";
 import { introRequest } from "@/modules/intros/schema";
+import { readRequesterState } from "@/modules/intros/contract";
 import { memberAvatar, memberBlock, memberFillIn, memberLookup, memberNetwork, memberProfile, memberTag } from "@/modules/members/schema";
 import { readFillInSettings } from "@/modules/members/service-fill-in";
 import { readPrivacy } from "@/modules/members/service-privacy";
@@ -50,7 +51,8 @@ async function readIntros(database: Database, memberId: string) {
     .orderBy(asc(introRequest.createdAt));
   return rows.map(({ requesterId, introducerId, requesterName, note, reason, declineReason, outcome, outcomeResults, ...intro }) =>
     requesterId === memberId
-      ? { ...intro, yourRole: "asked", yourNote: note, reason, theirDeclineNote: declineReason, outcome, outcomeResults, introducerId }
+      ? // As the app shows it to whoever asked: no connector's private decline note, and no step the app keeps from them.
+        { ...intro, state: readRequesterState(intro.state), yourRole: "asked", yourNote: note, reason, outcome, outcomeResults, introducerId }
       : { ...intro, yourRole: "connector", askedBy: requesterName, yourDeclineNote: declineReason },
   );
 }

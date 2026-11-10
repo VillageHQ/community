@@ -5,6 +5,16 @@ import { and, eq, isNull, or, sql } from "drizzle-orm";
 import type { Transaction } from "../../platform/database/client.ts";
 import { conversation, conversationReadCursor, directMessage, messageEmailNotice, messageReport } from "./schema.ts";
 
+// Taken before the member row, in the order a send takes them, so a delete and a send can't deadlock.
+export async function lockMemberConversations(transaction: Transaction, memberId: string) {
+  await transaction
+    .select({ id: conversation.id })
+    .from(conversation)
+    .where(or(eq(conversation.memberLowId, memberId), eq(conversation.memberHighId, memberId)))
+    .orderBy(conversation.id)
+    .for("update");
+}
+
 export const ERASED_MESSAGE_TEXT = "Deleted with the member's account.";
 
 // A deleted account: each of their messages loses its words and shows as deleted to the other member, who keeps the

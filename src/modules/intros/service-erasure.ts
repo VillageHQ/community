@@ -56,6 +56,6 @@ export async function anonymizeMemberIntros(transaction: Transaction, { memberId
   // As the person someone wanted to meet: who they are, and the note about them.
   await transaction
     .update(introRequest)
-    .set({ targetName: SOMEONE, targetHeadline: null, targetLinkedinSlug: placeholderSlug(), targetEmail: null, note: ERASED_INTRO_TEXT })
+    .set({ targetName: SOMEONE, targetHeadline: null, targetLinkedinSlug: placeholderSlug(), targetEmail: null, note: ERASED_INTRO_TEXT, reason: ERASED_INTRO_TEXT, declineReason: null })
     .where(asTarget);
 }

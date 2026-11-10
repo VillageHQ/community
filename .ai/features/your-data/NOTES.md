@@ -20,7 +20,12 @@
   `POST /v2/user/cancel` per Village identity; never throws), then one transaction under the admin roster lock:
   intros anonymized, asks tallied and deleted, feed, messages, reports, network caches, opt-outs, suppression,
   rate limits, weekly emails, outbox, the account placeholder (`members/service-erasure.ts`), audit scrub, a sweep of
-  every text column for the email, and one `account_deleted` audit entry.
+  every text column for the email, and one `account_deleted` audit entry. The transaction locks the member's
+  conversations before their user row (the order a send takes them) and retries on a deadlock; a send re-checks under
+  its lock that the sender is still active.
+- Matching: the email as a whole address only (`readEmailPattern`), so `xdana@…` is never touched. The name (whole
+  words, at least 3 characters) is used only for rows no id links to, and only when no other account's name contains
+  it, so deleting one "John Smith" never touches another's records.
 - What stays, on purpose: the `user` row as "Deleted member" with `deleted-<id>@reclaimed.invalid` (banned, no
   password or session), `member_removal` with `erased_at`, intro rows with no words or identity of theirs, `ask_tally`
   rows, conversations (their messages show as deleted), audit and moderation entries with no personal text, other

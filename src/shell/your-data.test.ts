@@ -8,6 +8,7 @@ import { POST as postDirectory } from "@/app/api/members/directory/route";
 import { POST as postStart } from "@/app/api/messages/start/route";
 import { POST as postSend } from "@/app/api/messages/send/route";
 import { POST as postIntroAsks } from "@/app/api/onboarding/intro-asks/route";
+import { POST as postOnboarding } from "@/app/api/onboarding/route";
 import { POST as postDelete } from "@/app/api/profile/delete/route";
 import { POST as postExport } from "@/app/api/profile/export/route";
 import { POST as postPrivacy } from "@/app/api/profile/privacy/route";
@@ -211,6 +212,22 @@ describe("your data and the real delete", () => {
       closedAt: new Date(),
     });
 
+    // Omar asked Admin to reach Dana herself (by her LinkedIn address); Admin's decline note names her.
+    await database.insert(introRequest).values({
+      ...intro,
+      targetName: DANA.name,
+      targetLinkedinSlug: DANA.slug,
+      requesterId: omar.userId,
+      introducerId: admin.userId,
+      introducerName: "Ada Admin",
+      introducerLinkedinSlug: "ada-admin",
+      reason: `Ada worked with ${DANA.name}`,
+      note: `Please introduce me to ${DANA.name}`,
+      state: INTRO_STATES.declined,
+      declineReason: `${DANA.name} is busy`,
+      closedAt: new Date(),
+    });
+
     const conversationId = await seedConversation(database, dana.userId, omar.userId);
     await seedMessages(database, { conversationId, senderId: omar.userId, count: 1 });
     await database.update(directMessage).set({ body: OMAR_WORDS.message }).where(eq(directMessage.senderId, omar.userId));
@@ -328,6 +345,26 @@ describe("your data and the real delete", () => {
       expect(await database.select().from(emailOutbox)).toHaveLength(1);
     });
 
+    it("never touches another member's records when they share the name", async () => {
+      await nameMember(database, omar.userId, DANA.name);
+      await database.insert(adminAuditEntry).values({ action: AUDIT_ACTIONS.emailConfirmed, actorId: admin.userId, actorName: "Ada Admin", targetMemberId: omar.userId, targetName: DANA.name });
+      await database.insert(emailOutbox).values({ kind: "message", toEmail: omar.email, memberId: omar.userId, subject: `Hi ${DANA.name}`, html: "<p>x</p>", text: "x", status: "pending" });
+
+      expect((await call(postDelete, dana, { confirmation: "delete" })).status).toBe(OK_STATUS);
+
+      const [entry] = await database.select().from(adminAuditEntry).where(eq(adminAuditEntry.targetMemberId, omar.userId));
+      expect(entry?.targetName).toBe(DANA.name);
+      expect(await database.select().from(emailOutbox).where(eq(emailOutbox.memberId, omar.userId))).toHaveLength(1);
+    });
+
+    it("finishes while the member is sending messages at the same moment", async () => {
+      const conversationId = await seedConversation(database, dana.userId, omar.userId);
+      const sends = Array.from({ length: 12 }, () => call(postSend, dana, { conversationId, clientKey: randomUUID(), body: DANA_WORDS.message }));
+      const [deleted] = await Promise.all([call(postDelete, dana, { confirmation: "delete" }), ...sends]);
+      expect(deleted.status).toBe(OK_STATUS);
+      expect(await findTraces(database, danaNeedles())).toEqual([]);
+    });
+
     it("needs the word typed, and deletes nothing without it", async () => {
       expect((await call(postDelete, dana, { confirmation: "yes" })).status).toBe(UNPROCESSABLE_STATUS);
       expect((await call(postDelete, dana, {})).status).toBe(UNPROCESSABLE_STATUS);
@@ -383,6 +420,37 @@ describe("your data and the real delete", () => {
       expect(response.status).toBe(OK_STATUS);
       expect(response.headers.get("content-disposition")).toMatch(/attachment; filename="my-data-\d{4}-\d{2}-\d{2}\.json"/);
       const text = await response.text();
+      await database.insert(introRequest).values({
+        requesterId: dana.userId,
+        introducerId: omar.userId,
+        targetName: "Tara Target",
+        targetLinkedinSlug: "tara-third",
+        introducerName: "Omar Keeper",
+        introducerLinkedinSlug: "omar-keeper",
+        reason: "Worked together",
+        note: "Another ask by Dana",
+        state: INTRO_STATES.declined,
+        declineReason: "OMARDECLINE private to Omar",
+        closedAt: new Date(),
+        expiresAt: new Date(Date.now() + WEEK_MS),
+      });
+      await database.insert(introRequest).values({
+        requesterId: dana.userId,
+        introducerId: omar.userId,
+        targetName: "Tara Target",
+        targetLinkedinSlug: "tara-fourth",
+        introducerName: "Omar Keeper",
+        introducerLinkedinSlug: "omar-keeper",
+        reason: "Worked together",
+        note: "A third ask by Dana",
+        state: INTRO_STATES.targetDeclined,
+        askedTargetAt: new Date(),
+        closedAt: new Date(),
+        expiresAt: new Date(Date.now() + WEEK_MS),
+      });
+      const exportedAgain = await (await call(postExport, dana, {})).text();
+      expect(exportedAgain).not.toContain("OMARDECLINE");
+      expect(exportedAgain).not.toContain(INTRO_STATES.targetDeclined);
       for (const words of [dana.email, DANA.name, DANA_WORDS.bio, DANA_WORDS.post, DANA_WORDS.reply, DANA_WORDS.askTitle, DANA_WORDS.answer, DANA_WORDS.offer, DANA_WORDS.message, DANA_WORDS.introNote, DANA_WORDS.declineNote]) {
         expect(text).toContain(words);
       }
@@ -456,6 +524,9 @@ describe("your data and the real delete", () => {
       expect(await resolveOnboardingStep(database, omarSession)).toBe(ONBOARDING_STEPS.introAsks);
 
       expect((await call(postIntroAsks, omar, {})).status).toBe(UNPROCESSABLE_STATUS);
+      // The older "finish onboarding" call can't jump past the question.
+      expect((await call(postOnboarding, omar, { step: ONBOARDING_STEPS.network })).status).toBe(409);
+      expect(await resolveOnboardingStep(database, omarSession)).toBe(ONBOARDING_STEPS.introAsks);
       expect((await call(postIntroAsks, omar, { acceptsIntroAsks: false })).status).toBe(OK_STATUS);
       expect(await resolveOnboardingStep(database, omarSession)).not.toBe(ONBOARDING_STEPS.introAsks);
 

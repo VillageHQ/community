@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, ilike, like, or, sql } from "drizzle-orm";
+import { and, eq, ilike, isNull, like, ne, or, sql } from "drizzle-orm";
 
 import { contentReport } from "@/modules/admin/schema";
 import { REPORT_RESOLUTIONS } from "@/modules/admin/contract";
@@ -14,7 +14,7 @@ import { introRequest } from "@/modules/intros/schema";
 import { DELETED_MEMBER_NAME } from "@/modules/members/contract-privacy";
 import { eraseMemberAccount, matchesWord, readEmailPattern, readErasureFacts, readNamePattern, type ErasureFacts } from "@/modules/members/service-erasure";
 import { toContainsPattern } from "@/modules/members/reads-directory";
-import { eraseMemberMessages } from "@/modules/messages/service-erasure";
+import { eraseMemberMessages, lockMemberConversations } from "@/modules/messages/service-erasure";
 import { messageReport } from "@/modules/messages/schema";
 import { memberConnectNudge, memberPathResult } from "@/modules/network/schema";
 import { eraseFromVillage, VILLAGE_CANCEL_OUTCOMES, type VillageErasure } from "@/modules/network/service-erasure";
@@ -79,6 +79,11 @@ async function deleteOutboxCopies(transaction: Transaction, { memberId, email }:
 async function scrubAuditCopies(transaction: Transaction, { memberId, email }: ErasureFacts, namePattern: string | null) {
   await transaction.update(adminAuditEntry).set({ targetName: DELETED_MEMBER_NAME, detail: null }).where(eq(adminAuditEntry.targetMemberId, memberId));
   await transaction.update(adminAuditEntry).set({ actorName: DELETED_MEMBER_NAME }).where(eq(adminAuditEntry.actorId, memberId));
+  // An invite line from before they joined has no member id, only their email as the detail and their name as the target.
+  await transaction
+    .update(adminAuditEntry)
+    .set({ targetName: DELETED_MEMBER_NAME, detail: null })
+    .where(and(isNull(adminAuditEntry.targetMemberId), matchesWord(adminAuditEntry.detail, readEmailPattern(email))));
   await transaction.update(adminAuditEntry).set({ detail: null }).where(matchesWord(adminAuditEntry.detail, readEmailPattern(email)));
   if (namePattern) {
     await transaction.update(adminAuditEntry).set({ detail: null }).where(matchesWord(adminAuditEntry.detail, namePattern));
@@ -107,9 +112,22 @@ async function sweepEmail(transaction: Transaction, email: string) {
   }
 }
 
+// Name matching reaches rows no id links to (emails to others, weekly items, audit lines from before they joined). It
+// runs only when no other account's name contains theirs, so deleting one "John Smith" never touches another's records.
+async function readUniqueNamePattern(transaction: Transaction, { memberId, name }: ErasureFacts) {
+  const pattern = readNamePattern(name);
+  if (!pattern) return null;
+  const [other] = await transaction
+    .select({ id: user.id })
+    .from(user)
+    .where(and(ne(user.id, memberId), matchesWord(user.name, pattern)))
+    .limit(1);
+  return other ? null : pattern;
+}
+
 async function eraseEverything(transaction: Transaction, facts: ErasureFacts, actorId: string, actor: DeletionActor, village: VillageErasure) {
   const { memberId, email } = facts;
-  const namePattern = readNamePattern(facts.name);
+  const namePattern = await readUniqueNamePattern(transaction, facts);
   const actorName = actor === DELETION_ACTORS.self ? DELETED_MEMBER_NAME : undefined;
 
   const [askRows, introRows] = await Promise.all([
@@ -167,6 +185,26 @@ function readVillageSentence({ groupOutcome, cancelOutcome }: VillageErasure, is
   return sentences.join(" ");
 }
 
+const DEADLOCK_CODE = "40P01";
+const DEADLOCK_ATTEMPTS = 3;
+
+function isDeadlock(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  if ("code" in error && error.code === DEADLOCK_CODE) return true;
+  return "cause" in error && isDeadlock(error.cause);
+}
+
+// Postgres picks one side of a deadlock to fail; the whole transaction rolled back, so running it again is safe.
+async function retryOnDeadlock<Result>(work: () => Promise<Result>): Promise<Result> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await work();
+    } catch (error) {
+      if (attempt >= DEADLOCK_ATTEMPTS || !isDeadlock(error)) throw error;
+    }
+  }
+}
+
 // The real delete, for a member themselves or for an admin acting on a member. Village goes first, while the member's
 // Village identity is still known; then everything here goes in one transaction, so a failure leaves nothing half done.
 export async function deleteAccount(context: RequestContext, memberId: string, actor: DeletionActor) {
@@ -186,14 +224,16 @@ export async function deleteAccount(context: RequestContext, memberId: string, a
   }
 
   const village = await eraseFromVillage(context, { memberId, memberName: before.name, email: before.email });
-  await database.transaction(async (transaction) => {
+  await retryOnDeadlock(() => database.transaction(async (transaction) => {
     await lockAdminRoster(transaction);
     if (!isSelf) await requireCurrentAdmin(transaction, member.id);
+    // A send locks its conversation, then the member row; locking in that same order means a send can't deadlock this.
+    await lockMemberConversations(transaction, memberId);
     const facts = await readErasureFacts(transaction, memberId);
     if (!facts) throw accountGoneError();
     if (facts.role === MEMBER_ROLES.admin) await requireAnotherAdmin(transaction);
     await eraseEverything(transaction, facts, member.id, actor, village);
-  });
+  }));
 
   const villageSentence = readVillageSentence(village, isSelf);
   const done = isSelf ? "Your account and everything it held are deleted." : "The account and everything it held are deleted.";

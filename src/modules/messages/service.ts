@@ -138,6 +138,8 @@ type Sender = { environment: Environment; branding: EmailBranding | null; member
 
 async function insertMessage(transaction: Transaction, { environment, branding, memberId, mayMessage }: Sender, { conversationId, clientKey, body }: SendMessageBody) {
   const target = await lockConversation(transaction, conversationId, memberId);
+  // Checked under the lock: a send that began just before its sender was removed or deleted must not land after.
+  if (!(await isMemberActive(transaction, memberId))) throw conversationGoneError();
   const racedMessageId = await readOwnMessageIdByKey(transaction, { conversationId, clientKey }, memberId);
   if (racedMessageId) return { messageId: racedMessageId, isEmailQueued: false };
 

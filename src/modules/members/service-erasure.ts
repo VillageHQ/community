@@ -74,7 +74,7 @@ export async function eraseMemberAccount(transaction: Transaction, { facts, acto
   await transaction
     .delete(verification)
     .where(
-      or(like(verification.identifier, toContainsPattern(memberId)), matchesWord(verification.identifier, readEmailPattern(email)), matchesWord(verification.value, readEmailPattern(email))),
+      or(like(verification.identifier, toContainsPattern(memberId)), eq(verification.value, memberId), matchesWord(verification.identifier, readEmailPattern(email)), matchesWord(verification.value, readEmailPattern(email))),
     );
 
   await transaction
