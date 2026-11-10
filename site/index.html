@@ -4,524 +4,398 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
-<title>Community by Village: a private home for your portfolio founders</title>
-<meta name="description" content="An open source, invite-only community your fund runs for its founders. Feed, directory, direct messages and warm intros through Village, with your name, logo and color. No code needed to set it up.">
-<meta name="theme-color" content="#0f7f86">
+<title>Founderhall by Village: the shortest way from your founder to the right person</title>
+<meta name="description" content="An open-source, invite-only home your fund runs for its founders. A Today page and a weekly email, warm intros that need a yes from both people, and a partner report that counts every intro.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f7f5ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131715" media="(prefers-color-scheme: dark)">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Community by Village">
-<meta property="og:title" content="Give your founders a room full of people who can help">
-<meta property="og:description" content="An open source, invite-only community your fund runs for its founders. Your name, your logo, your copy.">
+<meta property="og:site_name" content="Founderhall by Village">
+<meta property="og:title" content="The shortest way from your founder to the right person">
+<meta property="og:description" content="An open-source, invite-only home your fund runs for its founders. Warm intros that need a yes from both people, and every intro counted for your partners.">
 <meta property="og:image" content="assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Made-up founders joined by thin lines, next to the headline: give your founders a room full of people who can help.">
+<meta property="og:image:alt" content="Founderhall by Village: the shortest way from your founder to the right person.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="assets/fonts/figtree-latin-variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/source-serif-4-roman.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/site.css">
 <noscript><link rel="stylesheet" href="assets/noscript.css"></noscript>
 <script src="assets/site.js" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
-<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false"><defs><symbol id="i-house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-message-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></symbol><symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol><symbol id="i-waypoints" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.586 5.414-5.172 5.172"/><path d="m18.586 13.414-5.172 5.172"/><path d="M6 12h12"/><circle cx="12" cy="20" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="20" cy="12" r="2"/><circle cx="4" cy="12" r="2"/></symbol><symbol id="i-handshake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></symbol><symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol><symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></symbol><symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/></symbol><symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></symbol><symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol><symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol><symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol><symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol><symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol><symbol id="i-log-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol><symbol id="i-user-round" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol><symbol id="i-hand-helping" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 12h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 14"/><path d="m7 18 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/><path d="m2 13 6 6"/></symbol><symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"/><path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"/><path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"/></symbol><symbol id="i-circle-question-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol><symbol id="i-circle-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></symbol><symbol id="i-users-round" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></symbol><symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-door-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 21H2"/><path d="M10 3H7a2 2 0 00-2 2v16"/><path d="M14 12h.01"/><path d="M19 21V5a2 2 0 00-1.675-1.974l-6.163-1.013A1 1 0 0010 3v18a1 1 0 001.124.992z"/><path d="M22 21h-3"/></symbol><symbol id="i-loader-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></symbol><symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></symbol><symbol id="portrait-amara" viewBox="0 0 64 64"><rect width="64" height="64" fill="#f4d9b8"/><path d="M8 64c1-14 11-21 24-21s23 7 24 21z" fill="#0f6b70"/><path d="M26 36h12v8c0 3-3 5-6 5s-6-2-6-5z" fill="#74492f"/><ellipse cx="32" cy="27" rx="11.5" ry="13.5" fill="#8a5a3c"/><g fill="#22160f"><circle cx="22" cy="19" r="6.5"/><circle cx="28" cy="13.5" r="7"/><circle cx="36" cy="13" r="7"/><circle cx="42" cy="18.5" r="6.5"/><circle cx="20" cy="25" r="4"/><circle cx="44" cy="25" r="4"/></g></symbol><symbol id="portrait-jonas" viewBox="0 0 64 64"><rect width="64" height="64" fill="#c9e4e6"/><path d="M8 64c1-14 11-21 24-21s23 7 24 21z" fill="#23405f"/><path d="M26 36h12v8c0 3-3 5-6 5s-6-2-6-5z" fill="#dcae8c"/><ellipse cx="32" cy="27" rx="11.5" ry="13.5" fill="#f0c8a8"/><path d="M20 25c-1-10 5-15 12-15s13 5 12 15c-2-4-4-6-6-7-5 2-11 2-14 1-2 1-3 3-4 6z" fill="#a8743f"/><path d="M21 30c1 8 5 12.500 11 12.500S42 38 43 30c-2 2-3 3-5 3-2-.8-4-.8-6-.8s-4 0-6 .8c-2 0-3-1-5-3z" fill="#a8743f"/></symbol><symbol id="portrait-noor" viewBox="0 0 64 64"><rect width="64" height="64" fill="#f3d6d2"/><path d="M17 28c0-12 6-19 15-19s15 7 15 19v17c0 3-3 5-7 5H24c-4 0-7-2-7-5z" fill="#20171a"/><path d="M8 64c1-14 11-21 24-21s23 7 24 21z" fill="#f4efe3"/><path d="M26 36h12v8c0 3-3 5-6 5s-6-2-6-5z" fill="#c48f69"/><ellipse cx="32" cy="27" rx="11.5" ry="13.5" fill="#d9a57e"/><path d="M20.500 27c-.5-9 4-15 11.500-15s12 6 11.500 15c-3-2-7-6-9-10-3 5-9 8-14 10z" fill="#20171a"/></symbol><symbol id="portrait-lena" viewBox="0 0 64 64"><rect width="64" height="64" fill="#dfe7c9"/><path d="M8 64c1-14 11-21 24-21s23 7 24 21z" fill="#3c5a3e"/><path d="M26 36h12v8c0 3-3 5-6 5s-6-2-6-5z" fill="#e3b89c"/><ellipse cx="32" cy="27" rx="11.5" ry="13.5" fill="#f5d3bb"/><circle cx="32" cy="9.500" r="6.500" fill="#b5532e"/><path d="M20 27c-1-10 5-15.500 12-15.500S45 17 44 27c-1.500-4-4-7-7-8.500-5 1-12 2-14 1.500-1.500 1.500-2.500 4-3 7z" fill="#b5532e"/></symbol><symbol id="portrait-mateo" viewBox="0 0 64 64"><rect width="64" height="64" fill="#f5e2a8"/><path d="M8 64c1-14 11-21 24-21s23 7 24 21z" fill="#b8452f"/><path d="M26 36h12v8c0 3-3 5-6 5s-6-2-6-5z" fill="#b27b52"/><ellipse cx="32" cy="27" rx="11.5" ry="13.5" fill="#c98f63"/><path d="M20 26c-2-10 4-16.500 13-16.500 7 0 12 5 11 15.500-1-3-2.500-5-4-6-3 1.500-7-1-9.500-1-3 0-6 1.500-7.500 3-1.500 1.500-2.500 3-3 5z" fill="#1c1a18"/></symbol><symbol id="village-mark" viewBox="0 0 64 64"><defs><linearGradient id="village-gradient" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2dbfd4"/><stop offset=".5" stop-color="#1da8bc"/><stop offset="1" stop-color="#17a97c"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#village-gradient)"/><path d="M20 19.500h7.600l4.600 16.700 4.700-16.700h7.100L36 44.500h-7.900z" fill="#fff"/></symbol><symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol><symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol><symbol id="i-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 4a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/></symbol><symbol id="i-droplet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></symbol><symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19h8"/><path d="m4 17 6-6-6-6"/></symbol><symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></symbol><symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></symbol><symbol id="i-scroll-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></symbol><symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol><symbol id="i-coins" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.744 17.736a6 6 0 1 1-7.48-7.48"/><path d="M15 6h1v4"/><path d="m6.134 14.768.866-.5 2 3.464"/><circle cx="16" cy="8" r="6"/></symbol><symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></symbol><symbol id="i-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></symbol><symbol id="i-key-round" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol><symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol><symbol id="i-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="m19 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"/><path d="m5 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M7 21h10"/></symbol><symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol><symbol id="i-rotate-ccw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></symbol><symbol id="i-circle-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58 0-.28-.01-1.04-.02-2.04-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.9-.01 3.29 0 .32.21.7.82.58A12 12 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/></symbol><symbol id="fund-mark" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 25V8l14 15V6"/><path d="M16.5 10.5 21 6l4.5 4.5"/></symbol></defs></svg>
 
 <header class="site-header">
   <div class="wrap site-bar">
-    <p class="lockup">
-      <a class="lockup-home" href="#top"><svg class="lockup-mark" aria-hidden="true"><use href="#village-mark"/></svg><span class="lockup-name">Community</span></a>
-      <a class="lockup-by" href="https://village.ai">by Village</a>
-    </p>
+    <a class="lockup" href="#top">
+      <svg class="lockup-mark" viewBox="0 0 48 48" aria-hidden="true"><path d="M9 41V25a15 15 0 0 1 30 0v16h-5V25a10 10 0 0 0-20 0v16Z" fill="currentColor"/><rect x="6" y="39.5" width="36" height="2.5" fill="currentColor"/><path d="M22.2 13h3.6v28l-1.8-2.2-1.8 2.2Z" fill="#9c4e22"/></svg>
+      <span class="lockup-name">Founderhall</span>
+      <span class="lockup-by">by Village</span>
+    </a>
     <nav class="site-nav" aria-label="Main">
-      <a href="#first-visit">First visit</a>
-      <a href="#deploy">Set up</a>
-      <a href="#cost">Cost</a>
+      <a href="#today">Today</a>
+      <a href="#intros">Intros</a>
+      <a href="#report">Partner report</a>
       <a href="#privacy">Privacy</a>
-      <a href="#control">Control</a>
-      <a href="https://github.com/VillageHQ/community">GitHub</a>
+      <a href="#setup">Set up</a>
+      <a href="https://github.com/VillageHQ/community">Source code</a>
     </nav>
-    <div class="site-actions">
-      <a class="button button-primary button-small" href="#deploy">Deploy</a>
-      <button class="icon-button menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Menu" hidden>
-        <svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg>
-      </button>
-    </div>
+    <a class="button button-primary button-small" href="#setup">Set up yours</a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="Menu" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
   </div>
   <nav class="mobile-nav" id="mobile-nav" aria-label="Main, small screens" hidden>
-    <a href="#first-visit">First visit</a>
-    <a href="#deploy">Set up</a>
-    <a href="#cost">Cost</a>
+    <a href="#today">Today</a>
+    <a href="#intros">Intros</a>
+    <a href="#report">Partner report</a>
     <a href="#privacy">Privacy</a>
-    <a href="#control">Control</a>
-    <a href="https://github.com/VillageHQ/community">GitHub</a>
+    <a href="#setup">Set up</a>
+    <a href="https://github.com/VillageHQ/community">Source code</a>
   </nav>
 </header>
 
 <main id="main">
 
 <section class="hero" id="top" aria-labelledby="hero-title">
-  <div class="hero-panel">
+  <div class="wrap hero-grid">
     <div class="hero-copy">
-      <p class="hero-eyebrow">Open source. Invite only.</p>
-      <h1 id="hero-title">Give your founders a room full of people who can help.</h1>
-      <p class="hero-lede">Community is a private home for your portfolio, with your fund's name on the door. Founders post in a shared feed, find each other, message one to one and ask for warm intros.</p>
+      <p class="eyebrow">Open source · invite only</p>
+      <h1 id="hero-title">The shortest way from your founder to the right person.</h1>
+      <p class="lede">Founderhall is a private home for your portfolio, with your fund's name on the door. A founder opens it, sees what needs them this week, finds who in your community can introduce them, and asks. Nobody is introduced without saying yes.</p>
       <div class="hero-actions">
-        <a class="button button-inverse button-hero" href="#deploy">Set up yours<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-        <a class="button button-ghost button-hero" href="#first-visit">Try a founder's first visit</a>
+        <a class="button button-primary" href="#setup">Set up yours</a>
+        <a class="button" href="#intros">See how an intro works</a>
       </div>
-      <p class="hero-note">Free, open-source software (AGPL-3.0). You run your own copy, and the one-click setup needs no code.</p>
+      <p class="fine">Free, open-source software under AGPL-3.0. You run your own copy, and the one-click setup needs no code.</p>
     </div>
 
-    <div class="constellation" aria-hidden="true">
-      <svg class="threads" viewBox="0 0 100 100" fill="none" preserveAspectRatio="none">
-        <path d="M50 50Q28 38 20 12"/><path d="M50 50Q70 34 78 10"/><path d="M50 50Q31 62 11 64"/><path d="M50 50Q70 48 91 58"/><path d="M50 50Q56 72 76 89"/><path d="M50 50Q43 74 27 90"/><path d="M20 12Q48 2 78 10"/><path d="M11 64Q14 80 27 90"/><path d="M78 10Q80 36 91 58"/>
-      </svg>
-      <div class="star star-you"><span class="avatar avatar-hero tint-a"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span><span class="star-label">Amara</span></div>
-      <div class="star star-jonas"><span class="avatar avatar-large tint-d"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><span class="star-label">Jonas</span></div>
-      <div class="star star-noor"><span class="avatar avatar-large tint-f"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><span class="star-label">Noor</span></div>
-      <div class="star star-lena"><span class="avatar avatar-large tint-e"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><span class="star-label">Lena</span></div>
-      <div class="star star-dele"><span class="avatar avatar-medium tint-e">DA</span><span class="star-label">Dele</span></div>
-      <div class="star star-mateo"><span class="avatar avatar-large tint-b"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span><span class="star-label">Mateo</span></div>
-      <div class="star star-hana"><span class="avatar avatar-medium tint-f">HK</span><span class="star-label">Hana</span></div>
-      <p class="hero-bubble hero-bubble-ask"><span class="tag tag-ask">Ask</span>Who knows a great first sales hire in Berlin?</p>
-      <p class="hero-bubble hero-bubble-offer"><span class="tag tag-offer">Offer</span>Happy to read your pilot contract.</p>
-      <p class="hero-bubble hero-bubble-win"><span class="tag tag-win">Win</span>Closed our seed!</p>
-    </div>
+    <figure>
+      <div class="sheet mock" aria-hidden="true">
+        <div class="mock-bar"><span class="fund-tile">N</span><span class="mock-fund">Northwind Founders</span></div>
+        <div>
+          <p class="mock-title">Good to see you, Sam.</p>
+          <p class="mock-sub">Two things need you this week.</p>
+        </div>
+        <div class="mock-group">
+          <h4>Asks you could help with</h4>
+          <p class="mock-row"><span class="avatar">MT</span><span>Mei Tan is looking for a former CFO at a health-tech company.<small>You said you can help with finance hires.</small></span><span class="mock-action">I can help</span></p>
+        </div>
+        <div class="mock-group">
+          <h4>Waiting on you</h4>
+          <p class="mock-row"><span class="avatar">JB</span><span>Jonas Berg asked you for an intro to a hospital buyer you know.<small>Read the note, then say yes or pass.</small></span><span class="mock-action">Open</span></p>
+        </div>
+        <div class="mock-group">
+          <h4>New this week</h4>
+          <p class="mock-row"><span class="avatar">LN</span><span>Lena Novak<small>Founder, Fernwork</small></span><span class="mock-action">Say hi</span></p>
+        </div>
+      </div>
+      <figcaption class="caption">A sketch of the Today page for a made-up fund and founder.</figcaption>
+    </figure>
   </div>
 </section>
 
-<section class="section" id="what" aria-labelledby="what-title">
-  <div class="wrap">
+<section class="section band" id="fund" aria-labelledby="fund-title">
+  <div class="wrap split">
     <div class="section-head">
-      <p class="asked"><span class="avatar avatar-small tint-b" aria-hidden="true">PR</span><span class="asked-bubble">What is this, exactly?</span></p>
-      <h2 id="what-title">Your portfolio's own community, built on Village's network.</h2>
-      <p class="section-lede"><a class="text-link" href="https://village.ai">Village</a> maps who people already know. Community uses it so a founder can ask for a warm intro instead of writing cold. The rest is a private place for your founders to talk.</p>
+      <p class="eyebrow">Fund first</p>
+      <h2 id="fund-title">Your fund's name on the door. Your founders' networks behind it.</h2>
+      <p class="lede">Members see your community's name, logo and colour. Through <a class="text-link" href="https://village.ai">Village</a>, members who choose to share connect their networks, and everyone in the community can search them together: who can introduce me to this person, and how do they know them?</p>
     </div>
-    <div class="what-grid">
-      <figure class="product-shot">
-        <img src="assets/product-feed.png" width="1440" height="900" alt="The Community feed for a made-up fund, Northwind Ventures. A sidebar lists Feed, Messages, Members, Network and Intros. Members post asks and wins, and a side card lists new members with Say hi buttons.">
-        <figcaption>A real screenshot of the app, with made-up people.</figcaption>
-      </figure>
-      <ul class="room-list">
-        <li><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg></span><div><h3>Feed</h3><p>Founders ask the room, share a win or offer a hand. Comments and reactions are built in, and admins can moderate.</p></div></li>
-        <li><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></span><div><h3>Members</h3><p>A directory of everyone in the community, with the profile each person fills in.</p></div></li>
-        <li><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-message-circle"/></svg></span><div><h3>Messages</h3><p>One-to-one conversations between two members.</p></div></li>
-        <li><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-waypoints"/></svg></span><div><h3>Network</h3><p>Each member searches their own network plus the relationships other members share, through Village. It isn't a search of everyone in the world.</p></div></li>
-        <li><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-handshake"/></svg></span><div><h3>Intros</h3><p>A member asks a fellow member for an intro with a short note. That member says yes or passes, then the person they would meet says yes or no thanks.</p></div></li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section class="section section-tour" id="first-visit" aria-labelledby="tour-title">
-  <div class="wrap">
-    <div class="section-head">
-      <p class="asked"><span class="avatar avatar-small tint-b" aria-hidden="true">PR</span><span class="asked-bubble">Will my founders actually use it?</span></p>
-      <h2 id="tour-title">See what they see on day one.</h2>
-      <p class="section-lede">Community is new, so we have no adoption numbers to show you. We can show you the first visit. Click through it as Amara, a made-up founder.</p>
-    </div>
-
-    <div class="tour" data-tour>
-      <div class="tour-bar">
-        <div class="tour-tabs" role="tablist" aria-label="A founder's first visit">
-          <button class="tour-tab" type="button" role="tab" id="tour-tab-join" aria-controls="tour-panel-join" aria-selected="true" data-tour-tab><span class="tour-number">1</span>Join</button>
-          <button class="tour-tab" type="button" role="tab" id="tour-tab-feed" aria-controls="tour-panel-feed" aria-selected="false" tabindex="-1" data-tour-tab><span class="tour-number">2</span>Feed</button>
-          <button class="tour-tab" type="button" role="tab" id="tour-tab-network" aria-controls="tour-panel-network" aria-selected="false" tabindex="-1" data-tour-tab><span class="tour-number">3</span>Find a way in</button>
-          <button class="tour-tab" type="button" role="tab" id="tour-tab-ask" aria-controls="tour-panel-ask" aria-selected="false" tabindex="-1" data-tour-tab><span class="tour-number">4</span>Get an intro</button>
-        </div>
-        <fieldset class="swatches">
-          <legend>Try your color</legend>
-          <input class="swatch-input" type="radio" name="tour-accent" id="accent-teal" checked><label class="swatch swatch-teal" for="accent-teal"><span class="sr-only">Teal</span></label>
-          <input class="swatch-input" type="radio" name="tour-accent" id="accent-sun"><label class="swatch swatch-sun" for="accent-sun"><span class="sr-only">Sunbeam yellow</span></label>
-          <input class="swatch-input" type="radio" name="tour-accent" id="accent-midnight"><label class="swatch swatch-midnight" for="accent-midnight"><span class="sr-only">Midnight blue</span></label>
-          <input class="swatch-input" type="radio" name="tour-accent" id="accent-coral"><label class="swatch swatch-coral" for="accent-coral"><span class="sr-only">Coral</span></label>
-          <input class="swatch-input" type="radio" name="tour-accent" id="accent-cobalt"><label class="swatch swatch-cobalt" for="accent-cobalt"><span class="sr-only">Cobalt</span></label>
-        </fieldset>
-      </div>
-
-      <div class="frame" data-tour-frame data-step="join">
-        <aside class="frame-sidebar" aria-hidden="true">
-          <div class="frame-brand"><span class="logo-tile"><svg aria-hidden="true"><use href="#fund-mark"/></svg></span><span><b>Northwind</b><small>Founder community</small></span></div>
-          <ul class="frame-nav">
-            <li data-nav="feed"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg>Feed</li>
-            <li><svg class="icon" aria-hidden="true"><use href="#i-message-circle"/></svg>Messages</li>
-            <li><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Members</li>
-            <li data-nav="network"><svg class="icon" aria-hidden="true"><use href="#i-waypoints"/></svg>Network</li>
-            <li data-nav="ask"><svg class="icon" aria-hidden="true"><use href="#i-handshake"/></svg>Intros</li>
-          </ul>
-          <div class="frame-me"><span class="avatar avatar-small tint-a"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span><span><b>Amara Osei</b><small>Founder and CEO</small></span></div>
-          <p class="frame-powered"><svg class="village-mini" aria-hidden="true"><use href="#village-mark"/></svg>Network by Village</p>
-        </aside>
-
-        <div class="frame-main">
-          <!-- Step 1 -->
-          <div class="tour-panel" role="tabpanel" id="tour-panel-join" aria-labelledby="tour-tab-join" data-tour-panel="join">
-            <div class="join-split">
-              <div class="join-brand">
-                <p class="join-logo"><span class="logo-tile logo-tile-inverse"><svg aria-hidden="true"><use href="#fund-mark"/></svg></span>Northwind Ventures</p>
-                <div class="constellation constellation-join" aria-hidden="true">
-                  <svg class="threads" viewBox="0 0 100 100" fill="none" preserveAspectRatio="none"><path d="M50 52Q30 40 22 16"/><path d="M50 52Q70 38 78 14"/><path d="M50 52Q30 66 14 76"/><path d="M50 52Q68 68 84 78"/><path d="M22 16Q50 4 78 14"/></svg>
-                  <div class="star star-you-join"><span class="avatar avatar-large tint-a"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span><span class="star-label">You</span></div>
-                  <div class="star star-join-1"><span class="avatar avatar-medium tint-d"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><span class="star-label">Jonas</span></div>
-                  <div class="star star-join-2"><span class="avatar avatar-medium tint-f"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><span class="star-label">Noor</span></div>
-                  <div class="star star-join-3"><span class="avatar avatar-medium tint-b">PR</span><span class="star-label">Priya</span></div>
-                  <div class="star star-join-4"><span class="avatar avatar-medium tint-e"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><span class="star-label">Lena</span></div>
-                </div>
-                <figure class="seat-note">
-                  <blockquote>We saved you a seat. Come on in.</blockquote>
-                  <figcaption><span class="avatar avatar-small tint-b" aria-hidden="true">PR</span><span><b>Priya Raman</b><small>Head of Platform, Northwind Ventures</small></span></figcaption>
-                </figure>
-              </div>
-              <div class="join-form">
-                <h3 class="frame-title" tabindex="-1">You're invited.</h3>
-                <p class="frame-lede">Priya Raman invited you to join Northwind Ventures.</p>
-                <dl class="sample-fields">
-                  <div><dt>Email</dt><dd class="sample-field">amara@tidewell.example</dd></div>
-                  <div><dt>Your name</dt><dd class="sample-field">Amara Osei</dd></div>
-                  <div><dt>Choose a password</dt><dd class="sample-field"><span aria-hidden="true">••••••••••••</span><span class="sr-only">Hidden sample password</span></dd></div>
-                </dl>
-                <button class="tour-button tour-button-primary tour-button-block" type="button" data-tour-go="feed">Come on in</button>
-                <p class="frame-fine">Invites work once and last 14 days. Your email stays private: only admins see it.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 2 -->
-          <div class="tour-panel" role="tabpanel" id="tour-panel-feed" aria-labelledby="tour-tab-feed" data-tour-panel="feed" hidden>
-            <div class="feed-layout">
-              <div class="feed-column">
-                <h3 class="frame-title" tabindex="-1">Good to see you, Amara.</h3>
-                <p class="frame-lede">3 new members joined this week.</p>
-                <div class="composer"><span class="avatar avatar-small tint-a" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span><p>Ask the room, share a win, offer a hand</p></div>
-
-                <article class="post">
-                  <header class="post-head"><span class="avatar avatar-medium tint-d" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span><span class="post-who"><b>Jonas Lindqvist</b><small>Co-founder, Ledgerline</small></span><span class="tag tag-ask">Ask</span></header>
-                  <p>We need a first sales hire who knows European freight. Who should I talk to?</p>
-                  <div class="post-actions">
-                    <button class="reaction" type="button" aria-pressed="false" data-reaction data-count="4"><svg class="icon icon-small" aria-hidden="true"><use href="#i-heart"/></svg><span class="sr-only">React with a heart. Count: </span><span data-reaction-count>4</span></button>
-                    <button class="reaction" type="button" aria-pressed="false" data-reaction data-count="2"><svg class="icon icon-small" aria-hidden="true"><use href="#i-rocket"/></svg><span class="sr-only">React with a rocket. Count: </span><span data-reaction-count>2</span></button>
-                    <span class="post-reply"><svg class="icon icon-small" aria-hidden="true"><use href="#i-message-circle"/></svg>Reply</span>
-                  </div>
-                </article>
-
-                <article class="post">
-                  <header class="post-head"><span class="avatar avatar-medium tint-f" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span><span class="post-who"><b>Noor Haddad</b><small>Founder and CEO, Kindling Health</small></span><span class="tag tag-win">Win</span></header>
-                  <p>Closed our seed this week. Thank you to everyone here who took a call.</p>
-                </article>
-              </div>
-              <aside class="feed-rail" aria-label="New this week">
-                <h4>New this week</h4>
-                <ul>
-                  <li><span class="avatar avatar-small tint-e" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span><span><b>Lena Novak</b><small>Fernwork</small></span><span class="say-hi">Say hi</span></li>
-                  <li><span class="avatar avatar-small tint-b" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span><span><b>Mateo Ferreira</b><small>Parcelhaus</small></span><span class="say-hi">Say hi</span></li>
-                </ul>
-              </aside>
-            </div>
-          </div>
-
-          <!-- Step 3 -->
-          <div class="tour-panel" role="tabpanel" id="tour-panel-network" aria-labelledby="tour-tab-network" data-tour-panel="network" hidden>
-            <div class="network-hero">
-              <h3 class="frame-title" tabindex="-1">Who do you want to meet?</h3>
-              <p class="frame-lede">Search your community's shared networks, including yours.</p>
-              <div class="search-box">
-                <svg class="icon search-icon" aria-hidden="true"><use href="#i-search"/></svg>
-                <p class="search-text">Heads of procurement at European freight companies</p>
-                <button class="tour-button tour-button-primary" type="button" data-search>Search</button>
-              </div>
-              <p class="search-status" role="status" data-search-status></p>
-            </div>
-            <div class="network-results" data-search-results hidden>
-              <div>
-                <h4 class="result-count">3 people, all from shared networks.</h4>
-                <ul class="results">
-                  <li><button class="result" type="button" aria-pressed="true" data-person="clara"><span class="avatar avatar-medium tint-c" aria-hidden="true">CB</span><span class="result-who"><b>Clara Bergström</b><small>VP Procurement, Corvane Logistics</small></span><svg class="icon icon-small" aria-hidden="true"><use href="#i-chevron-right"/></svg></button></li>
-                  <li><button class="result" type="button" aria-pressed="false" data-person="tomasz"><span class="avatar avatar-medium tint-a" aria-hidden="true">TW</span><span class="result-who"><b>Tomasz Wieczorek</b><small>Head of Procurement, Halden Freight</small></span><svg class="icon icon-small" aria-hidden="true"><use href="#i-chevron-right"/></svg></button></li>
-                  <li><button class="result" type="button" aria-pressed="false" data-person="aylin"><span class="avatar avatar-medium tint-b" aria-hidden="true">AD</span><span class="result-who"><b>Aylin Demir</b><small>Head of Sourcing, Marlow and Reed</small></span><svg class="icon icon-small" aria-hidden="true"><use href="#i-chevron-right"/></svg></button></li>
-                </ul>
-              </div>
-
-              <div class="way-in" data-person-panel="clara">
-                <h4>Who can intro you to Clara</h4>
-                <div class="path">
-                  <span class="path-node"><span class="avatar avatar-small tint-a" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span>You</span>
-                  <span class="path-node"><span class="avatar avatar-small tint-d" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span>Jonas</span>
-                  <span class="path-node"><span class="avatar avatar-small tint-c" aria-hidden="true">CB</span>Clara</span>
-                </div>
-                <div class="connector">
-                  <p class="connector-who"><b>Jonas Lindqvist</b><span class="member-badge"><svg class="icon icon-tiny" aria-hidden="true"><use href="#i-users-round"/></svg>Community member</span></p>
-                  <p class="connector-reason"><svg class="icon icon-small" aria-hidden="true"><use href="#i-link"/></svg>Worked with Clara at Corvane Logistics for four years.</p>
-                  <button class="tour-button tour-button-primary tour-button-block" type="button" data-tour-go="ask">Ask Jonas for an intro<svg class="icon icon-small" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
-                </div>
-                <p class="frame-fine"><svg class="icon icon-tiny" aria-hidden="true"><use href="#i-lock"/></svg>Jonas reads your note first. Clara hears nothing unless they say yes.</p>
-              </div>
-
-              <div class="way-in" data-person-panel="tomasz" hidden>
-                <h4>Who can intro you to Tomasz</h4>
-                <p class="way-in-note">You already know Tomasz, so no intro needed. Reach out directly.</p>
-              </div>
-
-              <div class="way-in" data-person-panel="aylin" hidden>
-                <h4>No warm way in yet</h4>
-                <p class="way-in-note">Nobody's network reaches Aylin right now. Ask the community in the feed, or try someone else.</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 4 -->
-          <div class="tour-panel" role="tabpanel" id="tour-panel-ask" aria-labelledby="tour-tab-ask" data-tour-panel="ask" hidden>
-            <div class="ask-card" data-ask-draft>
-              <h3 class="frame-title frame-title-small" tabindex="-1">Ask Jonas for an intro to Clara</h3>
-              <p class="note-label">Your note to Jonas</p>
-              <div class="note-text">
-                <p>Hi Jonas,</p>
-                <p>Would you be open to introducing me to Clara? Here's why I'd like to meet them:</p>
-                <p>Tidewell is piloting with two Nordic carriers and Clara runs procurement at Corvane. Twenty minutes would tell us if we fit.</p>
-              </div>
-              <p class="frame-fine"><svg class="icon icon-tiny" aria-hidden="true"><use href="#i-lock"/></svg>Jonas reads your note first. Clara hears nothing unless they say yes. If Jonas says yes, Clara sees your name, your role and your note, then decides.</p>
-              <button class="tour-button tour-button-primary tour-button-block" type="button" data-ask-send>Send to Jonas<svg class="icon icon-small" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
-            </div>
-            <div class="ask-card" data-ask-sent hidden>
-              <span class="sent-icon"><svg class="icon icon-large" aria-hidden="true"><use href="#i-circle-check"/></svg></span>
-              <h3 class="frame-title frame-title-small" tabindex="-1" data-ask-sent-title>Your intro request is on its way</h3>
-              <p class="frame-lede">Here's what happens next.</p>
-              <ol class="next-steps">
-                <li><b>Jonas says yes or passes.</b> He can say no as freely as yes. If he does nothing, the intro request closes by itself after 14 days.</li>
-                <li><b>On a yes, Jonas asks Clara.</b> He forwards a private link, and Clara says yes or no thanks on one page, with no account.</li>
-                <li><b>Only after both say yes, one message joins you.</b> If either says no, you just see that it isn't happening, not who said it.</li>
-              </ol>
-              <button class="tour-button tour-button-soft" type="button" data-tour-restart><svg class="icon icon-small" aria-hidden="true"><use href="#i-rotate-ccw"/></svg>Start again</button>
-            </div>
-          </div>
-        </div>
-
-        <ul class="frame-tabbar" aria-hidden="true">
-          <li data-nav="feed"><svg class="icon" aria-hidden="true"><use href="#i-house"/></svg>Feed</li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-message-circle"/></svg>Messages</li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg>Members</li>
-          <li data-nav="network"><svg class="icon" aria-hidden="true"><use href="#i-waypoints"/></svg>Network</li>
-          <li data-nav="ask"><svg class="icon" aria-hidden="true"><use href="#i-handshake"/></svg>Intros</li>
-        </ul>
-      </div>
-
-      <div class="tour-controls">
-        <button class="button button-outline button-small" type="button" data-tour-previous><svg class="icon icon-small" aria-hidden="true"><use href="#i-arrow-left"/></svg>Back</button>
-        <p class="tour-caption">A sample community with made-up people. Real searches can take a minute or more.</p>
-        <button class="button button-primary button-small" type="button" data-tour-next><span data-tour-next-label>Next: Feed</span><svg class="icon icon-small" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
-      </div>
-    </div>
-
-    <ul class="point-grid">
-      <li><h3>An easy first visit</h3><p>A personal invite link, a name, a password. Everything on their profile card is optional.</p></li>
-      <li><h3>Useful from the first post</h3><p>Sharing a network is optional. "Not now" still leaves them the feed, messages and members.</p></li>
-      <li><h3>Made for phones too</h3><p>On a small screen the app swaps its sidebar for a tab bar at the bottom.</p></li>
-      <li><h3>A room needs a host</h3><p>No tool fills a room by itself. Post a welcome first, then invite a few founders who will speak up.</p></li>
+    <ul class="rule-list">
+      <li><h3>Invite only</h3><p>Only people you invite get in. Each link is personal, works once and lasts 14 days. Invite one person, or many from a pasted list or a CSV.</p></li>
+      <li><h3>Search the shared networks</h3><p>A founder searches their own network and the ones other members share. Community members come first, with Village's own words for how each one knows the person.</p></li>
+      <li><h3>One ask reaches the people who can help</h3><p>When a founder posts an ask, the members on a path to the person it names, and up to 5 whose "can help with" matches, each get one email. They can offer an intro or answer.</p></li>
+      <li><h3>A directory that fills itself in</h3><p>Filter members by stage, sector, cohort and how recently their card was updated. Cards can fill in from public work profiles once you record what allows it; a member's own words always win.</p></li>
     </ul>
   </div>
 </section>
 
-<section class="section" id="deploy" aria-labelledby="setup-title">
+<section class="section" id="today" aria-labelledby="today-title">
   <div class="wrap">
     <div class="section-head">
-      <p class="asked"><span class="avatar avatar-small tint-b" aria-hidden="true">PR</span><span class="asked-bubble">Can I set it up myself, without engineering?</span></p>
-      <h2 id="setup-title">Yes. Click a button, then follow a checklist.</h2>
-      <p class="section-lede">The Vercel and DigitalOcean paths need no terminal and no code. You need an account on the host and, for network search and intros, a Village developer account. You can create that during setup with Google.</p>
+      <p class="eyebrow">Today</p>
+      <h2 id="today-title">Only what needs them this week. Founders don't have to live in it.</h2>
+      <p class="lede">The home page lists what's waiting for each founder: asks they could help with, intros waiting for their yes, intros to finish, their own open asks and who joined this week. When it's done, it says so. The weekly email carries the same items, so most weeks they can answer from the inbox.</p>
+    </div>
+    <div class="split">
+      <div class="sheet inbox" aria-hidden="true">
+        <div class="mail">
+          <p class="mail-from"><span>Northwind Founders</span><span>Thu 09:00</span></p>
+          <p class="mail-subject">This week in Northwind Founders: 2 things for you</p>
+          <p>1. Mei Tan is looking for a former CFO. 2. Jonas Berg asked you for an intro. Reply <span class="code-chip">HELP 1</span> or <span class="code-chip">NO 2</span>, or use the buttons.</p>
+        </div>
+        <div class="mail">
+          <p class="mail-from"><span>Northwind Founders</span><span>Fri 14:12</span></p>
+          <p class="mail-subject">Your sign-in link for Northwind Founders</p>
+          <p>One button signs you in. The link works once and lasts 15 minutes.</p>
+        </div>
+        <div class="mail">
+          <p class="mail-from"><span>Northwind Founders</span><span>Mon 10:40</span></p>
+          <p class="mail-subject">Priya Shah sent you a message</p>
+          <p>Open it in Northwind Founders. Turn these off with one click.</p>
+        </div>
+      </div>
+      <ul class="rule-list">
+        <li><h3>A weekly email, not a firehose</h3><p>One email a week with what needs them, on the day and hour you choose. A founder with nothing to answer gets nothing. Each item has a button, and with reply set up they can answer by replying.</p></li>
+        <li><h3>Sign in from the email</h3><p>With email on, a founder asks for a sign-in link: one button, one use, 15 minutes. A password works too.</p></li>
+        <li><h3>Notices they can turn off</h3><p>Intros, messages, asks and the weekly email each send their own notices, each with one-click unsubscribe and a switch on the member's card.</p></li>
+        <li><h3>Made for phones too</h3><p>On a small screen the app swaps its sidebar for a tab bar at the bottom.</p></li>
+      </ul>
+    </div>
+    <p class="fine after-grid">Email goes through your own <a class="text-link" href="https://resend.com">Resend</a> account, from a domain you verified there. Settings checks that domain's SPF, DKIM and DMARC records for you.</p>
+  </div>
+</section>
+
+<section class="section band" id="intros" aria-labelledby="intros-title">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Double opt-in intros</p>
+      <h2 id="intros-title">Four steps, and a yes at the two that matter.</h2>
+      <p class="lede">The connector agrees, then the person your founder wants to meet agrees, and only then are they joined.</p>
+    </div>
+    <ol class="steps">
+      <li><span class="step-number">1</span><h3>Sam asks, with a short note</h3><p>From the path to Alex, Sam asks Priya, the member who knows them. Alex hears nothing yet.</p></li>
+      <li><span class="step-number">2</span><h3>Priya decides</h3><p>Yes, or pass. A pass is private, and a reason, if she gives one, stays with her.</p></li>
+      <li><span class="step-number">3</span><h3>Alex decides</h3><p>Priya forwards a private link, or the app emails it once. One page, no account: yes, no thanks, or stop all intro requests.</p></li>
+      <li><span class="step-number">4</span><h3>One message joins them</h3><p>The ask closes as introduced. Two weeks later Sam is asked whether it helped.</p></li>
+    </ol>
+    <p class="yes-line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Nobody is introduced without saying yes.</p>
+
+    <div class="intro-detail">
+      <ul class="plain-list">
+        <li><b>Sam can't tell whose no it was.</b> He sees a kind, neutral message, and who else can reach Alex.</li>
+        <li><b>Nobody gets chased forever.</b> An ask nobody answers closes by itself after 14 days. If the app emailed Alex the link, one reminder goes 4 days later, and that's the only one.</li>
+        <li><b>The giving side is protected.</b> Each founder has a weekly allowance of asks, 5 by default, and a connector gets at most 10 intro asks a week. A declined ask gives its place back.</li>
+        <li><b>Alex's yes can't be faked by a link preview.</b> Opening the page changes nothing; only a button press answers it. The link works once and closes with the ask.</li>
+        <li><b>Stop means stop.</b> "Stop all intro requests" closes every open ask for Alex and holds back future ones.</li>
+      </ul>
+      <figure>
+        <div class="sheet consent" aria-hidden="true">
+          <div class="mock-bar"><span class="fund-tile">N</span><span class="mock-fund">Northwind Founders</span></div>
+          <p class="mock-title">Would you like to meet Sam?</p>
+          <p class="mock-sub">Hi Alex. Sam Lee asked Priya Shah for an intro to you, and Priya wanted to check with you first. Nothing happens unless you say yes.</p>
+          <p class="mock-sub"><b>Sam Lee</b> · CEO, Lumen Health</p>
+          <p class="consent-note">I run Lumen Health: nurse scheduling for hospital chains, live at 3 hospitals. Mercy Valley is our best next customer and you run procurement there. Would you take a 20-minute call?</p>
+          <div class="mock-buttons">
+            <span class="mock-button mock-button-primary">Yes, introduce us</span>
+            <span class="mock-button">No thanks</span>
+          </div>
+          <span class="mock-link">Stop all intro requests from Northwind Founders</span>
+        </div>
+        <figcaption class="caption">A sketch of the page Alex opens, with made-up people. It needs no account.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="report" aria-labelledby="report-title">
+  <div class="wrap split">
+    <div>
+      <div class="section-head">
+        <p class="eyebrow">For you and your partners</p>
+        <h2 id="report-title">Every intro, counted for the partner meeting.</h2>
+        <p class="lede">The asks your founders make become a report your partners can read: asked, each side's yes, introduced, declined, expired, and whether it helped.</p>
+      </div>
+      <ul class="rule-list">
+        <li><h3>Nothing to fill in</h3><p>Every step of every intro is counted as it happens. Pick this quarter so far, last quarter, or since launch.</p></li>
+        <li><h3>The no's are shown too</h3><p>Declines and expiries sit beside the yeses, and expiries are split by who never answered. A count that only goes up teaches the wrong habits.</p></li>
+        <li><h3>Counts, not gossip</h3><p>Admins see totals, never who asked whom. A connector is named only if they turned on "Credit me in reports".</p></li>
+        <li><h3>Print it, download it, send it</h3><p>Print the page, download a CSV, or email it to up to 20 partners. Sending your first report is the last step of setup.</p></li>
+      </ul>
+    </div>
+    <figure>
+      <div class="sheet report" aria-hidden="true">
+        <div class="mock-bar"><span class="fund-tile">N</span><span class="mock-fund">Partner report · this quarter so far</span></div>
+        <p class="report-summary">42 intros asked, 24 made, 9 declined.</p>
+        <table class="report-table">
+          <tbody>
+            <tr><th>Asked</th><td>42</td></tr>
+            <tr><th>Connector said yes</th><td>31</td></tr>
+            <tr><th>Person asked for said yes</th><td>26</td></tr>
+            <tr><th>Introduced</th><td>24</td></tr>
+            <tr><th>Declined<small>A normal, respected answer</small></th><td>9</td></tr>
+            <tr><th>Expired<small>Split by who never answered</small></th><td>6</td></tr>
+            <tr><th>Still open</th><td>3</td></tr>
+            <tr><th>Said it helped<small>17 of the 22 who answered</small></th><td>77%</td></tr>
+          </tbody>
+        </table>
+        <table class="report-table">
+          <tbody>
+            <tr><th>Top connectors<small>Only members who asked to be credited</small></th><td></td></tr>
+            <tr><th>Priya Shah</th><td>6</td></tr>
+            <tr><th>Daniel Okafor</th><td>4</td></tr>
+            <tr><th>Everyone else</th><td>14</td></tr>
+          </tbody>
+        </table>
+        <div class="report-actions"><span>Print</span><span>Download CSV</span><span>Send to partners</span></div>
+      </div>
+      <figcaption class="caption">Made-up numbers for a made-up fund.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="section band" id="privacy" aria-labelledby="privacy-title">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Trust</p>
+      <h2 id="privacy-title">Whose data is this? Here's where it lives and who can see it.</h2>
+    </div>
+    <ul class="trust">
+      <li><h3>The community's data is yours</h3><p>Profiles, asks, intros and messages sit in your own Postgres database, on your host's account.</p></li>
+      <li><h3>Network search runs on Village</h3><p>A member who shares gives Village their email address and connects their network there. Your Village secret key is sealed in your database with your setup token.</p></li>
+      <li><h3>Nobody is contacted without a yes</h3><p>The member who knows them decides first. The person being introduced hears nothing until then, and isn't introduced until they say yes too.</p></li>
+      <li><h3>Admins can't read direct messages</h3><p>Not in the app: no page, route or role reaches them. An admin sees a copy of a message only when the person who received it reports it.</p></li>
+      <li class="is-limit"><h3>Not end-to-end encrypted</h3><p>Messages and intro notes are stored as plain text. Anyone with access to your database can read them, backups included. Tell your members who runs it.</p></li>
+      <li class="is-limit"><h3>Your network is in it too</h3><p>Creating the group shares your own Village network with every current and future member. Decide that before you click.</p></li>
+      <li><h3>Anyone can say "Don't look me up"</h3><p>Filled-in cards say where each line came from. A member can hide any filled-in line, or ask not to be looked up at all.</p></li>
+      <li><h3>We make no compliance claims for your copy</h3><p>You choose where it runs. Found a problem? <a class="text-link" href="https://github.com/VillageHQ/community/blob/main/SECURITY.md">Report it privately</a>.</p></li>
+    </ul>
+
+    <div class="sheet deal">
+      <div>
+        <h3>Founders read the deal before they share.</h3>
+        <p class="fine">These are the app's own words. Each member ticks a box to agree. "Not now" keeps everything that doesn't need Village.</p>
+      </div>
+      <div class="deal-quote">
+        <p>Joining shares your Village network with every current and future member of this community. They can find your contacts and ask you for introductions.</p>
+        <p>You gain access to the networks of the other members in return. Search them and see who can introduce you, and why.</p>
+        <p>You say yes or no to every intro anyone asks you for.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="switches" aria-labelledby="switches-title">
+  <div class="wrap split">
+    <div class="section-head">
+      <p class="eyebrow">Your choice</p>
+      <h2 id="switches-title">Start quiet. Turn on more when your community wants it.</h2>
+      <p class="lede">Admin, Features switches the optional parts on or off. Off, a part's pages and its menu entry are gone.</p>
+    </div>
+    <ul class="rule-list switches">
+      <li><span class="switch-state switch-state-on">On</span><p><b>Members, messages, asks, network search and intros.</b> On from the start. Search and intros need Village; the rest runs without it.</p></li>
+      <li><span class="switch-state">Off</span><p><b>Feed.</b> A shared feed for asks, wins and offers, with replies and reactions.</p></li>
+      <li><span class="switch-state">Off</span><p><b>Jobs.</b> Founders link their hiring tool and the jobs update every hour. Add a public board and a widget for your website.</p></li>
+      <li><span class="switch-state">Off</span><p><b>Slack and Discord.</b> New asks and a weekly line in your channel, and /ask from Slack.</p></li>
+      <li><span class="switch-state">Off</span><p><b>Perks.</b> A perks page for your founders.</p></li>
+    </ul>
+  </div>
+</section>
+
+<section class="section band" id="setup" aria-labelledby="setup-title">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Set up</p>
+      <h2 id="setup-title">Click a button, then follow a checklist.</h2>
+      <p class="lede">The Vercel and DigitalOcean paths need no terminal and no code. You need an account on the host and, for network search and intros, a Village developer account.</p>
     </div>
 
     <div class="setup-grid">
-      <ol class="setup-steps">
-        <li><span class="step-number">1</span><div><h3>Click a deploy button</h3><p>Your host creates the app and its database.</p></div></li>
-        <li><span class="step-number">2</span><div><h3>Choose a setup token</h3><p>A long password you enter once. A password manager can generate it. <a class="text-link" href="https://github.com/VillageHQ/community#setup-token">What it's for</a></p></div></li>
-        <li><span class="step-number">3</span><div><h3>Create your admin account</h3><p>Your new site opens on this step. Setup closes for good after it.</p></div></li>
-        <li><span class="step-number">4</span><div><h3>Follow the checklist</h3><p>Your progress saves as you go. It stays open in Admin, so you can finish later.</p></div></li>
+      <ol class="numbered">
+        <li><h3>Click a deploy button</h3><p>Your host creates the app and its database.</p></li>
+        <li><h3>Choose a setup token</h3><p>A long password you enter once. A password manager can make one. <a class="text-link" href="https://github.com/VillageHQ/community#setup-token">What it's for</a></p></li>
+        <li><h3>Create your admin account</h3><p>Your new site opens on this step. Setup closes for good after it.</p></li>
+        <li><h3>Follow the checklist</h3><p>Your progress saves as you go, and it stays open in Admin.</p></li>
       </ol>
-      <div class="checklist-card">
-        <p class="checklist-eyebrow">Sample: your checklist in the app</p>
-        <ul class="checklist">
-          <li class="is-done"><span class="check-mark"><svg class="icon icon-small" aria-hidden="true"><use href="#i-check"/></svg></span><div><b>Brand your community</b><small>Your name, logo and color. Everyone sees them.</small></div></li>
-          <li class="is-current"><span class="check-mark">2</span><div><b>Register your domain</b><small>Tell Village the address of this site.</small></div></li>
-          <li><span class="check-mark">3</span><div><b>Add your Village keys</b><small>They connect this community to Village.</small></div></li>
-          <li><span class="check-mark">4</span><div><b>Create the group</b><small>This turns on network search for everyone who joins.</small></div></li>
-          <li><span class="check-mark">5</span><div><b>Invite your first members</b><small>A personal invite link for each person you bring in.</small></div></li>
+      <div class="sheet checklist" aria-hidden="true">
+        <p class="eyebrow">Sample: your checklist in the app</p>
+        <ul>
+          <li class="is-done"><span class="check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span><b>Brand your community</b><small>Your name, logo and colour.</small></span></li>
+          <li><span class="check-box">2</span><span><b>Add your Village keys</b><small>They connect this community to Village.</small></span></li>
+          <li><span class="check-box">3</span><span><b>Create the group</b><small>This turns on network search for everyone who joins.</small></span></li>
+          <li><span class="check-box">4</span><span><b>Invite your first members</b><small>A personal link for each person you bring in.</small></span></li>
+          <li><span class="check-box">5</span><span><b>Your first partner report</b><small>Send it, or mark it shared another way.</small></span></li>
         </ul>
       </div>
     </div>
 
-    <h3 class="deploy-title">Pick where it runs</h3>
-    <p class="deploy-hint">Not sure? Pick the host your fund already pays for.</p>
-    <ul class="deploy-grid">
-      <li class="deploy-card">
-        <div class="deploy-head"><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-triangle"/></svg></span><h4>Vercel</h4><span class="tag tag-offer">No terminal</span></div>
+    <ul class="deploy">
+      <li class="sheet deploy-card">
+        <div class="deploy-head"><h3>Vercel</h3><span class="tag">No terminal</span></div>
         <p>The button copies the code to your account and sets up a Neon database.</p>
-        <a class="button button-primary button-large button-block" href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity&amp;project-name=community&amp;repository-name=community&amp;env=SETUP_TOKEN&amp;envDescription=Choose%20a%20long%20random%20password%20of%20at%20least%2032%20characters.%20You%20will%20enter%20it%20once%20at%20%2Fsetup%20to%20create%20your%20admin%20account.&amp;envLink=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity%23setup-token&amp;stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D" rel="noopener noreferrer" data-deploy="vercel">Deploy on Vercel</a>
+        <a class="button button-primary button-block" href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity&amp;project-name=community&amp;repository-name=community&amp;env=SETUP_TOKEN&amp;envDescription=Choose%20a%20long%20random%20password%20of%20at%20least%2032%20characters.%20You%20will%20enter%20it%20once%20at%20%2Fsetup%20to%20create%20your%20admin%20account.&amp;envLink=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity%23setup-token&amp;stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D" rel="noopener noreferrer">Deploy on Vercel</a>
       </li>
-      <li class="deploy-card">
-        <div class="deploy-head"><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-droplet"/></svg></span><h4>DigitalOcean</h4><span class="tag tag-offer">No terminal</span></div>
-        <p>The button creates the app and a dev database. That database has 512 MiB and no backups, so upgrade it for real use. Replace the <code>change-me</code> placeholder with your setup token.</p>
-        <a class="button button-primary button-large button-block" href="https://cloud.digitalocean.com/apps/new?repo=https://github.com/VillageHQ/community/tree/main" rel="noopener noreferrer" data-deploy="digitalocean">Deploy on DigitalOcean</a>
+      <li class="sheet deploy-card">
+        <div class="deploy-head"><h3>DigitalOcean</h3><span class="tag">No terminal</span></div>
+        <p>The button creates the app and a small dev database with no backups, so upgrade it for real use. Replace the <code>change-me</code> placeholder with your setup token.</p>
+        <a class="button button-primary button-block" href="https://cloud.digitalocean.com/apps/new?repo=https://github.com/VillageHQ/community/tree/main" rel="noopener noreferrer">Deploy on DigitalOcean</a>
       </li>
-      <li class="deploy-card deploy-card-wide" id="own-server">
-        <div class="deploy-copy">
-          <div class="deploy-head"><span class="room-icon"><svg class="icon" aria-hidden="true"><use href="#i-terminal"/></svg></span><h4>Your own server</h4><span class="tag tag-win">Terminal needed</span></div>
-          <p>Run one command on a server you rent. Pick this if someone on your team is comfortable in a terminal.</p>
+      <li class="sheet deploy-card deploy-wide" id="own-server">
+        <div>
+          <div class="deploy-head"><h3>Your own server</h3><span class="tag">Terminal needed</span></div>
+          <p>Rent a server, point a domain at it and run one command. It runs on HTTPS, restarts by itself and backs up every day. <a class="text-link" href="https://github.com/VillageHQ/community/blob/main/docs/self-host-vps.md">Read the guide</a></p>
         </div>
         <div class="deploy-command">
-        <pre class="command"><code data-command>curl -fsSL https://<wbr>raw.githubusercontent.com/<wbr>VillageHQ/<wbr>community/<wbr>main/<wbr>install.sh | sudo bash</code></pre>
-        <button class="button button-soft button-large button-block" type="button" data-copy hidden><svg class="icon icon-small" aria-hidden="true"><use href="#i-copy"/></svg><span data-copy-label>Copy the command</span></button>
-        <p class="sr-only" role="status" data-copy-status></p>
+          <pre class="command"><code data-command>curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh | sudo bash</code></pre>
+          <button class="button button-block" type="button" data-copy hidden><span data-copy-label>Copy the command</span></button>
+          <p class="sr-only" role="status" data-copy-status></p>
         </div>
       </li>
     </ul>
-    <p class="status-note"><svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg><span><b>Where these stand:</b> we haven't yet run the one-click buttons end to end on a live host. If a step doesn't match what you see, <a class="text-link" href="https://github.com/VillageHQ/community/issues">tell us on GitHub</a>.</span></p>
+    <p class="status-note"><b>Where these stand:</b> we haven't yet run the one-click buttons end to end on a live host. If a step doesn't match what you see, <a class="text-link" href="https://github.com/VillageHQ/community/issues">tell us on GitHub</a>.</p>
   </div>
 </section>
 
-<section class="section section-cost" id="cost" aria-labelledby="cost-title">
+<section class="section" id="cost" aria-labelledby="cost-title">
   <div class="wrap">
     <div class="section-head">
-      <p class="asked"><span class="avatar avatar-small tint-b" aria-hidden="true">PR</span><span class="asked-bubble">What does it cost?</span></p>
+      <p class="eyebrow">What you pay for</p>
       <h2 id="cost-title">The software is free. You pay your host and Village directly.</h2>
     </div>
-    <ul class="cost-grid">
-      <li class="cost-card cost-card-free">
-        <h3>The software</h3>
-        <p class="cost-figure">Free</p>
-        <p>Open source under AGPL-3.0. No seat fee and no contract.</p>
-      </li>
-      <li class="cost-card">
-        <h3>Hosting and database</h3>
-        <p class="cost-figure">Your host's price</p>
-        <p>Your host bills you, not us. Check their current prices before you pick one.</p>
-      </li>
-      <li class="cost-card">
-        <h3>Network search and intros</h3>
-        <p class="cost-figure">Your Village credits</p>
-        <p>The app estimates about $0.22 for a full search and $0.10 for a path lookup, at $0.02 a credit, so 100 searches come to about $22. Village's prices can change. Village's setup asks for a payment method before your app goes live.</p>
-      </li>
+    <ul class="columns">
+      <li><h3>The software</h3><p>Open source under AGPL-3.0. No seat fee and no contract.</p></li>
+      <li><h3>Hosting and database</h3><p>Your host bills you, not us. Check their current prices before you pick one.</p></li>
+      <li><h3>Network search and intros</h3><p>They spend your Village app's credits. Members, messages and the feed spend none.</p></li>
     </ul>
-    <ul class="cost-notes">
-      <li><svg class="icon icon-small" aria-hidden="true"><use href="#i-check"/></svg><span><b>Feed, members and messages spend no credits.</b> Only network search and intros use Village.</span></li>
-      <li><svg class="icon icon-small" aria-hidden="true"><use href="#i-check"/></svg><span><b>You set a daily limit.</b> Each member gets 50 searches and path lookups a day by default. You can set it from 1 to 500.</span></li>
-      <li><svg class="icon icon-small" aria-hidden="true"><use href="#i-check"/></svg><span><b>You see the usage.</b> Admin, Credits shows use per day and per member. Your balance lives on <a class="text-link" href="https://village.ai/platform/usage">Village's platform</a>.</span></li>
-      <li><svg class="icon icon-small" aria-hidden="true"><use href="#i-check"/></svg><span><b>Email is optional.</b> To send invites and intro notices by email, add your own <a class="text-link" href="https://resend.com">Resend</a> account. Resend bills you for it.</span></li>
+    <ul class="columns columns-follow">
+      <li><h3>A monthly cap</h3><p>Lookups stop at the community's monthly credit cap, and every admin gets an email at 80% and at 100%.</p></li>
+      <li><h3>A daily limit</h3><p>Each member gets 50 searches and path lookups a day by default. You set it from 1 to 500.</p></li>
+      <li><h3>You see the use</h3><p>Admin, Credits shows use per day and per member. Your balance lives on <a class="text-link" href="https://village.ai/platform/usage">Village's platform</a>.</p></li>
     </ul>
   </div>
 </section>
 
-<section class="band band-soft" id="privacy" aria-labelledby="privacy-title">
-  <div class="wrap">
+<section class="section band" id="control" aria-labelledby="control-title">
+  <div class="wrap split">
     <div class="section-head">
-      <p class="asked"><span class="avatar avatar-small tint-b" aria-hidden="true">PR</span><span class="asked-bubble">Is my founders' data safe? And ours?</span></p>
-      <h2 id="privacy-title">Here's where it lives and who can see it.</h2>
-    </div>
-
-    <div class="data-grid">
-      <div class="data-card">
-        <p class="data-where"><svg class="icon icon-small" aria-hidden="true"><use href="#i-database"/></svg>Your database</p>
-        <h3>The community's data is yours.</h3>
-        <p>Profiles, posts, messages and intro notes sit in your own Postgres database, on your host's account.</p>
-      </div>
-      <div class="data-card">
-        <p class="data-where"><svg class="icon icon-small" aria-hidden="true"><use href="#i-waypoints"/></svg>Village</p>
-        <h3>Network search runs on Village.</h3>
-        <p>A member who shares gives Village their email address and connects their network there. Your Village keys sit in your database as plain text, so be careful who can open it.</p>
-      </div>
-    </div>
-
-    <div class="deal-card">
-      <div class="deal-intro">
-        <h3>Founders read the deal before they share.</h3>
-        <p>These are the app's own words. Each member ticks a box to agree. "Not now" keeps the feed, messages and members on.</p>
-      </div>
-      <div class="deal-body">
-        <div class="deal-sides">
-          <div class="deal-side"><h4><svg class="icon icon-small" aria-hidden="true"><use href="#i-users-round"/></svg>You share</h4><p>Joining shares your Village network with <b>every current and future member</b> of this community. They can find your contacts and ask you for introductions.</p></div>
-          <div class="deal-side deal-side-get"><h4><svg class="icon icon-small" aria-hidden="true"><use href="#i-waypoints"/></svg>You get</h4><p>You gain access to the networks of the other members in return. Search them and see who can introduce you, and why.</p></div>
-        </div>
-        <ul class="deal-notes">
-          <li><svg class="icon icon-small" aria-hidden="true"><use href="#i-check"/></svg>You say yes or no to every intro anyone asks you for.</li>
-          <li><svg class="icon icon-small" aria-hidden="true"><use href="#i-search"/></svg>That covers intros only. Without asking you each time, members can find your contacts in search and see you as someone who can introduce them.</li>
-          <li><svg class="icon icon-small" aria-hidden="true"><use href="#i-mail"/></svg>Your email address goes to Village, the company that runs network search for this community.</li>
-          <li><svg class="icon icon-small" aria-hidden="true"><use href="#i-door-open"/></svg>You can leave the group from this page. That stops sharing with the group, but people who already saw your contacts can't unsee them.</li>
-          <li><svg class="icon icon-small" aria-hidden="true"><use href="#i-circle-alert"/></svg>If an admin removes you from this site, we also ask Village to take you out of the group. If Village can't, you stay shared until you leave inside Village.</li>
-        </ul>
-      </div>
-    </div>
-
-    <ul class="answer-grid">
-      <li><h3>Can admins read direct messages?</h3><p>Not in the app. No page, route or role reaches them. An admin sees a copy of a message only when the person who received it reports it.</p></li>
-      <li class="answer-limit"><h3>The limit you should know</h3><p>Messages aren't end-to-end encrypted. Anyone with access to your database can read them, backups included. Tell your members who runs it.</p></li>
-      <li><h3>Who sees an intro request?</h3><p>The person asking and the person asked. If that member says yes, the person they would meet sees the note too. Admins see counts, plus a copy of a note if the person asked reports it.</p></li>
-      <li><h3>Does anyone get contacted without a yes?</h3><p>No. The member who knows them decides first. On a yes, the person being introduced gets a private link to say yes or no thanks. Nobody is introduced until they say yes too.</p></li>
-      <li><h3>Who can get in?</h3><p>Only people you invite. Public sign-up is closed. Each link is personal, works once and lasts 14 days. Network search stays off until the member's email is confirmed.</p></li>
-      <li class="answer-limit"><h3>Your network is in it too</h3><p>Creating the group shares your own Village network with every current and future member. Decide that before you click.</p></li>
-    </ul>
-    <p class="security-line"><svg class="icon icon-small" aria-hidden="true"><use href="#i-shield-check"/></svg><span>We make no compliance claims for your copy, because you choose where it runs. Found a problem? <a class="text-link" href="https://github.com/VillageHQ/community/blob/main/SECURITY.md">Report it privately</a>.</span></p>
-  </div>
-</section>
-
-<section class="band band-ink" id="control" aria-labelledby="control-title">
-  <div class="wrap">
-    <div class="section-head">
-      <p class="asked asked-on-ink"><span class="avatar avatar-small tint-b" aria-hidden="true">PR</span><span class="asked-bubble">Who controls it?</span></p>
+      <p class="eyebrow">Control</p>
       <h2 id="control-title">You do. It's your copy, on your account.</h2>
+      <p class="lede">Everything lives in Admin: members and invites, reports, the partner report, credits, the weekly email, features, branding and settings, and an audit log of who did what, and when.</p>
     </div>
-    <div class="control-grid">
-      <div>
-        <h3>Everything lives in Admin</h3>
-        <ul class="admin-list">
-          <li><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg><div><b>Members</b><small>Invite, make an admin, remove.</small></div></li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-flag"/></svg><div><b>Reports</b><small>See what members reported. Dismiss, delete or remove.</small></div></li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg><div><b>Health</b><small>Real counts of members, posts, intros and invites.</small></div></li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-coins"/></svg><div><b>Credits</b><small>Use per day and per member, an estimated cost, the daily limit.</small></div></li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-scroll-text"/></svg><div><b>Audit log</b><small>Who did what, and when.</small></div></li>
-          <li><svg class="icon" aria-hidden="true"><use href="#i-palette"/></svg><div><b>Branding</b><small>Your community's name, logo and color.</small></div></li>
-        </ul>
-      </div>
-      <div>
-        <h3>What running your own copy means</h3>
-        <ul class="own-list">
-          <li><b>The code is yours to keep.</b> It's open source under AGPL-3.0, and it runs on your host's account.</li>
-          <li><b>You choose when to update.</b> Updates aren't automatic. We fix the latest code, but we can't patch your copy for you.</li>
-          <li><b>Village is optional.</b> Only network search and intros need it. Your feed, members and messages run without it.</li>
-          <li><b>Help comes through GitHub.</b> There's no managed plan or support contract. Open an issue there.</li>
-        </ul>
-        <div class="control-actions">
-          <a class="button button-inverse button-large" href="https://github.com/VillageHQ/community"><svg class="icon icon-small" aria-hidden="true"><use href="#i-github"/></svg>See the code</a>
-          <a class="button button-ghost button-large" href="https://github.com/VillageHQ/community/blob/main/LICENSE">Read the license</a>
-        </div>
-      </div>
-    </div>
+    <ul class="rule-list">
+      <li><h3>The code is yours to keep</h3><p>It's open source under AGPL-3.0, and it runs on your host's account.</p></li>
+      <li><h3>You choose when to update</h3><p>Updates aren't automatic. We fix the latest code, but we can't patch your copy for you.</p></li>
+      <li><h3>Village is optional</h3><p>Only network search and intros need it. Members, messages and asks run without it.</p></li>
+      <li><h3>Help comes through GitHub</h3><p>Open an issue there. <a class="text-link" href="https://github.com/VillageHQ/community">See the code</a> · <a class="text-link" href="https://github.com/VillageHQ/community/blob/main/LICENSE">Read the licence</a></p></li>
+    </ul>
   </div>
 </section>
 
 <section class="section" id="questions" aria-labelledby="questions-title">
   <div class="wrap wrap-narrow">
-    <h2 id="questions-title">A few more questions</h2>
+    <h2 id="questions-title" class="faq-title">Questions platform leads ask</h2>
     <div class="faq">
-      <details><summary>Do founders get email notifications?<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>With email on, invites and intro notices go by email. Direct messages and feed posts send no email, so founders see them when they open the app.</p></details>
-      <details><summary>Can it run on our own domain?<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>Your host gives your site an address, and hosts let you attach your own domain there. The app reads its public address from a setting called <code>APP_URL</code>. You also give Village that address in the checklist.</p></details>
-      <details><summary>What happens when I remove someone?<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>They're signed out, can't sign back in and leave the directory. You choose whether their posts stay or go. If they're in the Village group, we ask Village to take them out and tell you what happened. If Village can't, their network stays shared until they leave inside Village.</p></details>
-      <details><summary>Does Village host it for me?<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>No. You run your own copy on your own host. Village builds the project and sells the credits that network search uses.</p></details>
-      <details><summary>What if someone forgets their password?<svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></summary><p>With email on, they reset it from the sign-in page. Admins can't set a member's password, on purpose: it would let an admin sign in as them and read their messages. <a class="text-link" href="https://github.com/VillageHQ/community#if-someone-forgets-their-password">The README covers email off.</a></p></details>
+      <details><summary>My founders won't open another platform.</summary><p>They don't have to live in it. The weekly email carries what needs them, and they can answer from it. Intros, messages and asks send their own notices. The first visit is one invite link, a name and a password.</p></details>
+      <details><summary>Emails in my name, to people I know?</summary><p>Nobody outside the community hears about an intro until the member who knows them says yes, and the link goes from that member or, once, from the app. Intro, message, ask and weekly emails have one-click unsubscribe.</p></details>
+      <details><summary>Can admins read our direct messages?</summary><p>Not in the app. Anyone with access to your database can, because messages aren't end-to-end encrypted. We say so plainly.</p></details>
+      <details><summary>Can it run on our own domain?</summary><p>Yes. Your host lets you attach your own domain. The app reads its public address from a setting called <code>APP_URL</code>.</p></details>
+      <details><summary>What happens when I remove someone?</summary><p>They're signed out, can't sign back in and leave the directory. You choose whether their posts stay or go. If they're in the Village group, we ask Village to take them out and tell you what happened.</p></details>
+      <details><summary>Does Village host it for me?</summary><p>No. You run your own copy on your own host. Village builds the project and sells the credits that network search uses.</p></details>
+      <details><summary>What does the AGPL mean for us?</summary><p>You may use, change and run the code for free. If you change it and let people use your changed version over a network, you must offer those users your changed source. A plain-language summary, not legal advice.</p></details>
     </div>
   </div>
 </section>
 
 <section class="closing" aria-labelledby="closing-title">
-  <div class="closing-panel">
-    <div class="closing-faces" aria-hidden="true">
-      <span class="avatar avatar-large tint-d"><svg viewBox="0 0 64 64"><use href="#portrait-jonas"/></svg></span>
-      <span class="avatar avatar-large tint-f"><svg viewBox="0 0 64 64"><use href="#portrait-noor"/></svg></span>
-      <span class="avatar avatar-large tint-a"><svg viewBox="0 0 64 64"><use href="#portrait-amara"/></svg></span>
-      <span class="avatar avatar-large tint-b"><svg viewBox="0 0 64 64"><use href="#portrait-mateo"/></svg></span>
-      <span class="avatar avatar-large tint-e"><svg viewBox="0 0 64 64"><use href="#portrait-lena"/></svg></span>
-    </div>
-    <h2 id="closing-title">Save your founders a seat.</h2>
-    <p>Pick a host, click the button and send your first invite.</p>
-    <div class="closing-actions">
-      <a class="button button-inverse button-hero" href="#deploy">Pick where it runs<svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
-      <a class="button button-ghost button-hero" href="https://github.com/VillageHQ/community"><svg class="icon" aria-hidden="true"><use href="#i-github"/></svg>See the code</a>
+  <div class="wrap">
+    <h2 id="closing-title">Give every founder your network. Show your partners every intro.</h2>
+    <p class="lede">Pick a host, click the button and send your first invite.</p>
+    <div class="hero-actions">
+      <a class="button button-primary" href="#setup">Pick where it runs</a>
+      <a class="button" href="https://github.com/VillageHQ/community">See the source code</a>
     </div>
   </div>
 </section>
@@ -530,18 +404,19 @@
 
 <footer class="site-footer">
   <div class="wrap footer-grid">
-    <p class="lockup">
-      <a class="lockup-home" href="#top"><svg class="lockup-mark" aria-hidden="true"><use href="#village-mark"/></svg><span class="lockup-name">Community</span></a>
-      <a class="lockup-by" href="https://village.ai">by Village</a>
-    </p>
+    <a class="lockup" href="#top">
+      <svg class="lockup-mark" viewBox="0 0 48 48" aria-hidden="true"><path d="M9 41V25a15 15 0 0 1 30 0v16h-5V25a10 10 0 0 0-20 0v16Z" fill="currentColor"/><rect x="6" y="39.5" width="36" height="2.5" fill="currentColor"/><path d="M22.2 13h3.6v28l-1.8-2.2-1.8 2.2Z" fill="#9c4e22"/></svg>
+      <span class="lockup-name">Founderhall</span>
+      <span class="lockup-by">by Village</span>
+    </a>
     <nav class="footer-links" aria-label="Footer">
-      <a href="https://github.com/VillageHQ/community">GitHub</a>
+      <a href="https://github.com/VillageHQ/community">Source code</a>
       <a href="https://github.com/VillageHQ/community/blob/main/LICENSE">AGPL-3.0 licence</a>
       <a href="https://github.com/VillageHQ/community/blob/main/SECURITY.md">Security</a>
       <a href="https://github.com/VillageHQ/community/issues">Issues</a>
       <a href="https://village.ai">Village</a>
     </nav>
-    <p class="footer-fine">Every person, fund and company on this page is made up. This page sets no cookies and has no analytics.</p>
+    <p class="fine">Every person, fund and company on this page is made up. This page sets no cookies and has no analytics.</p>
   </div>
 </footer>
 </body>
