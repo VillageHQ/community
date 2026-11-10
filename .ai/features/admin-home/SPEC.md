@@ -1,3 +1,7 @@
+---
+id: admin-home
+status: building
+---
 # Admin home
 
 The admin's first page (`/admin`): this quarter's intros in one serif line, then what needs the admin, then the
