@@ -17,6 +17,7 @@ export type ShellNavigationItem = {
   icon: ReactNode;
   section: NavigationSection;
   badge?: string;
+  isFullPageLoad?: boolean;
 };
 
 export function isNavigationItemActive(href: string, pathname: string) {

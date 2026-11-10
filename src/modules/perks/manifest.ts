@@ -13,7 +13,8 @@ export const perksManifest = {
   isOnByDefault: false,
   needsVillage: false,
   requires: [],
-  navigation: [{ label: "Perks", href: PERKS_PAGE, icon: Gift, section: NAVIGATION_SECTIONS.primary }],
+  // The page frames the marketplace under its own security policy, which only a full page load applies.
+  navigation: [{ label: "Perks", href: PERKS_PAGE, icon: Gift, section: NAVIGATION_SECTIONS.primary, isFullPageLoad: true }],
   adminTabs: [{ label: "Perks", href: PERKS_ADMIN_PAGE }],
   paths: { pages: [PERKS_PAGE, PERKS_ADMIN_PAGE], api: [PERKS_API_ROUTES.save] },
 } satisfies ToggleableManifest;

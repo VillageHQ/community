@@ -6,7 +6,7 @@ import { ChevronRight, Ellipsis, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Dialog } from "radix-ui";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { askCountsQuery } from "@/modules/asks/queries";
@@ -23,6 +23,11 @@ import {
   type NavigationBadgeCounts,
   type ShellNavigationItem,
 } from "./navigation-rules";
+
+// A plain link where the page needs a full load (its own security headers), the app's link elsewhere.
+function NavigationLink({ isFullPageLoad, ...linkProps }: ComponentProps<typeof Link> & { href: string; isFullPageLoad?: boolean }) {
+  return isFullPageLoad ? <a {...linkProps} /> : <Link {...linkProps} />;
+}
 
 type NavigationProps = { items: readonly ShellNavigationItem[]; isAdmin: boolean; badges: NavigationBadgeCounts };
 
@@ -78,10 +83,11 @@ const SIDEBAR_LINK =
 
 function SidebarSection({ section, items, badges }: Omit<NavigationProps, "isAdmin"> & { section: NavigationSection }) {
   const pathname = usePathname();
-  return items.filter((item) => item.section === section).map(({ label, href, icon, badge }) => (
-    <Link
+  return items.filter((item) => item.section === section).map(({ label, href, icon, badge, isFullPageLoad }) => (
+    <NavigationLink
       key={href}
       href={href}
+      isFullPageLoad={isFullPageLoad}
       aria-current={isNavigationItemActive(href, pathname) ? "page" : undefined}
       className={SIDEBAR_LINK}
     >
@@ -91,7 +97,7 @@ function SidebarSection({ section, items, badges }: Omit<NavigationProps, "isAdm
         count={badge ? badges[badge] : undefined}
         description={badge ? describeCount(badge, badges[badge]) : undefined}
       />
-    </Link>
+    </NavigationLink>
   ));
 }
 
@@ -153,14 +159,14 @@ function MoreTab({ items, badges, pathname }: MoreTabProps) {
             </Dialog.Close>
           </div>
           <div className="flex flex-col gap-1">
-            {items.map(({ label, href, icon, badge }) => (
+            {items.map(({ label, href, icon, badge, isFullPageLoad }) => (
               <Dialog.Close key={href} asChild>
-                <Link href={href} aria-current={isNavigationItemActive(href, pathname) ? "page" : undefined} className={OVERFLOW_ROW}>
+                <NavigationLink href={href} isFullPageLoad={isFullPageLoad} aria-current={isNavigationItemActive(href, pathname) ? "page" : undefined} className={OVERFLOW_ROW}>
                   {icon}
                   {label}
                   <NavigationBadge count={badge ? badges[badge] : undefined} description={badge ? describeCount(badge, badges[badge]) : undefined} />
                   <ChevronRight aria-hidden="true" className={badge && badges[badge] ? undefined : "ml-auto"} />
-                </Link>
+                </NavigationLink>
               </Dialog.Close>
             ))}
           </div>
@@ -180,10 +186,10 @@ export function TabBar({ items, badges }: Omit<NavigationProps, "isAdmin">) {
       data-slot="tab-bar"
       className="fixed inset-x-0 bottom-0 z-20 grid auto-cols-fr grid-flow-col bg-card px-2 pt-2 pb-[max(env(safe-area-inset-bottom),14px)] shadow-sheet lg:hidden"
     >
-      {tabs.map(({ label, href, icon, badge }) => {
+      {tabs.map(({ label, href, icon, badge, isFullPageLoad }) => {
         const isActive = isNavigationItemActive(href, pathname);
         return (
-          <Link key={href} href={href} aria-current={isActive ? "page" : undefined} className={TAB}>
+          <NavigationLink key={href} href={href} isFullPageLoad={isFullPageLoad} aria-current={isActive ? "page" : undefined} className={TAB}>
             <TabIcon isActive={isActive}>{icon}</TabIcon>
             {label}
             {badge && liveBadges[badge] ? (
@@ -191,7 +197,7 @@ export function TabBar({ items, badges }: Omit<NavigationProps, "isAdmin">) {
                 {liveBadges[badge]}
               </span>
             ) : null}
-          </Link>
+          </NavigationLink>
         );
       })}
       {overflow.length > 0 ? <MoreTab items={overflow} badges={liveBadges} pathname={pathname} /> : null}
