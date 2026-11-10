@@ -105,6 +105,9 @@ describe("where the data is kept, and whom to ask", () => {
     expect(JSON.stringify(await hidden.json())).toContain("Use plain text on one line.");
 
     expect(await readDataHome(database)).toEqual({ location: null, contact: null });
+
+    const joined = { ...FILLED, contactName: "Data lead \u0645\u06cc\u200c\u062e\u0648\u0627\u0647\u0645" };
+    expect((await save(admin, joined)).status).toBe(200);
   });
 
   it("is for admins only", async () => {
