@@ -89,13 +89,13 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
           <div className="min-w-0 flex-[1_1_240px]">
             <h1 className="type-h1">{profile.name}</h1>
             {roleLine || shown.company ? (
-              <p className="type-lead mt-1 text-foreground-soft">
+              <p className="type-lead mt-1 wrap-anywhere text-foreground-soft">
                 {roleLine}
                 {shown.company ? (
-                  <span className="inline-flex items-center gap-1.5 align-baseline">
-                    <CompanyLogo url={shown.companyLogoUrl} sizePx={PROFILE_LOGO_SIZE_PX} className="self-center" />
+                  <>
+                    <CompanyLogo url={shown.companyLogoUrl} sizePx={PROFILE_LOGO_SIZE_PX} className="mt-0 mr-1.5 align-[-0.2em]" />
                     {shown.company}
-                  </span>
+                  </>
                 ) : null}
               </p>
             ) : null}
