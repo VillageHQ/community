@@ -12,3 +12,14 @@ Note: the one hit above, rate_limit "sign-in-email|<email>", was written AFTER t
 sign in again with the deleted email and old password (it was refused: 401, "Invalid email or password"). Any sign-in
 attempt with any typed email makes such a row; the app prunes them 5 minutes after the last attempt. The re-run below,
 taken after that window, shows zero.
+
+Re-run after the 5-minute window (no manual cleanup: the app's own pruning had already removed the row):
+NOTICE:  Rows holding the deleted member's email, name or words, across every text column of every table: 0
+DO
+      name      |                             email                              | banned 
+----------------+----------------------------------------------------------------+--------
+ Ada Admin      | ada@example.com                                                | f
+ Deleted member | deleted-bce50b55-af4c-4bd0-a0e7-047d4348e42c@reclaimed.invalid | t
+ Deleted member | deleted-dad7ebf2-a09d-4546-9574-f73ed80c02ae@reclaimed.invalid | t
+(3 rows)
+
