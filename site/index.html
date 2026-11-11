@@ -296,12 +296,12 @@
     <div class="section-head">
       <p class="eyebrow">Set up</p>
       <h2 id="setup-title">Click a button, then follow a checklist.</h2>
-      <p class="lede">The Vercel and DigitalOcean paths need no terminal and no code. You need an account on the host and, for network search and intros, a Village developer account.</p>
+      <p class="lede">The DigitalOcean path needs no terminal and no code. You need an account on the host and, for network search and intros, a Village developer account.</p>
     </div>
 
     <div class="setup-grid">
       <ol class="numbered">
-        <li><h3>Click a deploy button</h3><p>Your host creates the app and its database.</p></li>
+        <li><h3>Click the deploy button</h3><p>Your host creates the app and its database.</p></li>
         <li><h3>Choose a setup token</h3><p>A long password you enter once. A password manager can make one. <a class="text-link" href="https://github.com/VillageHQ/community#setup-token">What it's for</a></p></li>
         <li><h3>Create your admin account</h3><p>Your new site opens on this step. Setup closes for good after it.</p></li>
         <li><h3>Follow the checklist</h3><p>Your progress saves as you go, and it stays open in Admin.</p></li>
@@ -320,16 +320,11 @@
 
     <ul class="deploy">
       <li class="sheet deploy-card">
-        <div class="deploy-head"><h3>Vercel</h3><span class="tag">No terminal</span></div>
-        <p>The button copies the code to your account and sets up a Neon database.</p>
-        <a class="button button-primary button-block" href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity&amp;project-name=community&amp;repository-name=community&amp;env=SETUP_TOKEN%2CCRON_SECRET&amp;envDescription=Choose%20two%20different%20long%20random%20passwords%20of%20at%20least%2032%20characters.%20SETUP_TOKEN%20you%20enter%20once%20at%20%2Fsetup%20to%20create%20your%20admin%20account.%20CRON_SECRET%20lets%20Vercel%20run%20the%20weekly%20email%20and%20other%20timed%20jobs.&amp;envLink=https%3A%2F%2Fgithub.com%2FVillageHQ%2Fcommunity%23setup-token&amp;stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22neon%22%2C%22productSlug%22%3A%22neon%22%2C%22protocol%22%3A%22storage%22%7D%5D" rel="noopener noreferrer">Deploy on Vercel</a>
-      </li>
-      <li class="sheet deploy-card">
         <div class="deploy-head"><h3>DigitalOcean</h3><span class="tag">No terminal</span></div>
         <p>The button creates the app and a small dev database with no backups, so upgrade it for real use. Replace the <code>change-me</code> placeholder with your setup token.</p>
         <a class="button button-primary button-block" href="https://cloud.digitalocean.com/apps/new?repo=https://github.com/VillageHQ/community/tree/main" rel="noopener noreferrer">Deploy on DigitalOcean</a>
       </li>
-      <li class="sheet deploy-card deploy-wide" id="own-server">
+      <li class="sheet deploy-card" id="own-server">
         <div>
           <div class="deploy-head"><h3>Your own server</h3><span class="tag">Terminal needed</span></div>
           <p>Rent a server, point a domain at it and run one command. It runs on HTTPS, restarts by itself and backs up every day. <a class="text-link" href="https://github.com/VillageHQ/community/blob/main/docs/self-host-vps.md">Read the guide</a></p>
@@ -341,7 +336,7 @@
         </div>
       </li>
     </ul>
-    <p class="status-note"><b>Where these stand:</b> we haven't yet run the one-click buttons end to end on a live host. If a step doesn't match what you see, <a class="text-link" href="https://github.com/VillageHQ/community/issues">tell us on GitHub</a>.</p>
+    <p class="status-note"><b>Where these stand:</b> we haven't yet run the one-click button end to end on a live host. A Vercel button comes back once a live test shows the weekly email sends there. If a step doesn't match what you see, <a class="text-link" href="https://github.com/VillageHQ/community/issues">tell us on GitHub</a>.</p>
   </div>
 </section>
 

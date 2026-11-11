@@ -46,6 +46,7 @@ const ADMIN_TABS: AdminTab[] = [
   { label: "Jobs", href: JOB_BOARD_PAGES.admin, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Features", href: ROUTES.adminFeatures, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Weekly email", href: ROUTES.adminWeeklyEmail, readBadge: () => 0, badgeDescription: () => "" },
+  { label: "Email", href: ROUTES.adminEmail, readBadge: () => 0, badgeDescription: () => "" },
   {
     label: "Slack and Discord",
     href: CHAT_ADMIN_PAGE,

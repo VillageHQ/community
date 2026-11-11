@@ -1,5 +1,5 @@
 {
-  "id": "aab9baaf-ef39-4c96-a8f4-bfcbc310ae16",
+  "id": "38243869-f5f2-4eb2-89e1-9548bb2dcc20",
   "prevId": "6c9f9c4a-a1b3-43cd-9dd2-1891528bd67f",
   "version": "7",
   "dialect": "postgresql",
@@ -1615,18 +1615,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "pinned_at": {
-          "name": "pinned_at",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pinned_by_user_id": {
-          "name": "pinned_by_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (3) with time zone",
@@ -1708,19 +1696,6 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
-        },
-        "ask_pinned_by_user_id_user_id_fk": {
-          "name": "ask_pinned_by_user_id_user_id_fk",
-          "tableFrom": "ask",
-          "tableTo": "user",
-          "columnsFrom": [
-            "pinned_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1746,10 +1721,6 @@
         "ask_closed_with_outcome": {
           "name": "ask_closed_with_outcome",
           "value": "(\"ask\".\"closed_at\" is null) = (\"ask\".\"outcome\" is null)"
-        },
-        "ask_pinned_only_open": {
-          "name": "ask_pinned_only_open",
-          "value": "\"ask\".\"pinned_at\" is null or \"ask\".\"closed_at\" is null"
         },
         "ask_title_length": {
           "name": "ask_title_length",
@@ -5257,6 +5228,140 @@
           ]
         }
       },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.village_check": {
+      "name": "village_check",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checked_at": {
+          "name": "checked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "keys": {
+          "name": "keys",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "group_state": {
+          "name": "group_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "group_member_count": {
+          "name": "group_member_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checked_by_id": {
+          "name": "checked_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "village_check_checked_by_id_user_id_fk": {
+          "name": "village_check_checked_by_id_user_id_fk",
+          "tableFrom": "village_check",
+          "tableTo": "user",
+          "columnsFrom": [
+            "checked_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.village_member_check": {
+      "name": "village_member_check",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_provisioned": {
+          "name": "is_provisioned",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "network_status": {
+          "name": "network_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_in_group": {
+          "name": "is_in_group",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "checked_at": {
+          "name": "checked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "village_member_check_user_id_user_id_fk": {
+          "name": "village_member_check_user_id_user_id_fk",
+          "tableFrom": "village_member_check",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
