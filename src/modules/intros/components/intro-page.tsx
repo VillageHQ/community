@@ -115,7 +115,9 @@ export function IntroPage(props: IntroPageProps) {
       <FlashOnArrival />
       <BackLink href={ROUTES.intros}>Your intros</BackLink>
       <div className="fh-pagehead">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        {/* Founderhall's row (gap 12). The column gap is a hair under, so a title and pill that fill the phone row exactly
+            stay on one line as on Founderhall instead of wrapping on a sub-pixel. */}
+        <div className="flex flex-wrap items-start justify-between gap-x-[11.9px] gap-y-3">
           <h1 className="fh-h1">{readIntroTitle(intro)}</h1>
           <Pill tone={pill.tone}>{pill.label}</Pill>
         </div>

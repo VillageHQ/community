@@ -11,6 +11,7 @@ import { API_ROUTES } from "@/platform/http/routes";
 
 import { IntroPage } from "./intro-page";
 import { IntrosList } from "./intros-list";
+import { TargetLinkQuestion } from "./public-intro";
 
 const router = vi.hoisted(() => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => router, useSearchParams: () => new URLSearchParams(), usePathname: () => "/intros/x" }));
@@ -146,6 +147,19 @@ describe("the intro screens (Founderhall's)", () => {
 
       expect(screen.getByText("You said: helpful")).toBeTruthy();
       expect(screen.getByText("Introduced · helpful")).toBeTruthy();
+    });
+  });
+
+  describe("the person's page", () => {
+    it("says there's nothing to do when the answer was already given in another tab", async () => {
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ answer: "no_thanks", isRepeat: true }), { headers: { "Content-Type": "application/json" } })));
+      const facts = { askerName: "Sam Lee", connectorName: "Marcus Webb", targetName: "Rosa Lindqvist", note: NOTE, joinsByEmail: true, asksForEmail: false };
+      render(createElement(TargetLinkQuestion, { token: "t".repeat(43), community: COMMUNITY, facts, initialChoice: "yes", optOutHref: "/intro/optout/x" }));
+
+      fireEvent.click(screen.getByRole("button", { name: "Send my answer" }));
+
+      expect(await screen.findByText("Nothing to do")).toBeTruthy();
+      expect(screen.queryByText("You’re introduced")).toBeNull();
     });
   });
 

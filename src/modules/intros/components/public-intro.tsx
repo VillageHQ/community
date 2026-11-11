@@ -110,14 +110,19 @@ export function TargetLinkQuestion({ token, community, facts, initialChoice, opt
         ]}
         submit={async ({ choice }) => {
           const isYes = choice === TARGET_CHOICES.yes;
-          await answerConsentRequest({
+          const saved = await answerConsentRequest({
             token,
             answer: isYes ? CONSENT_ANSWERS.yes : CONSENT_ANSWERS.noThanks,
             ...(isYes && facts.asksForEmail && email.trim() ? { targetEmail: email.trim() } : {}),
           });
+          // Answered already (another tab, another link): say there's nothing to do, never the choice just clicked.
+          if (saved.isRepeat) {
+            setDone(NOTHING_TO_DO);
+            return;
+          }
           const isJoinedByEmail = facts.joinsByEmail || (facts.asksForEmail && email.trim() !== "");
           setDone(
-            !isYes
+            saved.answer !== CONSENT_ANSWERS.yes
               ? { title: "Thanks for answering", text: "Nobody is told why, and nothing more is sent about this.", hasConsentLine: true }
               : isJoinedByEmail
                 ? { title: "You’re introduced", text: `Check your email: one message to you and ${askerFirst}, with ${connectorFirst} copied. Reply to it to write to them.`, hasConsentLine: true }
