@@ -197,13 +197,6 @@
       "when": 1794366759264,
       "tag": "0028_village_check",
       "breakpoints": true
-    },
-    {
-      "idx": 29,
-      "version": "7",
-      "when": 1794370068914,
-      "tag": "0029_asks_tools",
-      "breakpoints": true
     }
   ]
 }
