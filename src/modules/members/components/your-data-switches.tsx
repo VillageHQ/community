@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { SlidersHorizontal } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
@@ -83,7 +83,7 @@ export function SwitchesSheet({ communityName, isHidden, messagePolicy, isMessag
   return (
     <form className="fh-sheet" id="switches" aria-labelledby="switches-title" onSubmit={submit}>
       <h2 id="switches-title" className="fh-h3 flex items-center gap-1.5">
-        <SlidersHorizontal aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} /> Your switches
+        <Settings2 aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} /> Your switches
       </h2>
       {lookup ? (
         <SetRow
@@ -102,7 +102,7 @@ export function SwitchesSheet({ communityName, isHidden, messagePolicy, isMessag
       {isMessagesOn ? (
         <fieldset className="mt-3.5">
           <legend className="fh-label">Who can message me</legend>
-          <div className="mt-2 grid gap-2">
+          <div className="mt-2">
             {radio(MESSAGE_POLICIES.communityDefault, "The community’s default", `Now: ${COMMUNITY_DEFAULT_WORDS[COMMUNITY_MESSAGE_POLICY]}.`)}
             {radio(MESSAGE_POLICIES.anyone, `Anyone in ${communityName}`, "Any member can start a conversation.")}
             {radio(MESSAGE_POLICIES.introduced, "Only people I’ve been introduced to", "Members you met through an intro here. Admins can always write.")}

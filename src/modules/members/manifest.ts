@@ -14,7 +14,7 @@ export const membersManifest = {
   navigation: [{ label: "Directory", href: ROUTES.members, icon: Users, section: NAVIGATION_SECTIONS.primary }],
   adminTabs: [],
   paths: {
-    pages: [ROUTES.feed, ROUTES.landing, ROUTES.welcome, ROUTES.members, ROUTES.people, ROUTES.editCard, ROUTES.legacyMembers, ROUTES.join, ROUTES.confirmEmail],
+    pages: [ROUTES.feed, ROUTES.landing, ROUTES.welcome, ROUTES.members, ROUTES.people, ROUTES.editCard, ROUTES.join, ROUTES.confirmEmail],
     api: [API_ROUTES.members, API_ROUTES.profile, API_ROUTES.onboarding, API_ROUTES.invites, API_ROUTES.inviteAccept],
   },
 } satisfies CoreManifest;

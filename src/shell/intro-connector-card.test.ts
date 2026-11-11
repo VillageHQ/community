@@ -64,7 +64,7 @@ describe("a connector", () => {
     it("links to their profile and offers a message", () => {
       renderCard(MEMBER_CONNECTOR);
 
-      expect(screen.getByRole("link", { name: "See Jonas Lindqvist's profile" }).getAttribute("href")).toBe("/members/jonas");
+      expect(screen.getByRole("link", { name: "See Jonas Lindqvist's profile" }).getAttribute("href")).toBe("/people/jonas");
       expect(screen.getByRole("button", { name: "Message Jonas Lindqvist" })).toBeTruthy();
     });
 

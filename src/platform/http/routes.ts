@@ -22,14 +22,13 @@ export const ROUTES = {
   intros: "/intros",
   introConsent: "/meet",
   // Founderhall's addresses. The old ones (/members, /members/<id>, /members/card, /members/data) answer with
-  // permanent redirects from their own page files.
+  // permanent redirects (next.config.mjs).
   members: "/directory",
   people: "/people",
   editCard: "/me",
   yourData: "/me/data",
   emailSettings: "/me/email",
   myNetwork: "/me/network",
-  legacyMembers: "/members",
   network: "/network",
   admin: "/admin",
   adminSetup: "/admin/setup",

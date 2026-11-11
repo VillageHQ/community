@@ -41,11 +41,14 @@ import { readCompanyJobs } from "@/modules/job-board/reads-hiring";
 
 type ProfilePageProps = { params: Promise<{ memberId: string }> };
 
-// The tab reads "Ada Okafor · Northwind Founders", as Founderhall's does.
+// The tab reads "Ada Okafor · Northwind Founders", as Founderhall's does. A member hidden from the directory keeps
+// the plain title, so their name never shows on a page that answers "not found".
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
   const { memberId } = await params;
-  const profile = await readMemberProfile(getDatabase(), memberId);
-  return { title: profile?.name ?? PAGE_TITLES.profile };
+  const database = getDatabase();
+  const profile = await readMemberProfile(database, memberId);
+  if (!profile || (await isHiddenMember(database, profile.id))) return { title: PAGE_TITLES.profile };
+  return { title: profile.name };
 }
 
 const EXTERNAL_LINK_RELATIONSHIP = "noopener noreferrer nofollow";

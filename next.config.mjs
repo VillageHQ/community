@@ -66,6 +66,12 @@ export const nextConfig = {
     { source: "/feed", destination: "/", permanent: false },
     // Demo faces moved from drawn .svg to .webp portraits; a demo seeded before that keeps the old links until its reset.
     { source: "/demo/faces/:name([a-z0-9-]+)\.svg", destination: "/demo/faces/:name.webp", permanent: true },
+    // Founderhall's addresses for the directory and profiles (the transplant). Old links in emails and bookmarks still
+    // work; the query goes along.
+    { source: "/members", destination: "/directory", permanent: true },
+    { source: "/members/card", destination: "/me", permanent: true },
+    { source: "/members/data", destination: "/me/data", permanent: true },
+    { source: "/members/:memberId", destination: "/people/:memberId", permanent: true },
   ],
 };
 

@@ -60,7 +60,7 @@ export function PrivacySheet({ communityName, isHidden, acceptsIntroAsks }: Priv
       </h2>
       <form onSubmit={submit}>
         <p className="fh-label mt-3">Show me in the directory to</p>
-        <div className="mt-2 grid gap-2">
+        <div className="mt-2">
           <OptionCard
             id="privacy-visibility-all"
             name="visibility"
