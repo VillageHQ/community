@@ -8,7 +8,6 @@ import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
 import { isActiveMember } from "../../platform/auth/member-status.ts";
-import { pickOnAccent } from "../../platform/design/accent.ts";
 import { readFirstName } from "../../platform/design/avatar-identity.ts";
 import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
 import { EMAIL_KINDS } from "../../platform/email/kinds.ts";
@@ -19,7 +18,7 @@ import type { RequestContext } from "../../platform/http/request-context.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import { ROUTES } from "../../platform/http/routes.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
-import { memberNetwork } from "../members/schema.ts";
+import { memberNetwork, memberPrivacy } from "../members/schema.ts";
 import { NETWORK_ERROR_CODES } from "./contract.ts";
 import { memberConnectNudge } from "./schema.ts";
 
@@ -69,23 +68,29 @@ export async function readConnectMeter(database: Database, adminId: string, now 
   };
 }
 
+// Founderhall's words (Admin › Village › Nudge): plain text first; the HTML part says the same.
 export function renderConnectNudge(memberName: string, communityName: string, link: string, accentColor: string) {
   const firstName = readFirstName(toSingleLine(memberName));
   const community = toSingleLine(communityName);
-  const subject = `Find warm intros through ${community}`;
+  const subject = `Find warm paths through your own network and ${community}’`;
   const greeting = firstName ? `Hi ${firstName},` : "Hi,";
-  const body = `Members of ${community} connect their networks, so a search finds people they can introduce each other to. Connect yours and the same search covers the people you know too.`;
-  const promise = "Members can see that you know someone and ask you for an intro. They can't download your contacts, and nobody is contacted without your yes.";
+  const body = `Members of ${community} can connect their networks, so search finds people they can introduce each other to. Connect yours and the same search covers the people you know too.`;
+  const promise = "Members who search can see that you know a person and ask you for an intro. They can’t download your contacts, see how you know them beyond a warmth word, or reach anyone without your yes.";
   const action = "Connect your network";
+  const after = "It takes a couple of minutes on the network service’s own screen. You can disconnect any time.";
+  const footer = `Sent by ${community} via its member portal.`;
   const html = [
     `<div style="font-family:Arial,sans-serif;font-size:16px;line-height:24px;color:#0c2427;max-width:520px;margin:0 auto;padding:24px">`,
     `<p style="margin:0 0 12px">${escapeHtml(greeting)}</p>`,
     `<p style="margin:0 0 12px">${escapeHtml(body)}</p>`,
-    `<p style="margin:0 0 24px">${escapeHtml(promise)}</p>`,
-    `<a href="${escapeHtml(link)}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${accentColor};color:${pickOnAccent(accentColor)};font-weight:700;text-decoration:none">${escapeHtml(action)}</a>`,
+    `<p style="margin:0 0 12px">${escapeHtml(promise)}</p>`,
+    `<p style="margin:0 0 12px">${escapeHtml(action)}: <a href="${escapeHtml(link)}" style="color:${accentColor};font-weight:700">${escapeHtml(link)}</a></p>`,
+    `<p style="margin:0 0 12px">${escapeHtml(after)}</p>`,
+    `<p style="margin:0;color:#59625d;font-size:13px">${escapeHtml(footer)}</p>`,
     `</div>`,
   ].join("");
-  return { subject, html, text: `${greeting}\n\n${body}\n\n${promise}\n\n${action}: ${link}` };
+  const text = [greeting, body, promise, `${action}: ${link}`, after, footer].join("\n\n");
+  return { subject, html, text };
 }
 
 // Claimed by one conditional upsert, so two admins clicking at once can't remind anyone twice.
@@ -102,13 +107,23 @@ async function claimNudge(transaction: DatabaseOrTransaction, memberId: string, 
   return claimed.length > 0;
 }
 
-async function queueNudges(transaction: DatabaseOrTransaction, environment: Environment, branding: EmailBranding, adminId: string, now: Date) {
+// Who a nudge goes to: members who haven't connected, or members who connected but don't take intro asks.
+export const NUDGE_AUDIENCES = { unconnected: "unconnected", noAsks: "no_asks" } as const;
+
+export type NudgeAudience = (typeof NUDGE_AUDIENCES)[keyof typeof NUDGE_AUDIENCES];
+
+export function isInNudgeAudience(audience: NudgeAudience) {
+  return audience === NUDGE_AUDIENCES.noAsks ? and(isNotNull(memberNetwork.groupJoinedAt), eq(memberPrivacy.acceptsIntroAsks, false)) : isUnconnected();
+}
+
+async function queueNudges(transaction: DatabaseOrTransaction, environment: Environment, branding: EmailBranding, adminId: string, now: Date, audience: NudgeAudience) {
   const members = await transaction
     .select({ id: user.id, name: user.name, email: user.email })
     .from(user)
     .leftJoin(memberNetwork, eq(memberNetwork.userId, user.id))
+    .leftJoin(memberPrivacy, eq(memberPrivacy.userId, user.id))
     .leftJoin(memberConnectNudge, eq(memberConnectNudge.userId, user.id))
-    .where(and(isActiveMember(now), isUnconnected(), ne(user.id, adminId), isNudgeDue(now)));
+    .where(and(isActiveMember(now), isInNudgeAudience(audience), ne(user.id, adminId), isNudgeDue(now)));
 
   const link = `${resolveAppUrl(environment)}${ROUTES.network}`;
   let queuedCount = 0;
@@ -126,17 +141,17 @@ async function queueNudges(transaction: DatabaseOrTransaction, environment: Envi
   return queuedCount;
 }
 
-export async function nudgeUnconnectedMembers({ database, environment, member }: RequestContext, now = new Date()) {
+export async function nudgeUnconnectedMembers({ database, environment, member }: RequestContext, now = new Date(), audience: NudgeAudience = NUDGE_AUDIENCES.unconnected) {
   const branding = await readEmailBranding(database, environment);
   if (!branding) {
-    throw new RequestError(CONFLICT_STATUS, NETWORK_ERROR_CODES.notConfigured, "Reminders go by email. Turn on email in Settings first.");
+    throw new RequestError(CONFLICT_STATUS, NETWORK_ERROR_CODES.notConfigured, "Nudges go by email. Set up Mail first.");
   }
   return withAdminTransaction(database, member.id, async (transaction) => {
-    const queuedCount = await queueNudges(transaction, environment, branding, member.id, now);
+    const queuedCount = await queueNudges(transaction, environment, branding, member.id, now, audience);
     if (queuedCount > 0) {
       await recordAdminAction(transaction, member.id, {
         action: AUDIT_ACTIONS.connectNudgeSent,
-        detail: queuedCount === 1 ? "1 member" : `${queuedCount} members`,
+        detail: `${queuedCount === 1 ? "1 member" : `${queuedCount} members`}${audience === NUDGE_AUDIENCES.noAsks ? " not allowing asks" : ""}`,
       });
     }
     return queuedCount;

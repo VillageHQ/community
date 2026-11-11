@@ -1,5 +1,5 @@
 {
-  "id": "03c73fa8-b866-4b98-b46a-061aed37dfa2",
+  "id": "fc337ebe-6018-45fa-b084-69bb49aee058",
   "prevId": "d3206edc-837e-41d6-aebc-209777187c4d",
   "version": "7",
   "dialect": "postgresql",
@@ -1045,6 +1045,81 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.village_credit_call": {
+      "name": "village_credit_call",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credits": {
+          "name": "credits",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "called_at": {
+          "name": "called_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "village_credit_call_called_at": {
+          "name": "village_credit_call_called_at",
+          "columns": [
+            {
+              "expression": "called_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "village_credit_call_user_id_user_id_fk": {
+          "name": "village_credit_call_user_id_user_id_fk",
+          "tableFrom": "village_credit_call",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.village_monthly_usage": {
       "name": "village_monthly_usage",
       "schema": "",
@@ -1596,18 +1671,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "target_text": {
-          "name": "target_text",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "target_company": {
-          "name": "target_company",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "listed_at": {
           "name": "listed_at",
           "type": "timestamp (3) with time zone",
@@ -1747,18 +1810,6 @@
           "name": "ask_target_only_on_asks",
           "value": "\"ask\".\"target_slug\" is null or \"ask\".\"kind\" = 'ask'"
         },
-        "ask_target_text_only_on_asks": {
-          "name": "ask_target_text_only_on_asks",
-          "value": "(\"ask\".\"target_text\" is null and \"ask\".\"target_company\" is null) or \"ask\".\"kind\" = 'ask'"
-        },
-        "ask_target_text_length": {
-          "name": "ask_target_text_length",
-          "value": "char_length(\"ask\".\"target_text\") <= 160"
-        },
-        "ask_target_company_length": {
-          "name": "ask_target_company_length",
-          "value": "char_length(\"ask\".\"target_company\") <= 120"
-        },
         "ask_category_known": {
           "name": "ask_category_known",
           "value": "\"ask\".\"category\" in ('intro', 'hire', 'customer', 'advice', 'other')"
@@ -1777,7 +1828,7 @@
         },
         "ask_title_length": {
           "name": "ask_title_length",
-          "value": "char_length(\"ask\".\"title\") between 1 and 500"
+          "value": "char_length(\"ask\".\"title\") between 1 and 120"
         },
         "ask_detail_length": {
           "name": "ask_detail_length",
@@ -1815,13 +1866,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "kind": {
-          "name": "kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'answer'"
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (3) with time zone",
@@ -1831,21 +1875,6 @@
         }
       },
       "indexes": {
-        "ask_answer_ask_id_idx": {
-          "name": "ask_answer_ask_id_idx",
-          "columns": [
-            {
-              "expression": "ask_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "ask_answer_author_id_idx": {
           "name": "ask_answer_author_id_idx",
           "columns": [
@@ -1891,13 +1920,18 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "ask_answer_one_per_member": {
+          "name": "ask_answer_one_per_member",
+          "nullsNotDistinct": false,
+          "columns": [
+            "ask_id",
+            "author_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
-        "ask_answer_kind_known": {
-          "name": "ask_answer_kind_known",
-          "value": "\"ask_answer\".\"kind\" in ('answer', 'know_someone', 'done_myself')"
-        },
         "ask_answer_body_length": {
           "name": "ask_answer_body_length",
           "value": "char_length(\"ask_answer\".\"body\") between 1 and 1000"
@@ -1935,24 +1969,6 @@
         },
         "connector_slug": {
           "name": "connector_slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "person_name": {
-          "name": "person_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "person_title": {
-          "name": "person_title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "warmth": {
-          "name": "warmth",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -2031,10 +2047,6 @@
         "ask_helper_reason_known": {
           "name": "ask_helper_reason_known",
           "value": "\"ask_helper\".\"reason\" in ('path', 'words')"
-        },
-        "ask_helper_warmth_known": {
-          "name": "ask_helper_warmth_known",
-          "value": "\"ask_helper\".\"warmth\" is null or \"ask_helper\".\"warmth\" in ('close', 'knows', 'met')"
         }
       },
       "isRLSEnabled": false
@@ -4202,12 +4214,6 @@
         },
         "hidden_at": {
           "name": "hidden_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "confirmed_at": {
-          "name": "confirmed_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

@@ -23,6 +23,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 
 ## Now (in flight)
 - [ ] Founderhall transplant, foundation: Founderhall's look, shared parts and shell (menus, console, phone bars, footers, flash) on every Community screen, and a parts review page — fh-foundation — open pull request — [spec](features/fh-foundation/SPEC.md)
+- [ ] Founderhall transplant, Set up and the plumbing pages: Founderhall's Set up, Settings, Mail, Village, Import members, Sign-in links, Integrations, Perks and Audit log on Community's engine — fh-setup-plumbing — open pull request — [spec](features/fh-setup-plumbing/SPEC.md)
 - [ ] Founderhall transplant, dark mode: a dark version of Founderhall's look (owner's pick), token layer only, every pair WCAG AA — fh-dark — open pull request — [spec](features/fh-dark/SPEC.md)
 - [ ] Founderhall transplant, area 8: sign-in by emailed link first, one-button invites, the two welcome steps and every public page in Founderhall's card — fh-public-signin — open pull request — [spec](features/fh-public-signin/SPEC.md)
 - [ ] Founderhall transplant, area 1: Today and Asks & updates in Founderhall's screens, a page for each ask, Is this right?, Founderhall's emails — fh-today-asks — open pull request — [spec](features/fh-today-asks/SPEC.md)

@@ -14,6 +14,6 @@ export const chatManifest = {
   needsVillage: false,
   requires: [],
   navigation: [],
-  adminTabs: [{ label: "Slack and Discord", href: CHAT_ADMIN_PAGE }],
+  adminTabs: [{ label: "Integrations", href: CHAT_ADMIN_PAGE }],
   paths: { pages: [CHAT_ADMIN_PAGE], api: [CHAT_API_ROUTES.admin, "/api/chat"] },
 } satisfies ToggleableManifest;

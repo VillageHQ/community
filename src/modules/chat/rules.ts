@@ -37,16 +37,16 @@ export type WeekPostFacts = { community: string; introsMade: number; openAsks: n
 
 export function composeAskPost(kind: ChatKind, { community, authorName, title, url }: AskPostFacts) {
   const words = escapeText(kind, clipText(title, CHAT_LIMITS.askCharacters));
-  return `${escapeText(kind, community)} · new ask from ${escapeText(kind, authorName)}: "${words}"\n${toLink(kind, url, "I can help")}`;
+  return `${escapeText(kind, community)} · new ask from ${escapeText(kind, authorName)}: “${words}”\n${toLink(kind, url, "I can help")}`;
 }
 
 export function composeWeekPost(kind: ChatKind, { community, introsMade, openAsks, url }: WeekPostFacts) {
   const numbers = `${plural(introsMade, "intro", "intros")} made, ${plural(openAsks, "ask", "asks")} open.`;
-  return `${escapeText(kind, community)} this week: ${numbers} ${toLink(kind, url, "See the asks")}`;
+  return `${escapeText(kind, community)} this week: ${numbers} ${toLink(kind, url, "Open the console")}`;
 }
 
 export function composeTestPost(kind: ChatKind, { community, url }: { community: string; url: string }) {
-  return `${escapeText(kind, community)}: test post. New asks and a weekly line will show up here. ${toLink(kind, url, "Open the community")}`;
+  return `${escapeText(kind, community)}: test post. New asks and a weekly line will show up here. ${toLink(kind, url, "Open the portal")}`;
 }
 
 // The first name only, or "a member" for someone the directory doesn't list.

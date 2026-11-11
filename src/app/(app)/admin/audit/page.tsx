@@ -23,7 +23,7 @@ export default modulePage(adminManifest, async function AdminAuditLogPage() {
   queryClient.setQueryData(auditPageQuery(FIRST_PAGE).queryKey, auditPage);
 
   return (
-    <AdminSection title="Audit log" description="Who did what, and when. Nothing here can be edited from this site.">
+    <AdminSection title="Audit log" description="Who changed what, newest first. Kept in this portal’s own database.">
       <HydrationBoundary state={dehydrate(queryClient)}>
         <AuditLog />
       </HydrationBoundary>

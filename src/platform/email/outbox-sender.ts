@@ -11,6 +11,8 @@ import { readResendConfig, sendResendEmail, type ResendConfig } from "./resend.t
 import { emailOutbox } from "./schema.ts";
 import { escapeHtml } from "./email-text.ts";
 import { buildUnsubscribeParts, UNSUBSCRIBE_URL_MARK } from "./unsubscribe.ts";
+import { composeSenderAddress, readMailSettings } from "./mail-settings.ts";
+import { readBranding } from "../branding/branding.ts";
 
 export const MAXIMUM_SEND_ATTEMPTS = 6;
 const MINUTE_MS = 60_000;
@@ -138,10 +140,17 @@ const SUMMARY_KEYS = {
   [OUTBOX_STATUSES.skipped]: "skipped",
 } as const;
 
+// The sender the admin set in Set up › Settings (from name, sending domain), over the host's RESEND_FROM_ADDRESS.
+export async function readSenderConfig(database: Database, config: ResendConfig): Promise<ResendConfig> {
+  const [mail, branding] = await Promise.all([readMailSettings(database), readBranding(database)]);
+  return { ...config, fromAddress: composeSenderAddress(config.fromAddress, mail, branding.name) };
+}
+
 async function sendClaimed(database: Database, environment: Environment, onlyId: string | null) {
   const summary: OutboxSendSummary = { sent: 0, retrying: 0, failed: 0, skipped: 0 };
-  const config = readResendConfig(environment);
-  if (!config) return summary;
+  const hostConfig = readResendConfig(environment);
+  if (!hostConfig) return summary;
+  const config = await readSenderConfig(database, hostConfig);
 
   for (const email of await claimDueEmails(database, onlyId)) {
     summary[SUMMARY_KEYS[await deliver(database, environment, config, email)]] += 1;
