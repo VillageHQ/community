@@ -64,7 +64,7 @@ export function AnswerForm({ askId }: { askId: string }) {
           Your answer
         </label>
         <input className="fh-input" id="c-body" name="body" maxLength={ASK_LIMITS.answerLength} placeholder="Write an answer" required />
-        <Button size="sm" type="submit" disabled={isPending}>
+        <Button size="sm" type="submit" disabled={isPending} className="h-8 self-center">
           <Send aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />
           Send
         </Button>

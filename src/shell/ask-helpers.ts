@@ -49,6 +49,19 @@ export function describeAllowanceUsed({ cap, backAt }: AskAllowance) {
   return `You've used this week's ${cap} asks. The next one comes back ${when}. An intro ask also comes back if it's declined, expires or you withdraw it.`;
 }
 
+// Founderhall's words when a post on Asks & updates would go past the week's asks: "The next one comes back 12 Nov."
+export function describePostAllowanceUsed({ cap, backAt }: AskAllowance) {
+  const when = backAt ? new Date(backAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) : "in a few days";
+  return `You’ve used this week’s ${cap} asks. The next one comes back ${when}.`;
+}
+
+// The same check for a post from the Asks & updates composer, in Founderhall's words.
+export const assertPostAllowance: AllowanceCheck = async (transaction, memberId) => {
+  await transaction.select({ id: user.id }).from(user).where(eq(user.id, memberId)).for("no key update");
+  const allowance = await readAskAllowance(transaction, memberId);
+  if (allowance.left === 0) throw new RequestError(CONFLICT_STATUS, ASK_ERROR_CODES.allowanceUsed, describePostAllowanceUsed(allowance));
+};
+
 // Locks the member's row first, so two asks at once count each other.
 export const assertAskAllowance: AllowanceCheck = async (transaction, memberId) => {
   await transaction.select({ id: user.id }).from(user).where(eq(user.id, memberId)).for("no key update");

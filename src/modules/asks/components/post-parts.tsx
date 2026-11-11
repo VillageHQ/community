@@ -106,7 +106,7 @@ export function PostCard({ post, now, isYoursTab = false }: { post: BoardPost; n
         </Link>
         {isYoursTab && isAsk && isOpen ? (
           <Link className="fh-react" href={page}>
-            Mark answered
+            <span className="underline">Mark answered</span>
           </Link>
         ) : null}
       </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { asksManifest } from "@/modules/asks/manifest";
-import { readAskFlash } from "@/modules/asks/contract";
+import { ASKS_PAGE, readAskFlash } from "@/modules/asks/contract";
 import { jobBoardManifest } from "@/modules/job-board/manifest";
 import { readBoardJobs } from "@/modules/job-board/reads";
 import { describeEmailConfirmation } from "@/modules/members/contract-email-confirmation-copy";
@@ -79,6 +79,7 @@ export default modulePage(membersManifest, async function TodayRoute({ searchPar
       nextSteps={nextSteps}
       lookupQuestion={lookupState?.needsAnswer ? <LookupQuestionCard communityName={community.name} /> : null}
       flash={readAskFlash(flashKey)}
+      askIntroHref={isNetworkOn ? ROUTES.network : `${ASKS_PAGE}#compose`}
       now={now}
     />
   );

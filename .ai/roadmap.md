@@ -23,6 +23,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 
 ## Now (in flight)
 - [ ] Founderhall transplant, foundation: Founderhall's look, shared parts and shell (menus, console, phone bars, footers, flash) on every Community screen, and a parts review page — fh-foundation — open pull request — [spec](features/fh-foundation/SPEC.md)
+- [ ] Founderhall transplant, area 1: Today and Asks & updates in Founderhall's screens, a page for each ask, Is this right?, Founderhall's emails — fh-today-asks — open pull request — [spec](features/fh-today-asks/SPEC.md)
 - [ ] A Village check through Village's own API (keys, group, each member), the member's own status on Meet, a sent-email list with the do-not-send list, and no Vercel button on the website for now — village-check — open pull request — [spec](features/village-check/SPEC.md)
 - [ ] The small known bugs: sign-in keeps the typed email, switched-off pages answer 404, Today's "Check your card", Perks from the menu, Slack /ask follow-up, hyphenated words in matching, cohort on a single invite, long fund names on phones — fix-small — open pull request — [charter](features/fix-small/CHARTER.md)
 - [x] Intro fixes from the final check: empty "no" note, the yes on a forwarded link, reminders for quiet intros, a connector who said no, the "no thanks" page — fix-intros — merged, [PR #27](https://github.com/VillageHQ/community/pull/27)

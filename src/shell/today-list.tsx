@@ -23,6 +23,8 @@ import { FactButtons, NotThisWeekButton } from "./today-actions";
 import type { TodayItems } from "./today";
 
 export const TODAY_END_LINE = "That’s everything this week.";
+// Founderhall's "Ask for an intro" opens its guided ask (/ask), which another build area adds. Until then it opens the
+// network search, or the composer when search is off, so the main button never leads nowhere.
 export const GUIDED_ASK_PAGE = "/ask";
 const COMPOSE_PAGE = `${ASKS_PAGE}#compose`;
 const ICON = { "aria-hidden": true, className: "fh-i fh-xs", strokeWidth: 1.5 } as const;
@@ -65,11 +67,13 @@ type TodayPageProps = {
   lookupQuestion: ReactNode;
   flash: string | null;
   now: Date;
+  // Where "Ask for an intro" goes today (see GUIDED_ASK_PAGE).
+  askIntroHref: string;
 };
 
 // Founderhall's Today (todayPage): what needs you in the main column (asks on your paths, intros waiting for your
 // yes, lines to check), your own asks and the community's boards in the right rail.
-export function TodayPage({ today, memberName, communityName, digestDay, dateLabel, allowance, perksCommunityName, openJobCount, nextSteps, lookupQuestion, flash, now }: TodayPageProps) {
+export function TodayPage({ today, memberName, communityName, digestDay, dateLabel, allowance, perksCommunityName, openJobCount, nextSteps, lookupQuestion, flash, now, askIntroHref }: TodayPageProps) {
   const first = firstWord(memberName);
   const help = today.helpableAsks;
   const intros = [...today.introsToAnswer, ...today.introsToFinish];
@@ -102,7 +106,7 @@ export function TodayPage({ today, memberName, communityName, digestDay, dateLab
         }
         action={
           <>
-            <Link className="fh-btn fh-btn-ink fh-btn-sm" href={GUIDED_ASK_PAGE}>
+            <Link className="fh-btn fh-btn-ink fh-btn-sm" href={askIntroHref}>
               <ArrowLeftRight {...ICON} />
               Ask for an intro
             </Link>
@@ -233,7 +237,7 @@ export function TodayPage({ today, memberName, communityName, digestDay, dateLab
               </div>
             ) : (
               <p className="fh-small fh-muted">
-                Nothing in motion. <Link href={GUIDED_ASK_PAGE}>Ask for an intro</Link> or <Link href={COMPOSE_PAGE}>post an ask</Link>.
+                Nothing in motion. <Link href={askIntroHref}>Ask for an intro</Link> or <Link href={COMPOSE_PAGE}>post an ask</Link>.
               </p>
             )}
           </section>
