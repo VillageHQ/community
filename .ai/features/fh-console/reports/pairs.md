@@ -1,0 +1,45 @@
+# Side-by-side pairs (Founderhall left, Community right)
+
+Every acceptance shot of the console area at 1280 and 390 px. The `admin-first-*` pairs come from a fresh install.
+
+- `admin-asks-digest`: 390 1280 
+- `admin-asks-pinned`: 390 1280 
+- `admin-digest-preview`: 390 1280 
+- `admin-digest-preview-sam`: 390 1280 
+- `admin-digest-test-sent`: 390 1280 
+- `admin-first-asks-empty`: 390 1280 
+- `admin-first-home-after-invites`: 390 1280 
+- `admin-first-home-launch-checklist`: 390 1280 
+- `admin-first-intro-log-empty`: 390 1280 
+- `admin-first-invites`: 390 1280 
+- `admin-first-job-board-empty`: 390 1280 
+- `admin-first-members-empty`: 390 1280 
+- `admin-first-partner-report-empty`: 390 1280 
+- `admin-founder-view-today`: 390 1280 
+- `admin-home`: 390 1280 
+- `admin-intro-limits-saved`: 390 1280 
+- `admin-intro-log`: 390 1280 
+- `admin-intro-log-all-time`: 390 1280 
+- `admin-intro-log-declined`: 390 1280 
+- `admin-intro-log-made`: 390 1280 
+- `admin-intro-log-open`: 390 1280 
+- `admin-intro-log-withdrawn`: 390 1280 
+- `admin-invites`: 390 1280 
+- `admin-invites-error`: 390 1280 
+- `admin-invites-resent`: 390 1280 
+- `admin-invites-sent`: 390 1280 
+- `admin-job-board`: 390 1280 
+- `admin-launch-checklist-live`: 390 1280 
+- `admin-members`: 390 1280 
+- `admin-members-admins`: 390 1280 
+- `admin-members-connected`: 390 1280 
+- `admin-members-delete`: 390 1280 
+- `admin-members-invited`: 390 1280 
+- `admin-members-joined`: 390 1280 
+- `admin-members-search-empty`: 390 1280 
+- `admin-partner-report`: 390 1280 
+- `admin-partner-report-all`: 390 1280 
+- `admin-partner-report-month`: 390 1280 
+- `admin-partner-report-send`: 390 1280 
+- `admin-partner-report-year`: 390 1280 
+- `admin-report-sent`: 390 1280 
