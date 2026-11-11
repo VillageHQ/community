@@ -1,22 +1,6 @@
 import "server-only";
 
-import {
-  ArrowLeftRight,
-  BookUser,
-  Building2,
-  CalendarCheck,
-  FileChartColumn,
-  Gift,
-  Hand,
-  Inbox,
-  LayoutDashboard,
-  Search,
-  Settings2,
-  UserRound,
-  UserRoundPlus,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowLeftRight, BookUser, Building2, CalendarCheck, FileChartColumn, Gift, Hand, Inbox, LayoutDashboard, Newspaper, Search, Settings2, UserRound, UserRoundPlus, Users, type LucideIcon } from "lucide-react";
 import { createElement } from "react";
 
 import { ASKS_ADMIN_PAGE } from "@/modules/asks/contract";
@@ -38,8 +22,10 @@ type MenuEntry = Omit<ShellNavigationItem, "icon" | "href"> & {
 // Founderhall's member menu, in its order: Today · Asks & updates · Search · Directory · Jobs · Intros · Inbox ·
 // [Perks] · My profile. Six of them are phone tabs.
 const MEMBER_MENU: readonly MenuEntry[] = [
-  { key: MEMBER_KEYS.today, label: "Today", tabLabel: "Today", icon: CalendarCheck, href: ROUTES.feed },
+  { key: MEMBER_KEYS.today, label: "Today", tabLabel: "Today", icon: CalendarCheck, href: ROUTES.today },
   { key: MEMBER_KEYS.asks, label: "Asks & updates", tabLabel: "Asks", icon: Hand, moduleId: "asks", badge: NAVIGATION_BADGES.asks },
+  // Community's switchable feed (off by default; Founderhall has none): its own page, listed only while it's on.
+  { key: MEMBER_KEYS.feed, label: "Feed", icon: Newspaper, moduleId: "feed" },
   { key: MEMBER_KEYS.search, label: "Search", tabLabel: "Search", icon: Search, moduleId: "network" },
   { key: MEMBER_KEYS.directory, label: "Directory", tabLabel: "Directory", icon: BookUser, moduleId: "members" },
   { key: MEMBER_KEYS.jobs, label: "Jobs", icon: Building2, moduleId: "job-board" },

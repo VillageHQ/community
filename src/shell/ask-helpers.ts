@@ -5,12 +5,13 @@ import { eq } from "drizzle-orm";
 import { ASK_ERROR_CODES, ASK_LIMITS, type AskAllowance, type AskHelperBody, type KnowSomeoneBody } from "@/modules/asks/contract";
 import { readPostedAskTimes, readWeeklyAllowance } from "@/modules/asks/reads";
 import { offerHelp, readAskForHelper, readPathHelperForAuthor, type AllowanceCheck } from "@/modules/asks/service";
-import type { PathFinder } from "@/modules/asks/service-helpers";
+import type { PathFinder, PathTarget } from "@/modules/asks/service-helpers";
 import { introsManifest } from "@/modules/intros/manifest";
 import { readCountedIntroAskTimes } from "@/modules/intros/reads-allowance";
 import { createIntroRequest, createOfferedIntro } from "@/modules/intros/service";
 import { networkManifest } from "@/modules/network/manifest";
-import { NO_OPEN_ASKS, readMemberPaths } from "@/modules/network/service";
+import { SEARCH_PROMPT_MAX_LENGTH } from "@/modules/network/contract";
+import { NO_OPEN_ASKS, readMemberPaths, searchMemberNetwork } from "@/modules/network/service";
 import { user } from "@/platform/database/auth-schema";
 import type { Database, DatabaseOrTransaction } from "@/platform/database/client";
 import type { RequestContext } from "@/platform/http/request-context";
@@ -48,6 +49,19 @@ export function describeAllowanceUsed({ cap, backAt }: AskAllowance) {
   return `You've used this week's ${cap} asks. The next one comes back ${when}. An intro ask also comes back if it's declined, expires or you withdraw it.`;
 }
 
+// Founderhall's words when a post on Asks & updates would go past the week's asks: "The next one comes back 12 Nov."
+export function describePostAllowanceUsed({ cap, backAt }: AskAllowance) {
+  const when = backAt ? new Date(backAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) : "in a few days";
+  return `You’ve used this week’s ${cap} asks. The next one comes back ${when}.`;
+}
+
+// The same check for a post from the Asks & updates composer, in Founderhall's words.
+export const assertPostAllowance: AllowanceCheck = async (transaction, memberId) => {
+  await transaction.select({ id: user.id }).from(user).where(eq(user.id, memberId)).for("no key update");
+  const allowance = await readAskAllowance(transaction, memberId);
+  if (allowance.left === 0) throw new RequestError(CONFLICT_STATUS, ASK_ERROR_CODES.allowanceUsed, describePostAllowanceUsed(allowance));
+};
+
 // Locks the member's row first, so two asks at once count each other.
 export const assertAskAllowance: AllowanceCheck = async (transaction, memberId) => {
   await transaction.select({ id: user.id }).from(user).where(eq(user.id, memberId)).for("no key update");
@@ -59,14 +73,29 @@ export async function isAskIntroOn(database: Database) {
   return isModuleEnabled(database, introsManifest);
 }
 
-// The author's own path lookup: one Village lookup through the credit ledger, cached for a day. Only members who
-// joined the group, so only members who agreed to share, come back as connectors.
-export const findAskPaths: PathFinder = async (context, targetSlug) => {
+// Founderhall's path check: who the ask names ("Head of procurement at a US hospital", and a company) is searched in
+// the author's network first, then the first person found who isn't a member is looked up for paths. A LinkedIn
+// profile skips the search. Both go through the credit ledger.
+async function findPersonToReach(context: RequestContext, { targetSlug, targetText, targetCompany }: PathTarget) {
+  if (targetSlug) return { slug: targetSlug, headline: null };
+  const prompt = [targetText, targetCompany].filter(Boolean).join(" at ").slice(0, SEARCH_PROMPT_MAX_LENGTH);
+  const { people } = await searchMemberNetwork(context, prompt);
+  const person = people.find(({ isMember, linkedinSlug }) => !isMember && linkedinSlug);
+  return person?.linkedinSlug ? { slug: person.linkedinSlug, headline: person.headline } : null;
+}
+
+// The author's own path lookup. Only members who joined the group, so only members who agreed to share, come back
+// as connectors.
+export const findAskPaths: PathFinder = async (context, target) => {
   if (!(await isModuleEnabled(context.database, networkManifest))) return null;
-  const paths = await readMemberPaths(context, targetSlug, NO_OPEN_ASKS);
+  const person = await findPersonToReach(context, target);
+  if (!person) return null;
+  const paths = await readMemberPaths(context, person.slug, NO_OPEN_ASKS);
   return {
     targetName: paths.targetName,
-    helpers: paths.connectors.flatMap(({ member, linkedinSlug, reason }) => (member ? [{ memberId: member.id, connectorSlug: linkedinSlug, reason }] : [])),
+    helpers: paths.connectors.flatMap(({ member, linkedinSlug, reason }) =>
+      member ? [{ memberId: member.id, connectorSlug: linkedinSlug, reason, personTitle: person.headline }] : [],
+    ),
   };
 };
 

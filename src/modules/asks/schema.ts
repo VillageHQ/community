@@ -2,7 +2,7 @@ import { desc, sql } from "drizzle-orm";
 import { check, index, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 import { user } from "../../platform/database/auth-schema.ts";
-import { ASK_CATEGORIES, ASK_HELPER_REASONS, ASK_KINDS, ASK_LIMITS, ASK_OUTCOMES } from "./contract.ts";
+import { ASK_ANSWER_KINDS, ASK_CATEGORIES, ASK_HELPER_REASONS, ASK_KINDS, ASK_LIMITS, ASK_OUTCOMES, ASK_WARMTHS } from "./contract.ts";
 
 const MILLISECOND_PRECISION = 3;
 
@@ -32,6 +32,9 @@ export const ask = pgTable(
     // The person the ask wants to reach, as a LinkedIn profile name. Optional; only asks have one.
     targetSlug: text("target_slug"),
     targetName: text("target_name"),
+    // Founderhall's "Who are you trying to reach?": a person or a role, and a company. Optional; only asks have them.
+    targetText: text("target_text"),
+    targetCompany: text("target_company"),
     listedAt: askTimestamp("listed_at").notNull().defaultNow(),
     closedAt: askTimestamp("closed_at"),
     outcome: text("outcome"),
@@ -47,6 +50,9 @@ export const ask = pgTable(
     index("ask_author_id_idx").on(table.authorId),
     check("ask_kind_known", sql`${table.kind} in (${toSqlList(ASK_KINDS)})`),
     check("ask_target_only_on_asks", sql`${table.targetSlug} is null or ${table.kind} = '${sql.raw(ASK_KINDS.ask)}'`),
+    check("ask_target_text_only_on_asks", sql`(${table.targetText} is null and ${table.targetCompany} is null) or ${table.kind} = '${sql.raw(ASK_KINDS.ask)}'`),
+    check("ask_target_text_length", sql`char_length(${table.targetText}) <= ${sql.raw(String(ASK_LIMITS.targetLength))}`),
+    check("ask_target_company_length", sql`char_length(${table.targetCompany}) <= ${sql.raw(String(ASK_LIMITS.companyLength))}`),
     index("ask_author_created_idx").on(table.authorId, table.createdAt),
     check("ask_category_known", sql`${table.category} in (${toSqlList(ASK_CATEGORIES)})`),
     check("ask_outcome_known", sql`${table.outcome} in (${toSqlList(ASK_OUTCOMES)})`),
@@ -93,6 +99,10 @@ export const askHelper = pgTable(
     why: text("why").notNull(),
     // For a path helper, their LinkedIn profile name on the author's path, so the author can ask them for the intro.
     connectorSlug: text("connector_slug"),
+    // For a path helper: who they know on the way, so "Why you" can name them ("You know Dana Morris well").
+    personName: text("person_name"),
+    personTitle: text("person_title"),
+    warmth: text("warmth"),
     notifiedAt: askTimestamp("notified_at"),
     createdAt: askTimestamp("created_at").notNull().defaultNow(),
   },
@@ -100,10 +110,11 @@ export const askHelper = pgTable(
     primaryKey({ columns: [table.askId, table.helperId] }),
     index("ask_helper_helper_id_idx").on(table.helperId),
     check("ask_helper_reason_known", sql`${table.reason} in (${toSqlList(ASK_HELPER_REASONS)})`),
+    check("ask_helper_warmth_known", sql`${table.warmth} is null or ${table.warmth} in (${toSqlList(ASK_WARMTHS)})`),
   ],
 );
 
-// "I've done this myself": a public answer under an ask, one per member.
+// A public line under an ask: a plain answer, or an "I can help" saying the member knows someone or has done it.
 export const askAnswer = pgTable(
   "ask_answer",
   {
@@ -115,11 +126,13 @@ export const askAnswer = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
+    kind: text("kind").notNull().default(ASK_ANSWER_KINDS.answer),
     createdAt: askTimestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
-    unique("ask_answer_one_per_member").on(table.askId, table.authorId),
+    index("ask_answer_ask_id_idx").on(table.askId),
     index("ask_answer_author_id_idx").on(table.authorId),
+    check("ask_answer_kind_known", sql`${table.kind} in (${toSqlList(ASK_ANSWER_KINDS)})`),
     check("ask_answer_body_length", sql`char_length(${table.body}) between 1 and ${sql.raw(String(ASK_LIMITS.answerLength))}`),
   ],
 );

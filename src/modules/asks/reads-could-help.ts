@@ -8,7 +8,7 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { memberProfile, memberTag } from "../members/schema.ts";
 import { shownFaceColumns, toShownFaceUrl } from "../members/reads-pictures.ts";
-import { ASK_KINDS } from "./contract.ts";
+import { ASK_HELPER_REASONS, ASK_KINDS, describeAskWho, describeWhyYou } from "./contract.ts";
 import { helpableAskSchema, type HelpableAsk } from "./contract-today.ts";
 import { hasNoBlockBetween, isOpenAsk } from "./reads.ts";
 import { findMatchedWords, readWords } from "./rules-help-match.ts";
@@ -24,7 +24,17 @@ async function readHelperWords(database: Database, memberId: string) {
     database.select({ canHelpWith: memberProfile.canHelpWith }).from(memberProfile).where(eq(memberProfile.userId, memberId)),
     database.select({ tag: memberTag.tag }).from(memberTag).where(eq(memberTag.userId, memberId)),
   ]);
-  return readWords([profile?.canHelpWith ?? "", ...tags.map(({ tag }) => tag)].join(" "));
+  return { words: readWords([profile?.canHelpWith ?? "", ...tags.map(({ tag }) => tag)].join(" ")), canHelpWith: profile?.canHelpWith?.trim() ?? "" };
+}
+
+const PROFILE_LINE_LENGTH = 90;
+
+// Founderhall's "Why you:" for an ask the member wasn't routed to: their own "can help with" line, quoted.
+function describeProfileWhy(canHelpWith: string, matchedWords: readonly string[]) {
+  const line = canHelpWith.replace(/\s+/g, " ");
+  if (!line) return describeWhyYou({ reason: ASK_HELPER_REASONS.words, why: `can help with ${matchedWords.join(", ")}`, personName: null, personTitle: null, warmth: null });
+  const quoted = line.length > PROFILE_LINE_LENGTH ? `${line.slice(0, PROFILE_LINE_LENGTH - 2).replace(/\s+\S*$/, "")}…` : line;
+  return describeWhyYou({ reason: ASK_HELPER_REASONS.words, why: `can help with “${quoted}”`, personName: null, personTitle: null, warmth: null });
 }
 
 function hasNoAnswerFrom(memberId: string) {
@@ -44,6 +54,14 @@ type CandidateRow = {
   title: string;
   detail: string | null;
   listedAt: Date;
+  createdAt: Date;
+  targetText: string | null;
+  targetCompany: string | null;
+  targetName: string | null;
+  reason: string | null;
+  personName: string | null;
+  personTitle: string | null;
+  warmth: string | null;
   authorId: string;
   authorName: string;
   avatarUpdatedAt: Date | null;
@@ -55,7 +73,24 @@ type CandidateRow = {
 // left out, as on the board.
 function selectCandidates(database: Database, memberId: string) {
   return database
-    .select({ id: ask.id, title: ask.title, detail: ask.detail, listedAt: ask.listedAt, authorId: user.id, authorName: user.name, ...shownFaceColumns(user.id), why: askHelper.why })
+    .select({
+      id: ask.id,
+      title: ask.title,
+      detail: ask.detail,
+      listedAt: ask.listedAt,
+      createdAt: ask.createdAt,
+      targetText: ask.targetText,
+      targetCompany: ask.targetCompany,
+      targetName: ask.targetName,
+      authorId: user.id,
+      authorName: user.name,
+      ...shownFaceColumns(user.id),
+      why: askHelper.why,
+      reason: askHelper.reason,
+      personName: askHelper.personName,
+      personTitle: askHelper.personTitle,
+      warmth: askHelper.warmth,
+    })
     .from(ask)
     .innerJoin(user, eq(user.id, ask.authorId))
     .leftJoin(askHelper, and(eq(askHelper.askId, ask.id), eq(askHelper.helperId, memberId)));
@@ -76,8 +111,9 @@ export async function readAsksYouCouldHelp(database: Database, memberId: string,
   const rows = new Map<string, CandidateRow>([...recent, ...routed].map((row) => [row.id, row]));
 
   return [...rows.values()]
-    .map((row) => ({ row, matchedWords: findMatchedWords(`${row.title} ${row.detail ?? ""}`, helperWords) }))
-    .filter(({ row, matchedWords }) => row.why !== null || matchedWords.length > 0)
+    .map((row) => ({ row, matchedWords: findMatchedWords(`${row.title} ${row.detail ?? ""}`, helperWords.words) }))
+    // Founderhall's rule: Today and the weekly email show the asks this member was routed to when they were posted.
+    .filter(({ row }) => row.why !== null)
     .toSorted((first, second) => second.row.listedAt.getTime() - first.row.listedAt.getTime() || second.row.id.localeCompare(first.row.id))
     .slice(0, HELPABLE_ASKS_SHOWN)
     .map(({ row, matchedWords }) =>
@@ -86,8 +122,14 @@ export async function readAsksYouCouldHelp(database: Database, memberId: string,
         title: row.title,
         author: { id: row.authorId, name: row.authorName, avatarUrl: toShownFaceUrl(row.authorId, row.avatarUpdatedAt, row.filledFace) },
         listedAt: row.listedAt.toISOString(),
+        createdAt: row.createdAt.toISOString(),
         matchedWords,
         why: row.why,
+        who: describeAskWho(row) || null,
+        whyYou:
+          row.why !== null && row.reason !== null
+            ? describeWhyYou({ reason: row.reason, why: row.why, personName: row.personName, personTitle: row.personTitle, warmth: row.warmth })
+            : describeProfileWhy(helperWords.canHelpWith, matchedWords),
       }),
     );
 }

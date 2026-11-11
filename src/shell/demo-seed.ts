@@ -45,6 +45,8 @@ const INVITE_LIFETIME_DAYS = 14;
 
 type Ids = ReadonlyMap<string, string>;
 
+const CITY_FROM_FILL_IN = { key: "sam.lee", daysAgo: 9 } as const;
+
 function makeClock(now: Date) {
   return (days: number, hours = 0) => new Date(now.getTime() - days * DAY_MS - hours * HOUR_MS);
 }
@@ -55,8 +57,14 @@ function person(key: string) {
   return found;
 }
 
+// People named only as an intro's target, never shown with a face or looked up: Founderhall's demo asks Sam to
+// introduce Marcus to Rachel Kim.
+const INTRO_ONLY_TARGETS: readonly (typeof DEMO_OUTSIDERS)[number][] = [
+  { slug: "rachel-kim-demo", name: "Rachel Kim", title: "CFO", company: "Brightside Clinics", location: "Boston" },
+];
+
 function outsider(slug: string) {
-  const found = DEMO_OUTSIDERS.find((candidate) => candidate.slug === slug);
+  const found = [...DEMO_OUTSIDERS, ...INTRO_ONLY_TARGETS].find((candidate) => candidate.slug === slug);
   if (!found) throw new Error(`The demo has no outsider "${slug}".`);
   return found;
 }
@@ -80,7 +88,8 @@ async function seedMembers(transaction: Transaction, ago: ReturnType<typeof make
       userId: id,
       title: demoPerson.title,
       company: demoPerson.company,
-      location: demoPerson.location,
+      // Sam's city comes from public profiles, not his own words, so his Today asks "Is this right?" (as Founderhall's demo).
+      location: demoPerson.key === CITY_FROM_FILL_IN.key ? null : demoPerson.location,
       bio: demoPerson.bio,
       canHelpWith: demoPerson.canHelpWith,
       needs: demoPerson.needs,
@@ -195,6 +204,16 @@ const CURRENT_INTROS: readonly IntroSeed[] = [
     reason: "Ada met Dana at a supply-chain meetup.",
     note: "Ada, would you introduce me to Dana? We're exploring contract review for hospital procurement.",
     extra: (createdAt) => ({ closedAt: new Date(createdAt.getTime() + DAY_MS), declineKind: "not_this_time" }),
+  },
+  {
+    requester: "ravi.menon",
+    introducer: "julia.weber",
+    target: "alex-morgan-demo",
+    state: "accepted",
+    daysAgo: 9,
+    reason: "Julia hired Alex's team for a sales workshop.",
+    note: "Julia, Alex is the VP Sales I mentioned at the dinner. Would love a warm intro while we're hiring a US head of sales.",
+    extra: (createdAt) => ({ acceptedAt: new Date(createdAt.getTime() + DAY_MS) }),
   },
   {
     requester: "elena.rossi",
@@ -321,140 +340,156 @@ async function seedIntros(transaction: Transaction, ids: Ids, ago: ReturnType<ty
   }
 }
 
+// Founderhall's demo asks, word for word, so the two apps compare on the same people: 8 asks and 2 updates.
+type AskHelperSeed = { helper: string; reason: "path" | "words"; why: string; person?: string; title?: string; warmth?: "close" | "knows" | "met" };
+type AskAnswerSeed = { author: string; body: string; kind?: "answer" | "know_someone" | "done_myself"; daysAgo: number; hoursAgo?: number };
+
 type AskSeed = {
   author: string;
   title: string;
-  detail: string;
   category: (typeof ask.$inferInsert)["category"];
   kind?: "ask" | "update";
   daysAgo: number;
-  target?: string;
-  closed?: { daysAgo: number; outcome: "solved_here" | "solved_elsewhere" | "no_longer_needed" };
-  offers?: readonly [string, string][];
-  answers?: readonly [string, string][];
-  helpers?: readonly [string, string][];
+  hoursAgo?: number;
+  targetText?: string;
+  targetCompany?: string;
+  pinned?: boolean;
+  answeredDaysAgo?: number;
+  helpers?: readonly AskHelperSeed[];
+  answers?: readonly AskAnswerSeed[];
 };
 
 const ASKS: readonly AskSeed[] = [
   {
     author: "sam.lee",
-    title: "Intro to procurement at a US hospital group",
-    detail: "Two pilots are live with outpatient clinics. We're ready for a hospital group in the Northeast and need someone who can open the procurement door.",
-    category: "intro",
-    daysAgo: 2,
-    target: "dana-whitfield-demo",
-    offers: [
-      ["priya.shah", "I know Dana from a panel last spring. Happy to make the intro once you send a two-line blurb."],
-      ["ravi.menon", "Not Dana, but I know the CIO at another hospital group in Boston. Want that one too?"],
+    title: "Looking for an intro to someone who runs procurement at a US hospital group. Two pilots live; we need a buyer’s view on our 2027 pitch.",
+    category: "customer",
+    daysAgo: 12,
+    targetText: "Head of procurement at a US hospital",
+    answeredDaysAgo: 10,
+    helpers: [{ helper: "priya.shah", reason: "path", why: "Worked together at Brightline Payments", person: "Alex Kim", title: "Head of Procurement at Halcyon Health", warmth: "close" }],
+    answers: [
+      { author: "priya.shah", body: "I worked with Alex for three years at Brightline. Happy to ask.", kind: "know_someone", daysAgo: 11, hoursAgo: 20 },
+      { author: "sam.lee", body: "Introduced, and we’re meeting next week. Thank you Priya.", daysAgo: 8 },
     ],
-    answers: [["oliver.grant", "We sold to NHS trusts: get a clinical champion first, procurement follows. Happy to share our champion email."]],
   },
   {
-    author: "priya.shah",
-    title: "VP Sales who has sold to finance teams",
-    detail: "London-based, has carried a quota selling to CFOs or controllers at mid-size companies. First sales leader at Ledgerline.",
+    author: "sam.lee",
+    title: "Who has hired a first VP Sales selling to US hospitals? I want an hour with someone who has done it.",
     category: "hire",
-    daysAgo: 4,
-    offers: [["marcus.webb", "Our old head of sales at Brightwater sold to finance teams before us. I'll ask if she's looking."]],
-    helpers: [
-      ["sam.lee", "Sam can help with first sales hires."],
-      ["grace.kim", "Grace works at Ledgerline."],
-    ],
+    daysAgo: 3,
+    targetText: "a VP Sales who has sold to hospitals",
+    helpers: [{ helper: "priya.shah", reason: "words", why: "can help with “Founders selling to CFOs; first sales hires in the UK.”" }],
+    answers: [{ author: "priya.shah", body: "I hired ours last year. Happy to share the scorecard we used and what I’d do differently.", kind: "done_myself", daysAgo: 2, hoursAgo: 4 }],
   },
   {
     author: "amara.diallo",
-    title: "Plant manager with cement or ceramics experience",
-    detail: "Our first plant opens in France next year. Looking for someone who has run a kiln line.",
-    category: "hire",
-    daysAgo: 6,
-    helpers: [["sam.lee", "Sam's network has people in industrial operations."]],
-  },
-  {
-    author: "diego.alvarez",
-    title: "Intro to a large food cooperative",
-    detail: "Campo's sensors cut water use by a fifth on olive farms. A cooperative could roll it out to hundreds of members at once.",
-    category: "customer",
-    daysAgo: 8,
-    target: "mei-chen-demo",
-    offers: [["lena.fischer", "I stock Harbor Foods products in Berlin and know their supply-chain team."]],
-  },
-  {
-    author: "noah.berg",
-    title: "Angel investors who know the Nordics",
-    detail: "Raising a small pre-seed for Fjordpay. Looking for angels who have built or backed payments companies in Norway or Sweden.",
-    category: "intro",
-    daysAgo: 3,
-    target: "jonas-lind-demo",
-    helpers: [["sam.lee", "Sam raised from a Nordic angel last year."]],
-  },
-  {
-    author: "tomas.novak",
-    title: "How did you price your developer API?",
-    detail: "We're choosing between per-document and per-seat pricing. Would love to hear what worked for others.",
+    title: "Has anyone raised a seed round in New York for a hardware-heavy company? 20 minutes on how you pitched it would help.",
     category: "advice",
-    daysAgo: 5,
-    answers: [
-      ["ravi.menon", "Usage-based with a free tier worked for us. Charge per document, cap the first invoice so nobody gets a shock."],
-      ["sam.lee", "We started per-seat and regretted it. Our buyers wanted to pay for outcomes."],
-    ],
-  },
-  {
-    author: "zara.ahmed",
-    title: "Clearpath is live with its first two banks",
-    detail: "Thanks to everyone who helped with intros in the spring. Both banks signed annual contracts this month.",
-    category: "other",
-    kind: "update",
-    daysAgo: 1,
-  },
-  {
-    author: "elena.rossi",
-    title: "A bank partner in Spain",
-    detail: "Cashwell is expanding to Spain and needs a bank partner for card settlement.",
-    category: "intro",
-    daysAgo: 45,
-    target: "sara-lopez-demo",
-    closed: { daysAgo: 30, outcome: "solved_here" },
-    offers: [["diego.alvarez", "Sara at Banco Meridia banks half the farms we work with. Intro sent!"]],
-    answers: [["oliver.grant", "Ask any bank for its settlement sandbox first. Testing card settlement took us six weeks in Portugal."]],
+    daysAgo: 2,
+    targetText: "a founder who raised a seed round in New York",
+    helpers: [{ helper: "sam.lee", reason: "words", why: "can help with “Raising a seed round in New York; HIPAA basics for first-time founders.”" }],
   },
   {
     author: "lena.fischer",
-    title: "Head of growth who knows German retail",
-    detail: "Corner Grocer needs someone who has grown a B2B app with independent shops.",
+    title: "Looking for an intro to the supply-chain lead at a US hospital. We are testing a wholesale model for clinic supplies.",
+    category: "intro",
+    daysAgo: 1,
+    hoursAgo: 3,
+    targetText: "VP Supply Chain at a US hospital",
+    targetCompany: "Mercy Ridge Hospital",
+    helpers: [{ helper: "sam.lee", reason: "path", why: "Worked together at Mercy Ridge Hospital", person: "Dana Morris", title: "VP Supply Chain at Mercy Ridge Hospital", warmth: "close" }],
+  },
+  {
+    author: "ada.okafor",
+    title: "Looking for a former CFO to review our first board pack before the seed close.",
+    category: "advice",
+    daysAgo: 4,
+    targetText: "a former CFO",
+    helpers: [{ helper: "priya.shah", reason: "path", why: "Worked together at Brightline Payments", person: "Nina Patel", title: "Former CFO at Brightline Payments", warmth: "close" }],
+    answers: [{ author: "elena.rossi", body: "Not a CFO, but happy to share the board-pack template our investors liked.", daysAgo: 3 }],
+  },
+  {
+    author: "elena.rossi",
+    title: "Any advice on getting an EU e-money licence faster? The Bank of Italy asked for a second round of documents.",
+    category: "advice",
+    daysAgo: 9,
+    answeredDaysAgo: 7,
+    answers: [{ author: "priya.shah", body: "We went through the UK version. Send the risk framework before they ask for it; it cut our second round to three weeks.", kind: "done_myself", daysAgo: 8 }],
+  },
+  {
+    author: "amara.diallo",
+    title: "Looking for a plant manager with cement or ceramics experience, ideally in France.",
     category: "hire",
-    daysAgo: 70,
-    closed: { daysAgo: 50, outcome: "solved_elsewhere" },
+    daysAgo: 5,
+    targetText: "a plant manager in cement",
+    pinned: true,
+  },
+  {
+    author: "marcus.webb",
+    title: "Who has run a Series B data room recently? I’d like to compare notes on what investors actually opened.",
+    category: "advice",
+    daysAgo: 6,
+    answers: [{ author: "elena.rossi", body: "We did ours in March. Three things got opened: the cohort sheet, the pipeline and the cap table. Happy to talk.", daysAgo: 5 }],
+  },
+  {
+    author: "marcus.webb",
+    title: "We moved our data platform off a single cloud: 31% cheaper, no downtime. Happy to share the runbook with anyone doing the same.",
+    category: "other",
+    kind: "update",
+    daysAgo: 2,
+    hoursAgo: 6,
+  },
+  {
+    author: "priya.shah",
+    title: "Ledgerline is hiring a VP Sales in London. Intros welcome, and thank you to everyone who sent names last month.",
+    category: "other",
+    kind: "update",
+    daysAgo: 7,
   },
 ];
 
 async function seedAsks(transaction: Transaction, ids: Ids, ago: ReturnType<typeof makeClock>) {
+  const admin = ids.get("maya.ortiz") ?? null;
   for (const seed of ASKS) {
-    const target = seed.target ? outsider(seed.target) : null;
-    const createdAt = ago(seed.daysAgo, 2);
+    const createdAt = ago(seed.daysAgo, seed.hoursAgo ?? 0);
     const [created] = await transaction
       .insert(ask)
       .values({
         authorId: ids.get(seed.author) ?? "",
         title: seed.title,
-        detail: seed.detail,
+        detail: null,
         category: seed.category,
         kind: seed.kind ?? "ask",
-        targetSlug: target?.slug ?? null,
-        targetName: target?.name ?? null,
+        targetText: seed.targetText ?? null,
+        targetCompany: seed.targetCompany ?? null,
         listedAt: createdAt,
         createdAt,
-        ...(seed.closed ? { closedAt: ago(seed.closed.daysAgo), outcome: seed.closed.outcome } : {}),
+        ...(seed.pinned ? { pinnedAt: createdAt, pinnedByUserId: admin } : {}),
+        ...(seed.answeredDaysAgo === undefined ? {} : { closedAt: ago(seed.answeredDaysAgo), outcome: "solved_here" as const }),
       })
       .returning({ id: ask.id });
     if (!created) continue;
-    for (const [index, [helper, note]] of (seed.offers ?? []).entries()) {
-      await transaction.insert(askOffer).values({ askId: created.id, helperId: ids.get(helper) ?? "", note, createdAt: new Date(createdAt.getTime() + (index + 1) * 5 * HOUR_MS) });
+    for (const helper of seed.helpers ?? []) {
+      await transaction.insert(askHelper).values({
+        askId: created.id,
+        helperId: ids.get(helper.helper) ?? "",
+        reason: helper.reason,
+        why: helper.why,
+        personName: helper.person ?? null,
+        personTitle: helper.title ?? null,
+        warmth: helper.warmth ?? null,
+        notifiedAt: createdAt,
+        createdAt,
+      });
     }
-    for (const [index, [author, body]] of (seed.answers ?? []).entries()) {
-      await transaction.insert(askAnswer).values({ askId: created.id, authorId: ids.get(author) ?? "", body, createdAt: new Date(createdAt.getTime() + (index + 1) * 7 * HOUR_MS) });
-    }
-    for (const [helper, why] of seed.helpers ?? []) {
-      await transaction.insert(askHelper).values({ askId: created.id, helperId: ids.get(helper) ?? "", reason: "words", why, createdAt });
+    for (const answer of seed.answers ?? []) {
+      const answeredAt = ago(answer.daysAgo, answer.hoursAgo ?? 0);
+      const authorId = ids.get(answer.author) ?? "";
+      await transaction.insert(askAnswer).values({ askId: created.id, authorId, body: answer.body, kind: answer.kind ?? "answer", createdAt: answeredAt });
+      if (answer.kind && answer.kind !== "answer") {
+        await transaction.insert(askOffer).values({ askId: created.id, helperId: authorId, note: answer.body, seenAt: answeredAt, createdAt: answeredAt });
+      }
     }
   }
 }
@@ -518,7 +553,13 @@ async function seedFillIn(transaction: Transaction, ids: Ids, ago: ReturnType<ty
       continue;
     }
     await transaction.insert(memberLookup).values({ userId, status: LOOKUP_STATUSES.found, lookedUpAt: filledAt });
-    const lines = Object.entries(toDemoFilledProfile(demoPerson)).map(([field, value]) => ({ userId, field, value, filledAt }));
+    const isCityFilled = demoPerson.key === CITY_FROM_FILL_IN.key;
+    const lines = Object.entries(toDemoFilledProfile(demoPerson)).map(([field, value]) => ({
+      userId,
+      field,
+      value,
+      filledAt: isCityFilled && field === "location" ? ago(CITY_FROM_FILL_IN.daysAgo) : filledAt,
+    }));
     if (lines.length > 0) await transaction.insert(memberFillIn).values(lines);
   }
 }

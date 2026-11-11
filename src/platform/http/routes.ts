@@ -3,6 +3,10 @@ export const ACCOUNT_DELETED_PARAM = "accountDeleted";
 
 export const ROUTES = {
   feed: "/",
+  // Founderhall's Today. "/" sends a member here.
+  today: "/today",
+  // The switchable feed's own page (Community-only).
+  feedPage: "/feed",
   // Founderhall's paths. The old ones (/sign-in, /sign-in/link, /join/<token>) redirect here (next.config.mjs).
   signIn: "/signin",
   signInLink: "/auth",
@@ -127,6 +131,7 @@ export const API_ROUTES = {
   networkFillIn: "/api/network/fill-in",
   profileLookupChoice: "/api/profile/lookup-choice",
   profileFillIn: "/api/profile/fill-in",
+  profileFillInCheck: "/api/profile/fill-in/check",
   feedReport: "/api/feed/report",
   introReport: "/api/intros/report",
   networkConfirmation: "/api/members/confirmation",
