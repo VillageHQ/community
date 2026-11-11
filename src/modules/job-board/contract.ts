@@ -8,7 +8,7 @@ export const JOB_BOARD_PAGES = {
   admin: "/admin/jobs",
   // The public board's address, as Founderhall: /jobs. A visitor there gets the page at `publicPage` (src/proxy.ts).
   public: "/jobs",
-  publicPage: "/public/jobs",
+  publicPage: "/public/board",
 } as const;
 
 export const JOB_BOARD_PAGE_TITLES = {

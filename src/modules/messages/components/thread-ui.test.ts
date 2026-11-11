@@ -166,20 +166,24 @@ describe("the thread on screen", () => {
     });
 
     it("refuses a blank message", () => {
+      const fetchStub = stubApi();
       renderThread([makePage([])]);
 
       typeMessage("   \n  ");
+      clickSend();
 
-      expect(screen.getByRole<HTMLButtonElement>("button", { name: SEND_NAME }).disabled).toBe(true);
+      expect(readRequests(fetchStub, API_ROUTES.messageSend)).toEqual([]);
     });
 
-    it("explains when a message runs over the cap", () => {
+    it("explains when a message runs over the cap, and sends nothing", () => {
+      const fetchStub = stubApi();
       renderThread([makePage([])]);
 
       typeMessage("a".repeat(MESSAGE_LIMITS.bodyLength + 1));
+      clickSend();
 
       expect(screen.getByRole("alert").textContent).toContain("under 4,000 characters");
-      expect(screen.getByRole<HTMLButtonElement>("button", { name: SEND_NAME }).disabled).toBe(true);
+      expect(readRequests(fetchStub, API_ROUTES.messageSend)).toEqual([]);
       expect(screen.getByText("1 over")).toBeTruthy();
     });
 

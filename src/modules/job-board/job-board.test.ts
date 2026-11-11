@@ -21,7 +21,7 @@ import { POST as postPull } from "@/app/api/job-board/sources/pull/route";
 import { POST as postRemove } from "@/app/api/job-board/sources/remove/route";
 import { GET as getWidgetScript } from "@/app/api/job-board/widget.js/route";
 import { POST as postDirectory } from "@/app/api/members/directory/route";
-import PublicJobsPage from "@/app/public/jobs/page";
+import PublicJobsPage from "@/app/public/board/page";
 import { FEED_TOOLS, JOB_BOARD_LIMITS, type FeedTool } from "@/modules/job-board/contract";
 import { jobBoardManifest } from "@/modules/job-board/manifest";
 import { readAllSources, readBoardCompanies, readBoardJobs, readMemberSources } from "@/modules/job-board/reads";

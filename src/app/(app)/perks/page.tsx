@@ -26,11 +26,9 @@ export default modulePage(perksManifest, async function PerksPage() {
     <>
       <PageHeader title="Perks" description={`Deals for ${community.name} founders, run by BuiltFirst.`} />
       {/* The demo never frames BuiltFirst: its frame holds made-up deals instead. */}
-      {isDemo ? (
-        <DemoPerksList />
-      ) : url ? (
+      {isDemo || url ? (
         <>
-          <PerksFrame url={url} title={`Perks for ${community.name} founders`} />
+          {url && !isDemo ? <PerksFrame url={url} title={`Perks for ${community.name} founders`} /> : <DemoPerksList />}
           <p className="fh-small fh-muted mt-2.5">BuiltFirst may ask you to sign in with your BuiltFirst account.</p>
         </>
       ) : (

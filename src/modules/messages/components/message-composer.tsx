@@ -27,6 +27,7 @@ function keepFocusInField(event: { preventDefault: () => void }) {
 type MessageComposerProps = { peerName: string; inputRef?: Ref<HTMLTextAreaElement>; isBusy?: boolean; onSend: (body: string) => void };
 
 // Founderhall's reply box (`.reply`): one Leaf bar under the messages, a textarea "Write a message" and Send.
+// Send stays ready, as Founderhall's; a blank or too-long message sends nothing.
 export function MessageComposer({ peerName, inputRef, isBusy = false, onSend }: MessageComposerProps) {
   const [draft, setDraft] = useState("");
   const body = messageBodySchema.safeParse(draft);
@@ -60,7 +61,7 @@ export function MessageComposer({ peerName, inputRef, isBusy = false, onSend }: 
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={sendOnEnter}
         />
-        <Button type="submit" size="sm" disabled={!body.success || isBusy} aria-busy={isBusy} onMouseDown={keepFocusInField}>
+        <Button type="submit" size="sm" className="self-start" disabled={isBusy} aria-busy={isBusy} onMouseDown={keepFocusInField}>
           <Send aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />
           Send
         </Button>

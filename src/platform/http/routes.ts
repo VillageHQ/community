@@ -47,6 +47,8 @@ export const ROUTES = {
   adminInvites: "/admin/invites",
   // The parts review page: off unless SHOW_PARTS_PAGE=true (development and review copies only).
   parts: "/parts",
+  // A switched-off module's page, for a signed-in member: a 404 inside the app (src/proxy.ts).
+  notHere: "/not-here",
 } as const;
 
 export const AUTH_BASE_PATH = "/api/auth";

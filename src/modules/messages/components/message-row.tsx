@@ -46,7 +46,8 @@ type BubbleProps = {
 // link there, shown on hover and focus (Community keeps both).
 function Bubble({ entry, peerName, action, actionRef }: BubbleProps) {
   return (
-    <div className={cn("fh-msg group", entry.isMine && "fh-me", isFailed(entry) && "shadow-[inset_0_0_0_1px_var(--ribbon)]")}>
+    // A tap on a phone focuses the message, which shows its link.
+    <div tabIndex={action ? 0 : undefined} className={cn("fh-msg group", entry.isMine && "fh-me", isFailed(entry) && "shadow-[inset_0_0_0_1px_var(--ribbon)]")}>
       <p className={cn(entry.body === null && "text-graphite italic")}>
         {entry.body === null ? DELETED_LABEL : <RichText text={entry.body} tone={RICH_TEXT_TONES.surface} />}
       </p>
