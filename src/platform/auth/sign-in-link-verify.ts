@@ -30,9 +30,8 @@ function readLinkEmail(value: string) {
   return null;
 }
 
-// Better Auth signs a not-yet-confirmed account in only after it deletes the account's password and sessions,
-// because whoever set them never proved they own the address. Read that first, so the page can say so.
-async function readLinkMember(database: Database, token: string) {
+// The member a live link signs in, or null.
+async function readLinkOwner(database: Database, token: string) {
   const [link] = await database
     .select({ value: verification.value })
     .from(verification)
@@ -41,10 +40,23 @@ async function readLinkMember(database: Database, token: string) {
   if (!email) return null;
 
   const [member] = await database
-    .select({ id: user.id, emailVerified: user.emailVerified, banned: user.banned, banExpires: user.banExpires })
+    .select({ id: user.id, email: user.email, emailVerified: user.emailVerified, banned: user.banned, banExpires: user.banExpires })
     .from(user)
     .where(eq(user.email, email));
   if (!member || isBanActive(member)) return null;
+  return member;
+}
+
+// The confirm page's "Signing in as …": reads a live link without using it. Null: used, expired or unknown.
+export async function readSignInLinkEmail(database: Database, token: string) {
+  return (await readLinkOwner(database, token))?.email ?? null;
+}
+
+// Better Auth signs a not-yet-confirmed account in only after it deletes the account's password and sessions,
+// because whoever set them never proved they own the address. Read that first, so the page can say so.
+async function readLinkMember(database: Database, token: string) {
+  const member = await readLinkOwner(database, token);
+  if (!member) return null;
 
   const [password] = await database
     .select({ id: account.id })

@@ -13,6 +13,7 @@ import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-s
 import { createSignedInMember } from "@/test/signed-in-member";
 
 import { POST as postBulk } from "@/app/api/admin/invites/bulk/route";
+import { readInviteToken } from "@/test/invite-link";
 
 const APP_URL = "http://localhost:3000";
 
@@ -141,7 +142,7 @@ describe("inviting many people", () => {
 
     expect(result.invitedCount).toBe(3);
     const grace = result.links.find(({ email }) => email === "grace@example.com");
-    const lookup = await readInviteByToken(database, grace?.link.split("/").at(-1) ?? "");
+    const lookup = await readInviteByToken(database, readInviteToken(grace?.link));
     expect(lookup?.inviteeName).toBe("Grace Hopper");
   });
 
@@ -162,7 +163,7 @@ describe("inviting many people", () => {
     const response = await postBulk(bulkRequest(admin, "csv", "name,email,company,cohort\nAda,ada@example.com,Engines Ltd,Fund II"));
     const [link] = bulkInviteResultSchema.parse(await response.json()).links;
 
-    const accepted = await acceptInvite(database, link?.link.split("/").at(-1) ?? "", { name: "Ada", password: "a-long-test-password" });
+    const accepted = await acceptInvite(database, readInviteToken(link?.link), { name: "Ada", password: "a-long-test-password" });
     const [profile] = await database.select().from(memberProfile).where(eq(memberProfile.userId, accepted?.userId ?? ""));
     expect(profile?.company).toBe("Engines Ltd");
     expect(profile?.cohort).toBe("Fund II");
