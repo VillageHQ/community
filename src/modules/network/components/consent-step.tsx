@@ -87,8 +87,8 @@ export function ConsentStep({ welcome }: { welcome: WelcomeContext }) {
               You get
             </h3>
             <p className="mt-1.5 type-note text-foreground-soft">
-              Your searches cover the people you know too, not just the networks other members share, and see who
-              can introduce you, and why.
+              Your searches cover the people you know too, not just the networks other members share. See who can
+              introduce you, and why.
             </p>
           </div>
         </div>

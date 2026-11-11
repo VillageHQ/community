@@ -1,6 +1,6 @@
 # Verification: search before connecting your own network
 
-An independent verifier ran this check on branch `absi-agent/search-first` at commit "Members can search before connecting their own
+An independent verifier ran this check on branch `this build's branch` at commit "Members can search before connecting their own
 network". It used the fake Village, the demo app with made-up people, and throwaway databases. No real accounts, keys or email were used.
 
 **Verdict: FAIL.** One bug blocks the "ask a sharing member for an intro" part of the scope (B1). Everything else passes.
@@ -94,3 +94,29 @@ network". It used the fake Village, the demo app with made-up people, and throwa
 - `.env.local` and the scratch test file were deleted.
 - The dev server was killed, and nothing listens on its port.
 - `git status` shows only `reports/verify/` (6 small JPEGs) and this report.
+
+## Re-check after repair 1
+This re-check covers commit d22503c only, with the same rules: throwaway databases, a scratch test file that was deleted
+afterwards, and the demo app.
+
+- **Lint, typecheck and tests:** lint and typecheck exit 0. `vitest run src/modules/network src/modules/intros src/modules/asks src/test/architecture`: 33 files and 1340 tests passed.
+- **B1: PASS.**
+  - In the tests: a never-connected member's ask through a sharer comes back `requested`. It shows on both boards. The
+    connector accepts and gets a consent link, the target's "yes" returns 200, and the row becomes `target_agreed`.
+  - Break attempts:
+    - A banned asker's ask disappears from the connector's board, and accepting it returns 404.
+    - A connector who left the group closes the ask (`expired`), and accepting it fails.
+    - "I know someone" on an ask whose author never connected creates an intro in `asking_target`, not expired.
+    - A helper who never connected can't offer an intro (409).
+  - In the demo app: Sam, never connected, asked Marcus about Dana. The ask is `requested` in the database and shows "Waiting for an answer" (`v7`).
+- **O1: PASS.**
+  - The fake Village returned three paths:
+    - sharer → refuser → target;
+    - a path whose starter is the refuser;
+    - a path through the sharer only.
+  - Pooled and connected searchers both see only the sharer-only path. The refuser's slug and name appear nowhere in the paths, connectors, ask response or stored reason. An ask through the refuser is refused.
+  - A sharer who is banned disappears from the paths too.
+  - A non-sharing member as the target still gets their path through a sharer.
+- **O2: PASS, with a wording nit.** The "You get" text no longer says that sharing unlocks search. The new sentence reads
+  awkwardly ("Your searches cover … and see who can introduce you"). That's a copy nit, not a blocker.
+- **Cleanup:** the databases were dropped, `.env.local` and the scratch test were deleted, the dev server was killed, and nothing listens on its port.
