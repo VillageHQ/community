@@ -1,12 +1,13 @@
 # Intros
 
-A member asks another member for an intro to someone they know. The connector says yes or no; on a yes, the person says yes or no thanks on a public page. Only then does one message join them. A week later the requester is asked if it helped. Toggleable. Works without Village.
+A member asks another for an intro. The connector says yes or no; on a yes, the person answers on a public page.
+Only then does one message join them. Later the requester is asked if it helped. Toggleable. Works without Village.
 
 Two ways in: a named ask from a profile (`components/ask-member-intro.tsx`) and a Village path ask. Intros never
 imports network; the shell joins them (`src/shell/intro-*.ts*`). Read `.ai/features/intros-no-village/NOTES.md` first.
 
-- `contract.ts`: states, allowed moves and limits. `INTRO_TRANSITIONS` is the state machine. `REQUESTER_STATES` is what a requester may see of each state.
-- `service.ts`: create an ask, move it, issue a new consent link, email the link, record an outcome.
+- `contract.ts`: states, moves (`INTRO_TRANSITIONS`), limits, and what a requester sees (`REQUESTER_STATES`).
+- `service.ts`: create, move, new consent link, email the link, record an outcome.
 - `service-consent.ts`: issue consent tokens and save the target's answer, including "stop all asks".
 - `reads*.ts`: boards, counts, details, the public page. Expiry and the outcome prompt happen at read time; a timed sweep also expires due asks.
 - `service-blocks.ts`: what a block does to open asks.

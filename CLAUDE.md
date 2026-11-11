@@ -15,7 +15,7 @@ The root map for agents in this repo. The root `AGENTS.md` is not tracked: `next
 ## What this repo is
 An open-source community app for a venture fund and its founders (AGPL-3.0): Today home, the weekly email, double
 opt-in intros, the asks board, the partner report, and switchable modules. Next.js, TypeScript, Postgres + Drizzle,
-Better Auth, Vitest, pnpm. Village is optional (network search and profile fill-in).
+Better Auth, Vitest, pnpm. Village is optional (network search, intro paths and profile fill-in; intros from profiles work without it).
 
 ## How to run / test
 - Run: `cp .env.example .env`, `docker compose up -d --wait`, `pnpm install`, `pnpm dev`; set `SETUP_TOKEN`, open `/setup`.
@@ -36,7 +36,8 @@ Better Auth, Vitest, pnpm. Village is optional (network search and profile fill-
 - How features work today: `.ai/features/chat-perks/NOTES.md`, `.ai/features/fix-intros/NOTES.md`,
   `.ai/features/fix-small/NOTES.md`, `.ai/features/hosting-data-settings/NOTES.md`, `.ai/features/partner-report/NOTES.md`, `.ai/features/small-gaps/NOTES.md`,
   `.ai/features/today-weekly/NOTES.md`, `.ai/features/two-sided-intros/NOTES.md`, `.ai/features/your-data/NOTES.md`,
-  `.ai/features/admin-home/NOTES.md`, `.ai/features/admin-firstrun/NOTES.md`, `.ai/features/faces-logos/NOTES.md`, `.ai/features/demo-jobs-perks/NOTES.md`.
+  `.ai/features/admin-home/NOTES.md`, `.ai/features/admin-firstrun/NOTES.md`, `.ai/features/faces-logos/NOTES.md`, `.ai/features/demo-jobs-perks/NOTES.md`,
+  `.ai/features/intros-no-village/NOTES.md`.
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (public guides), `drizzle/` (generated), `site/` (has its README), `public/` (demo pictures),
   `vercel.json` (the Vercel Cron Job running the timed jobs daily). Every deploy setup runs the job runner;
   `src/test/deploy-setups.test.ts` guards it.
