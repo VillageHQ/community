@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ASK_CATEGORIES, ASK_KINDS, ASK_LIMITS, ASK_STATES, composeAskReportBody, composeOfferMessage, describeNewOffers } from "./contract";
-import { ASK_VIEWS, parseAskBoardFilters, toAskBoardQueryString } from "./rules-board-url";
+import { ASK_VIEWS, parseAskBoardFilters, readBoardTab, toAskBoardQueryString } from "./rules-board-url";
 import { canRenewAsk, readAskState, readExpiresAt } from "./rules-state";
 import { describeAge, describeTimeLeft } from "./rules-time";
 
@@ -73,15 +73,15 @@ describe("age words", () => {
 
 describe("the board URL", () => {
   it("defaults to every open ask", () => {
-    expect(parseAskBoardFilters({})).toEqual({ view: ASK_VIEWS.board, category: null, kind: null });
+    expect(parseAskBoardFilters({})).toEqual({ view: ASK_VIEWS.board, category: null, kind: null, search: null });
   });
 
   it("reads a view and a category", () => {
-    expect(parseAskBoardFilters({ view: "yours", category: "hire" })).toEqual({ view: ASK_VIEWS.yours, category: ASK_CATEGORIES.hire, kind: null });
+    expect(parseAskBoardFilters({ view: "yours", category: "hire" })).toEqual({ view: ASK_VIEWS.yours, category: ASK_CATEGORIES.hire, kind: null, search: null });
   });
 
   it("ignores values it doesn't know", () => {
-    expect(parseAskBoardFilters({ view: "<script>", category: "investor" })).toEqual({ view: ASK_VIEWS.board, category: null, kind: null });
+    expect(parseAskBoardFilters({ view: "<script>", category: "investor" })).toEqual({ view: ASK_VIEWS.board, category: null, kind: null, search: null });
   });
 
   it("round trips", () => {
@@ -91,8 +91,16 @@ describe("the board URL", () => {
   });
 
   it("keeps the updates filter", () => {
-    expect(parseAskBoardFilters({ kind: "update" })).toEqual({ view: ASK_VIEWS.board, category: null, kind: ASK_KINDS.update });
+    expect(parseAskBoardFilters({ kind: "update" })).toEqual({ view: ASK_VIEWS.board, category: null, kind: ASK_KINDS.update, search: null });
     expect(toAskBoardQueryString({ view: ASK_VIEWS.board, category: null, kind: ASK_KINDS.update })).toBe("?kind=update");
+  });
+
+  it("reads the tabs and a search, and a search reads every ask", () => {
+    expect(parseAskBoardFilters({ view: "closed", q: "  pricing   help " })).toEqual({ view: ASK_VIEWS.closed, category: null, kind: null, search: "pricing help" });
+    expect(readBoardTab({ view: ASK_VIEWS.answered, category: null, kind: null })).toBe("answered");
+    expect(readBoardTab({ view: ASK_VIEWS.yours, category: null, kind: null })).toBeNull();
+    expect(readBoardTab({ view: ASK_VIEWS.closed, category: null, kind: null, search: "pricing" })).toBe("open");
+    expect(toAskBoardQueryString({ view: ASK_VIEWS.board, category: null, kind: null, search: "pricing help" })).toBe("?q=pricing+help");
   });
 
   it("stays clean with no filters", () => {

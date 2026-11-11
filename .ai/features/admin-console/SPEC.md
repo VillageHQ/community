@@ -26,3 +26,8 @@ The console home with counts only (never who asked whom), the founder-view switc
 ## Update 2026-11-10: the console home shipped
 The console home (intro counts, waiting items) shipped as the admin home: `.ai/features/admin-home/`. Still open
 here: the member-view switch, the mail page, the asks admin page, Village test connection and the mail setup step.
+
+## Update 2026-11-11: the asks admin page is built
+Admin › Asks (`/admin/asks`, asks-tools) has this quarter's counts, the oldest unanswered asks, pins, reported asks
+and the weekly allowance. Still open here: the member-view switch, the mail page, Village test connection and the mail
+setup step.

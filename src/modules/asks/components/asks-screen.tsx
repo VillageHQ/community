@@ -1,19 +1,20 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Search, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useDeferredValue, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { QueryBoundary } from "@/components/query-boundary";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
+import { Input } from "@/components/ui/input";
 import { Tag } from "@/components/ui/tag";
-import { ASK_KINDS, ASKS_PAGE, type AskCategory, type AskKind } from "@/modules/asks/contract";
+import { ASK_KINDS, ASK_LIMITS, ASKS_PAGE, type AskCategory, type AskKind } from "@/modules/asks/contract";
 import { askCountsQuery } from "@/modules/asks/queries";
-import { ASK_VIEWS, parseAskBoardFilters, parseAskDraft, toAskBoardQueryString, type AskBoardFilters, type AskView } from "@/modules/asks/rules-board-url";
+import { ASK_VIEWS, parseAskBoardFilters, parseAskDraft, readBoardTab, toAskBoardQueryString, type AskBoardFilters, type AskView } from "@/modules/asks/rules-board-url";
 
 import { AskBoard } from "./ask-board";
 import { AskComposer } from "./ask-composer";
@@ -31,21 +32,96 @@ function applyFilters(filters: AskBoardFilters) {
   window.history.replaceState(null, "", `${ASKS_PAGE}${toAskBoardQueryString(filters)}`);
 }
 
-type ViewChipsProps = { view: AskView; onChange: (view: AskView) => void };
+type ViewChipsProps = { view: AskView | null; onChange: (view: AskView) => void };
+
+const VIEW_LABELS: { view: AskView; label: string }[] = [
+  { view: ASK_VIEWS.board, label: "Open" },
+  { view: ASK_VIEWS.yours, label: "Mine" },
+  { view: ASK_VIEWS.answered, label: "Answered" },
+  { view: ASK_VIEWS.closed, label: "Closed" },
+];
 
 function ViewChips({ view, onChange }: ViewChipsProps) {
   const { data } = useQuery(askCountsQuery());
   const newOffers = data?.newOffers ?? 0;
   return (
     <div role="group" aria-label="Which asks to show" className="flex flex-wrap gap-2">
-      <Chip isPressed={view === ASK_VIEWS.board} onClick={() => onChange(ASK_VIEWS.board)}>
-        Open asks
-      </Chip>
-      <Chip isPressed={view === ASK_VIEWS.yours} onClick={() => onChange(ASK_VIEWS.yours)}>
-        Your asks
-        {newOffers > 0 ? <Tag tone="accent">{newOffers} new</Tag> : null}
-      </Chip>
+      {VIEW_LABELS.map(({ view: choice, label }) => (
+        <Chip key={choice} isPressed={view === choice} onClick={() => onChange(choice)}>
+          {label}
+          {choice === ASK_VIEWS.yours && newOffers > 0 ? <Tag tone="accent">{newOffers} new</Tag> : null}
+        </Chip>
+      ))}
     </div>
+  );
+}
+
+const SEARCH_INPUT_ID = "asks-search";
+const SEARCH_DELAY_MS = 300;
+
+// One search over every ask, closed and expired ones too: the title, the details and the answers.
+function AskSearch({ search, onSearch }: { search: string | null; onSearch: (search: string | null) => void }) {
+  const [draft, setDraft] = useState(search ?? "");
+  const [shownSearch, setShownSearch] = useState(search);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A tab or a new post clears the search from outside, so the box empties with it.
+  if (search !== shownSearch) {
+    setShownSearch(search);
+    if (search === null) setDraft("");
+  }
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  function schedule(value: string) {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => onSearch(value.replace(/\s+/g, " ").trim() || null), SEARCH_DELAY_MS);
+  }
+
+  return (
+    <form
+      role="search"
+      className="relative"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (timer.current) clearTimeout(timer.current);
+        onSearch(draft.replace(/\s+/g, " ").trim() || null);
+      }}
+    >
+      <label htmlFor={SEARCH_INPUT_ID} className="sr-only">
+        Search every ask, closed ones too
+      </label>
+      <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-5 size-icon -translate-y-1/2 text-muted-foreground" />
+      <Input
+        id={SEARCH_INPUT_ID}
+        type="search"
+        value={draft}
+        maxLength={ASK_LIMITS.searchLength}
+        placeholder="Search every ask and answer"
+        autoComplete="off"
+        className="pr-14 pl-[54px] [&::-webkit-search-cancel-button]:hidden"
+        onChange={(event) => {
+          setDraft(event.target.value);
+          schedule(event.target.value);
+        }}
+      />
+      {draft ? (
+        <Button
+          type="button"
+          variant="quiet"
+          size="icon"
+          aria-label="Clear search"
+          className="absolute top-1.5 right-1.5"
+          onClick={() => {
+            if (timer.current) clearTimeout(timer.current);
+            setDraft("");
+            onSearch(null);
+          }}
+        >
+          <X aria-hidden="true" />
+        </Button>
+      ) : null}
+    </form>
   );
 }
 
@@ -80,6 +156,8 @@ export function AsksScreen({ isViewerAdmin }: { isViewerAdmin: boolean }) {
   const openComposer = () => setIsComposerOpen(true);
   const seeYourAsks = () => applyFilters({ view: ASK_VIEWS.yours, category: null, kind: null });
   const seeEverything = () => applyFilters({ view: ASK_VIEWS.board, category: null, kind: null });
+  const search = filters.search ?? null;
+  const deferredTab = readBoardTab(deferredFilters);
 
   return (
     <>
@@ -101,22 +179,28 @@ export function AsksScreen({ isViewerAdmin }: { isViewerAdmin: boolean }) {
             </Alert>
           ) : null}
         </div>
-        <ViewChips view={filters.view} onChange={(view) => applyFilters({ view, category: null, kind: null })} />
-        {filters.view === ASK_VIEWS.board ? (
+        <AskSearch search={search} onSearch={(next) => applyFilters({ view: ASK_VIEWS.board, category: null, kind: null, search: next })} />
+        <ViewChips
+          view={search ? null : filters.view}
+          onChange={(view) => applyFilters({ view, category: null, kind: null })}
+        />
+        {filters.view === ASK_VIEWS.board && !search ? (
           <CategoryChips category={filters.category} kind={filters.kind} onChange={(filter) => applyFilters({ view: ASK_VIEWS.board, ...filter })} />
         ) : null}
         <QueryBoundary loadingMessage="Finding asks…">
-          {deferredFilters.view === ASK_VIEWS.board ? (
+          {deferredTab ? (
             <AskBoard
-              category={deferredFilters.category}
-              kind={deferredFilters.kind}
+              tab={deferredTab}
+              search={deferredFilters.search ?? null}
+              category={deferredFilters.search ? null : deferredFilters.category}
+              kind={deferredFilters.search ? null : deferredFilters.kind}
               isViewerAdmin={isViewerAdmin}
               onAsk={openComposer}
               onSeeEverything={seeEverything}
               onSeeYourAsks={seeYourAsks}
             />
           ) : (
-            <YourAsks onAsk={openComposer} isViewerAdmin={isViewerAdmin} />
+            <YourAsks onAsk={openComposer} />
           )}
         </QueryBoundary>
       </div>

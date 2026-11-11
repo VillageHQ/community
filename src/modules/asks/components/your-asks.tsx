@@ -1,13 +1,12 @@
 "use client";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { CheckCircle2, Clock3, Handshake, Hourglass, Inbox, Megaphone, Plus, RefreshCw, Sparkles } from "lucide-react";
+import { CheckCircle2, Clock3, Handshake, Hourglass, Inbox, Megaphone, Plus, RefreshCw, RotateCcw, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 
 import { EmptyState } from "@/components/empty-state";
 import { FormError } from "@/components/form-error";
-import { FormField } from "@/components/form-field";
 import { Alert } from "@/components/ui/alert";
 import { MemberLine } from "./member-line";
 import { Avatar } from "@/components/ui/avatar";
@@ -16,7 +15,6 @@ import { Label } from "@/components/ui/label";
 import { Tag } from "@/components/ui/tag";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  ASK_ALLOWANCE,
   ASK_KINDS,
   ASK_LIMITS,
   ASK_STATES,
@@ -35,7 +33,7 @@ import { ROUTES } from "@/platform/http/routes";
 
 import { CATEGORY_DISPLAY, describeOfferCount, OFFER_AVATAR_SIZE_PX, OUTCOME_LABELS, OUTCOMES, readMemberLine } from "./ask-display";
 import { CharactersLeft } from "./characters-left";
-import { useAskHelper, useCloseAsk, useMarkOffersSeen, useRenewAsk, useSaveAllowance } from "./use-ask-mutations";
+import { useAskHelper, useCloseAsk, useMarkOffersSeen, useRenewAsk, useReopenAsk } from "./use-ask-mutations";
 
 const SECTIONS: { state: AskState; title: string }[] = [
   { state: ASK_STATES.open, title: "On the board" },
@@ -212,44 +210,6 @@ function AllowanceSummary({ allowance }: { allowance: AskAllowance }) {
   );
 }
 
-const ALLOWANCE_FIELD = "weeklyAllowance";
-
-function AllowanceSetting({ allowance }: { allowance: AskAllowance }) {
-  const saveAllowance = useSaveAllowance();
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    saveAllowance.mutate(Number(new FormData(event.currentTarget).get(ALLOWANCE_FIELD)));
-  }
-  return (
-    <section aria-label="Weekly ask allowance" className="grid gap-3 rounded-card-phone bg-card p-card-phone shadow-panel sm:rounded-card sm:p-6">
-      <h2 className="type-h3">Weekly ask allowance</h2>
-      <form className="grid gap-3" onSubmit={submit}>
-        <FormField
-          name={ALLOWANCE_FIELD}
-          label="Asks per member, per week"
-          type="number"
-          inputMode="numeric"
-          min={ASK_ALLOWANCE.minimum}
-          max={ASK_ALLOWANCE.maximum}
-          step={1}
-          required
-          defaultValue={allowance.cap}
-          hint={`Admins only. Posted asks and intro asks share it. Any whole number from ${ASK_ALLOWANCE.minimum} to ${ASK_ALLOWANCE.maximum}. The default is ${ASK_ALLOWANCE.default}. Each member can also receive at most ${ASK_LIMITS.connectorWeeklyCap} intro asks a week.`}
-        />
-        <FormError message={saveAllowance.error?.message ?? null} />
-        {saveAllowance.isSuccess ? (
-          <Alert variant="success" role="none">
-            Saved. Members now get {saveAllowance.data.weeklyAllowance} asks a week.
-          </Alert>
-        ) : null}
-        <Button type="submit" disabled={saveAllowance.isPending} className="max-sm:w-full sm:justify-self-start">
-          {saveAllowance.isPending ? "Saving…" : "Save the allowance"}
-        </Button>
-      </form>
-    </section>
-  );
-}
-
 function CloseAskChoices({ askId, onCancel }: { askId: string; onCancel: () => void }) {
   const closeAsk = useCloseAsk();
   return (
@@ -290,6 +250,7 @@ function StateTag({ ask }: { ask: OwnAsk }) {
 function OwnAskCard({ ask, canIntro }: { ask: OwnAsk; canIntro: boolean }) {
   const [isClosing, setIsClosing] = useState(false);
   const renewAsk = useRenewAsk();
+  const reopenAsk = useReopenAsk();
   const { label: categoryLabel, icon: CategoryIcon, tone } = CATEGORY_DISPLAY[ask.category];
   const isClosed = ask.state === ASK_STATES.closed;
   const isUpdate = ask.kind === ASK_KINDS.update;
@@ -331,7 +292,15 @@ function OwnAskCard({ ask, canIntro }: { ask: OwnAsk; canIntro: boolean }) {
       </section>
       )}
       {isClosing ? <CloseAskChoices askId={ask.id} onCancel={() => setIsClosing(false)} /> : null}
-      <FormError message={renewAsk.error?.message ?? null} />
+      <FormError message={renewAsk.error?.message ?? reopenAsk.error?.message ?? null} />
+      {isClosed ? (
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" size="lg" variant="soft" disabled={reopenAsk.isPending} className="max-sm:w-full" onClick={() => reopenAsk.mutate(ask.id)}>
+            <RotateCcw aria-hidden="true" />
+            {reopenAsk.isPending ? "Reopening…" : "Reopen this ask"}
+          </Button>
+        </div>
+      ) : null}
       {isClosed || isClosing ? null : (
         <div className="flex flex-wrap gap-2">
           {ask.canRenew ? (
@@ -354,10 +323,9 @@ function hasNewOffers(asks: readonly OwnAsk[]) {
   return asks.some(({ state, offers }) => state === ASK_STATES.open && offers.some(({ isNew }) => isNew));
 }
 
-export function YourAsks({ onAsk, isViewerAdmin = false }: { onAsk: () => void; isViewerAdmin?: boolean }) {
+export function YourAsks({ onAsk }: { onAsk: () => void }) {
   const { data } = useSuspenseQuery(ownAsksQuery());
   useMarkOffersSeen(hasNewOffers(data.asks));
-  const setting = isViewerAdmin ? <AllowanceSetting allowance={data.allowance} /> : null;
   if (data.asks.length === 0) {
     return (
       <div className="grid max-w-[760px] gap-7">
@@ -369,7 +337,6 @@ export function YourAsks({ onAsk, isViewerAdmin = false }: { onAsk: () => void; 
           </Button>
         </EmptyState>
       </div>
-      {setting}
       </div>
     );
   }
@@ -392,7 +359,6 @@ export function YourAsks({ onAsk, isViewerAdmin = false }: { onAsk: () => void; 
           </section>
         );
       })}
-      {setting}
     </div>
   );
 }

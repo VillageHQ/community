@@ -35,6 +35,9 @@ export const ask = pgTable(
     listedAt: askTimestamp("listed_at").notNull().defaultNow(),
     closedAt: askTimestamp("closed_at"),
     outcome: text("outcome"),
+    // An admin's pin keeps an open ask at the top of the board. Closing the ask takes the pin off.
+    pinnedAt: askTimestamp("pinned_at"),
+    pinnedByUserId: text("pinned_by_user_id").references(() => user.id, { onDelete: "set null" }),
     createdAt: askTimestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
@@ -48,6 +51,7 @@ export const ask = pgTable(
     check("ask_category_known", sql`${table.category} in (${toSqlList(ASK_CATEGORIES)})`),
     check("ask_outcome_known", sql`${table.outcome} in (${toSqlList(ASK_OUTCOMES)})`),
     check("ask_closed_with_outcome", sql`(${table.closedAt} is null) = (${table.outcome} is null)`),
+    check("ask_pinned_only_open", sql`${table.pinnedAt} is null or ${table.closedAt} is null`),
     check("ask_title_length", sql`char_length(${table.title}) between 1 and ${sql.raw(String(ASK_LIMITS.titleLength))}`),
     check("ask_detail_length", sql`char_length(${table.detail}) between 1 and ${sql.raw(String(ASK_LIMITS.detailLength))}`),
   ],

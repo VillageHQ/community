@@ -418,6 +418,7 @@ const ASKS: readonly AskSeed[] = [
     target: "sara-lopez-demo",
     closed: { daysAgo: 30, outcome: "solved_here" },
     offers: [["diego.alvarez", "Sara at Banco Meridia banks half the farms we work with. Intro sent!"]],
+    answers: [["oliver.grant", "Ask any bank for its settlement sandbox first. Testing card settlement took us six weeks in Portugal."]],
   },
   {
     author: "lena.fischer",

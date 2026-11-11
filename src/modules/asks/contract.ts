@@ -23,7 +23,11 @@ export const ASK_API_ROUTES = {
   knowSomeone: "/api/asks/know-someone",
   askHelper: "/api/asks/ask-helper",
   allowance: "/api/asks/allowance",
+  pin: "/api/asks/pin",
+  reopen: "/api/asks/reopen",
 } as const;
+
+export const ASKS_ADMIN_PAGE = "/admin/asks";
 
 export const ASK_LIMITS = {
   titleLength: 120,
@@ -39,6 +43,9 @@ export const ASK_LIMITS = {
   wordHelpersPerAsk: 5,
   allowanceWindowDays: 7,
   connectorWeeklyCap: 10,
+  pinnedAsks: 3,
+  searchLength: 120,
+  adminOldestShown: 10,
 } as const;
 
 export const ASK_ALLOWANCE = { default: 5, minimum: 1, maximum: 100 } as const;
@@ -50,6 +57,8 @@ export const ASK_HELPER_REASONS = { path: "path", words: "words" } as const;
 export const ASK_CATEGORIES = { intro: "intro", hire: "hire", customer: "customer", advice: "advice", other: "other" } as const;
 export const ASK_OUTCOMES = { solvedHere: "solved_here", solvedElsewhere: "solved_elsewhere", noLongerNeeded: "no_longer_needed" } as const;
 export const ASK_STATES = { open: "open", expired: "expired", closed: "closed" } as const;
+// The board's tabs. "Mine" is the separate Your asks view, so it isn't a board tab.
+export const ASK_BOARD_TABS = { open: "open", answered: "answered", closed: "closed" } as const;
 export const ASK_REPORT_TARGET = "ask";
 export const ASK_ANSWER_REPORT_TARGET = "ask_answer";
 
@@ -65,6 +74,9 @@ export const ASK_ERROR_CODES = {
   answerNotFound: "ask_answer_not_found",
   introUnavailable: "ask_intro_unavailable",
   notHelper: "ask_not_helper",
+  pinLimit: "ask_pin_limit",
+  notOpen: "ask_not_open",
+  notClosed: "ask_not_closed",
 } as const;
 
 const REPEATED_WHITESPACE = /\s+/g;
@@ -101,11 +113,25 @@ export const linkedinTargetSchema = z
 
 export const askCursorSchema = z.object({ listedAt: timestampSchema, id: z.uuid() });
 
+// Blank or spaces-only means no search.
+export const askSearchSchema = z
+  .string()
+  .overwrite(removeNullBytes)
+  .overwrite(removeBidiControls)
+  .trim()
+  .max(ASK_LIMITS.searchLength)
+  .nullable()
+  .default(null)
+  .transform((value) => value || null);
+
 export const askBoardBodySchema = z.object({
+  tab: z.enum(ASK_BOARD_TABS).default(ASK_BOARD_TABS.open),
+  search: askSearchSchema,
   category: z.enum(ASK_CATEGORIES).nullable().default(null),
   kind: askKindSchema.nullable().default(null),
   cursor: askCursorSchema.nullable().default(null),
 });
+export const pinAskBodySchema = z.object({ askId: z.uuid(), isPinned: z.boolean() });
 export const createAskBodySchema = z.object({
   title: askTitleSchema,
   detail: askDetailSchema.nullable().default(null),
@@ -162,9 +188,18 @@ export const boardAskSchema = z.object({
   myOffer: myOfferSchema.nullable(),
   answers: z.array(answerShapeSchema),
   whyYou: z.string().nullable(),
+  state: z.enum(ASK_STATES),
+  outcome: z.enum(ASK_OUTCOMES).nullable(),
+  isPinned: z.boolean(),
+  canReopen: z.boolean(),
 });
 
-export const askBoardPageSchema = z.object({ asks: z.array(boardAskSchema), nextCursor: askCursorSchema.nullable(), canIntro: z.boolean() });
+export const askBoardPageSchema = z.object({
+  asks: z.array(boardAskSchema),
+  pinnedAsks: z.array(boardAskSchema),
+  nextCursor: askCursorSchema.nullable(),
+  canIntro: z.boolean(),
+});
 
 const offerSchema = z.object({
   id: z.uuid(),
@@ -209,6 +244,8 @@ export const createdIntroSchema = z.object({ introId: z.uuid() });
 export const allowanceSettingSchema = z.object({ weeklyAllowance: z.number().int() });
 
 export type AskCategory = z.infer<typeof askCategorySchema>;
+export type AskBoardTab = (typeof ASK_BOARD_TABS)[keyof typeof ASK_BOARD_TABS];
+export type PinAskBody = z.infer<typeof pinAskBodySchema>;
 export type AskOutcome = z.infer<typeof askOutcomeSchema>;
 export type AskState = (typeof ASK_STATES)[keyof typeof ASK_STATES];
 export type AskKind = (typeof ASK_KINDS)[keyof typeof ASK_KINDS];
