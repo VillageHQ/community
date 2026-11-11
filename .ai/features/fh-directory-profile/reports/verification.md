@@ -153,3 +153,11 @@ date is now 11 Nov because of the test edits. Sam has one deletion request and o
 4. **"Your switches" icon**: `SlidersHorizontal` where Founderhall uses Lucide `settings-2` (`your-data-switches.tsx`). Fix: use `Settings2`.
 
 Everything else is community data (a), kept Community function (b) or owned elsewhere (c). The deletion email matches word for word.
+
+## Re-check after the repair (a second verifier, only what failed)
+1. A hidden member's name in the title: PASS (title "Member · Northwind Founders", no name in the HTML; back to the name once listed again).
+2. Old addresses: PASS (308, query kept, for /members, /members/card, /members/data, /members/<id>).
+3. Option-card spacing: PASS (8 px between cards on /me and /me/data, as Founderhall's).
+4. "Your switches" icon: PASS (Lucide settings-2).
+
+Verdict after repair: PASS. The pairs in `pairs/` were retaken after the repair.
