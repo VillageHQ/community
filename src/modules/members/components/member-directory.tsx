@@ -2,7 +2,7 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { Search, UsersRound, X } from "lucide-react";
+import { BriefcaseBusiness, Search, UsersRound, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useDeferredValue, useState } from "react";
@@ -55,8 +55,12 @@ function goToPage(page: number, filters: DirectoryFilters) {
   document.getElementById(RESULTS_ID)?.focus();
 }
 
+function readHiringLabel(jobCount: number) {
+  return `Hiring · ${jobCount === 1 ? "1 job" : `${jobCount} jobs`}`;
+}
+
 function MemberCard({ member, viewerId }: { member: DirectoryMember; viewerId: string }) {
-  const { id, name, title, company, companyLogoUrl, canHelpWith, avatarUrl, tags } = member;
+  const { id, name, title, company, companyLogoUrl, canHelpWith, avatarUrl, tags, hiringJobCount } = member;
   const facts = [member.stage, member.sector, member.cohort].filter(Boolean).join(" · ");
   return (
     <li className="flex">
@@ -72,6 +76,12 @@ function MemberCard({ member, viewerId }: { member: DirectoryMember; viewerId: s
               </div>
             ) : null}
             {facts ? <div className="type-small text-muted-foreground">{facts}</div> : null}
+            {hiringJobCount > 0 ? (
+              <Tag tone="sage" className="mt-1.5">
+                <BriefcaseBusiness aria-hidden="true" />
+                {readHiringLabel(hiringJobCount)}
+              </Tag>
+            ) : null}
           </div>
         </div>
         {canHelpWith ? (
@@ -195,13 +205,19 @@ type DirectoryResultsProps = { filters: DirectoryFilters; onClear: () => void; i
 
 function DirectoryResults({ filters, onClear, isStale, viewerId }: DirectoryResultsProps) {
   const { data: directory } = useSuspenseQuery(directoryQuery(filters));
-  const { members, matchCount, page, pageCount, popularTags, filterOptions } = directory;
-  const isFiltered = hasDirectoryFilters(filters);
+  const { members, matchCount, page, pageCount, popularTags, filterOptions, isHiringShown } = directory;
+  const isFiltered = hasDirectoryFilters(isHiringShown ? filters : { ...filters, hiring: false });
   return (
     <>
       <DirectoryFilterMenus filters={filters} options={filterOptions} />
-      {popularTags.length > 0 ? (
+      {popularTags.length > 0 || isHiringShown ? (
         <div role="group" aria-label="Filter members" className="mb-6 flex flex-wrap gap-2">
+          {isHiringShown ? (
+            <Chip isPressed={filters.hiring} onClick={() => applyFilters({ ...filters, hiring: !filters.hiring, page: 1 })}>
+              <BriefcaseBusiness aria-hidden="true" className="size-4" />
+              Hiring
+            </Chip>
+          ) : null}
           <Chip
             isPressed={filters.tag === EVERYONE_TAG}
             onClick={() => applyFilters({ ...filters, tag: EVERYONE_TAG, page: 1 })}
