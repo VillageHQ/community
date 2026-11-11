@@ -21,6 +21,8 @@ export const EMAIL_KINDS = {
   askHelper: "ask_helper",
   partnerReport: "partner_report",
   emailTest: "email_test",
+  introThread: "intro_thread",
+  replyNotice: "reply_notice",
 } as const;
 
 export type EmailKind = (typeof EMAIL_KINDS)[keyof typeof EMAIL_KINDS];
@@ -44,6 +46,10 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.partnerReport]: null,
   // An admin's "Send a test to me" from Settings.
   [EMAIL_KINDS.emailTest]: null,
+  // A reply in an intro thread, passed on to the other person. They are mid-conversation, and the outside person has no switch.
+  [EMAIL_KINDS.introThread]: null,
+  // The one plain answer to an emailed reply: why it didn't land, or the next step after a YES.
+  [EMAIL_KINDS.replyNotice]: null,
 };
 
 export const EMAIL_TOPIC_LABELS: Record<EmailTopic, { title: string; description: string }> = {
