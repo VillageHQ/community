@@ -25,7 +25,7 @@ async function askDemoVillage(path: string, body: object) {
 }
 
 describe("demo pictures", () => {
-  it("bundles a drawn face for every made-up person and a drawn mark for every made-up company", () => {
+  it("bundles a portrait for every made-up person and a drawn mark for every made-up company", () => {
     const people = [...DEMO_PEOPLE, ...DEMO_INVITEES, ...DEMO_OUTSIDERS];
     expect(people.map(({ name }) => toDemoFaceUrl(name)).filter((url) => !isBundled(url))).toEqual([]);
     expect(people.map(({ company }) => toDemoLogoUrl(company)).filter((url) => !isBundled(url))).toEqual([]);

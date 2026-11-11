@@ -3,7 +3,7 @@ import { toDemoDomain, toDemoFaceUrl, toDemoLogoUrl } from "./pictures.ts";
 
 // Canned, made-up Village answers for demo mode, in the shapes Village's API uses. No key is checked and nothing is
 // stored: every member is connected and synced, search returns the same invented people, every path runs through
-// a demo member who shares their network, and the profile fill-in finds each demo member with a drawn face and logo.
+// a demo member who shares their network, and the profile fill-in finds each demo member with a portrait and a drawn logo.
 
 const TOKEN_PREFIX = "demo-token.";
 const TIMESTAMP = "2026-01-01T00:00:00.000Z";
@@ -131,7 +131,7 @@ function toPaths(linkedinUrl: string, callerEmail: string) {
   };
 }
 
-// The public profile the fill-in finds for a demo member: their own card, with a drawn face and company logo.
+// The public profile the fill-in finds for a demo member: their own card, with a portrait and a drawn company logo.
 export function toDemoProfile(person: DemoPerson) {
   return {
     full_name: person.name,
