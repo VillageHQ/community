@@ -68,9 +68,20 @@ describe("answering by replying to the email", () => {
     return row?.email ?? "";
   }
 
+  // The outbox sends right away and clears a sent row's words, so those come from what the fake Resend received.
   async function readQueued(kind: string, to?: string) {
-    const rows = await database.select().from(emailOutbox).where(eq(emailOutbox.kind, kind));
-    return rows.filter((row) => !to || row.toEmail === to);
+    const rows = (await database.select().from(emailOutbox).where(eq(emailOutbox.kind, kind))).filter((row) => !to || row.toEmail === to);
+    return Promise.all(
+      rows.map(async (row) => {
+        if (row.text) return row;
+        const text = await vi.waitFor(() => {
+          const sent = resend.state.emails.find(({ idempotencyKey }) => idempotencyKey === row.id);
+          if (!sent) throw new Error("Not sent yet.");
+          return (sent.body as RecordedBody).text;
+        });
+        return { ...row, text };
+      }),
+    );
   }
 
   function context(memberId: string, email: string) {

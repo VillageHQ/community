@@ -31,7 +31,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 ## Next (queued)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
 - [ ] Intros from a profile without Village, and the finer intro rules — parity — [spec](features/intros-from-profile/SPEC.md)
-- [ ] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
+- [x] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
 
 ### From the final check of the merged app (2026-11-10), not covered by another part
 - [ ] On a phone, Intros moves onto the bottom bar (Home · Meet · Intros · Messages · More; Members and Asks under More) — the owner's pick, 5 of the simulated buyers named it — phone-bar — open pull request — [charter](features/phone-bar/CHARTER.md)
