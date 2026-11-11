@@ -12,7 +12,6 @@ Only then does one message join them. A week later the requester is asked if it 
 - `queries.ts`: client requests; `limits.ts`: rate limits. `copy.ts`: words; `components/`: UI, `consent-answer-panel.tsx`: public page.
 - `components/connector-ask.tsx`: network's slots (ask dialog, promise line).
 - `quiet-intro-emails.ts`: connector reminder, expiry email (jobs).
-- `service-thread.ts`: intro threads (`.ai/features/reply-by-email/NOTES.md`).
 
 States: `requested` → `asking_target` → `target_agreed` → `completed`. Closed: `declined`, `target_declined`, `withdrawn`, `expired`. `accepted` is the old single opt-in yes; rows already in it can still complete or expire, and nothing new enters it.
 
