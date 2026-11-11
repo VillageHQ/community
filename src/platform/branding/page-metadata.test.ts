@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { metadata as adminMetadata } from "@/app/(app)/admin/page";
-import { metadata as networkMetadata } from "@/app/(app)/network/page";
+import { metadata as networkMetadata } from "@/app/(app)/search/page";
 import { metadata as notFoundMetadata } from "@/app/not-found";
 import { metadata as setupMetadata } from "@/app/setup/page";
 import { metadata as signInMetadata } from "@/app/signin/page";

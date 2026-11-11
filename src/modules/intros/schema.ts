@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { boolean, check, index, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
-import { CONSENT_ANSWERS, INTRO_DECLINE_KINDS, INTRO_LIMITS, INTRO_OUTCOMES, INTRO_RESULTS, INTRO_STATES, OPEN_INTRO_STATES } from "./contract.ts";
+import { CONSENT_ANSWERS, INTRO_LINK_PURPOSES, INTRO_DECLINE_KINDS, INTRO_LIMITS, INTRO_OUTCOMES, INTRO_RESULTS, INTRO_STATES, OPEN_INTRO_STATES } from "./contract.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 
 const MILLISECOND_PRECISION = 3;
@@ -136,6 +136,24 @@ export const introConsentLink = pgTable(
   (table) => [index("intro_consent_link_intro_idx").on(table.introId)],
 );
 
+// Links that answer without signing in: the connector's (in the ask email) and the asker's outcome link. Only the
+// SHA-256 of the token is kept. A link works while its step is open; later it shows "Nothing to do".
+export const introAnswerLink = pgTable(
+  "intro_answer_link",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    introId: uuid("intro_id")
+      .notNull()
+      .references(() => introRequest.id, { onDelete: "cascade" }),
+    purpose: text("purpose").notNull(),
+    createdAt: introTimestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("intro_answer_link_intro_idx").on(table.introId),
+    check("intro_answer_link_purpose_known", sql`${table.purpose} in (${toSqlLiterals(Object.values(INTRO_LINK_PURPOSES))})`),
+  ],
+);
+
 // After an introduction made by email with replies on, the asker and the person asked write to each other by
 // replying. The app keeps the thread and passes each reply on. The outside person's address lives here, not on the
 // intro, because the intro clears it once it completes; it goes with the thread.
@@ -147,7 +165,8 @@ export const introThread = pgTable("intro_thread", {
   createdAt: introTimestamp("created_at").notNull().defaultNow(),
 });
 
-export const INTRO_THREAD_AUTHORS = { requester: "requester", target: "target" } as const;
+// The connector is copied on the introduction, so their replies go to both, and both sides' replies reach them.
+export const INTRO_THREAD_AUTHORS = { requester: "requester", target: "target", introducer: "introducer" } as const;
 
 export type IntroThreadAuthor = (typeof INTRO_THREAD_AUTHORS)[keyof typeof INTRO_THREAD_AUTHORS];
 

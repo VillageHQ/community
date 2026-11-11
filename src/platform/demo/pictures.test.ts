@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { DEMO_INVITEES, DEMO_OUTSIDERS, DEMO_PEOPLE, toDemoEmail } from "./people";
+import { DEMO_INVITEES, DEMO_OUTSIDERS, DEMO_PEOPLE, DEMO_SEARCH_PEOPLE, toDemoEmail } from "./people";
 import { toDemoFaceUrl, toDemoLogoUrl } from "./pictures";
 import { answerDemoVillage, DEMO_VILLAGE_KEYS } from "./village-answers";
 
@@ -26,7 +26,7 @@ async function askDemoVillage(path: string, body: object) {
 
 describe("demo pictures", () => {
   it("bundles a portrait for every made-up person and a drawn mark for every made-up company", () => {
-    const people = [...DEMO_PEOPLE, ...DEMO_INVITEES, ...DEMO_OUTSIDERS];
+    const people = [...DEMO_PEOPLE, ...DEMO_INVITEES, ...DEMO_OUTSIDERS, ...DEMO_SEARCH_PEOPLE];
     expect(people.map(({ name }) => toDemoFaceUrl(name)).filter((url) => !isBundled(url))).toEqual([]);
     expect(people.map(({ company }) => toDemoLogoUrl(company)).filter((url) => !isBundled(url))).toEqual([]);
   });

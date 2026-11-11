@@ -9,7 +9,8 @@ import { readBranding, type Branding } from "@/platform/branding/branding";
 import { isActiveMember } from "@/platform/auth/member-status";
 import { user } from "@/platform/database/auth-schema";
 import type { Database } from "@/platform/database/client";
-import { EMAIL_KINDS, EMAIL_TOPICS, UNSUBSCRIBE_LINK } from "@/platform/email/kinds";
+import { EMAIL_KINDS, EMAIL_TOPICS } from "@/platform/email/kinds";
+import { UNSUBSCRIBE_URL_MARK } from "@/platform/email/unsubscribe";
 import { isEmailWanted, queueEmail } from "@/platform/email/outbox";
 import { sendQueuedEmailNow } from "@/platform/email/outbox-sender";
 import { readResendConfig } from "@/platform/email/resend";
@@ -71,7 +72,7 @@ type ComposeInput = { recipient: Recipient; items: TodayItems; numbered: WeeklyE
 function compose(environment: Environment, { recipient, items, numbered, links, branding, canReply, isTest, isSent }: ComposeInput) {
   // A sent email's stop line carries the member's unsubscribe link (the outbox fills it in); a preview's opens the app.
   return renderWeeklyEmail({
-    stopUrl: isSent ? UNSUBSCRIBE_LINK : resolveAppUrl(environment),
+    stopUrl: isSent ? UNSUBSCRIBE_URL_MARK : resolveAppUrl(environment),
     memberName: recipient.name,
     communityName: branding.name,
     accentColor: branding.accentColor,
@@ -224,13 +225,18 @@ export function buildSampleItems(now = new Date()): TodayItems {
         title: "Who knows a good fractional CFO for a seed-stage startup?",
         author: { id: "sample-asker", name: "Priya Shah", avatarUrl: null },
         listedAt: at,
+        createdAt: at,
         matchedWords: ["finance"],
         why: null,
+        who: "a fractional CFO",
+        whyYou: "Your profile says you can help with “finance for seed-stage startups.”",
       },
     ],
     introsToAnswer: [intro],
     introsToFinish: [],
     profileLines: [],
+    ownPosts: [],
+    introsInMotion: [],
     ownAsks: [
       {
         id: "00000000-0000-4000-8000-000000000003",

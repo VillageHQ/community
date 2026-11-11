@@ -19,6 +19,7 @@ export const EMAIL_KINDS = {
   creditWarning: "credit_warning",
   connectNudge: "connect_nudge",
   askHelper: "ask_helper",
+  askHelpOffered: "ask_help_offered",
   partnerReport: "partner_report",
   emailTest: "email_test",
   introThread: "intro_thread",
@@ -26,10 +27,6 @@ export const EMAIL_KINDS = {
 } as const;
 
 export type EmailKind = (typeof EMAIL_KINDS)[keyof typeof EMAIL_KINDS];
-
-// An email that words its own stop line ("Stop the weekly digest: …") puts this where the link goes. The outbox fills
-// in the member's unsubscribe page when it sends, and then adds no footer of its own.
-export const UNSUBSCRIBE_LINK = "{{unsubscribe_link}}";
 
 const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.invite]: null,
@@ -46,6 +43,8 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.creditWarning]: null,
   [EMAIL_KINDS.connectNudge]: EMAIL_TOPICS.network,
   [EMAIL_KINDS.askHelper]: EMAIL_TOPICS.asks,
+  // To the asker when a member says "I can help": the answer to their own ask, like an intro update.
+  [EMAIL_KINDS.askHelpOffered]: null,
   // Sent by an admin to people outside the community, who have no member switch. The send itself skips addresses that bounced.
   [EMAIL_KINDS.partnerReport]: null,
   // An admin's "Send a test to me" from Settings.

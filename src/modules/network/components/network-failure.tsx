@@ -5,8 +5,7 @@ import { BatteryLow, Clock, CloudOff, RefreshCw, type LucideIcon } from "lucide-
 import { useEffect } from "react";
 import type { FallbackProps } from "react-error-boundary";
 
-import { EmptyState } from "@/components/empty-state";
-import { ErrorState, RetryButton } from "@/components/error-state";
+import { Note } from "@/components/ui/note";
 import { Button } from "@/components/ui/button";
 import { NETWORK_ERROR_CODES } from "@/modules/network/contract";
 import { RequestFailure } from "@/platform/http/post-request";
@@ -14,7 +13,6 @@ import { RequestFailure } from "@/platform/http/post-request";
 import { NETWORK_QUERY_KEYS } from "@/modules/network/queries";
 
 const FALLBACK_MESSAGE = "Something went wrong. Try again.";
-const FAILURE_TITLE = "That didn't work";
 
 type WarmStep = { icon: LucideIcon; title: string; description: string; action: string | null };
 
@@ -74,24 +72,33 @@ export function NetworkFailure({ error, resetErrorBoundary }: FallbackProps) {
     if (isStageChanging) void queryClient.invalidateQueries({ queryKey: [NETWORK_QUERY_KEYS.status] });
   }, [isStageChanging, queryClient]);
 
+  // Founderhall's search error: one note in member words, in the results' place.
   const warmStep = code === null ? undefined : WARM_STEPS[code];
   if (warmStep) {
     return (
-      <div role="status" className="rounded-field bg-muted">
-        <EmptyState icon={warmStep.icon} title={warmStep.title} description={warmStep.description} headingLevel="h3">
-          {warmStep.action ? (
-            <Button type="button" size="lg" onClick={resetErrorBoundary}>
+      <div role="status" className="mt-4">
+        <Note kind="needs" icon={warmStep.icon}>
+          <b>{warmStep.title}.</b> {warmStep.description}
+        </Note>
+        {warmStep.action ? (
+          <div className="fh-btn-row mt-2.5">
+            <Button type="button" variant="quiet" size="sm" onClick={resetErrorBoundary}>
               {warmStep.action}
             </Button>
-          ) : null}
-        </EmptyState>
+          </div>
+        ) : null}
       </div>
     );
   }
 
   return (
-    <ErrorState title={FAILURE_TITLE} description={readFailureMessage(error)} headingLevel="h3">
-      <RetryButton onClick={resetErrorBoundary} />
-    </ErrorState>
+    <div role="alert" className="mt-4">
+      <Note kind="needs">{readFailureMessage(error)}</Note>
+      <div className="fh-btn-row mt-2.5">
+        <Button type="button" variant="quiet" size="sm" onClick={resetErrorBoundary}>
+          Try again
+        </Button>
+      </div>
+    </div>
   );
 }

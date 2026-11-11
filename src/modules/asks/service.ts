@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, count, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { and, count, eq, gt, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
@@ -15,14 +15,16 @@ import { logAdminAction } from "../../platform/observability/route-logging.ts";
 import { saveSettings } from "../../platform/settings/store.ts";
 import {
   ASK_ALLOWANCE_SETTING,
+  ASK_ANSWER_KINDS,
+  ASK_CATEGORIES,
   ASK_ERROR_CODES,
   ASK_KINDS,
   ASK_LIMITS,
-  ASK_OUTCOMES,
   ASK_STATES,
   composeAnswerReportBody,
   composeAskReportBody,
   type AnswerAskBody,
+  type AskAnswerKind,
   type CloseAskBody,
   type CreateAskBody,
   type OfferHelpBody,
@@ -35,6 +37,7 @@ import { ask, askAnswer, askHelper, askOffer } from "./schema.ts";
 const NOT_FOUND_STATUS = 404;
 const CONFLICT_STATUS = 409;
 const UNPROCESSABLE_STATUS = 422;
+const REPEAT_WINDOW_MS = 60_000;
 
 function askGoneError() {
   return new RequestError(NOT_FOUND_STATUS, ASK_ERROR_CODES.notFound, "This ask isn't available anymore.");
@@ -61,16 +64,33 @@ async function assertRoomForAnotherOpenAsk(transaction: Transaction, memberId: s
 // because intro asks share it and this module can't read intros.
 export type AllowanceCheck = (transaction: Transaction, memberId: string) => Promise<void>;
 
+// The ask's category is no longer asked for: one that names who it's trying to reach is an intro, any other is advice.
+// The partner report counts by it.
+function inferCategory({ category, targetText, targetCompany, targetLinkedin }: CreateAskBody) {
+  if (category) return category;
+  return targetText || targetCompany || targetLinkedin ? ASK_CATEGORIES.intro : ASK_CATEGORIES.advice;
+}
+
 export async function createAsk({ database, member }: RequestContext, body: CreateAskBody, assertAllowance: AllowanceCheck) {
-  const { title, detail, category, kind } = body;
+  const { title, detail, kind } = body;
   const isAsk = kind === ASK_KINDS.ask;
+  const category = isAsk ? inferCategory(body) : (body.category ?? ASK_CATEGORIES.other);
   return database.transaction(async (transaction) => {
     await lockMemberAsks(transaction, member.id);
     await assertRoomForAnotherOpenAsk(transaction, member.id, new Date());
     if (isAsk) await assertAllowance(transaction, member.id);
     const [created] = await transaction
       .insert(ask)
-      .values({ authorId: member.id, title, detail, category, kind, targetSlug: isAsk ? body.targetLinkedin : null })
+      .values({
+        authorId: member.id,
+        title,
+        detail,
+        category,
+        kind,
+        targetSlug: isAsk ? body.targetLinkedin : null,
+        targetText: isAsk ? body.targetText : null,
+        targetCompany: isAsk ? body.targetCompany : null,
+      })
       .returning({ id: ask.id });
     if (!created) throw askGoneError();
     return created;
@@ -91,18 +111,31 @@ async function lockAskForOffer(transaction: Transaction, askId: string, helperId
   return target;
 }
 
-// "I've done this myself": one public answer per member under an open ask. A second try finds the first.
-export async function answerAsk({ database, member }: RequestContext, { askId, body }: AnswerAskBody) {
+// The ask anyone may answer under: there, seen by them, not removed. Founderhall lets the author and members answer
+// any ask, open or answered, as many times as they like.
+async function lockAskForAnswer(transaction: Transaction, askId: string, memberId: string) {
+  const [target] = await transaction
+    .select({ authorId: ask.authorId, title: ask.title })
+    .from(ask)
+    .innerJoin(user, eq(user.id, ask.authorId))
+    .where(and(eq(ask.id, askId), isActiveMember(), hasNoBlockBetween(memberId, ask.authorId)))
+    .for("share", { of: ask });
+  if (!target) throw askGoneError();
+  return target;
+}
+
+// A public answer under an ask. The same words twice within a minute are one answer, so a double tap posts once.
+export async function answerAsk({ database, member }: RequestContext, { askId, body }: AnswerAskBody, kind: AskAnswerKind = ASK_ANSWER_KINDS.answer) {
   return database.transaction(async (transaction) => {
-    await lockAskForOffer(transaction, askId, member.id);
-    const [created] = await transaction.insert(askAnswer).values({ askId, authorId: member.id, body }).onConflictDoNothing().returning({ id: askAnswer.id });
-    if (created) return { id: created.id, wasAlreadyAnswered: false };
+    await lockAskForAnswer(transaction, askId, member.id);
     const [earlier] = await transaction
       .select({ id: askAnswer.id })
       .from(askAnswer)
-      .where(and(eq(askAnswer.askId, askId), eq(askAnswer.authorId, member.id)));
-    if (!earlier) throw askGoneError();
-    return { id: earlier.id, wasAlreadyAnswered: true };
+      .where(and(eq(askAnswer.askId, askId), eq(askAnswer.authorId, member.id), eq(askAnswer.body, body), gt(askAnswer.createdAt, new Date(Date.now() - REPEAT_WINDOW_MS))));
+    if (earlier) return { id: earlier.id, wasAlreadyAnswered: true };
+    const [created] = await transaction.insert(askAnswer).values({ askId, authorId: member.id, body, kind }).returning({ id: askAnswer.id });
+    if (!created) throw askGoneError();
+    return { id: created.id, wasAlreadyAnswered: false };
   });
 }
 
@@ -220,26 +253,6 @@ export async function setAskPinned({ database, member }: RequestContext, { askId
     });
   });
   logAdminAction(isPinned ? "ask_pinned" : "ask_unpinned", member.id, askId);
-}
-
-// Asks & digest › Close (Founderhall's): an admin ends an ask or an update for everyone. It closes as no longer
-// needed, loses any pin, and the audit log keeps who closed it.
-export async function closeAskAsAdmin({ database, member }: RequestContext, askId: string) {
-  await withAdminTransaction(database, member.id, async (transaction) => {
-    const target = await lockAskForAdmin(transaction, askId);
-    if (target.closedAt) throw new RequestError(CONFLICT_STATUS, ASK_ERROR_CODES.closed, "This ask is already closed.");
-    await transaction
-      .update(ask)
-      .set({ closedAt: new Date(), outcome: ASK_OUTCOMES.noLongerNeeded, pinnedAt: null, pinnedByUserId: null })
-      .where(eq(ask.id, askId));
-    await recordAdminAction(transaction, member.id, {
-      action: AUDIT_ACTIONS.askClosedByAdmin,
-      targetMemberId: target.authorId,
-      targetName: target.authorName,
-      detail: target.title,
-    });
-  });
-  logAdminAction("ask_closed_by_admin", member.id, askId);
 }
 
 // The author or an admin puts a closed ask back on the board for a fresh 30 days. The author's open limit still

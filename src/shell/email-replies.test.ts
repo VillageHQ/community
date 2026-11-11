@@ -316,18 +316,23 @@ describe("answering by replying to the email", () => {
       return { ...people, intro, sent, toTarget, toAlex };
     }
 
-    it("sends each their own copy, and passes replies both ways while the asker reads them in the app", async () => {
-      const { alex, alexEmail, intro, sent, toTarget, toAlex } = await seedJoined();
-      expect(sent).toHaveLength(2);
-      expect(JSON.stringify(toTarget)).not.toContain(alexEmail);
-      expect(toTarget?.text).toContain("Reply to this email to say hello to Alex");
+    it("sends each their own copy, the connector copied, and passes replies to the others while the asker reads them in the app", async () => {
+      const { alex, alexEmail, hanaEmail, intro, sent, toTarget, toAlex } = await seedJoined();
+      expect(sent).toHaveLength(3);
+      // Founderhall's introduction: the asker and the person see each other's address once both said yes.
+      expect(toTarget?.text).toContain(alexEmail);
+      expect(toTarget?.text).toContain("Reply to this email to write to Alex");
+      // Members never see each other's address: the connector's copy shows neither.
+      const toConnector = sent.find(({ to }) => to.includes(hanaEmail));
+      expect(toConnector?.text).not.toContain(alexEmail);
+      expect(toConnector?.text).not.toContain(OUTSIDER_EMAIL);
 
       expect(await reply(`Jo Rivera <${OUTSIDER_EMAIL}>`, toTarget?.reply_to ?? "", `Lovely to meet you, Alex.${QUOTED}`)).toMatchObject({ kind: "t", outcome: "posted" });
-      const [toAsker] = await readQueued(EMAIL_KINDS.introThread, alexEmail);
+      const toAsker = (await readQueued(EMAIL_KINDS.introThread, alexEmail)).find(({ subject }) => subject.startsWith("Re: "));
       expect(toAsker?.text).toContain("Lovely to meet you, Alex.");
 
       expect(await reply(alexEmail, toAlex?.reply_to ?? "", `Likewise! Coffee next week?${QUOTED}`)).toMatchObject({ outcome: "posted" });
-      const [toOutsider] = await readQueued(EMAIL_KINDS.introThread, OUTSIDER_EMAIL);
+      const toOutsider = (await readQueued(EMAIL_KINDS.introThread, OUTSIDER_EMAIL)).find(({ subject }) => subject.startsWith("Re: "));
       expect(toOutsider?.text).toContain("Likewise! Coffee next week?");
       expect(toOutsider?.text).not.toContain(alexEmail);
 
@@ -338,11 +343,11 @@ describe("answering by replying to the email", () => {
       ]);
     });
 
-    it("refuses the outside person's address used by someone else, and the connector never sees the thread", async () => {
+    it("refuses the outside person's address used by someone else, and shows the connector the thread they are copied on", async () => {
       const { hana, hanaEmail, intro, toTarget } = await seedJoined();
       expect(await reply(hanaEmail, toTarget?.reply_to ?? "", "Butting in.")).toMatchObject({ reason: "wrong_sender" });
       expect(await database.select().from(introThreadMessage).where(eq(introThreadMessage.introId, intro.id))).toHaveLength(0);
-      expect(await readIntroThreadForRequester(database, intro.id, hana)).toBeNull();
+      expect(await readIntroThreadForRequester(database, intro.id, hana)).toEqual([]);
     });
   });
 
@@ -356,7 +361,7 @@ describe("answering by replying to the email", () => {
       const askId = created?.id ?? "";
       await routeAskToHelpers(context(alex, alexEmail), askId, async () => null);
       const [email] = await readQueued(EMAIL_KINDS.askHelper, hanaEmail);
-      expect(email?.text).toContain("we'll post it as your answer");
+      expect(email?.text).toContain("Or reply to this email: your reply shows under the ask, from you.");
 
       expect(await reply(samEmail, email?.replyTo ?? "", "Not me.")).toMatchObject({ reason: "wrong_sender" });
       expect(await reply(hanaEmail, email?.replyTo ?? "", `I raised from two fintech funds last year.${QUOTED}`)).toMatchObject({ kind: "h", outcome: "posted" });
@@ -392,7 +397,7 @@ describe("answering by replying to the email", () => {
       const sent = resend.state.emails.map(({ body }) => body as RecordedBody);
       expect(sent).toHaveLength(1);
       expect(sent[0]?.to).toEqual([OUTSIDER_EMAIL, alexEmail]);
-      expect(sent[0]?.text).toContain("reply all");
+      expect(sent[0]?.text).toContain("Reply all to write to each other.");
     });
   });
 });

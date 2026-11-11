@@ -25,7 +25,7 @@ describe("a network failure", () => {
       ),
     );
 
-    expect(screen.getByRole("heading", { name: "Lookups are paused for now" })).toBeTruthy();
+    expect(screen.getByText("Lookups are paused for now.")).toBeTruthy();
     expect(screen.getByText(/you don't need to do anything/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Check again" })).toBeTruthy();
     expect(screen.queryByText("Raw server words")).toBeNull();
@@ -42,7 +42,7 @@ describe("a network failure", () => {
         ),
       );
 
-      expect(screen.getByRole("heading", { name: "Search is unavailable right now" })).toBeTruthy();
+      expect(screen.getByText("Search is unavailable right now.")).toBeTruthy();
       expect(screen.getByText(/Your admin can see this/)).toBeTruthy();
       expect(screen.queryByText("That didn't work")).toBeNull();
       expect(screen.queryByText("Raw server words")).toBeNull();

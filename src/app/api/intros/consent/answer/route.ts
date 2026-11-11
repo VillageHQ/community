@@ -1,6 +1,6 @@
-import { consentAnswerBodySchema } from "@/modules/intros/contract";
+import { CONSENT_ANSWERS, consentAnswerBodySchema } from "@/modules/intros/contract";
 import { introsRoutes } from "@/modules/intros/routes";
-import { answerConsentAsk } from "@/modules/intros/service-consent";
+import { answerConsentAsk, stopIntroAsks } from "@/modules/intros/service-consent";
 import { getDatabase } from "@/platform/database/client";
 import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/platform/http/body-limit";
 import { REQUEST_ERROR_CODES } from "@/platform/http/error-codes";
@@ -27,7 +27,10 @@ export const POST = introsRoutes.open(
 
     const viewer = await readSessionMember(request);
     try {
-      return Response.json(await answerConsentAsk({ database: getDatabase(), environment: process.env, request, viewerId: viewer?.id ?? null }, body.data));
+      const context = { database: getDatabase(), environment: process.env, request, viewerId: viewer?.id ?? null };
+      // "Don't send me intro asks" works from a closed link too (the opt-out page).
+      if (body.data.answer === CONSENT_ANSWERS.stopAllAsks) return Response.json(await stopIntroAsks(context, body.data.token));
+      return Response.json(await answerConsentAsk(context, body.data));
     } catch (error) {
       if (error instanceof RequestError) return respondWithError(error);
       throw error;

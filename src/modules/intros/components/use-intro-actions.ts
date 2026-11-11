@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import type { IntroTransitionBody } from "@/modules/intros/contract";
@@ -8,15 +9,17 @@ import { INTRO_QUERY_KEYS, issuedConsentQuery, markIntrosSeenRequest, transition
 
 export function useIntroTransition() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   return useMutation({
     mutationFn: (body: IntroTransitionBody) => transitionIntroRequest(body),
     onSuccess: ({ id, consentIssue }) => {
       if (consentIssue) queryClient.setQueryData(issuedConsentQuery(id).queryKey, consentIssue);
     },
-    onSettled: () =>
-      Promise.all(
-        Object.values(INTRO_QUERY_KEYS).map((queryKey) => queryClient.invalidateQueries({ queryKey: [queryKey] })),
-      ),
+    onSettled: async () => {
+      await Promise.all(Object.values(INTRO_QUERY_KEYS).map((queryKey) => queryClient.invalidateQueries({ queryKey: [queryKey] })));
+      // The intro page is rendered on the server: read it again.
+      router.refresh();
+    },
   });
 }
 

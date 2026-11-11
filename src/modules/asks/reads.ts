@@ -21,6 +21,7 @@ import {
   ownAsksSchema,
   type AskBoardPage,
   type AskAnswer,
+  type AskAnswerKind,
   type AskBoardTab,
   type AskCategory,
   type AskCursor,
@@ -134,6 +135,7 @@ async function readAnswers(database: Database, askIds: string[], viewerId: strin
       id: askAnswer.id,
       askId: askAnswer.askId,
       body: askAnswer.body,
+      kind: askAnswer.kind,
       createdAt: askAnswer.createdAt,
       authorId: answerAuthor.id,
       authorName: answerAuthor.name,
@@ -155,6 +157,7 @@ async function readAnswers(database: Database, askIds: string[], viewerId: strin
       id: row.id,
       author: toAskMember({ id: row.authorId, name: row.authorName, title: row.authorTitle, company: row.authorCompany, avatarUpdatedAt: row.authorAvatarUpdatedAt, filledFace: row.authorFilledFace, companyLogoUrl: row.authorCompanyLogoUrl }),
       body: row.body,
+      kind: row.kind as AskAnswerKind,
       createdAt: row.createdAt.toISOString(),
       isMine: row.authorId === viewerId,
     });
@@ -469,7 +472,7 @@ export async function readReportableAnswer(database: Database, viewerId: string,
   return target ?? null;
 }
 
-export type WordHelper = { memberId: string; sharedWords: string[] };
+export type WordHelper = { memberId: string; sharedWords: string[]; canHelpWith: string };
 
 // Members whose "can help with" line or tags share a word with the ask, by the same rule the Today list uses
 // (rules-help-match.ts). Plain word overlap, no AI. The most shared words first.
@@ -490,7 +493,7 @@ export async function readWordHelpers(database: Database, authorId: string, askT
   return [...textByMember]
     .flatMap(([memberId, { canHelpWith, tags }]) => {
       const sharedWords = findMatchedWords(askText, readWords([canHelpWith, ...tags].join(" ")));
-      return sharedWords.length > 0 ? [{ memberId, sharedWords }] : [];
+      return sharedWords.length > 0 ? [{ memberId, sharedWords, canHelpWith }] : [];
     })
     .toSorted((first, second) => second.sharedWords.length - first.sharedWords.length)
     .slice(0, ASK_LIMITS.wordHelpersPerAsk);

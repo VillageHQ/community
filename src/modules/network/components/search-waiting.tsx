@@ -4,8 +4,6 @@ import { Clock } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import type { ConstellationPerson } from "@/components/constellation";
-import { LoadingThread } from "@/components/loading-state";
 import { Button } from "@/components/ui/button";
 import { ROUTES } from "@/platform/http/routes";
 
@@ -48,35 +46,34 @@ function useElapsedSeconds(startedAtMs: number) {
   return elapsedSeconds;
 }
 
-type SearchWaitingProps = {
-  prompt: string;
-  startedAtMs: number;
-  person: ConstellationPerson;
-  sharingMemberCount: number;
-};
+type SearchWaitingProps = { prompt: string; sharingMemberCount: number };
 
-export function SearchWaiting({ prompt, startedAtMs, person, sharingMemberCount }: SearchWaitingProps) {
+// A search takes up to two minutes (Village checks everyone's connections): a calm note where the results will be, with
+// the time so far, and a way to keep browsing (a notice says when it is ready).
+export function SearchWaiting({ prompt, sharingMemberCount }: SearchWaitingProps) {
+  const [startedAtMs] = useState(() => Date.now());
   const elapsedSeconds = useElapsedSeconds(startedAtMs);
-
   return (
-    <section
-      aria-label="Search in progress"
-      data-slot="search-waiting"
-      className="flex flex-col items-center rounded-card bg-card px-card-phone py-9 text-center shadow-panel sm:rounded-panel sm:p-10"
-    >
-      <LoadingThread person={person} />
-      <div role="status" aria-live="polite" className="grid justify-items-center">
-        <h2 className="type-h2">{readWaitingTitle(sharingMemberCount)}</h2>
-        <p className="type-lead mt-2 max-w-[520px] wrap-anywhere text-foreground-soft">&ldquo;{prompt}&rdquo;</p>
-        <p className="type-body mt-4 max-w-[480px] text-foreground-soft">{readWaitingNote(elapsedSeconds)}</p>
+    <section aria-label="Search in progress" data-slot="search-waiting" className="fh-sheet mt-4">
+      <div role="status" aria-live="polite">
+        <h2 className="fh-h3">{readWaitingTitle(sharingMemberCount)}</h2>
+        <p className="fh-small mt-1.5 wrap-anywhere">&ldquo;{prompt}&rdquo;</p>
+        <p className="fh-small fh-muted mt-1.5">{readWaitingNote(elapsedSeconds)}</p>
       </div>
-      <p aria-hidden="true" className="type-small mt-4 inline-flex min-h-8 items-center gap-2 rounded-full bg-muted px-3.5 font-semibold text-foreground-soft tabular-nums">
-        <Clock className="size-4" />
+      <div className="fh-meter mt-3" aria-hidden="true">
+        <div className="fh-track">
+          <i className="fh-indeterminate" style={{ ["--w" as string]: "35%" }} />
+        </div>
+      </div>
+      <p aria-hidden="true" className="fh-small fh-muted mt-2 inline-flex items-center gap-1.5 tabular-nums">
+        <Clock className="fh-i fh-xs" strokeWidth={1.5} />
         {formatElapsed(elapsedSeconds)} so far
       </p>
-      <Button asChild variant="outline" size="lg" className="mt-6 h-auto">
-        <Link href={ROUTES.feed}>Keep browsing. We&apos;ll tell you when it&apos;s ready.</Link>
-      </Button>
+      <div className="fh-btn-row mt-3">
+        <Button asChild variant="quiet" size="sm">
+          <Link href={ROUTES.feed}>Keep browsing. We&apos;ll tell you when it&apos;s ready.</Link>
+        </Button>
+      </div>
     </section>
   );
 }

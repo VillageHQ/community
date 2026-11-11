@@ -314,7 +314,7 @@ function respondToAuthenticated(
     state.joinedMembers.add(externalId);
     return respondWithData(response, 200, { success: true, message: "Joined" });
   }
-  const isUnsyncedSearch = isUnsyncedInGroup && (path === "/v2/people/search" || path === "/v2/people/paths" || path === "/v2/groups/leave");
+  const isUnsyncedSearch = isUnsyncedInGroup && (path === "/v2/people/search" || path === "/v2/people/paths" || path === "/v2/people/paths/bulk" || path === "/v2/groups/leave");
   if (isUnsyncedSearch && state.isUnsyncedGroupSearchRefused && path !== "/v2/groups/leave") {
     return respondWithError(response, 403, "authorization_error");
   }
@@ -370,6 +370,19 @@ function respondToAuthenticated(
       pagination: { cursor: "", has_next_page: false, count: state.searchPeople.length },
     });
     return;
+  }
+  if (path === "/v2/people/paths/bulk") {
+    if (state.isPathsNotSynced) return respondWithError(response, 409, "network_not_synced");
+    const ids = typeof body === "object" && body !== null && Array.isArray((body as { linkedin_ids?: unknown }).linkedin_ids) ? (body as { linkedin_ids: unknown[] }).linkedin_ids : [];
+    const answered = ids.flatMap((id) => {
+      if (typeof id !== "string") return [];
+      const linkedinUrl = [...state.pathsByUrl.keys(), ...(state.pathsByCaller.get(externalId)?.keys() ?? [])].find((url) => url.replace(/\/+$/, "").endsWith(`/in/${id}`));
+      const paths = linkedinUrl ? (state.pathsByCaller.get(externalId)?.get(linkedinUrl) ?? state.pathsByUrl.get(linkedinUrl)) : undefined;
+      if (!paths || !linkedinUrl) return [];
+      const { summary, count, paths: villagePaths } = toVillagePaths(paths);
+      return [{ target: { linkedin_identifier: id, linkedin_url: linkedinUrl }, summary, count, paths: villagePaths }];
+    });
+    return respondWithData(response, 200, answered, { counts: { total: { value: answered.length } } });
   }
   if (path === "/v2/people/paths") {
     if (state.isUnlinkedOnPathsRequest) {

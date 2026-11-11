@@ -392,4 +392,25 @@ export const DEMO_OUTSIDERS: readonly DemoOutsider[] = [
   { slug: "alex-morgan-demo", name: "Alex Morgan", title: "VP Sales", company: "Countwise", location: "London" },
   { slug: "nina-patel-demo", name: "Nina Patel", title: "Chief Innovation Officer", company: "St. Ambrose Hospitals", location: "Boston" },
   { slug: "luca-bianchi-demo", name: "Luca Bianchi", title: "Head of Insurance Operations", company: "Assicura Nord", location: "Milan" },
+  // The intro targets of Founderhall's demo, so both apps show the same intros side by side.
+  { slug: "alex-kim-demo", name: "Alex Kim", title: "Head of Procurement", company: "Halcyon Health", location: "Boston" },
+  { slug: "rachel-kim-demo", name: "Rachel Kim", title: "CFO", company: "Brightside Clinics", location: "Amsterdam" },
+];
+
+// The people the demo's search finds first, as Founderhall's demo tells it (made up): who knows them and how warmly.
+// `via` is the sharing member through whom the path runs; `knownBy` means Sam knows them first-hand ("reach out
+// yourself"), with how. `keywords` are the extra words a search for them may use.
+export type DemoSearchPerson = DemoOutsider & {
+  warmth: "close" | "knows" | "met";
+  via?: string;
+  knownHow?: string;
+  keywords: string;
+};
+
+export const DEMO_SEARCH_PEOPLE: readonly DemoSearchPerson[] = [
+  { slug: "alex-kim-demo", name: "Alex Kim", title: "Head of Procurement", company: "Halcyon Health", location: "Boston", warmth: "close", knownHow: "Had meetings in 2025", keywords: "hospital health procurement" },
+  { slug: "dana-morris-demo", name: "Dana Morris", title: "VP Supply Chain", company: "Mercy Ridge Hospital", location: "Chicago", warmth: "close", knownHow: "Worked together at Mercy Ridge Hospital", keywords: "hospital health procurement buyer" },
+  { slug: "rosa-lindqvist-demo", name: "Rosa Lindqvist", title: "CTO", company: "Halcyon Health", location: "Boston", warmth: "close", via: "marcus.webb", keywords: "hospital health technology" },
+  { slug: "tom-becker-demo", name: "Tom Becker", title: "Partner", company: "Greenline Climate Fund", location: "Berlin", warmth: "knows", via: "ada.okafor", keywords: "seed investor investors climate vc fund" },
+  { slug: "jonas-lind-demo", name: "Jonas Lind", title: "Angel investor", company: "Lind Family Office", location: "Stockholm", warmth: "met", via: "ada.okafor", keywords: "seed investor investors angel" },
 ];

@@ -202,10 +202,21 @@ describe("asks", () => {
       expect(response.status).toBe(UNPROCESSABLE_STATUS);
     });
 
-    it("explains a missing category in plain words", async () => {
-      const response = await call(postCreate, asker, { title: CFO_ASK, category: null });
+    it("needs no category: one that names who it's trying to reach is an intro, any other ask is advice", async () => {
+      expect((await call(postCreate, asker, { title: CFO_ASK, category: null, targetText: "a former CFO" })).status).toBe(OK_STATUS);
+      expect((await call(postCreate, asker, { title: "Any advice on pricing an API?" })).status).toBe(OK_STATUS);
 
-      expect(await response.json()).toMatchObject({ message: "Choose what kind of help you need." });
+      const rows = await database.select({ category: ask.category, targetText: ask.targetText }).from(ask).orderBy(ask.createdAt);
+      expect(rows).toEqual([
+        { category: ASK_CATEGORIES.intro, targetText: "a former CFO" },
+        { category: ASK_CATEGORIES.advice, targetText: null },
+      ]);
+    });
+
+    it("says how long an ask is when it runs past Founderhall's one line", async () => {
+      const response = await call(postCreate, asker, { title: "x".repeat(ASK_LIMITS.titleLength + 3) });
+
+      expect(await response.json()).toMatchObject({ message: `That is ${ASK_LIMITS.titleLength + 3} characters; keep it to ${ASK_LIMITS.titleLength}.` });
     });
 
     it.each([

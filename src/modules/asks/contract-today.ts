@@ -14,8 +14,12 @@ export const helpableAskSchema = z.object({
   title: z.string(),
   author: z.object({ id: z.string(), name: z.string(), avatarUrl: z.string().nullable() }),
   listedAt: z.string(),
+  createdAt: z.string(),
   matchedWords: z.array(z.string()),
   why: z.string().nullable(),
+  // Founderhall's lines: "Trying to reach: …" and "Why you: …".
+  who: z.string().nullable(),
+  whyYou: z.string(),
 });
 
 export type HelpableAsk = z.infer<typeof helpableAskSchema>;

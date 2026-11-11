@@ -21,6 +21,7 @@ import {
   INTRO_ACTIONS,
   INTRO_ERROR_CODES,
   INTRO_LIMITS,
+  INTRO_OUTCOMES,
   INTRO_ROLES,
   INTRO_STATES,
   REQUESTER_STATES,
@@ -133,7 +134,7 @@ async function readNamedConnector(context: RequestContext, { connectorId, target
     introducerLinkedinSlug: connector.linkedinSlug,
     reason: `Asked from ${introducerName}'s profile`.slice(0, INTRO_LIMITS.reasonLength),
     targetName: target.name,
-    targetHeadline: target.company,
+    targetHeadline: [target.role, target.company].filter(Boolean).join(", ").slice(0, INTRO_LIMITS.headlineLength) || null,
   };
 }
 
@@ -242,6 +243,7 @@ export async function createIntroRequest(context: RequestContext, body: CreateIn
 
 const ACTION_EMAILS: Partial<Record<IntroAction, IntroEmailEvent>> = {
   [INTRO_ACTIONS.decline]: INTRO_EMAIL_EVENTS.declined,
+  [INTRO_ACTIONS.withdraw]: INTRO_EMAIL_EVENTS.withdrawn,
 };
 
 function readTransitionPatch(body: IntroTransitionBody, currentDeadline: Date, now: Date) {
@@ -416,11 +418,18 @@ export async function recordIntroOutcome(context: RequestContext, { introId, out
   if (intro.viewerRole !== INTRO_ROLES.requester) throw introGoneError();
 
   const now = new Date();
-  const [applied] = await database
-    .update(introRequest)
-    .set({ outcome, outcomeResults: results.length > 0 ? results : null, outcomeAnsweredAt: now })
-    .where(and(eq(introRequest.id, introId), isOutcomeDueForRequester(member.id, now)))
-    .returning({ id: introRequest.id });
+  const branding = outcome === INTRO_OUTCOMES.helped ? await readEmailBranding(database, context.environment) : null;
+  const applied = await database.transaction(async (transaction) => {
+    const [saved] = await transaction
+      .update(introRequest)
+      .set({ outcome, outcomeResults: results.length > 0 ? results : null, outcomeAnsweredAt: now })
+      .where(and(eq(introRequest.id, introId), isOutcomeDueForRequester(member.id, now)))
+      .returning({ id: introRequest.id });
+    // The connector gets one thank-you when the intro helped (Founderhall's), whatever was answered before.
+    if (saved && branding) await queueIntroEmail(transaction, context.environment, branding, saved.id, INTRO_EMAIL_EVENTS.thanks);
+    return saved;
+  });
+  if (applied && branding) sendQueuedEmailsSoon(database, context.environment);
   const current = await readRequiredIntro(context, introId);
   if (applied || current.outcome === outcome) return current;
   throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.changed, INTRO_CHANGED_MESSAGE);

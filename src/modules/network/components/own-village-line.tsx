@@ -8,10 +8,11 @@ type OwnVillageLineProps = { isConnected: boolean; checkedAt: Date };
 export function OwnVillageLine({ isConnected, checkedAt }: OwnVillageLineProps) {
   const Icon = isConnected ? CircleCheck : CircleDashed;
   return (
-    <p className="type-small mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-foreground-soft" data-own-village-state={isConnected ? "connected" : "not-connected"}>
-      <Icon aria-hidden="true" className={`size-4 shrink-0 ${isConnected ? "text-sage-text" : ""}`} />
-      <span className="font-semibold text-foreground">Village: {isConnected ? "Connected · your network is shared" : "Not connected yet"}</span>
-      <span>Checked {formatShortDate(checkedAt)}</span>
+    <p className="fh-strip" data-own-village-state={isConnected ? "connected" : "not-connected"}>
+      <Icon aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} />
+      <span>
+        Village: {isConnected ? "Connected · your network is shared" : "Not connected yet"} · Checked {formatShortDate(checkedAt)}
+      </span>
     </p>
   );
 }

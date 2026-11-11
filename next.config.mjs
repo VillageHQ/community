@@ -84,6 +84,8 @@ export const nextConfig = {
     { source: "/messages", destination: "/inbox", permanent: true },
     { source: "/messages/:conversationId((?!new$)[^/]+)", destination: "/inbox/:conversationId", permanent: true },
     { source: "/public/jobs", destination: "/jobs", permanent: true },
+    // Search took Founderhall's address; old links and bookmarks (and their ?q=) land on it.
+    { source: "/network", destination: "/search", permanent: true },
   ],
 };
 
