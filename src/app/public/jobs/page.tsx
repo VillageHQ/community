@@ -1,46 +1,54 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { LogoTile } from "@/components/logo-tile";
-import { MAIN_CONTENT_ID } from "@/components/skip-link";
-import { CompanyFilter, JobList } from "@/modules/job-board/components/job-list";
-import { COMPANY_PARAM, JOB_BOARD_PAGE_TITLES, JOB_BOARD_PAGES } from "@/modules/job-board/contract";
+import { BackLink } from "@/components/page-header";
+import { PublicPage } from "@/components/public-page";
+import { CompanyTags, JobList } from "@/modules/job-board/components/job-list";
+import { COMPANY_PARAM, JOB_BOARD_PAGES } from "@/modules/job-board/contract";
+import { describePublicBoard, describePublicTitle, readCompaniesWithJobs } from "@/modules/job-board/copy";
 import { jobBoardManifest } from "@/modules/job-board/manifest";
 import { isPublicBoardOn, readBoardCompanies, readPublicJobs } from "@/modules/job-board/reads";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { getDatabase } from "@/platform/database/client";
+import { ROUTES } from "@/platform/http/routes";
 import { modulePage } from "@/platform/modules/module-page";
+import { readDataHome } from "@/platform/settings/data-home";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: JOB_BOARD_PAGE_TITLES.public };
-
 type PublicJobsPageProps = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-// For visitors: no session needed. Only the company, title, location and apply link of each job, never who shared it.
+async function readCompany(searchParams: PublicJobsPageProps["searchParams"]) {
+  const value = (await searchParams)[COMPANY_PARAM];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+// Founderhall's page title stands alone: "Jobs at Northwind Founders companies".
+export async function generateMetadata({ searchParams }: PublicJobsPageProps): Promise<Metadata> {
+  const [company, companies, community] = await Promise.all([readCompany(searchParams), readBoardCompanies(getDatabase()), readBrandingForPage()]);
+  const current = companies.find(({ slug }) => slug === company) ?? null;
+  const title = current ? `Jobs at ${current.name} · ${community.name}` : describePublicTitle(community.name, null);
+  return { title: { absolute: title } };
+}
+
+// For visitors at /jobs (src/proxy.ts sends them here): Founderhall's wide public page. Each job and its company,
+// never who shared it. While the board isn't public, a visitor is asked to sign in, as before.
 export default modulePage(jobBoardManifest, async function PublicJobsPage({ searchParams }: PublicJobsPageProps) {
   const database = getDatabase();
-  if (!(await isPublicBoardOn(database))) notFound();
-  const value = (await searchParams)[COMPANY_PARAM];
-  const company = typeof value === "string" && value.trim() ? value.trim() : null;
-  const [jobs, companies, community] = await Promise.all([readPublicJobs(database, company), readBoardCompanies(database), readBrandingForPage()]);
+  if (!(await isPublicBoardOn(database))) redirect(ROUTES.signIn);
+  const company = await readCompany(searchParams);
+  const [jobs, companies, community, dataHome] = await Promise.all([readPublicJobs(database, company), readBoardCompanies(database), readBrandingForPage(), readDataHome(database)]);
+  const current = company ? (companies.find(({ slug }) => slug === company) ?? null) : null;
+  if (company && !current) notFound();
+  const withJobs = readCompaniesWithJobs(companies);
 
   return (
-    <main id={MAIN_CONTENT_ID} tabIndex={-1} className="mx-auto grid w-full max-w-[880px] gap-6 px-3.5 py-10 sm:px-6">
-      <header className="grid gap-4">
-        <div className="flex items-center gap-3 text-lg font-bold tracking-[-0.012em]">
-          <LogoTile name={community.name} logo={community.logo} />
-          {community.name}
-        </div>
-        <div>
-          <h1 className="type-h1">Jobs at {community.name} companies</h1>
-          <p className="type-lead mt-1.5 text-foreground-soft">Open roles at the companies in our community. Apply on each company&apos;s own site.</p>
-        </div>
-      </header>
-      <div>
-        <CompanyFilter basePath={JOB_BOARD_PAGES.public} companies={companies} selected={company} />
-        {jobs.length > 0 ? <JobList jobs={jobs} /> : <p className="type-lead text-foreground-soft">No open jobs right now. Check back soon.</p>}
-      </div>
-    </main>
+    <PublicPage community={community} withCredit hosting={dataHome.location ? `${community.name}, ${dataHome.location}` : undefined} isWide>
+      {current ? <BackLink href={JOB_BOARD_PAGES.public}>All companies</BackLink> : null}
+      <h1 className="fh-h2">{describePublicTitle(community.name, current)}</h1>
+      <p className="fh-lede">{describePublicBoard({ total: jobs.length, companies, current, communityName: community.name })}</p>
+      {current ? null : <CompanyTags basePath={JOB_BOARD_PAGES.public} companies={withJobs} />}
+      {jobs.length > 0 ? <JobList jobs={jobs} /> : null}
+    </PublicPage>
   );
 });

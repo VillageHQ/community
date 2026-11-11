@@ -1,10 +1,26 @@
-import { readFirstName } from "@/platform/design/avatar-identity";
+import { toPossessive } from "../../platform/text/day-month.ts";
 
-const ENCRYPTION_NOTE =
-  "Messages aren't end-to-end encrypted, so whoever runs this community's database could read them.";
+// Founderhall's Inbox words (copy/member-inbox-*.md, member-message-*.md), with the community's name.
 
-export const ADMIN_PRIVACY_NOTE = `Admins can't open your messages in the app, and see one only if it's reported. ${ENCRYPTION_NOTE}`;
-
-export function describeThreadPrivacy(memberName: string) {
-  return `Only you and ${readFirstName(memberName)} can read this in the app, and admins see a message only if it's reported. ${ENCRYPTION_NOTE}`;
+export function describeAdminLine(communityName: string) {
+  return `${toPossessive(communityName)} admins can’t read messages in the portal.`;
 }
+
+export function describeInboxLede(communityName: string) {
+  return `Messages and intro threads. Reply here or by email; both land in the same thread. ${describeAdminLine(communityName)}`;
+}
+
+export function describeThreadLine(communityName: string) {
+  return `Replies by email land here too. ${describeAdminLine(communityName)}`;
+}
+
+export const INBOX_EMPTY = {
+  title: "No messages yet",
+  before: "Open a member’s profile in the ",
+  link: "directory",
+  after: " and choose Message. Intro threads land here once both sides said yes.",
+} as const;
+
+export const NEW_THREAD_LINE = "No messages yet. Say hello.";
+
+export const COMPOSER_LABEL = "Write a message";

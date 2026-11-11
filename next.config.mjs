@@ -66,6 +66,11 @@ export const nextConfig = {
     { source: "/feed", destination: "/", permanent: false },
     // Demo faces moved from drawn .svg to .webp portraits; a demo seeded before that keeps the old links until its reset.
     { source: "/demo/faces/:name([a-z0-9-]+)\.svg", destination: "/demo/faces/:name.webp", permanent: true },
+    // Founderhall's addresses: Messages became the Inbox, and the public job board moved to /jobs (visitors see it
+    // there; members see their own board). /messages/new stays: it is Founderhall's "Message" page.
+    { source: "/messages", destination: "/inbox", permanent: true },
+    { source: "/messages/:conversationId((?!new$)[^/]+)", destination: "/inbox/:conversationId", permanent: true },
+    { source: "/public/jobs", destination: "/jobs", permanent: true },
   ],
 };
 

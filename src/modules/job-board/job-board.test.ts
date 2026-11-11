@@ -440,7 +440,8 @@ describe("the job board", () => {
     await linkGreenhouse();
 
     expect((await visit(getEmbed, "/api/job-board/embed")).status).toBe(404);
-    expect(await readDigest(PublicJobsPage({ searchParams: Promise.resolve({}) }))).toBe(NOT_FOUND_DIGEST);
+    // /jobs is the members' board then: a visitor is asked to sign in.
+    expect(await readDigest(PublicJobsPage({ searchParams: Promise.resolve({}) }))).toBe("NEXT_REDIRECT;replace;/sign-in;307;");
     expect((await call(postPublicSwitch, founder, { isPublic: true })).status).toBe(403);
 
     await call(postPublicSwitch, admin, { isPublic: true });

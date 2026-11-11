@@ -1,32 +1,28 @@
 import { Gift } from "lucide-react";
 
-import { Card } from "@/components/ui/card";
+import { Row, Rows } from "@/components/ui/rows";
 import { Tag } from "@/components/ui/tag";
 import { DEMO_LABEL } from "@/platform/demo/mode";
 import { DEMO_PERKS, DEMO_PERKS_NOTE } from "@/platform/demo/perks";
 
-// Demo mode only: made-up deals in place of the BuiltFirst marketplace, which the demo never frames.
+// Demo mode only: the demo never frames BuiltFirst, so the marketplace's frame holds made-up deals instead.
 export function DemoPerksList() {
   return (
-    <section aria-label="Demo perks" className="grid gap-3">
-      <p className="type-small flex flex-wrap items-center gap-2 text-foreground-soft">
-        <Tag tone="neutral">{DEMO_LABEL}</Tag>
+    <section aria-label="Demo perks" className="fh-perks-frame p-4 lg:p-5">
+      <p className="fh-small fh-muted mb-3 flex flex-wrap items-center gap-2">
+        <Tag>{DEMO_LABEL}</Tag>
         {DEMO_PERKS_NOTE}
       </p>
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <Rows>
         {DEMO_PERKS.map((perk) => (
-          <li key={perk.company}>
-            <Card className="grid h-full content-start gap-1.5 sm:p-5">
-              <p className="type-small flex items-center gap-2 text-foreground-soft">
-                <Gift aria-hidden="true" className="size-4 text-brand-emphasis" />
-                {perk.company} · {perk.category}
-              </p>
-              <p className="type-label">{perk.offer}</p>
-              <p className="type-small text-foreground-soft">{perk.detail}</p>
-            </Card>
-          </li>
+          <Row
+            key={perk.company}
+            start={<Gift aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} />}
+            title={perk.offer}
+            detail={`${perk.company} · ${perk.category} · ${perk.detail}`}
+          />
         ))}
-      </ul>
+      </Rows>
     </section>
   );
 }

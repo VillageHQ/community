@@ -59,7 +59,7 @@ export default modulePage(perksManifest, async function AdminPerksPage() {
         </SettingCard>
         <SettingCard title="Preview" tag={null}>
           {url ? (
-            <PerksFrame url={url} title="Perks preview" className="h-[520px]" />
+            <PerksFrame url={url} title="Perks preview" isPreview />
           ) : (
             <CardDescription>
               Paste the embed code to see your marketplace here. No BuiltFirst account yet? BuiltFirst runs the marketplace and its deals; you set it up on builtfirst.com.

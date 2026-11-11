@@ -6,12 +6,14 @@ export const JOB_BOARD_PAGES = {
   board: "/jobs",
   yours: "/jobs/yours",
   admin: "/admin/jobs",
-  public: "/public/jobs",
+  // The public board's address, as Founderhall: /jobs. A visitor there gets the page at `publicPage` (src/proxy.ts).
+  public: "/jobs",
+  publicPage: "/public/jobs",
 } as const;
 
 export const JOB_BOARD_PAGE_TITLES = {
   board: "Jobs",
-  yours: "Your company's jobs",
+  yours: "Our jobs",
   admin: "Admin · Jobs",
   public: "Jobs",
 } as const;
@@ -154,7 +156,7 @@ export type BoardJob = {
   memberName: string;
 };
 
-export type PublicJob = Pick<BoardJob, "id" | "title" | "location" | "url" | "company" | "companySlug">;
+export type PublicJob = Pick<BoardJob, "id" | "title" | "location" | "department" | "url" | "postedAt" | "company" | "companySlug" | "companyLogoUrl">;
 
 // A company's open jobs on a member's profile: up to 5, and how many there are in all.
 export type CompanyJobs = { jobs: Pick<BoardJob, "id" | "title" | "location" | "url">[]; total: number; companySlug: string | null };

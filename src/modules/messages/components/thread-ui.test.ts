@@ -23,6 +23,7 @@ function makeMessage(sequence: number, overrides: Partial<DirectMessage> = {}): 
     body: `Message ${sequence}`,
     isDeleted: false,
     isReported: false,
+    isViaEmail: false,
     sequence,
     clientKey: null,
     createdAt: CREATED_AT,
@@ -85,12 +86,12 @@ function renderThread(pages: ThreadPage[]) {
     pages,
     pageParams: pages.map((_page, position) => (position === 0 ? null : pages[position - 1]?.olderCursor)),
   });
-  render(createElement(QueryClientProvider, { client: queryClient }, createElement(Thread, { conversationId: CONVERSATION_ID })));
+  render(createElement(QueryClientProvider, { client: queryClient }, createElement(Thread, { conversationId: CONVERSATION_ID, communityName: "Northwind Founders" })));
   return queryClient;
 }
 
 function typeMessage(text: string) {
-  fireEvent.change(screen.getByRole("textbox", { name: "Message Noor" }), { target: { value: text } });
+  fireEvent.change(screen.getByRole("textbox", { name: "Write a message" }), { target: { value: text } });
 }
 
 function readAnnouncer() {
@@ -154,7 +155,7 @@ describe("the thread on screen", () => {
         }),
       });
       renderThread([makePage([])]);
-      const field = screen.getByRole("textbox", { name: "Message Noor" });
+      const field = screen.getByRole("textbox", { name: "Write a message" });
 
       typeMessage("Hello");
       fireEvent.keyDown(field, { key: "Enter", shiftKey: true });
@@ -281,7 +282,7 @@ describe("the thread on screen", () => {
     it("offers no options on a deleted message", () => {
       renderThread([makePage([makeMessage(1, { isDeleted: true, body: null })])]);
 
-      expect(screen.queryByRole("button", { name: /Options for/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /Report Noor's message/ })).toBeNull();
     });
   });
 
@@ -403,19 +404,21 @@ describe("the thread on screen", () => {
   });
 
   describe("privacy", () => {
-    it("says plainly who could read the conversation", () => {
+    it("says, in Founderhall's words, that admins can't read it", () => {
       renderThread([makePage([makeMessage(1)])]);
 
-      const note = screen.getByText(/Only you and Noor can read this in the app/);
-      expect(note.textContent).toContain("aren't end-to-end encrypted");
-      expect(note.textContent).toContain("whoever runs this community's database could read them");
+      expect(screen.getByText("Replies by email land here too. Northwind Founders’ admins can’t read messages in the portal.")).toBeTruthy();
+    });
+
+    it("marks a message that came as an email reply", () => {
+      renderThread([makePage([makeMessage(1, { isViaEmail: true }), makeMessage(2)])]);
+
+      expect(screen.getAllByText("by email")).toHaveLength(1);
     });
 
     describe("reporting", () => {
       async function openReportPanel() {
-        const options = screen.getByRole("button", { name: "Options for Noor's message" });
-        fireEvent.pointerDown(options, { button: 0, pointerType: "mouse" });
-        fireEvent.click(await screen.findByRole("menuitem", { name: "Report" }));
+        fireEvent.click(screen.getByRole("button", { name: "Report Noor's message" }));
       }
 
       it("says the report is saved, says what's shared, and promises no review", async () => {
@@ -436,7 +439,7 @@ describe("the thread on screen", () => {
         await openReportPanel();
         fireEvent.click(await screen.findByRole("button", { name: "Report" }));
 
-        expect(await screen.findByText(/^Reported · /)).toBeTruthy();
+        expect(await screen.findByText(/ · reported$/)).toBeTruthy();
         expect(screen.getByText("Report saved for this community's admins.")).toBeTruthy();
       });
     });
