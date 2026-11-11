@@ -57,8 +57,14 @@ function person(key: string) {
   return found;
 }
 
+// People named only as an intro's target, never shown with a face or looked up: Founderhall's demo asks Sam to
+// introduce Marcus to Rachel Kim.
+const INTRO_ONLY_TARGETS: readonly (typeof DEMO_OUTSIDERS)[number][] = [
+  { slug: "rachel-kim-demo", name: "Rachel Kim", title: "CFO", company: "Brightside Clinics", location: "Boston" },
+];
+
 function outsider(slug: string) {
-  const found = DEMO_OUTSIDERS.find((candidate) => candidate.slug === slug);
+  const found = [...DEMO_OUTSIDERS, ...INTRO_ONLY_TARGETS].find((candidate) => candidate.slug === slug);
   if (!found) throw new Error(`The demo has no outsider "${slug}".`);
   return found;
 }
