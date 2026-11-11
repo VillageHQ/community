@@ -134,9 +134,9 @@ function peerUnavailableError() {
   return new RequestError(CONFLICT_STATUS, MESSAGE_ERROR_CODES.peerUnavailable, "This member isn't available right now.");
 }
 
-type Sender = { environment: Environment; branding: EmailBranding | null; memberId: string; mayMessage: MessagePermission };
+type Sender = { environment: Environment; branding: EmailBranding | null; memberId: string; mayMessage: MessagePermission; isViaEmail: boolean };
 
-async function insertMessage(transaction: Transaction, { environment, branding, memberId, mayMessage }: Sender, { conversationId, clientKey, body }: SendMessageBody) {
+async function insertMessage(transaction: Transaction, { environment, branding, memberId, mayMessage, isViaEmail }: Sender, { conversationId, clientKey, body }: SendMessageBody) {
   const target = await lockConversation(transaction, conversationId, memberId);
   // Checked under the lock: a send that began just before its sender was removed or deleted must not land after.
   if (!(await isMemberActive(transaction, memberId))) throw conversationGoneError();
@@ -161,6 +161,7 @@ async function insertMessage(transaction: Transaction, { environment, branding, 
       sequence: revision,
       revision,
       isWithheld: isBlockedByPeer,
+      isViaEmail,
     })
     .returning({ id: directMessage.id });
   if (!created) throw conversationGoneError();
@@ -174,12 +175,13 @@ async function readRequiredMessage(database: Database, viewerId: string, message
   return message;
 }
 
-export async function sendMessage({ database, environment, member }: RequestContext, body: SendMessageBody, mayMessage: MessagePermission) {
+// `isViaEmail`: the words came as a reply to the new-message email (the thread marks them "by email").
+export async function sendMessage({ database, environment, member }: RequestContext, body: SendMessageBody, mayMessage: MessagePermission, { isViaEmail = false } = {}) {
   const alreadySentId = await readOwnMessageIdByKey(database, body, member.id);
   if (alreadySentId) return readRequiredMessage(database, member.id, alreadySentId);
 
   await enforceMessagingLimit(database, member.id, MESSAGING_KINDS.send);
-  const sender = { environment, branding: await readEmailBranding(database, environment), memberId: member.id, mayMessage };
+  const sender = { environment, branding: await readEmailBranding(database, environment), memberId: member.id, mayMessage, isViaEmail };
   const { messageId, isEmailQueued } = await database.transaction((transaction) => insertMessage(transaction, sender, body));
   if (isEmailQueued) sendQueuedEmailsSoon(database, environment);
   return readRequiredMessage(database, member.id, messageId);

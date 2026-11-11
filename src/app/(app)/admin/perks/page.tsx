@@ -62,9 +62,7 @@ export default modulePage(adminManifest, async function AdminPerksPage() {
           <Card className="fh-sheet">
             <h2 className="type-h3">Preview</h2>
             {url ? (
-              <div className="fh-perks-frame fh-preview">
-                <PerksFrame url={url} title="Perks preview" className="h-[520px] rounded-none shadow-none" />
-              </div>
+              <PerksFrame url={url} title="Perks preview" isPreview />
             ) : (
               <p className="fh-small fh-muted mt-1.5">
                 Paste the embed code to see your marketplace here. No BuiltFirst account yet? BuiltFirst runs the marketplace and its deals; you open it on builtfirst.com.

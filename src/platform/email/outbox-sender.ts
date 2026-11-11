@@ -9,7 +9,7 @@ import { readEmailTopic } from "./kinds.ts";
 import { isEmailWanted, OUTBOX_STATUSES } from "./outbox.ts";
 import { readResendConfig, sendResendEmail, type ResendConfig } from "./resend.ts";
 import { emailOutbox } from "./schema.ts";
-import { buildUnsubscribeParts } from "./unsubscribe.ts";
+import { buildUnsubscribeParts, placeTextFooter } from "./unsubscribe.ts";
 import { composeSenderAddress, readMailSettings } from "./mail-settings.ts";
 import { readBranding } from "../branding/branding.ts";
 
@@ -99,7 +99,7 @@ async function composeEmail(database: Database, environment: Environment, email:
   if (!topic || !email.memberId) return { ...base, html: email.html, text: email.text };
 
   const { headers, htmlFooter, textFooter } = await buildUnsubscribeParts(database, environment, { memberId: email.memberId, topic });
-  return { ...base, html: `${email.html}${htmlFooter}`, text: `${email.text}${textFooter}`, headers };
+  return { ...base, html: `${email.html}${htmlFooter}`, text: placeTextFooter(email.text, textFooter), headers };
 }
 
 function isExpired(email: ClaimedEmail) {

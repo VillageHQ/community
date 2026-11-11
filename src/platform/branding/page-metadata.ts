@@ -8,7 +8,7 @@ export const PAGE_TITLES = {
   feed: "Feed",
   home: "Home",
   today: "This week",
-  messages: "Messages",
+  messages: "Inbox",
   network: "Network",
   intros: "Intros",
   intro: "Intro",

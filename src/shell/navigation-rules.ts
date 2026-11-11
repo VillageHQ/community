@@ -105,6 +105,8 @@ export function readConsoleTabKey(pathname: string) {
 // My profile, never Directory.
 export function readMemberKey(pathname: string, items: readonly MenuPlace[]) {
   if (isUnder(pathname, ROUTES.editCard) || isUnder(pathname, ROUTES.yourData)) return MEMBER_KEYS.me;
+  // A first message (/messages/new) belongs to the Inbox, as in Founderhall.
+  if (isUnder(pathname, ROUTES.newMessage)) return MEMBER_KEYS.inbox;
   const matches = items.filter(({ href }) => isUnder(pathname, href));
   return matches.sort((first, second) => second.href.length - first.href.length)[0]?.key ?? null;
 }

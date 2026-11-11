@@ -1,4 +1,4 @@
-import { MessageCircle } from "lucide-react";
+import { Inbox, MessageCircle } from "lucide-react";
 
 import { API_ROUTES, ROUTES } from "../../platform/http/routes.ts";
 import { MODULE_KINDS, NAVIGATION_SECTIONS, type ToggleableManifest } from "../../platform/modules/manifest.ts";
@@ -12,7 +12,7 @@ export const messagesManifest = {
   isOnByDefault: true,
   needsVillage: false,
   requires: [],
-  navigation: [{ label: "Messages", href: ROUTES.messages, icon: MessageCircle, section: NAVIGATION_SECTIONS.primary, badge: "messages" }],
+  navigation: [{ label: "Inbox", href: ROUTES.messages, icon: Inbox, section: NAVIGATION_SECTIONS.primary, badge: "messages" }],
   adminTabs: [],
-  paths: { pages: [ROUTES.messages], api: [API_ROUTES.messages] },
+  paths: { pages: [ROUTES.messages, ROUTES.newMessage], api: [API_ROUTES.messages] },
 } satisfies ToggleableManifest;

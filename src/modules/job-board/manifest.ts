@@ -16,7 +16,7 @@ export const jobBoardManifest = {
   navigation: [{ label: "Jobs", href: JOB_BOARD_PAGES.board, icon: BriefcaseBusiness, section: NAVIGATION_SECTIONS.primary }],
   adminTabs: [{ label: "Jobs", href: JOB_BOARD_PAGES.admin }],
   paths: {
-    pages: [JOB_BOARD_PAGES.board, JOB_BOARD_PAGES.admin, JOB_BOARD_PAGES.public],
+    pages: [JOB_BOARD_PAGES.board, JOB_BOARD_PAGES.admin, JOB_BOARD_PAGES.publicPage],
     api: [JOB_BOARD_API_PREFIX, JOB_BOARD_ADMIN_API_PREFIX],
   },
 } satisfies ToggleableManifest;
