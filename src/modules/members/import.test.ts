@@ -109,7 +109,7 @@ describe("Set up › Import members and Sign-in links, with mail on", () => {
 
     const first = issuedInviteSchema.parse(await (await copy()).json());
     const second = issuedInviteSchema.parse(await (await copy()).json());
-    const tokenOf = (link: string) => link.split("/").at(-1) ?? "";
+    const tokenOf = (link: string) => new URL(link).searchParams.get("token") ?? "";
 
     expect(await readInviteByToken(database, tokenOf(first.link))).toBeNull();
     expect(await readInviteByToken(database, tokenOf(second.link))).toMatchObject({ email: "ada@example.com" });

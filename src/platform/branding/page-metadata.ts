@@ -18,7 +18,7 @@ export const PAGE_TITLES = {
   yourData: "Your data",
   profile: "Member",
   welcome: "Welcome",
-  join: "Your invite",
+  join: "Join",
   confirmEmail: "Confirm your email",
   unsubscribe: "Email settings",
   weeklyAnswer: "Your weekly email",
@@ -45,7 +45,9 @@ export const PAGE_TITLES = {
   resetPassword: "Choose a new password",
   recoverAdmin: "Recover your admin account",
   signUp: "Sign-up is closed",
-  notFound: "Page not found",
+  notFound: "Not found",
+  checkEmail: "Check your email",
+  linkNotValid: "Link not valid",
 };
 
 export function toRootMetadata({ name, descriptor, logo }: MetadataBranding): Metadata {

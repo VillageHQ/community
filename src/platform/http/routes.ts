@@ -3,18 +3,20 @@ export const ACCOUNT_DELETED_PARAM = "accountDeleted";
 
 export const ROUTES = {
   feed: "/",
-  signIn: "/sign-in",
-  signInLink: "/sign-in/link",
-  signInAsNewAdmin: `/sign-in?${ADMIN_CREATED_PARAM}=true`,
-  signInAfterDeletion: `/sign-in?${ACCOUNT_DELETED_PARAM}=true`,
+  // Founderhall's paths. The old ones (/sign-in, /sign-in/link, /join/<token>) redirect here (next.config.mjs).
+  signIn: "/signin",
+  signInLink: "/auth",
+  signInAsNewAdmin: `/signin?${ADMIN_CREATED_PARAM}=true`,
+  signInAfterDeletion: `/signin?${ACCOUNT_DELETED_PARAM}=true`,
   signUp: "/sign-up",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
   recoverAdmin: "/recover-admin",
   setup: "/setup",
   landing: "/start",
-  join: "/join",
+  join: "/invite",
   welcome: "/welcome",
+  welcomePrivacy: "/welcome/privacy",
   confirmEmail: "/confirm-email",
   unsubscribe: "/unsubscribe",
   weeklyAnswer: "/weekly",
@@ -46,6 +48,11 @@ export const ROUTES = {
   // The parts review page: off unless SHOW_PARTS_PAGE=true (development and review copies only).
   parts: "/parts",
 } as const;
+
+// An invite's page: Founderhall's /invite?token=…
+export function toInvitePath(token: string) {
+  return `${ROUTES.join}?token=${encodeURIComponent(token)}`;
+}
 
 export const AUTH_BASE_PATH = "/api/auth";
 
@@ -157,6 +164,8 @@ export const API_ROUTES = {
   profileDelete: "/api/profile/delete",
   onboardingIntroAsks: "/api/onboarding/intro-asks",
   onboarding: "/api/onboarding",
+  onboardingWelcome: "/api/onboarding/welcome",
+  onboardingPrivacy: "/api/onboarding/privacy",
   villageKeys: "/api/admin/village/keys",
   villageGroup: "/api/admin/village/group",
   villageSettings: "/api/admin/village/settings",

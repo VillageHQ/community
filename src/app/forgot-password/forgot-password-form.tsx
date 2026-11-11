@@ -24,11 +24,11 @@ async function requestReset(_previousState: ForgotState, formData: FormData): Pr
 export function ForgotPasswordForm() {
   const [state, formAction, isPending] = useActionState(requestReset, INITIAL_STATE);
   return (
-    <form action={formAction} className="grid gap-5">
-      <FormField name="email" label="Your email" type="email" autoComplete="email" required />
+    <form action={formAction} className="fh-field grid gap-3.5">
+      <FormField name="email" label="Your email" type="email" autoComplete="email" placeholder="you@example.com" required />
       <FormError message={state.errorMessage} />
       {state.sentMessage ? <Alert variant="success">{state.sentMessage}</Alert> : null}
-      <Button type="submit" size="lg" disabled={isPending}>
+      <Button type="submit" width="block" disabled={isPending}>
         {isPending ? "Sending…" : "Send me a link"}
       </Button>
     </form>

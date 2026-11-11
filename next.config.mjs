@@ -56,6 +56,8 @@ export const nextConfig = {
     },
     { source: "/perks", headers: [{ key: "Content-Security-Policy", value: PERKS_CONTENT_SECURITY_POLICY }] },
     { source: "/admin/perks", headers: [{ key: "Content-Security-Policy", value: PERKS_CONTENT_SECURITY_POLICY }] },
+    { source: "/invite", headers: SECRET_LINK_HEADERS },
+    { source: "/auth", headers: SECRET_LINK_HEADERS },
     { source: "/join/:token", headers: SECRET_LINK_HEADERS },
     { source: "/meet/:token", headers: SECRET_LINK_HEADERS },
     { source: "/confirm-email", headers: SECRET_LINK_HEADERS },
@@ -69,6 +71,10 @@ export const nextConfig = {
     { source: "/admin/audit-log", destination: "/admin/audit", permanent: true },
     { source: "/admin/chat", destination: "/admin/integrations", permanent: true },
     { source: "/admin/credits", destination: "/admin/village", permanent: true },
+    // Founderhall's public paths. Links in emails sent before the rename keep working (the query string carries over).
+    { source: "/sign-in", destination: "/signin", permanent: true },
+    { source: "/sign-in/link", destination: "/auth", permanent: true },
+    { source: "/join/:token", destination: "/invite?token=:token", permanent: true },
     // Demo faces moved from drawn .svg to .webp portraits; a demo seeded before that keeps the old links until its reset.
     { source: "/demo/faces/:name([a-z0-9-]+)\.svg", destination: "/demo/faces/:name.webp", permanent: true },
   ],

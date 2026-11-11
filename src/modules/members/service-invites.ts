@@ -5,11 +5,11 @@ import { randomUUID } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 import { and, asc, count, desc, eq, gt, isNotNull, isNull, lte } from "drizzle-orm";
 
-import { account, user } from "../../platform/database/auth-schema.ts";
+import { account as authAccount, user } from "../../platform/database/auth-schema.ts";
 import type { Database, DatabaseOrTransaction, Transaction } from "../../platform/database/client.ts";
 import { invite, memberProfile } from "./schema.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
-import { ROUTES } from "../../platform/http/routes.ts";
+import { toInvitePath } from "../../platform/http/routes.ts";
 import { AUDIT_ACTIONS, type AuditAction } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
@@ -75,7 +75,7 @@ function recordInviteAction(transaction: Transaction, { member }: RequestContext
 }
 
 export function toInviteLink(environment: RequestContext["environment"], token: string) {
-  return `${resolveAppUrl(environment)}${ROUTES.join}/${token}`;
+  return `${resolveAppUrl(environment)}${toInvitePath(token)}`;
 }
 
 // Call inside the transaction that creates or renews the invite, so the email can't be lost.
@@ -345,9 +345,16 @@ class InviteEmailTakenError extends Error {}
 
 type AcceptedAccount = { name: string; password: string };
 
-export async function acceptInvite(database: Database, token: string, { name, password }: AcceptedAccount) {
+function readStartingName({ inviteeName, email }: { inviteeName: string | null; email: string }) {
+  return inviteeName?.trim() || email.split("@")[0] || email;
+}
+
+// Founderhall's "Accept and sign in" passes no account: the member has no password (they sign in by emailed link, and
+// may add one on My profile) and is called by the invite's name or the start of their address until welcome step 1
+// asks. Community's older form passes a name and a password.
+export async function acceptInvite(database: Database, token: string, account: AcceptedAccount | null = null) {
   const tokenHash = hashInviteToken(token);
-  const passwordHash = await hashPassword(password);
+  const passwordHash = account ? await hashPassword(account.password) : null;
   const userId = randomUUID();
 
   try {
@@ -357,28 +364,30 @@ export async function acceptInvite(database: Database, token: string, { name, pa
         .update(invite)
         .set({ acceptedAt: now })
         .where(and(eq(invite.tokenHash, tokenHash), OPEN_INVITE, gt(invite.expiresAt, now)))
-        .returning({ id: invite.id, email: invite.email, company: invite.company, cohort: invite.cohort, emailOutboxId: invite.emailOutboxId });
+        .returning({ id: invite.id, email: invite.email, inviteeName: invite.inviteeName, company: invite.company, cohort: invite.cohort, emailOutboxId: invite.emailOutboxId });
       if (!claimed) return null;
       // Accepted from the copied link: a still-queued invite email would only carry a used link.
       await cancelInviteEmail(transaction, claimed);
 
       const [created] = await transaction
         .insert(user)
-        .values({ id: userId, name, email: claimed.email, emailVerified: false, role: MEMBER_ROLE })
+        .values({ id: userId, name: account?.name ?? readStartingName(claimed), email: claimed.email, emailVerified: false, role: MEMBER_ROLE })
         .onConflictDoNothing({ target: user.email })
         .returning({ id: user.id });
       if (!created) throw new InviteEmailTakenError();
 
-      await transaction.insert(account).values({
-        id: randomUUID(),
-        userId,
-        accountId: userId,
-        providerId: CREDENTIAL_PROVIDER_ID,
-        password: passwordHash,
-      });
+      if (passwordHash) {
+        await transaction.insert(authAccount).values({
+          id: randomUUID(),
+          userId,
+          accountId: userId,
+          providerId: CREDENTIAL_PROVIDER_ID,
+          password: passwordHash,
+        });
+      }
       await transaction.insert(memberProfile).values({ userId, company: claimed.company, cohort: claimed.cohort });
       await transaction.update(invite).set({ acceptedUserId: userId }).where(eq(invite.id, claimed.id));
-      return { userId, email: claimed.email };
+      return { userId, email: claimed.email, name: account?.name ?? readStartingName(claimed) };
     });
   } catch (error) {
     if (error instanceof InviteEmailTakenError) return null;
