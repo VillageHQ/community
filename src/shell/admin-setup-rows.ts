@@ -113,7 +113,7 @@ export function readSetupRows(facts: SetupFacts): SetupRow[] {
       key: "audit",
       title: "Audit log",
       href: ROUTES.adminAuditLog,
-      description: "Every admin action, sign-in and privacy change, newest first.",
+      description: "Every admin action, newest first: invites, settings, members and privacy changes.",
       state: word("always on"),
     },
     // Community's own pages, in the same list.

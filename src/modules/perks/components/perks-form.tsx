@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 
 import { FLASH_KINDS, useFlash } from "@/components/flash";
 import { Field } from "@/components/form-field";
@@ -26,7 +26,10 @@ export function PerksForm({ savedUrl, isShown }: { savedUrl: string | null; isSh
   const router = useRouter();
   const flash = useFlash();
   const [isOn, setIsOn] = useState(savedUrl === null || isShown);
+  const formRef = useRef<HTMLFormElement>(null);
   const onSaved = () => {
+    // Founderhall empties the box after a save: the saved address shows below it instead.
+    formRef.current?.reset();
     flash("Settings saved.");
     router.refresh();
   };
@@ -49,7 +52,7 @@ export function PerksForm({ savedUrl, isShown }: { savedUrl: string | null; isSh
   const error = save.error?.message ?? remove.error?.message ?? null;
   return (
     <Card className="fh-sheet">
-      <form onSubmit={submit}>
+      <form ref={formRef} onSubmit={submit}>
         <h2 className="type-h3">BuiltFirst embed code</h2>
         <Field
           htmlFor={CODE_FIELD}

@@ -116,7 +116,8 @@ export function SettingsForm({ saved, uploadedLogo, isMailOn, serverPlan, manage
               <Input
                 id="s-accent"
                 name="accent"
-                className="fh-mono"
+                // Founderhall keeps the field's own border on a refused colour; the error line says what is wrong.
+                className="fh-mono aria-invalid:border-input"
                 value={values.accent}
                 maxLength={20}
                 placeholder="e.g. #24525A"
@@ -131,9 +132,9 @@ export function SettingsForm({ saved, uploadedLogo, isMailOn, serverPlan, manage
               <b>Preview</b>
               <span>The header, as members see it</span>
             </div>
-            <span className="fh-fundmark" style={toAccentVariables(previewColor, "light")}>
+            <span className="fh-fundmark min-w-0" style={toAccentVariables(previewColor, "light")}>
               <LogoTile name={previewName} logo={previewLogo} />
-              <b>{previewName}</b>
+              <b className="min-w-0 whitespace-normal break-words">{previewName}</b>
             </span>
           </div>
           {/* Community's own: the line under the name in the sidebar, and a logo file instead of an address. */}

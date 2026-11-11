@@ -98,7 +98,7 @@ export default modulePage(adminManifest, async function AdminSettingsPage() {
       <section className="fh-sheet">
         <h2 className="fh-h3">Audit log</h2>
         <p className="fh-small" style={{ marginTop: 6 }}>
-          Every admin action, sign-in and privacy change. <Link href={ROUTES.adminAuditLog}>Open the audit log</Link>
+          Every admin action: invites, settings, members and privacy changes. <Link href={ROUTES.adminAuditLog}>Open the audit log</Link>
         </p>
       </section>
       <VersionSheet />

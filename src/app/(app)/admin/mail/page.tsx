@@ -115,7 +115,7 @@ function SendingLog({ mail }: { mail: MailOverview }) {
               <span className="fh-who">
                 <b className="fh-plain">{subject}</b>
                 <span>
-                  to {toEmail} from {mail.senderEmail} · {kind}
+                  to {toEmail} from {mail.senderEmail} · {kind.replace(/^email_/, "")}
                 </span>
               </span>
               <span className="fh-end">
