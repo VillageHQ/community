@@ -19,6 +19,7 @@ import { isResendWebhookSigned, readSuppressedAddresses, signResendWebhook, supp
 import { emailOutbox, emailSuppression } from "./schema";
 import { readUnsubscribeToken, setEmailTopic } from "./unsubscribe";
 import { JOB_OUTCOMES, runJob } from "../jobs/runner";
+import { readInviteToken } from "@/test/invite-link";
 
 const APP_URL = "http://localhost:3000";
 const UNREACHABLE_URL = "http://127.0.0.1:9";
@@ -116,7 +117,7 @@ describe("reliable email", () => {
       const downContext = createRequestContext(database, readEnvironment(UNREACHABLE_URL), { id: adminId, email: "priya@example.com", role: "admin" });
       const accepted = await createInvite(downContext, "accepted@example.com");
       const inFlight = await createInvite(downContext, "in-flight@example.com");
-      await acceptInvite(database, accepted.link.split("/").at(-1) ?? "", {
+      await acceptInvite(database, readInviteToken(accepted.link), {
         name: "Ama Mensah",
         password: "a-long-enough-password",
       });

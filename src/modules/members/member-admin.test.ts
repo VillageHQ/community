@@ -24,6 +24,7 @@ import { POST as postConfirm } from "@/app/api/admin/members/confirm/route";
 import { networkManifest } from "@/modules/network/manifest";
 import { saveModuleState } from "@/platform/modules/enablement";
 import { POST as postWaiting } from "@/app/api/admin/members/waiting/route";
+import { readInviteToken } from "@/test/invite-link";
 
 const APP_URL = "http://localhost:3000";
 const INVITEE = "amara@tidewell.example";
@@ -56,7 +57,7 @@ describe("member admin", () => {
   }
 
   async function accept(link: string, name = "Amara Osei") {
-    const token = link.split("/").at(-1);
+    const token = readInviteToken(link);
     const response = await postAccept(jsonRequest(null, { token, name, password: PASSWORD }));
     const cookie = response.headers.getSetCookie()[0]?.split(";")[0] ?? "";
     return { response, cookie };
@@ -227,7 +228,7 @@ describe("member admin", () => {
 
     it("shows the old invite as revoked", async () => {
       const { issued } = await claimAndReclaim();
-      const token = issued.link.split("/").at(-1) ?? "";
+      const token = readInviteToken(issued.link);
 
       expect((await readInviteByToken(database, token))?.state).toBe(INVITE_STATES.revoked);
     });
@@ -309,7 +310,7 @@ describe("member admin", () => {
 
     it("hides a banned inviter on the invite page and in onboarding", async () => {
       const { link } = await createInvite();
-      const token = link.split("/").at(-1) ?? "";
+      const token = readInviteToken(link);
       await accept(link);
       const accepted = await readAccount();
 
