@@ -493,7 +493,7 @@ async function seedMessages(transaction: Transaction, ids: Ids, ago: ReturnType<
   ]);
 }
 
-// The profile fill-in has run for everyone: a drawn face and company logo each. Lena said "Don't look me up", so she
+// The profile fill-in has run for everyone: a portrait and a company logo each. Lena said "Don't look me up", so she
 // keeps her initials. Public profiles still list Grace at her last company, so her card (Ledgerline) shows no logo.
 const FILL_IN_REFUSED = "lena.fischer";
 const FILL_IN_OLDER_COMPANY = { key: "grace.kim", company: "Countwise" } as const;

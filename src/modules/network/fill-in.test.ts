@@ -190,10 +190,10 @@ describe("profile fill-in", () => {
     const profile = createFakeProfile();
     const filled = toFilledProfile({
       ...profile,
-      avatar: "/demo/faces/riley-example.svg",
+      avatar: "/demo/faces/riley-example.webp",
       work_relevant: { title: "Founder", company: { name: "Example Co", domain: "WWW.Example.COM", image_url: "javascript:alert(1)" } },
     });
-    expect(filled).toMatchObject({ [FILL_IN_FIELDS.face]: "/demo/faces/riley-example.svg", [FILL_IN_FIELDS.companyDomain]: "example.com" });
+    expect(filled).toMatchObject({ [FILL_IN_FIELDS.face]: "/demo/faces/riley-example.webp", [FILL_IN_FIELDS.companyDomain]: "example.com" });
     expect(filled[FILL_IN_FIELDS.companyLogo]).toBeUndefined();
     expect(readSafeImageUrl("/demo/../secrets.svg")).toBeUndefined();
     expect(readSafeImageUrl("//evil.example/x.svg")).toBeUndefined();

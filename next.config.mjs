@@ -64,6 +64,8 @@ export const nextConfig = {
   ],
   redirects: async () => [
     { source: "/feed", destination: "/", permanent: false },
+    // Demo faces moved from drawn .svg to .webp portraits; a demo seeded before that keeps the old links until its reset.
+    { source: "/demo/faces/:name([a-z0-9-]+)\.svg", destination: "/demo/faces/:name.webp", permanent: true },
   ],
 };
 
