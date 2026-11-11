@@ -1,6 +1,7 @@
 // The job board: link detection for every tool, each feed reader on a saved sample feed (src/test/fixtures/jobs),
 // the pull through a local fake feed server, the boards, the widget and who may change what. Made-up people only;
 // no real hiring tool is called.
+import { ROUTES } from "@/platform/http/routes";
 import { readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -441,7 +442,7 @@ describe("the job board", () => {
 
     expect((await visit(getEmbed, "/api/job-board/embed")).status).toBe(404);
     // /jobs is the members' board then: a visitor is asked to sign in.
-    expect(await readDigest(PublicJobsPage({ searchParams: Promise.resolve({}) }))).toBe("NEXT_REDIRECT;replace;/sign-in;307;");
+    expect(await readDigest(PublicJobsPage({ searchParams: Promise.resolve({}) }))).toBe(`NEXT_REDIRECT;replace;${ROUTES.signIn};307;`);
     expect((await call(postPublicSwitch, founder, { isPublic: true })).status).toBe(403);
 
     await call(postPublicSwitch, admin, { isPublic: true });
