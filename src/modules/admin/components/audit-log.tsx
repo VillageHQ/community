@@ -63,6 +63,7 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.villageGroupCreated]: ({ detail }) => `created the Village group "${detail}"`,
   [AUDIT_ACTIONS.brandingSaved]: () => "changed the community's brand",
   [AUDIT_ACTIONS.dataHomeSaved]: () => "changed where the data is kept or whom to ask",
+  [AUDIT_ACTIONS.emailUnsuppressed]: ({ detail }) => `took ${detail || "an address"} off the do-not-send list`,
   [AUDIT_ACTIONS.logoSaved]: () => "changed the community's logo",
   [AUDIT_ACTIONS.logoRemoved]: () => "removed the community's logo",
   [AUDIT_ACTIONS.villageGroupLeft]: ({ target, detail }) => readDepartureSentence(target, detail),

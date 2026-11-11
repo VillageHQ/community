@@ -1,3 +1,4 @@
+import { villageCheck } from "../modules/network/schema.ts";
 import { randomUUID } from "node:crypto";
 
 import { sql } from "drizzle-orm";
@@ -35,6 +36,7 @@ export async function clearDatabase(database: Database) {
   await database.delete(jobLease);
   await database.delete(chatConnection);
   await database.delete(villageMonthlyUsage);
+  await database.delete(villageCheck);
   await database.delete(verification);
   await database.delete(moderationRecord);
   await database.delete(messageReport);
