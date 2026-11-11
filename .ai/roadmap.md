@@ -28,7 +28,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] An admin home that leads with this quarter's intros, then what needs the admin — admin-home — open pull request, [PR #32](https://github.com/VillageHQ/community/pull/32) — [spec](features/admin-home/SPEC.md)
 - [ ] A new admin lands on setup until it is done; the stuck-intros line says it counts older asks — admin-firstrun — open pull request, [PR #33](https://github.com/VillageHQ/community/pull/33) — [spec](features/admin-firstrun/SPEC.md)
 
-- [ ] Asks board tabs (Open, Mine, Answered, Closed), search over every ask and answer, admin pin, reopen, and an Admin › Asks page — asks-tools — open pull request — [charter](features/asks-tools/CHARTER.md) · [spec](features/asks-board-tools/SPEC.md)
+- [ ] Asks board tabs (Open, Mine, Answered, Closed), search over every ask and answer, admin pin, reopen, and an Admin › Asks page — asks-tools — open pull request, [PR #39](https://github.com/VillageHQ/community/pull/39) — [charter](features/asks-tools/CHARTER.md) · [spec](features/asks-board-tools/SPEC.md)
 
 ## Next (queued)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
