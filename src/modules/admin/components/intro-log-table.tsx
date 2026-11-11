@@ -32,7 +32,8 @@ function LogRow({ row }: { row: IntroLogRow }) {
       </span>
       <span className="fh-cell">{readTarget(row)}</span>
       <span className="fh-cell">{row.connector}</span>
-      <span className="fh-cell">{pill}</span>
+      {/* A long state word ("no answer from connector") wraps inside its pill instead of being cut off. */}
+      <span className="fh-cell overflow-visible! whitespace-normal! [&_.fh-pill]:h-auto [&_.fh-pill]:min-h-6 [&_.fh-pill]:py-0.5 [&_.fh-pill]:whitespace-normal">{pill}</span>
       <span className="fh-cell fh-then fh-muted">{then || "–"}</span>
       <div className="fh-m-line">
         <b>{row.asker}</b> → <b>{row.target}</b>

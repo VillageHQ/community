@@ -8,7 +8,7 @@ import { ROUTES } from "@/platform/http/routes";
 import Link from "next/link";
 
 import { useFundMarkSub, useShellMode } from "./navigation-links";
-import { MEMBER_KEYS, SHELL_MODES, type ShellNavigation } from "./navigation-rules";
+import { CONSOLE_KEYS, MEMBER_KEYS, SHELL_MODES, type ShellNavigation } from "./navigation-rules";
 import { SignOutButton } from "./user-menu";
 
 type ShellFundMarkProps = { name: string; logo: CommunityLogo | null; isAdmin: boolean; size: "default" | "sidebar"; pathname?: string };
@@ -25,11 +25,16 @@ export function ShellFooterLine({ isAdmin, pathname }: { isAdmin: boolean; pathn
   return useShellMode(isAdmin, pathname) === SHELL_MODES.console ? <ProductCredit /> : <SourceLine />;
 }
 
-// The menu items with no phone tab (Jobs and Perks; the Partner report, Invites and the Job board in the console).
-// Founderhall reaches them from its pages; until the areas add those links, the phone foot lists them.
+// The menu items with no phone tab (Jobs and Perks; the Job board in the console). Founderhall reaches them from its
+// pages; until the areas add those links, the phone foot lists them. The console's Home and Intro log link the
+// Partner report, and Home and Members link Invites, so those two are left out.
+const REACHED_FROM_CONSOLE_PAGES: readonly string[] = [CONSOLE_KEYS.report, CONSOLE_KEYS.invites];
+
 function PhoneMoreLinks({ navigation, isAdmin, pathname }: { navigation: ShellNavigation; isAdmin: boolean; pathname?: string }) {
   const mode = useShellMode(isAdmin, pathname);
-  const items = (mode === SHELL_MODES.console ? navigation.console : navigation.member).filter((item) => !item.tabLabel && item.key !== MEMBER_KEYS.me);
+  const items = (mode === SHELL_MODES.console ? navigation.console : navigation.member).filter(
+    (item) => !item.tabLabel && item.key !== MEMBER_KEYS.me && !REACHED_FROM_CONSOLE_PAGES.includes(item.key),
+  );
   if (items.length === 0) return null;
   return (
     <nav aria-label="More" className="mb-2 flex flex-wrap gap-x-4 gap-y-1">
