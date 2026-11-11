@@ -1,11 +1,9 @@
-import { CircleAlert, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 
-import { CopyButton } from "@/components/copy-button";
-import { CardDescription } from "@/components/ui/card";
-import { Tag } from "@/components/ui/tag";
-import { SettingCard } from "@/modules/admin/components/setting-card";
-import { ChatControls, DiscordConnectForm, SlackChannelForm, SlackConnectForm } from "@/modules/chat/components/chat-forms";
+import { Card, SheetHead } from "@/components/ui/card";
+import { Pill } from "@/components/ui/pill";
+import { ASKS_PAGE } from "@/modules/asks/contract";
+import { ChatControls, ChatErrorNote, DiscordConnectForm, SlackChannelForm, SlackConnectForm, SlackManifestBox } from "@/modules/chat/components/chat-forms";
 import { CHAT_KINDS, toDiscordInviteLink, type ChatConnectionView } from "@/modules/chat/contract";
 import { chatManifest } from "@/modules/chat/manifest";
 import { buildSlackManifest, composeAskPost, composeWeekPost } from "@/modules/chat/rules";
@@ -16,178 +14,191 @@ import { readBranding } from "@/platform/branding/branding";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { getDatabase } from "@/platform/database/client";
 import { resolveAppUrl } from "@/platform/http/app-url";
+import { ROUTES } from "@/platform/http/routes";
 import { modulePage } from "@/platform/modules/module-page";
-import { formatDateAndTimeUtc } from "@/platform/text/format-date";
-import { describeSchedule } from "@/platform/weekly-email/schedule";
+import { formatDayMonthTimeUtc } from "@/platform/text/format-date";
+import { WEEKDAYS } from "@/platform/weekly-email/schedule";
 import { readWeeklySchedule } from "@/platform/weekly-email/schedule-store";
 import { AdminSection } from "@/shell/admin-section";
 
+// Founderhall's Admin › Integrations (integrations/views.mjs): Slack and Discord on the left, what gets posted on the
+// right. Every post links back to the portal.
 export const metadata: Metadata = { title: PAGE_TITLES.adminIntegrations };
 
-function StatusTag({ connection }: { connection: ChatConnectionView | null }) {
-  if (!connection) return <Tag>Not connected</Tag>;
-  if (connection.needsAttention) return <Tag tone="destructive">Needs a look</Tag>;
-  if (connection.isPaused) return <Tag tone="gold">Paused</Tag>;
-  return <Tag tone="sage">{connection.channelId ? "Posting" : "Pick a channel"}</Tag>;
+const SAMPLE_ASK = "An intro to a head of procurement at a US hospital group.";
+
+// Connected, paused, or the last post failed.
+function StatusPill({ connection }: { connection: ChatConnectionView | null }) {
+  if (!connection) return <Pill tone="open">Not connected</Pill>;
+  if (connection.needsAttention) return <Pill tone="needs">Needs attention</Pill>;
+  if (connection.isPaused) return <Pill tone="open">Paused</Pill>;
+  return <Pill tone="made">Connected</Pill>;
 }
 
-function ErrorNote({ text }: { text: string }) {
-  return (
-    <p role="alert" className="type-small flex gap-2 rounded-field bg-destructive-soft px-4 py-3 text-destructive-text">
-      <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <span className="wrap-anywhere">{text}</span>
-    </p>
-  );
-}
-
-function LastPost({ connection }: { connection: ChatConnectionView }) {
-  const last = connection.lastPostAt ? `Last post ${formatDateAndTimeUtc(connection.lastPostAt)}.` : "Nothing posted yet.";
+function StatusBlock({ connection }: { connection: ChatConnectionView }) {
+  const last = connection.lastPostAt ? `Last post ${formatDayMonthTimeUtc(connection.lastPostAt)}.` : "Nothing posted yet.";
   return (
     <>
-      <p className="type-small text-foreground-soft">
+      <p className="fh-small fh-muted mt-2">
         {last}
-        {connection.isPaused ? " Posting is paused." : ""}
+        {connection.isPaused ? " Posting is switched off." : ""}
       </p>
-      {connection.needsAttention && connection.lastError ? (
-        <ErrorNote text={`${connection.lastError}${connection.lastErrorAt ? ` (${formatDateAndTimeUtc(connection.lastErrorAt)})` : ""}`} />
+      {connection.lastError ? (
+        <ChatErrorNote>
+          {connection.lastError}
+          {connection.lastErrorAt ? ` (${formatDayMonthTimeUtc(connection.lastErrorAt)})` : ""}
+        </ChatErrorNote>
       ) : null}
     </>
   );
 }
 
-function ExternalLinkText({ href, children }: { href: string; children: string }) {
+function ExternalLink({ href, children }: { href: string; children: string }) {
   return (
-    <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-bold text-brand-emphasis underline hover:no-underline">
+    <a href={href} rel="noopener" target="_blank">
       {children}
-      <ExternalLink aria-hidden="true" className="size-3.5" />
-      <span className="sr-only"> (opens in a new tab)</span>
     </a>
   );
 }
 
-function SlackManifest({ manifestJson, isOpen }: { manifestJson: string; isOpen: boolean }) {
+// Community only: where the tokens are kept, when this server can't seal them.
+function StorageNote() {
+  const storage = readChatSecretStorage(process.env);
+  if (storage === CHAT_SECRET_STORAGE.sealed) return null;
+  if (storage === CHAT_SECRET_STORAGE.refused) return <ChatErrorNote>This is a preview. Connect Slack and Discord on your live site.</ChatErrorNote>;
+  return <ChatErrorNote>This server has no setup token, so tokens would be saved unencrypted. Add SETUP_TOKEN on your host first.</ChatErrorNote>;
+}
+
+type SlackSheetProps = { connection: ChatConnectionView | null; manifestJson: string; createUrl: string };
+
+async function SlackSheet({ connection, manifestJson, createUrl }: SlackSheetProps) {
+  const head = <SheetHead title="Slack" link={<StatusPill connection={connection} />} />;
+  if (!connection) {
+    return (
+      <Card id="slack" className="fh-sheet">
+        {head}
+        <ol className="fh-howto fh-small list-decimal">
+          <li>
+            <b>Create the Slack app from the manifest.</b> <ExternalLink href={createUrl}>Open Slack with the manifest filled in</ExternalLink>, choose your workspace, and create
+            it. Or paste the manifest below at api.slack.com/apps › Create New App › From a manifest.
+          </li>
+          <li>
+            <b>Install it to your workspace</b> (the app’s Install App page).
+          </li>
+          <li>
+            <b>Paste two values here:</b> the Bot User OAuth Token (OAuth &amp; Permissions, starts with xoxb-) and the Signing Secret (Basic Information › App Credentials).
+          </li>
+        </ol>
+        <SlackManifestBox manifestJson={manifestJson} isOpen />
+        <StorageNote />
+        <SlackConnectForm isConnected={false} />
+      </Card>
+    );
+  }
+  const listing = await listSlackChannels(getDatabase(), process.env);
   return (
-    <details open={isOpen} className="type-small grid gap-2">
-      <summary className="cursor-pointer font-bold">The Slack app&apos;s manifest</summary>
-      <pre className="mt-2 max-h-72 overflow-auto rounded-field bg-muted p-4 text-[13px] wrap-anywhere whitespace-pre-wrap">{manifestJson}</pre>
-      <div className="mt-2">
-        <CopyButton text={manifestJson} label="Copy the manifest" />
-      </div>
-    </details>
+    <Card id="slack" className="fh-sheet">
+      {head}
+      <p className="fh-small mt-2">
+        Workspace <b>{connection.accountName ?? connection.accountId ?? ""}</b>
+        {connection.channelName ? (
+          <>
+            {" "}
+            · posting to <b>#{connection.channelName}</b>
+          </>
+        ) : (
+          " · no channel yet"
+        )}
+        . Members can post an ask with <span className="font-mono text-[13px]">/ask</span>.
+      </p>
+      <StatusBlock connection={connection} />
+      {listing.error ? <ChatErrorNote>Couldn’t list the channels: {listing.error}</ChatErrorNote> : <SlackChannelForm channels={listing.channels} channelId={connection.channelId} />}
+      <ChatControls kind={CHAT_KINDS.slack} name="Slack" isPaused={connection.isPaused} hasChannel={connection.channelId !== null} />
+      <SlackManifestBox manifestJson={manifestJson} isOpen={false} />
+      <details className="mt-2.5">
+        <summary className="fh-small cursor-pointer">Paste a new token or signing secret</summary>
+        <SlackConnectForm isConnected />
+      </details>
+    </Card>
   );
 }
 
-type SlackCardProps = { connection: ChatConnectionView | null; manifestJson: string; createUrl: string };
-
-async function SlackCard({ connection, manifestJson, createUrl }: SlackCardProps) {
-  const listing = connection ? await listSlackChannels(getDatabase(), process.env) : null;
+function DiscordSheet({ connection }: { connection: ChatConnectionView | null }) {
+  const head = <SheetHead title="Discord" link={<StatusPill connection={connection} />} />;
+  if (!connection) {
+    return (
+      <Card id="discord" className="fh-sheet">
+        {head}
+        <ol className="fh-howto fh-small list-decimal">
+          <li>
+            <b>Create a bot</b> at <ExternalLink href="https://discord.com/developers/applications">discord.com/developers/applications</ExternalLink>: New Application, then Bot ›
+            Reset Token, and copy the token.
+          </li>
+          <li>
+            <b>Paste the token and the channel id here.</b> The page then shows the link that invites the bot to your server with the two permissions it needs: Send Messages
+            and Embed Links.
+          </li>
+        </ol>
+        <DiscordConnectForm isConnected={false} channelId={null} />
+      </Card>
+    );
+  }
   return (
-    <SettingCard title="Slack" tag={<StatusTag connection={connection} />}>
-      {connection ? (
-        <>
-          <CardDescription>
-            Workspace <span className="font-bold text-foreground">{connection.accountName}</span>
-            {connection.channelName ? (
-              <>
-                , posting to <span className="font-bold text-foreground">#{connection.channelName}</span>
-              </>
-            ) : (
-              ", no channel yet"
-            )}
-            . Members can post an ask by typing /ask in Slack.
-          </CardDescription>
-          <LastPost connection={connection} />
-          {listing?.error ? <ErrorNote text={`Couldn't list the channels: ${listing.error}`} /> : <SlackChannelForm channels={listing?.channels ?? []} channelId={connection.channelId} />}
-          <ChatControls kind={CHAT_KINDS.slack} name="Slack" isPaused={connection.isPaused} hasChannel={connection.channelId !== null} />
-          <SlackManifest manifestJson={manifestJson} isOpen={false} />
-          <details className="type-small">
-            <summary className="cursor-pointer font-bold">Paste a new token or signing secret</summary>
-            <div className="mt-3">
-              <SlackConnectForm isConnected />
-            </div>
-          </details>
-        </>
-      ) : (
-        <>
-          <ol className="type-small grid list-decimal gap-2 pl-5 text-foreground-soft">
-            <li>
-              <span className="font-bold text-foreground">Create the Slack app from the manifest.</span> <ExternalLinkText href={createUrl}>Open Slack with it filled in</ExternalLinkText>,
-              choose your workspace and create it. Or paste the manifest below at api.slack.com/apps, Create New App, From a manifest.
-            </li>
-            <li>
-              <span className="font-bold text-foreground">Install it to your workspace</span> from the app&apos;s Install App page.
-            </li>
-            <li>
-              <span className="font-bold text-foreground">Paste two values here:</span> the bot token and the signing secret.
-            </li>
-          </ol>
-          <SlackManifest manifestJson={manifestJson} isOpen />
-          <SlackConnectForm isConnected={false} />
-        </>
-      )}
-    </SettingCard>
+    <Card id="discord" className="fh-sheet">
+      {head}
+      <p className="fh-small mt-2">
+        Bot <b>{connection.accountName ?? ""}</b>
+        {connection.channelName ? (
+          <>
+            {" "}
+            · posting to <b>#{connection.channelName}</b>
+          </>
+        ) : connection.channelId ? (
+          <>
+            {" "}
+            · channel <span className="font-mono text-[13px]">{connection.channelId}</span>
+          </>
+        ) : (
+          " · no channel yet"
+        )}
+        .
+      </p>
+      {connection.accountId ? (
+        <p className="fh-small mt-2">
+          <b>Invite the bot to your server:</b> <ExternalLink href={toDiscordInviteLink(connection.accountId)}>open the invite link</ExternalLink> (asks for Send Messages and Embed
+          Links, nothing else).
+        </p>
+      ) : null}
+      <StatusBlock connection={connection} />
+      <ChatControls kind={CHAT_KINDS.discord} name="Discord" isPaused={connection.isPaused} hasChannel={connection.channelId !== null} />
+      <details className="mt-2.5" open={!connection.channelName}>
+        <summary className="fh-small cursor-pointer">Change the channel or the token</summary>
+        <DiscordConnectForm isConnected channelId={connection.channelId} />
+      </details>
+    </Card>
   );
 }
 
-function DiscordCard({ connection }: { connection: ChatConnectionView | null }) {
+function WhatGetsPosted({ askSample, weekSample, digestDay }: { askSample: string; weekSample: string; digestDay: string }) {
   return (
-    <SettingCard title="Discord" tag={<StatusTag connection={connection} />}>
-      {connection ? (
-        <>
-          <CardDescription>
-            Bot <span className="font-bold text-foreground">{connection.accountName}</span>
-            {connection.channelName ? (
-              <>
-                , posting to <span className="font-bold text-foreground">#{connection.channelName}</span>
-              </>
-            ) : null}
-            .
-          </CardDescription>
-          {connection.accountId ? (
-            <p className="type-small text-foreground-soft">
-              <span className="font-bold text-foreground">Invite the bot to your server:</span>{" "}
-              <ExternalLinkText href={toDiscordInviteLink(connection.accountId)}>open the invite link</ExternalLinkText>. It asks for Send Messages and Embed Links, nothing else.
-            </p>
-          ) : null}
-          <LastPost connection={connection} />
-          <ChatControls kind={CHAT_KINDS.discord} name="Discord" isPaused={connection.isPaused} hasChannel={connection.channelId !== null} />
-          <details className="type-small">
-            <summary className="cursor-pointer font-bold">Change the channel or the token</summary>
-            <div className="mt-3">
-              <DiscordConnectForm isConnected channelId={connection.channelId} />
-            </div>
-          </details>
-        </>
-      ) : (
-        <>
-          <ol className="type-small grid list-decimal gap-2 pl-5 text-foreground-soft">
-            <li>
-              <span className="font-bold text-foreground">Create a bot</span> at{" "}
-              <ExternalLinkText href="https://discord.com/developers/applications">discord.com/developers/applications</ExternalLinkText>: New Application, then Bot, Reset
-              Token, and copy the token.
-            </li>
-            <li>
-              <span className="font-bold text-foreground">Paste the token and the channel id here.</span> This page then shows the link that invites the bot to your server.
-            </li>
-          </ol>
-          <DiscordConnectForm isConnected={false} channelId={null} />
-        </>
-      )}
-    </SettingCard>
+    <Card className="fh-sheet">
+      <h2 className="type-h3">What gets posted</h2>
+      <p className="fh-small mt-1.5">
+        <b>A new ask</b>, as soon as a member posts it:
+      </p>
+      <p className="fh-chatpost whitespace-pre-line">{askSample}</p>
+      <p className="fh-small mt-2.5">
+        <b>Each week</b>, with the {digestDay} digest: intros made in the last 7 days and asks open (example numbers):
+      </p>
+      <p className="fh-chatpost whitespace-pre-line">{weekSample}</p>
+      <p className="fh-small fh-muted mt-2.5">
+        Every post links back to the portal, so answers and intros stay here. Members hidden from the directory are posted as “a member”. Updates and comments are not posted.
+      </p>
+    </Card>
   );
 }
 
-function SamplePost({ text }: { text: string }) {
-  return <p className="type-small rounded-field bg-muted px-4 py-3 whitespace-pre-wrap wrap-anywhere">{text}</p>;
-}
-
-function StorageNote({ storage }: { storage: ReturnType<typeof readChatSecretStorage> }) {
-  if (storage === CHAT_SECRET_STORAGE.sealed) return <CardDescription>Tokens stay on this site, sealed in the database with your setup token.</CardDescription>;
-  if (storage === CHAT_SECRET_STORAGE.refused) return <ErrorNote text="This is a preview. Connect Slack and Discord on your live site." />;
-  return <ErrorNote text="This site has no setup token, so tokens would be saved unencrypted. Add SETUP_TOKEN on your host first." />;
-}
-
-export default modulePage(chatManifest, async function AdminChatPage() {
+export default modulePage(chatManifest, async function AdminIntegrationsPage() {
   await requireAdmin();
   const database = getDatabase();
   const [slack, discord, branding, schedule] = await Promise.all([
@@ -199,36 +210,18 @@ export default modulePage(chatManifest, async function AdminChatPage() {
   const appUrl = resolveAppUrl(process.env);
   const manifest = buildSlackManifest(branding.name, appUrl);
   const createUrl = `https://api.slack.com/apps?new_app=1&manifest_json=${encodeURIComponent(JSON.stringify(manifest))}`;
-  const askSample = composeAskPost(CHAT_KINDS.discord, {
-    community: branding.name,
-    authorName: "Priya",
-    title: "An intro to a head of procurement at a US hospital group",
-    url: `${appUrl}/asks`,
-  });
-  const weekSample = composeWeekPost(CHAT_KINDS.discord, { community: branding.name, introsMade: 3, openAsks: 5, url: `${appUrl}/asks` });
+  const askSample = composeAskPost(CHAT_KINDS.discord, { community: branding.name, authorName: "Priya", title: SAMPLE_ASK, url: `${appUrl}${ASKS_PAGE}` });
+  const weekSample = composeWeekPost(CHAT_KINDS.discord, { community: branding.name, introsMade: 3, openAsks: 5, url: `${appUrl}${ROUTES.admin}` });
 
   return (
-    <AdminSection title="Slack and Discord" description="Post new asks and a weekly line to your community's Slack or Discord. Every post links back here.">
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="grid gap-5">
-          <SlackCard connection={slack} manifestJson={JSON.stringify(manifest, null, 2)} createUrl={createUrl} />
-          <DiscordCard connection={discord} />
+    <AdminSection title="Integrations" description="Post new asks and a weekly line to your community’s Slack or Discord. Every post links back here.">
+      <div className="fh-grid">
+        <div className="fh-c7 fh-stack">
+          <SlackSheet connection={slack} manifestJson={JSON.stringify(manifest, null, 2)} createUrl={createUrl} />
+          <DiscordSheet connection={discord} />
         </div>
-        <div className="grid gap-5">
-          <SettingCard title="What gets posted" tag={null}>
-            <CardDescription>A new ask, as soon as a member posts it:</CardDescription>
-            <SamplePost text={askSample} />
-            <CardDescription>Each week, after the weekly email ({describeSchedule(schedule)}), with example numbers:</CardDescription>
-            <SamplePost text={weekSample} />
-            <ul className="type-small grid list-disc gap-1.5 pl-5 text-foreground-soft">
-              <li>Only the ask&apos;s title and the author&apos;s first name. Updates, answers and offers stay in the app.</li>
-              <li>Asks by members who blocked someone, or were blocked, aren&apos;t posted.</li>
-              <li>Connecting or turning posting back on never posts older asks.</li>
-            </ul>
-          </SettingCard>
-          <SettingCard title="Your tokens" tag={null}>
-            <StorageNote storage={readChatSecretStorage(process.env)} />
-          </SettingCard>
+        <div className="fh-c5 fh-stack">
+          <WhatGetsPosted askSample={askSample} weekSample={weekSample} digestDay={WEEKDAYS[schedule.weekday] ?? "Thursday"} />
         </div>
       </div>
     </AdminSection>

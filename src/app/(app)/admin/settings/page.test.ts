@@ -1,7 +1,7 @@
 import { isValidElement, type ReactNode } from "react";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { VillageSecretCard } from "@/modules/admin/components/village-secret-card";
+import { VillageSecretLine } from "@/modules/admin/components/village-secret-card";
 import { networkManifest } from "@/modules/network/manifest";
 import { saveModuleState } from "@/platform/modules/enablement";
 import { VILLAGE_KEY_STATUSES } from "@/platform/village/contract";
@@ -18,7 +18,14 @@ vi.mock("next/headers", () => ({ headers: async () => new Headers({ cookie: sess
 function findSecretCard(node: ReactNode): ReactNode {
   if (Array.isArray(node)) return node.map(findSecretCard).find(Boolean);
   if (!isValidElement<{ children?: ReactNode }>(node)) return null;
-  return node.type === VillageSecretCard ? node : findSecretCard(node.props.children);
+  return node.type === VillageSecretLine ? node : findSecretCard(node.props.children);
+}
+
+// The Village sheet sits in the form's right column, passed as its aside.
+function findAside(node: ReactNode): ReactNode {
+  if (Array.isArray(node)) return node.map(findAside).find(Boolean);
+  if (!isValidElement<{ children?: ReactNode; aside?: ReactNode }>(node)) return null;
+  return node.props.aside ?? findAside(node.props.children);
 }
 
 describe("the settings page", () => {
@@ -40,7 +47,8 @@ describe("the settings page", () => {
       { key: INSTANCE_SETTING_KEYS.villageSecretKey, value: "sk_test" },
     ]);
 
-    const card = findSecretCard(await AdminSettingsPage({ searchParams: Promise.resolve({}) }));
+    const page = await AdminSettingsPage();
+    const card = findSecretCard(isValidElement<{ children?: ReactNode }>(page) ? findAside(page) : null);
 
     expect(isValidElement<{ status: string }>(card) && card.props.status).toBe(VILLAGE_KEY_STATUSES.plain);
   });

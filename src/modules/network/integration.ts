@@ -4,6 +4,7 @@ import type { ModuleIntegration } from "@/platform/modules/integration";
 
 import { networkManifest } from "./manifest";
 import { FILL_IN_JOB_NAME, FILL_IN_LEASE_MS, runFillIn } from "./service-fill-in";
+import { FILL_IN_TRIGGERS, isNightlyFillInOn, recordFillInRun } from "./service-village-admin";
 
 const HOUR_MS = 60 * 60_000;
 // The fill-in runs at night, from 02:00 to 05:59 UTC, checked every hour. A run finds only members
@@ -24,7 +25,13 @@ export const networkModule: ModuleIntegration = {
       name: FILL_IN_JOB_NAME,
       intervalMs: HOUR_MS,
       leaseMs: FILL_IN_LEASE_MS,
-      run: async (database, environment) => (isFillInHour() ? runFillIn(database, environment) : null),
+      // Admin › Village › "Fill in profiles every night" can turn the night off; "Fill in profiles now" still works.
+      run: async (database, environment) => {
+        if (!isFillInHour() || !(await isNightlyFillInOn(database))) return null;
+        const run = await runFillIn(database, environment);
+        await recordFillInRun(database, run, FILL_IN_TRIGGERS.nightly);
+        return run;
+      },
     },
   ],
 };

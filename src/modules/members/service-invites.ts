@@ -197,8 +197,9 @@ export async function createInvite(context: RequestContext, email: string, cohor
   return issueInvite(context, issued.row, issued.token, issued.message, issued.queuedEmailId);
 }
 
-export async function resendInvite(context: RequestContext, inviteId: string) {
-  const branding = await readEmailBranding(context.database, context.environment);
+// sendEmail false (Set up › Sign-in links): a new link for the admin to send by hand, and no email.
+export async function resendInvite(context: RequestContext, inviteId: string, { sendEmail = true }: { sendEmail?: boolean } = {}) {
+  const branding = sendEmail ? await readEmailBranding(context.database, context.environment) : null;
   const { rotated, token, queuedEmailId } = await withAdminTransaction(context.database, context.member.id, async (transaction) => {
     const result = await rotateInvite(transaction, context, inviteId);
     await recordInviteAction(transaction, context, AUDIT_ACTIONS.inviteResent, result.rotated.email);

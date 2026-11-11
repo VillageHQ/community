@@ -9,6 +9,8 @@ import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
 import { MESSAGE_POLICIES, type ChoicePlace, type MessagePolicy, type PrivacyBody } from "./contract-privacy.ts";
 import { memberPrivacy } from "./schema.ts";
+import { INSTANCE_SETTING_KEYS } from "../../platform/settings/schema.ts";
+import { readSettings } from "../../platform/settings/store.ts";
 
 export type MemberPrivacy = {
   isHidden: boolean;
@@ -30,12 +32,19 @@ const DEFAULT_PRIVACY: MemberPrivacy = {
   messagePolicyChangedAt: null,
 };
 
+// Who can message a member who never chose: the community's default from Set up › Settings (anyone, unless set).
+export async function readCommunityMessagePolicy(database: DatabaseOrTransaction): Promise<MessagePolicy> {
+  const value = (await readSettings(database, [INSTANCE_SETTING_KEYS.messagePolicyDefault])).get(INSTANCE_SETTING_KEYS.messagePolicyDefault);
+  return value === MESSAGE_POLICIES.introduced ? MESSAGE_POLICIES.introduced : MESSAGE_POLICIES.anyone;
+}
+
 export async function readPrivacy(database: DatabaseOrTransaction, memberId: string): Promise<MemberPrivacy> {
   const [row] = await database.select().from(memberPrivacy).where(eq(memberPrivacy.userId, memberId));
-  if (!row) return DEFAULT_PRIVACY;
+  if (!row) return { ...DEFAULT_PRIVACY, messagePolicy: await readCommunityMessagePolicy(database) };
   return {
     isHidden: row.isHidden,
-    messagePolicy: row.messagePolicy as MessagePolicy,
+    // A member who never chose follows the community's default.
+    messagePolicy: row.messagePolicyChangedAt === null ? await readCommunityMessagePolicy(database) : (row.messagePolicy as MessagePolicy),
     acceptsIntroAsks: row.acceptsIntroAsks,
     introAsksAnsweredAt: row.introAsksAnsweredAt,
     introAsksAnsweredPlace: row.introAsksAnsweredPlace as ChoicePlace | null,

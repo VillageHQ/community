@@ -2,10 +2,10 @@ import { z } from "zod";
 
 export const DNS_CHECK_STATUSES = { ok: "ok", missing: "missing", unknown: "unknown" } as const;
 
-export const dnsRecordSchema = z.object({ type: z.literal("TXT"), name: z.string(), value: z.string() });
+export const dnsRecordSchema = z.object({ type: z.enum(["TXT", "MX"]), name: z.string(), value: z.string() });
 
 export const dnsCheckLineSchema = z.object({
-  key: z.enum(["spf", "dkim", "dmarc"]),
+  key: z.enum(["spf", "dkim", "dmarc", "mx"]),
   label: z.string(),
   status: z.enum([DNS_CHECK_STATUSES.ok, DNS_CHECK_STATUSES.missing, DNS_CHECK_STATUSES.unknown]),
   found: z.string(),
