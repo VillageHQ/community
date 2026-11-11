@@ -117,6 +117,11 @@ export function pinAskRequest(body: PinAskBody) {
   return postRequest(ASK_API_ROUTES.pin, body, acknowledgedResponseSchema);
 }
 
+// Asks & digest › Close: an admin ends an ask for everyone.
+export function closeAskAsAdminRequest(askId: string) {
+  return postRequest(ASK_API_ROUTES.adminClose, { askId }, acknowledgedResponseSchema);
+}
+
 export function reopenAskRequest(askId: string) {
   return postRequest(ASK_API_ROUTES.reopen, { askId }, acknowledgedResponseSchema);
 }

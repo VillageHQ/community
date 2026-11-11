@@ -32,7 +32,8 @@ import { seedMember } from "@/test/members";
 
 import { readEnabledIds } from "./enabled-modules";
 import { isTodayEmpty, readTodayItems } from "./today";
-import { previewWeeklyEmail, runWeeklyEmails, WEEKLY_PREVIEW_SOURCES } from "./weekly-email";
+import { previewMemberDigest, previewWeeklyEmail, runWeeklyEmails, WEEKLY_PREVIEW_SOURCES } from "./weekly-email";
+import { saveWeeklyEmailEnabled } from "./weekly-email-settings";
 
 const APP_URL = "http://localhost:3000";
 const REPLY_DOMAIN = "reply.example.com";
@@ -225,10 +226,11 @@ describe("the Today home and the weekly email", () => {
       const bodies = readBodies();
       expect(bodies).toHaveLength(1);
       expect(bodies[0]?.to).toEqual([await readEmail(hana)]);
-      expect(bodies[0]?.subject).toBe("This week in Your community: 2 things for you");
-      expect(bodies[0]?.text).toContain(`1. “${ASK_TITLE}” from Alex Asker.`);
+      expect(bodies[0]?.subject).toMatch(/^\S+, you could help with this one$/u);
+      expect(bodies[0]?.text).toContain(`1. Alex Asker asks: ${ASK_TITLE}`);
       expect(bodies[0]?.text).toContain("2. Rae Requester asks you to introduce them to Jo Rivera.");
-      expect(bodies[0]?.text).toContain("That's everything this week.");
+      expect(bodies[0]?.text).toContain("That’s everything this week. Open the portal:");
+      expect(bodies[0]?.text).toContain("Nobody is introduced without saying yes.");
       expect(bodies[0]?.reply_to).toMatch(new RegExp(`^reply\\+[0-9a-f]{32}-[0-9a-f]{20}@${REPLY_DOMAIN.replaceAll(".", "\\.")}$`));
       expect(bodies[0]?.headers?.["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
     });
@@ -400,6 +402,28 @@ ${HELP_NOTE}`;
       expect(mine.isEmpty).toBe(true);
       expect(sample.text).toContain("Priya Shah");
       expect(sample.text).not.toContain("token=");
+    });
+
+    it("previews another member's digest with who asked whom hidden, while admins see no names", async () => {
+      const { hana } = await seedCommunity();
+      const admin = await seedMember(database, { name: "Ada Admin" });
+      await database.update(user).set({ role: "admin" }).where(eq(user.id, admin));
+      const session = { id: admin, email: await readEmail(admin), role: "admin" };
+
+      const preview = await previewMemberDigest(database, environment(), session, hana);
+
+      expect(preview?.text).toContain(`1. Alex Asker asks: ${ASK_TITLE}`);
+      expect(preview?.text).toContain("2. A member asks you to introduce them to Someone.");
+      expect(preview?.text).not.toContain("Rae Requester");
+      expect(preview?.text).not.toContain("Jo Rivera");
+      expect(preview?.text).not.toContain("token=");
+    });
+
+    it("stays quiet while an admin has switched the weekly digest off", async () => {
+      await seedCommunity();
+      await saveWeeklyEmailEnabled(database, false);
+
+      expect((await runWeeklyEmails(database, environment(), { now })).queued).toBe(0);
     });
   });
 

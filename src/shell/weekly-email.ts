@@ -28,6 +28,8 @@ import { createItemToken, createReplyAddress, readReplyDomain } from "@/platform
 import { readEnabledIds } from "./enabled-modules";
 import { needsMemberThisWeek, numberWeeklyItems, readTodayItems, type TodayItems } from "./today";
 import { ITEM_ACTIONS, renderWeeklyEmail, type ItemLinks } from "./weekly-email-compose";
+import { readWeeklyEmailEnabled } from "./weekly-email-settings";
+import { ADMIN_SEES_INTRO_NAMES, HIDDEN_INTRO_NAMES } from "@/modules/admin/intro-privacy";
 
 const MEMBERS_PER_BATCH = 50;
 const DAY_MS = 24 * 60 * 60_000;
@@ -153,6 +155,7 @@ export type WeeklyRunOptions = { now?: Date; maximumMembers?: number };
 export async function runWeeklyEmails(database: Database, environment: Environment, { now = new Date(), maximumMembers = Number.POSITIVE_INFINITY }: WeeklyRunOptions = {}) {
   const summary: WeeklyRunSummary = { weekKey: null, queued: 0, empty: 0, notWanted: 0, failed: 0 };
   if (!readResendConfig(environment)) return summary;
+  if (!(await readWeeklyEmailEnabled(database))) return summary;
   const week = readCurrentWeek(now, await readWeeklySchedule(database));
   if (!week) return summary;
   summary.weekKey = week.weekKey;
@@ -264,6 +267,45 @@ export async function previewWeeklyEmail(database: Database, environment: Enviro
   const recipient = isSample ? SAMPLE_MEMBER : await readAdminRecipient(database, admin);
   const rendered = compose(environment, { recipient, items, numbered, links: placeholderLinks(environment, numbered), branding, canReply: readReplyDomain(environment) !== null, isTest: false });
   return { ...rendered, isEmpty: !needsMemberThisWeek(items), recipientName: recipient.name };
+}
+
+// What an admin's preview shows of a member's intros. With ADMIN_SEES_INTRO_NAMES off, who asked whom stays private:
+// every name in an intro reads as a placeholder (the community's rule; the owner may switch it).
+function hideIntroNames(items: TodayItems): TodayItems {
+  if (ADMIN_SEES_INTRO_NAMES) return items;
+  const hide = (intro: TodayItems["introsToAnswer"][number]) => ({
+    ...intro,
+    note: "",
+    reason: "",
+    requester: { ...intro.requester, name: HIDDEN_INTRO_NAMES.asker },
+    introducer: { ...intro.introducer, name: HIDDEN_INTRO_NAMES.connector },
+    target: { ...intro.target, name: HIDDEN_INTRO_NAMES.target },
+  });
+  return { ...items, introsToAnswer: items.introsToAnswer.map(hide), introsToFinish: items.introsToFinish.map(hide) };
+}
+
+export const SAMPLE_PREVIEW = "sample";
+
+// The digest preview (Asks & digest › Preview): any active member's digest as it would go out this week, or the
+// made-up member's. Buttons go nowhere that acts; intro names follow the console's privacy switch.
+export async function previewMemberDigest(database: Database, environment: Environment, admin: SessionMember, memberId: string) {
+  if (memberId === SAMPLE_PREVIEW) return previewWeeklyEmail(database, environment, admin, WEEKLY_PREVIEW_SOURCES.sample);
+  const [branding, enabledIds, [row]] = await Promise.all([
+    readBranding(database),
+    readEnabledIds(database),
+    database.select({ id: user.id, name: user.name, email: user.email }).from(user).where(and(eq(user.id, memberId), isActiveMember())),
+  ]);
+  if (!row) return null;
+  const read = await readTodayItems(database, row.id, enabledIds);
+  const items = row.id === admin.id ? read : hideIntroNames(read);
+  const numbered = numberWeeklyItems(items);
+  const rendered = compose(environment, { recipient: row, items, numbered, links: placeholderLinks(environment, numbered), branding, canReply: readReplyDomain(environment) !== null, isTest: false });
+  return { ...rendered, isEmpty: !needsMemberThisWeek(items), recipientName: row.name };
+}
+
+// The members an admin can preview, by name.
+export function readDigestMembers(database: Database) {
+  return database.select({ id: user.id, name: user.name }).from(user).where(isActiveMember()).orderBy(asc(user.name));
 }
 
 export const TEST_SEND_OUTCOMES = { sent: "sent", queued: "queued", emailOff: "email_off", switchedOff: "switched_off" } as const;

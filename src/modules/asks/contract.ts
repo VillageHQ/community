@@ -25,6 +25,7 @@ export const ASK_API_ROUTES = {
   allowance: "/api/asks/allowance",
   pin: "/api/asks/pin",
   reopen: "/api/asks/reopen",
+  adminClose: "/api/asks/admin-close",
 } as const;
 
 export const ASKS_ADMIN_PAGE = "/admin/asks";

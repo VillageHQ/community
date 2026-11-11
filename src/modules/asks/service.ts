@@ -18,6 +18,7 @@ import {
   ASK_ERROR_CODES,
   ASK_KINDS,
   ASK_LIMITS,
+  ASK_OUTCOMES,
   ASK_STATES,
   composeAnswerReportBody,
   composeAskReportBody,
@@ -219,6 +220,26 @@ export async function setAskPinned({ database, member }: RequestContext, { askId
     });
   });
   logAdminAction(isPinned ? "ask_pinned" : "ask_unpinned", member.id, askId);
+}
+
+// Asks & digest › Close (Founderhall's): an admin ends an ask or an update for everyone. It closes as no longer
+// needed, loses any pin, and the audit log keeps who closed it.
+export async function closeAskAsAdmin({ database, member }: RequestContext, askId: string) {
+  await withAdminTransaction(database, member.id, async (transaction) => {
+    const target = await lockAskForAdmin(transaction, askId);
+    if (target.closedAt) throw new RequestError(CONFLICT_STATUS, ASK_ERROR_CODES.closed, "This ask is already closed.");
+    await transaction
+      .update(ask)
+      .set({ closedAt: new Date(), outcome: ASK_OUTCOMES.noLongerNeeded, pinnedAt: null, pinnedByUserId: null })
+      .where(eq(ask.id, askId));
+    await recordAdminAction(transaction, member.id, {
+      action: AUDIT_ACTIONS.askClosedByAdmin,
+      targetMemberId: target.authorId,
+      targetName: target.authorName,
+      detail: target.title,
+    });
+  });
+  logAdminAction("ask_closed_by_admin", member.id, askId);
 }
 
 // The author or an admin puts a closed ask back on the board for a fresh 30 days. The author's open limit still

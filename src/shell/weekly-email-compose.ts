@@ -1,22 +1,17 @@
 import { describeWhyYou } from "@/modules/asks/contract-today";
-import { pickOnAccent } from "@/platform/design/accent";
 import { escapeHtml, toSingleLine } from "@/platform/email/email-text";
 import type { WeeklyEmailItem } from "@/platform/weekly-email/schema";
 import { REPLY_CODES } from "@/platform/weekly-email/reply-codes";
 
 import type { TodayItems } from "./today";
 
+// The weekly digest, in Founderhall's words (copy/admin-digest-preview-sam.md, emails/email-digest-test.md). The
+// plain text is the email; the HTML part shows the same lines, each "Label: link" line as a button.
+
 export const ITEM_ACTIONS = {
   ask: [REPLY_CODES.help, REPLY_CODES.skip],
   intro: [REPLY_CODES.yes, REPLY_CODES.no],
 } as const;
-
-const ACTION_LABELS: Record<string, string> = {
-  [REPLY_CODES.help]: "I can help",
-  [REPLY_CODES.skip]: "Not for me",
-  [REPLY_CODES.yes]: "Yes, introduce",
-  [REPLY_CODES.no]: "No thanks",
-};
 
 export type ItemLinks = ReadonlyMap<number, ReadonlyMap<string, string>>;
 
@@ -32,145 +27,134 @@ export type WeeklyEmailFacts = {
   isTest: boolean;
 };
 
-type Line = { text: string; html: string };
+// Founderhall's two closing lines.
+export const DIGEST_CONSENT = "Nobody is introduced without saying yes.";
+export const DIGEST_TEST_LINE = "(A test digest: it went only to you. Its links and reply codes work, because they are your own items.)";
 
-const TEXT_STYLE = "font-family:Arial,sans-serif;font-size:16px;line-height:24px;color:#0c2427";
-const MUTED_STYLE = "font-size:14px;line-height:20px;color:#566463";
+const MAX_QUOTE = 90;
 
 function firstName(name: string) {
   return toSingleLine(name).split(/\s+/)[0] || "there";
 }
 
-function quote(text: string) {
-  return `“${toSingleLine(text)}”`;
+function clip(text: string, length: number) {
+  const line = toSingleLine(text);
+  return line.length > length ? `${line.slice(0, length - 1).trimEnd()}…` : line;
 }
 
-function plural(count: number, one: string, many: string) {
+function plural(count: number, one: string, many = `${one}s`) {
   return `${count} ${count === 1 ? one : many}`;
-}
-
-function actionLinks(number: number, links: ItemLinks, accentColor: string): Line {
-  const actions = [...(links.get(number) ?? new Map<string, string>())];
-  return {
-    text: actions.map(([action, url]) => `${ACTION_LABELS[action] ?? action}: ${url}`).join("\n   "),
-    html: actions
-      .map(
-        ([action, url], index) =>
-          `<a href="${escapeHtml(url)}" style="display:inline-block;margin:8px 8px 0 0;padding:8px 16px;border-radius:999px;font-size:14px;font-weight:700;text-decoration:none;${
-            index === 0 ? `background:${accentColor};color:${pickOnAccent(accentColor)}` : "border:1px solid #c9d2d1;color:#0c2427"
-          }">${escapeHtml(ACTION_LABELS[action] ?? action)}</a>`,
-      )
-      .join(""),
-  };
-}
-
-function section(title: string, lines: Line[]): Line {
-  return {
-    text: [title, ...lines.map(({ text }) => text)].join("\n"),
-    html: `<h2 style="font-size:18px;line-height:24px;margin:24px 0 8px">${escapeHtml(title)}</h2>${lines.map(({ html }) => html).join("")}`,
-  };
-}
-
-function numberedLine(number: number, sentence: string, note: string | null, facts: WeeklyEmailFacts): Line {
-  const links = actionLinks(number, facts.links, facts.accentColor);
-  return {
-    text: `${number}. ${sentence}${note ? `\n   ${note}` : ""}\n   ${links.text}`,
-    html: `<div style="margin:0 0 16px"><p style="margin:0"><strong>${number}.</strong> ${escapeHtml(sentence)}</p>${
-      note ? `<p style="margin:4px 0 0;${MUTED_STYLE}">${escapeHtml(note)}</p>` : ""
-    }<div>${links.html}</div></div>`,
-  };
-}
-
-function plainLine(sentence: string, url: string | null): Line {
-  return {
-    text: `- ${sentence}${url ? ` ${url}` : ""}`,
-    html: `<p style="margin:0 0 8px">${url ? `<a href="${escapeHtml(url)}" style="color:#0c2427">${escapeHtml(sentence)}</a>` : escapeHtml(sentence)}</p>`,
-  };
-}
-
-function lowerFirst(text: string) {
-  return text.charAt(0).toLowerCase() + text.slice(1);
 }
 
 function numberFor(numbered: readonly WeeklyEmailItem[], ref: string) {
   return numbered.find((item) => item.ref === ref)?.number ?? null;
 }
 
-function buildSections(facts: WeeklyEmailFacts) {
-  const { items, numbered, appUrl } = facts;
-  const sections: Line[] = [];
+function linkFor(links: ItemLinks, number: number, action: string, fallback: string) {
+  return links.get(number)?.get(action) ?? fallback;
+}
 
-  const askLines = items.helpableAsks.flatMap((ask) => {
+function readSubject(facts: WeeklyEmailFacts, helpCount: number, introCount: number) {
+  const name = firstName(facts.memberName);
+  const subject = helpCount
+    ? `${name}, you could help with ${helpCount === 1 ? "this one" : `these ${helpCount}`}`
+    : introCount
+      ? `${name}, ${introCount === 1 ? "one intro is" : `${introCount} intros are`} waiting for your yes`
+      : `${name}, that’s everything this week`;
+  return facts.isTest ? `[Test] ${subject}` : subject;
+}
+
+export function renderWeeklyEmailText(facts: WeeklyEmailFacts) {
+  const { items, numbered, links, appUrl, canReply } = facts;
+  const community = toSingleLine(facts.communityName);
+  const asks = items.helpableAsks.flatMap((ask) => {
     const number = numberFor(numbered, ask.id);
-    if (number === null) return [];
-    const why = `Why you: ${lowerFirst(describeWhyYou(ask)).replace(/[.!?]+$/u, "")}.`;
-    return [numberedLine(number, `${quote(ask.title)} from ${toSingleLine(ask.author.name)}.`, why, facts)];
+    return number === null ? [] : [{ ask, number }];
   });
-  if (askLines.length > 0) sections.push(section("Asks you could help with", askLines));
-
-  const introLines = items.introsToAnswer.flatMap((intro) => {
+  const intros = items.introsToAnswer.flatMap((intro) => {
     const number = numberFor(numbered, intro.id);
-    if (number === null) return [];
-    const sentence = `${toSingleLine(intro.requester.name)} asks you to introduce them to ${toSingleLine(intro.target.name)}.`;
-    return [numberedLine(number, sentence, intro.note ? quote(intro.note) : null, facts)];
+    return number === null ? [] : [{ intro, number }];
   });
-  if (introLines.length > 0) sections.push(section("Intros waiting for your yes", introLines));
+  const summary = [
+    asks.length ? plural(asks.length, "ask") + " you could help with" : null,
+    intros.length ? plural(intros.length, "intro") + " waiting for your yes" : null,
+  ].filter((part) => part !== null);
 
-  if (items.introsToFinish.length > 0) {
-    sections.push(
-      section(
-        "Ready for you to introduce",
-        items.introsToFinish.map((intro) =>
-          plainLine(`${toSingleLine(intro.target.name)} said yes to meeting ${toSingleLine(intro.requester.name)}. Send the intro.`, `${appUrl}/intros`),
-        ),
-      ),
-    );
+  const lines: string[] = [`Hi ${firstName(facts.memberName)},`, ""];
+  if (facts.isTest) lines.push(DIGEST_TEST_LINE, "");
+  lines.push(summary.length ? `Your week at ${community}: ${summary.join(", ")}.` : `Nothing needs you at ${community} this week.`);
+  if (summary.length) {
+    lines.push(canReply ? "Answer any item from your inbox: reply with its code on the first line (for example HELP 1), or use its link." : "Answer any item by its link.");
   }
 
-  if (items.ownAsks.length > 0) {
-    sections.push(
-      section(
-        "Your asks",
-        items.ownAsks.map((ask) =>
-          plainLine(`${quote(ask.title)}: ${ask.offers.length === 0 ? "no offers yet" : plural(ask.offers.length, "offer", "offers")}.`, `${appUrl}/asks`),
-        ),
-      ),
-    );
+  if (asks.length) {
+    lines.push("", `YOU COULD HELP WITH ${asks.length === 1 ? "THIS ONE" : `THESE ${asks.length}`}`);
+    for (const { ask, number } of asks) {
+      lines.push("", `${number}. ${toSingleLine(ask.author.name)} asks: ${toSingleLine(ask.title)}`);
+      const why = describeWhyYou(ask).replace(/[.!?]+$/u, "");
+      if (why) lines.push(`   Why you: ${why}.`);
+      lines.push(`   I can help: ${linkFor(links, number, REPLY_CODES.help, appUrl)}`, `   Not this week: ${linkFor(links, number, REPLY_CODES.skip, appUrl)}`);
+      if (canReply) lines.push(`   Or reply HELP ${number} with a line for ${firstName(ask.author.name)} · SKIP ${number}`);
+    }
+  }
+
+  if (intros.length) {
+    lines.push("", `INTRO${intros.length === 1 ? "" : "S"} WAITING FOR YOUR YES`);
+    for (const { intro, number } of intros) {
+      const isConnector = intro.viewerRole === "introducer";
+      const line = isConnector
+        ? `${toSingleLine(intro.requester.name)} asks you to introduce them to ${toSingleLine(intro.target.name)}.`
+        : `${toSingleLine(intro.introducer.name)} would like to introduce you to ${toSingleLine(intro.requester.name)}.`;
+      lines.push("", `${number}. ${line}`);
+      lines.push(`   Yes: ${linkFor(links, number, REPLY_CODES.yes, appUrl)}`, `   ${isConnector ? "Not this time" : "No thanks"}: ${linkFor(links, number, REPLY_CODES.no, appUrl)}`);
+      if (canReply) lines.push(`   Or reply YES ${number} · NO ${number}`);
+    }
+  }
+
+  // Community's own: intros both said yes to, waiting for the connector to make them.
+  if (items.introsToFinish.length) {
+    lines.push("", "READY FOR YOU TO INTRODUCE");
+    for (const intro of items.introsToFinish) {
+      lines.push(`- ${toSingleLine(intro.target.name)} said yes to meeting ${toSingleLine(intro.requester.name)}. Send the intro: ${appUrl}/intros/${intro.id}`);
+    }
+  }
+
+  if (items.ownAsks.length) {
+    lines.push("", "YOUR ASKS IN MOTION");
+    for (const ask of items.ownAsks) {
+      const helpers = ask.helpers.length ? `${plural(ask.helpers.length, "member")} can help` : "no paths found yet";
+      lines.push(`- “${clip(ask.title, MAX_QUOTE)}”: ${helpers}, ${plural(ask.answers.length, "answer")}. ${appUrl}/asks/${ask.id}`);
+    }
   }
 
   if (items.newMemberCount > 0) {
-    sections.push(
-      section("New this week", [plainLine(`${plural(items.newMemberCount, "new member", "new members")} joined. Say hi.`, `${appUrl}/members`)]),
-    );
+    lines.push("", "NEW THIS WEEK", `- ${plural(items.newMemberCount, "new member")} joined. Say hi: ${appUrl}/members`);
   }
-  return sections;
+
+  lines.push("", `That’s everything this week. Open the portal: ${appUrl}`, "", DIGEST_CONSENT, "", `Sent by ${community} via its member portal.`);
+  return { subject: readSubject(facts, asks.length, intros.length), text: lines.join("\n") };
 }
 
-function replyHelp(facts: WeeklyEmailFacts): Line | null {
-  if (!facts.canReply || facts.numbered.length === 0) return null;
-  const first = facts.numbered[0];
-  const example = first ? `${ITEM_ACTIONS[first.kind === "intro" ? "intro" : "ask"][0].toUpperCase()} ${first.number}` : "HELP 1";
-  const sentence = `Or just reply: put a code on the first line, like ${example}, one per line. HELP, SKIP, YES and NO work. Words under HELP go to the asker.`;
-  return { text: sentence, html: `<p style="margin:24px 0 0;${MUTED_STYLE}">${escapeHtml(sentence)}</p>` };
+// "   I can help: https://…" → its label and link; "… Open the portal: https://…" → the words before and the link.
+const LABELLED_LINK = /^(\s*)(.*?):\s+(https?:\/\/\S+)\s*$/u;
+
+function renderHtmlLine(line: string, accentColor: string) {
+  const labelled = line.match(LABELLED_LINK);
+  if (!labelled) return `<div style="white-space:pre-wrap;min-height:21px">${line ? escapeHtml(line) : "&nbsp;"}</div>`;
+  const [, indent = "", label = "", url = ""] = labelled;
+  const cut = label.lastIndexOf(". ");
+  const before = cut >= 0 ? `${label.slice(0, cut + 1)} ` : "";
+  const button = cut >= 0 ? label.slice(cut + 2) : label;
+  const style = `display:inline-block;margin:3px 0;padding:4px 12px;border:1px solid ${accentColor};border-radius:6px;color:${accentColor};font-weight:600;font-size:13px;text-decoration:none`;
+  return `<div style="white-space:pre-wrap;min-height:21px">${escapeHtml(indent)}${escapeHtml(before)}<a href="${escapeHtml(url)}" style="${style}">${escapeHtml(button)}</a></div>`;
 }
 
 export function renderWeeklyEmail(facts: WeeklyEmailFacts) {
-  const community = toSingleLine(facts.communityName);
-  const count = facts.numbered.length;
-  const subject = `${facts.isTest ? "[Test] " : ""}This week in ${community}${count > 0 ? `: ${plural(count, "thing", "things")} for you` : ""}`;
-  const greeting = `Hi ${firstName(facts.memberName)}, here's what needs you this week.`;
-  const built = buildSections(facts);
-  const sections = built.length > 0 ? built : [plainLine("Nothing needs you this week.", null)];
-  const help = replyHelp(facts);
-  const closing = `That's everything this week. Open ${community}: ${facts.appUrl}`;
-
-  const text = [greeting, ...sections.map(({ text: sectionText }) => sectionText), help?.text, closing].filter(Boolean).join("\n\n");
+  const { subject, text } = renderWeeklyEmailText(facts);
+  const accent = facts.accentColor;
   const html = [
-    `<div style="${TEXT_STYLE};max-width:520px;margin:0 auto;padding:24px">`,
-    `<p style="margin:0 0 8px">${escapeHtml(greeting)}</p>`,
-    ...sections.map(({ html: sectionHtml }) => sectionHtml),
-    help?.html ?? "",
-    `<p style="margin:24px 0 0">That's everything this week. <a href="${escapeHtml(facts.appUrl)}" style="color:#0c2427">Open ${escapeHtml(community)}</a></p>`,
+    `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:21px;color:#1B2420;max-width:560px;margin:0 auto;padding:24px">`,
+    ...text.split("\n").map((line) => renderHtmlLine(line, accent)),
     `</div>`,
   ].join("");
   return { subject, html, text };
