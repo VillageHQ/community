@@ -18,7 +18,7 @@ export function KvTiles({ tiles, className }: { tiles: readonly { label: ReactNo
   );
 }
 
-export const LEDGER_TONES = { ink: "", yes: "yes", made: "made", declined: "declined", open: "open" } as const;
+export const LEDGER_TONES = { ink: "", yes: "yes", made: "made", declined: "declined", open: "open", helpful: "helpful" } as const;
 
 export type LedgerTone = keyof typeof LEDGER_TONES;
 
@@ -44,12 +44,12 @@ function Bookmark() {
 }
 
 // The ledger (crop ledger-bars.png): label | an 8–10 px bar | a big figure (+ a small %). Bar colours: Ink, the fund
-// (said yes), Spine (made), Graphite (declined); open is hollow.
+// (said yes), Spine (made), Graphite (declined); open is hollow; helpful = a Spine bar and a Spine figure.
 export function Ledger({ rows, foot }: { rows: readonly LedgerRow[]; foot?: ReactNode }) {
   return (
     <div data-slot="ledger" className="fh-ledger">
       {rows.map((row, index) => (
-        <div key={index} className={cn("fh-lrow", row.tone && row.tone !== "ink" && `fh-${LEDGER_TONES[row.tone]}`)}>
+        <div key={index} className={cn("fh-lrow", row.tone && row.tone !== "ink" && `fh-${LEDGER_TONES[row.tone]}`, row.tone === "helpful" && "fh-made")}>
           <div className="fh-l">
             {row.hasBookmark ? <Bookmark /> : null}
             <b className="font-normal">{row.label}</b>

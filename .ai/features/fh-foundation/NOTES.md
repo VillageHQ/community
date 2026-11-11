@@ -10,7 +10,7 @@ The base every transplant area builds on: Founderhall's look, its shared parts a
   One breakpoint: `lg` = 1000 px.
 - **Type** — `type-h1` (serif 28/34 → 34/42), `type-h2` (serif 22/28), `type-h3` (sans 600 16/22), `type-name`,
   `type-small`, `type-label`, `type-hint`, `type-micro`, `type-tab`; body 15/22 IBM Plex Sans. Fonts self-hosted in
-  `src/app/_fonts/` (IBM Plex) and from `@fontsource-variable/source-serif-4`; wired in `src/app/fonts.ts`.
+  `src/app/_fonts/` (IBM Plex, and Founderhall's Source Serif 4 files, which keep the optical-size axis); wired in `src/app/fonts.ts`.
 - **Founderhall's part styles** — `src/app/parts.css`, generated from Founderhall's `public/app.css` by
   `.ai/features/fh-foundation/port-css.mjs`. Every class carries the `fh-` prefix (`fh-sheet`, `fh-r`, `fh-titem`…);
   bare element rules and font faces are dropped. It sits in the `components` layer, so Tailwind utilities win. Do not
@@ -70,3 +70,6 @@ log, need cards) have their Founderhall classes in `parts.css` and a worked exam
 `/parts`, a test page that answers 404 unless `SHOW_PARTS_PAGE=true`. It reads Founderhall's crops from
 `.ai/features/fh-foundation/crops/` and shows each beside Community's part. Four of Founderhall's crops caught a
 neighbouring element (helpers strip, KV tiles, status checklist, moderation row, table); the page says so and shows both.
+- Phones: the menu items with no phone tab (Jobs, Perks; in the console the Partner report, Invites, Job board) are
+  listed as small links in the phone foot, so nothing becomes unreachable. Founderhall reaches them from its pages;
+  the area that adds those links removes them here (`PhoneMoreLinks` in `src/shell/shell-chrome.tsx`).

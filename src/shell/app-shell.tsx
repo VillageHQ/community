@@ -48,7 +48,7 @@ export function AppShell({ community, member, navigation, badges, isNetworkOn, c
             <div data-slot="page-width" className="w-full">
               {children}
             </div>
-            <PhoneFoot isAdmin={member.isAdmin} />
+            <PhoneFoot isAdmin={member.isAdmin} navigation={navigation} />
           </main>
         </div>
         {isNetworkOn ? <SearchReadyNotice /> : null}

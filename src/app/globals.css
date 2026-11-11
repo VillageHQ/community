@@ -519,3 +519,17 @@
   background: #9c4e22;
   color: #ffffff;
 }
+
+/* Founderhall leaves the browser's own margin on radios and checkboxes; Tailwind's reset removes it. */
+.fh-opt input {
+  margin: 3px 3px 0 5px;
+}
+
+/* Founderhall's see-through bars are Paper; in dark mode they take the dark page so their words stay readable. */
+.dark :is(.fh-topbar, .fh-report-actions) {
+  background: rgb(21 20 15 / 0.94);
+}
+
+.dark .fh-mail-h {
+  background: var(--vellum);
+}

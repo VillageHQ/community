@@ -81,6 +81,10 @@ const GALLERY_STYLES = `
 .parts-frame .fh-phone-foot{display:block!important;margin-top:0}
 .parts-frame .fh-me-actions{display:block;padding:6px 6px 0}
 .parts-side .fh-side{display:flex!important;position:static;height:800px;flex-direction:column;padding:20px 16px 16px;background:var(--side);border-right:1px solid var(--rule)}
+.parts-me .fh-side{display:flex!important;flex-direction:column;position:static;height:auto;padding:0;border:0;background:none}
+.parts-me .fh-me{margin-top:0;padding:12px 6px 6px}
+.parts-me .fh-me-actions{display:none!important}
+.parts-me{background:var(--side);padding:0 8px 0 8px}
 .parts-row{display:grid;gap:16px;padding:28px 0;border-top:1px solid var(--rule)}
 .parts-pane > p{margin-bottom:8px;font:600 12px/16px var(--sans);color:var(--graphite)}
 .parts-crop{display:block;max-width:100%;height:auto}
@@ -184,10 +188,10 @@ export function PartsGallery({ crops, navigation }: { crops: Record<string, Crop
       {part(
         "sidebar-me-signout",
         "The member and Sign out",
-        <div className="parts-side">
-          <div className="[&_.fh-me]:flex [&_.fh-me]:items-center [&_.fh-me]:gap-2.5 [&_.fh-me]:border-t [&_.fh-me]:border-rule [&_.fh-me]:px-1.5 [&_.fh-me]:pt-3 [&_.fh-me_b]:block [&_.fh-me_b]:text-[14px] [&_.fh-me_b]:leading-[18px] [&_.fh-me_b]:font-semibold [&_.fh-me_span_span]:block [&_.fh-me_span_span]:text-[12px] [&_.fh-me_span_span]:text-graphite">
+        <div className="parts-me">
+          <aside className="fh-side">
             <SidebarMember member={SAM} />
-          </div>
+          </aside>
         </div>,
         { width: 247 },
       )}
@@ -234,11 +238,11 @@ export function PartsGallery({ crops, navigation }: { crops: Record<string, Crop
           description="Plus one intro waiting for your yes. Each item also works by replying to Thursday’s email."
           action={
             <>
-              <Button variant="ink">
+              <Button variant="ink" size="sm">
                 <ArrowLeftRight {...ICON} />
                 Ask for an intro
               </Button>
-              <Button variant="secondary">
+              <Button variant="secondary" size="sm">
                 <Plus {...ICON} />
                 Post an ask
               </Button>
@@ -251,11 +255,11 @@ export function PartsGallery({ crops, navigation }: { crops: Record<string, Crop
         "buttons-ink-secondary",
         "Ink and secondary buttons",
         <ButtonRow>
-          <Button variant="ink">
+          <Button variant="ink" size="sm">
             <ArrowLeftRight {...ICON} />
             Ask for an intro
           </Button>
-          <Button variant="secondary">
+          <Button variant="secondary" size="sm">
             <Plus {...ICON} />
             Post an ask
           </Button>
@@ -481,7 +485,7 @@ export function PartsGallery({ crops, navigation }: { crops: Record<string, Crop
             <OptionCard name="parts-basis" id="parts-basis-terms" title="Members agreed in our membership terms on" description={<Input type="date" aria-label="Date" className="mt-2 w-60" />} />
             <OptionCard name="parts-basis" id="parts-basis-ask" defaultChecked isRecommended title="Ask each member at sign-in" description="Nothing is filled in until they tick “Fill in my profile from public profiles”." />
           </fieldset>
-          <Button className="mt-3.5">
+          <Button size="sm" className="mt-3.5">
             <Send {...ICON} />
             Send invites
           </Button>
@@ -784,11 +788,13 @@ export function PartsGallery({ crops, navigation }: { crops: Record<string, Crop
             <CircleCheck {...ICON} /> <b>You already know Marcus</b> · You were introduced
           </p>
           <ButtonRow className="mt-3">
-            <Button>
+            <Button size="sm">
               <MessageSquare {...ICON} />
               Message
             </Button>
-            <Button variant="quiet">Profile</Button>
+            <Button size="sm" variant="quiet">
+              Profile
+            </Button>
           </ButtonRow>
         </div>,
         { width: 952 },
@@ -984,7 +990,7 @@ export function PartsGallery({ crops, navigation }: { crops: Record<string, Crop
             { label: <b>Introduced</b>, value: "3", percent: 60, tone: "made", hasBookmark: true },
             { label: "Declined", note: "0 by connector, 0 by target", value: "0", percent: 0, tone: "declined" },
             { label: "Still open", note: "1 with connector, 1 with target", value: "2", percent: 40, tone: "open" },
-            { label: "Found it helpful", note: "1 of 1 who answered", value: "100%", percent: 100, tone: "made" },
+            { label: "Found it helpful", note: "1 of 1 who answered", value: "100%", percent: 100, tone: "helpful" },
           ]}
         />
         </div>,
@@ -1083,15 +1089,15 @@ export function PartsGallery({ crops, navigation }: { crops: Record<string, Crop
         "Report actions",
         <div className="fh-report-actions">
           <SegmentedControlStatic label="Period" segments={["Q4 to date", "Q3", "Since launch"]} current="Q4 to date" />
-          <Button>
+          <Button size="sm">
             <Send {...ICON} />
             Send to partners
           </Button>
-          <Button variant="secondary">
+          <Button variant="secondary" size="sm">
             <Download {...ICON} />
             CSV
           </Button>
-          <Button variant="secondary">
+          <Button variant="secondary" size="sm">
             <Printer {...ICON} />
             PDF
           </Button>
@@ -1107,17 +1113,24 @@ export function PartsGallery({ crops, navigation }: { crops: Record<string, Crop
       {part(
         "table",
         "Report head and figure tiles",
-        <div className="fh-report border-t-0 shadow-none">
-          <p className="fh-by mt-0">Prepared by Maya Ortiz · 11 Nov · from the intro log</p>
-          <div className="fh-kv">
-            <div>
-              <b>6</b>
-              <span>intros asked for</span>
+        <div className="h-[238px] max-w-[349px] overflow-hidden">
+          <div className="w-[750px]">
+            <h1 className="fh-h1 mt-0 text-[32px] leading-[40px]">date: 6 asked, 3 made, 0 declined</h1>
+            <p className="fh-small fh-muted mt-1.5">Prepared by Maya Ortiz · 11 Nov · from the intro log</p>
+            <div className="fh-kv">
+              {[
+                ["6", "intros asked for"],
+                ["3", "introduced, both said yes"],
+                ["1", "found it helpful, 1 of 1"],
+                ["2 days", "median from ask to intro"],
+              ].map(([value, label]) => (
+                <div key={label}>
+                  <b>{value}</b>
+                  <span>{label}</span>
+                </div>
+              ))}
             </div>
-            <div>
-              <b>3</b>
-              <span>introduced, both said yes</span>
-            </div>
+            <ReportOutcomes />
           </div>
         </div>,
         { width: 365, note: "Founderhall's crop of the table caught the report's head; the table itself is in the report document." },

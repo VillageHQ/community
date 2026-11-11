@@ -5,8 +5,10 @@ import { ProductCredit, SourceLine } from "@/components/source-code-link";
 import type { CommunityLogo } from "@/platform/branding/branding";
 import { ROUTES } from "@/platform/http/routes";
 
+import Link from "next/link";
+
 import { useFundMarkSub, useShellMode } from "./navigation-links";
-import { SHELL_MODES } from "./navigation-rules";
+import { MEMBER_KEYS, SHELL_MODES, type ShellNavigation } from "./navigation-rules";
 import { SignOutButton } from "./user-menu";
 
 type ShellFundMarkProps = { name: string; logo: CommunityLogo | null; isAdmin: boolean; size: "default" | "sidebar"; pathname?: string };
@@ -23,10 +25,34 @@ export function ShellFooterLine({ isAdmin, pathname }: { isAdmin: boolean; pathn
   return useShellMode(isAdmin, pathname) === SHELL_MODES.console ? <ProductCredit /> : <SourceLine />;
 }
 
+// The menu items with no phone tab (Jobs and Perks; the Partner report, Invites and the Job board in the console).
+// Founderhall reaches them from its pages; until the areas add those links, the phone foot lists them.
+function PhoneMoreLinks({ navigation, isAdmin, pathname }: { navigation: ShellNavigation; isAdmin: boolean; pathname?: string }) {
+  const mode = useShellMode(isAdmin, pathname);
+  const items = (mode === SHELL_MODES.console ? navigation.console : navigation.member).filter((item) => !item.tabLabel && item.key !== MEMBER_KEYS.me);
+  if (items.length === 0) return null;
+  return (
+    <nav aria-label="More" className="mb-2 flex flex-wrap gap-x-4 gap-y-1">
+      {items.map((item) =>
+        item.isFullPageLoad ? (
+          <a key={item.key} href={item.href} className="fh-linkbtn">
+            {item.label}
+          </a>
+        ) : (
+          <Link key={item.key} href={item.href} className="fh-linkbtn">
+            {item.label}
+          </Link>
+        ),
+      )}
+    </nav>
+  );
+}
+
 // The foot of every page on a phone (crop footer-phone.png): Sign out, then the footer line.
-export function PhoneFoot({ isAdmin, pathname }: { isAdmin: boolean; pathname?: string }) {
+export function PhoneFoot({ isAdmin, pathname, navigation }: { isAdmin: boolean; pathname?: string; navigation?: ShellNavigation }) {
   return (
     <div data-slot="phone-foot" className="fh-phone-foot">
+      {navigation ? <PhoneMoreLinks navigation={navigation} isAdmin={isAdmin} pathname={pathname} /> : null}
       <SignOutButton />
       <ShellFooterLine isAdmin={isAdmin} pathname={pathname} />
     </div>

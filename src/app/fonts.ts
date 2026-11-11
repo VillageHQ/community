@@ -21,11 +21,12 @@ export const plexMono = localFont({
   variable: "--font-plex-mono",
 });
 
-// Titles and people's names: Source Serif 4.
+// Titles and people's names: Source Serif 4, Founderhall's own files (they carry the optical-size axis, so a
+// 34 px title is set in the display cut).
 export const sourceSerif = localFont({
   src: [
-    { path: "../../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2", weight: "200 900", style: "normal" },
-    { path: "../../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-italic.woff2", weight: "200 900", style: "italic" },
+    { path: "./_fonts/SourceSerif4-Roman.woff2", weight: "200 900", style: "normal" },
+    { path: "./_fonts/SourceSerif4-Italic.woff2", weight: "200 900", style: "italic" },
   ],
   display: "swap",
   variable: "--font-source-serif",

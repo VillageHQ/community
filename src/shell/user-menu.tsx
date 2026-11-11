@@ -58,10 +58,10 @@ export function DarkModeRow() {
     <div className="fh-setrow">
       <label htmlFor={id} className="flex min-w-0 items-start gap-2.5">
         <Moon aria-hidden="true" className="fh-i fh-s mt-px text-graphite" strokeWidth={1.5} />
-        <span>
+        <div>
           <b>Dark mode</b>
           <span>Light text on a dark page, on this device.</span>
-        </span>
+        </div>
       </label>
       <Switch id={id} checked={isDark} onCheckedChange={applyTheme} />
     </div>
