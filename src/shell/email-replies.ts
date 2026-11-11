@@ -136,6 +136,8 @@ function readClientKey(emailId: string | null) {
 export function readFirstLineAnswer(text: string) {
   const first = (text.split("\n").find((line) => line.trim()) ?? "")
     .replace(EMAIL_IN_TEXT, "")
+    // Mail apps write a linked address as <…> or <mailto:…>; what's left of the brackets isn't part of the answer.
+    .replace(/<\s*(mailto:)?\s*>/gi, "")
     .trim()
     .toLowerCase()
     .replace(/[\s.!,:;-]+$/, "")
@@ -298,11 +300,14 @@ export async function answerEmailReply(database: Database, environment: Environm
   const sender = readEmailAddress(received.from);
   const isAutomatic = !sender || AUTOMATIC_SENDER.test(sender) || sender.endsWith(`@${signer.domain}`) || isAutomaticReply(received);
   if (isAutomatic) return refused(first.kind, REPLY_REFUSALS.automatic);
-  // The first address of ours whose signature checks out. A made-up one beside it changes nothing.
+  // Among our addresses whose signature checks out, the one made for the sender wins; else the first. A made-up one
+  // beside them changes nothing.
   let found: { target: ReplyTarget; recipient: Recipient } | null = null;
   for (const candidate of targets) {
     const resolved = await resolveRecipient(database, candidate);
-    if (resolved.status === "ok") {
+    if (resolved.status !== "ok") continue;
+    found ??= { target: candidate, recipient: resolved.recipient };
+    if (resolved.recipient.email.trim().toLowerCase() === sender) {
       found = { target: candidate, recipient: resolved.recipient };
       break;
     }

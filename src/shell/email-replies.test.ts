@@ -208,6 +208,16 @@ describe("answering by replying to the email", () => {
       expect(await database.select().from(directMessage).where(eq(directMessage.conversationId, conversationId))).toHaveLength(2);
     });
 
+    it("uses the address made for the sender when the other member's is listed first", async () => {
+      const { alex, alexEmail, hana, hanaEmail, conversationId, replyTo } = await seedMessageEmail();
+      await sendMessage(context(hana, hanaEmail), { conversationId, clientKey: crypto.randomUUID(), body: "Hi Alex" }, mayMessage);
+      const [toAlex] = await readQueued(EMAIL_KINDS.directMessage, alexEmail);
+
+      expect(await reply(hanaEmail, [toAlex?.replyTo ?? "", replyTo], "Thursday works.")).toMatchObject({ outcome: "posted" });
+      expect(await database.select().from(directMessage).where(eq(directMessage.senderId, alex))).toHaveLength(1);
+      expect(await database.select().from(directMessage).where(eq(directMessage.senderId, hana))).toHaveLength(2);
+    });
+
     it("refuses a forged address and mails nobody", async () => {
       const { hanaEmail, conversationId, replyTo } = await seedMessageEmail();
 
@@ -246,7 +256,8 @@ describe("answering by replying to the email", () => {
       const { hanaEmail, intro, replyTo, text } = await seedAskedEmail();
       expect(text).toContain("YES or NO on the first line");
 
-      const answer = await reply(hanaEmail, replyTo, `Yes ${OUTSIDER_EMAIL}${QUOTED}`);
+      // Mail apps write a linked address in brackets.
+      const answer = await reply(hanaEmail, replyTo, `Yes, <mailto:${OUTSIDER_EMAIL}>${QUOTED}`);
 
       expect(answer).toMatchObject({ routed: true, kind: "i", outcome: "posted" });
       expect(await readState(intro.id)).toBe(INTRO_STATES.askingTarget);

@@ -1,15 +1,19 @@
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > posts the reply into the conversation, without the quoted email or the signature 188ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > posts once when Resend sends the same reply twice 122ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > refuses a reply from another address, posts nothing of it, and sends that address one plain bounce 87ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > refuses a forged address and mails nobody 69ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > bounces a reply that is empty once the quoted email is gone, or too long 115ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > the connector's intro email > takes YES with the person's address: the intro moves on, and the person asked gets the note 110ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > the connector's intro email > takes NO, and asks again when the first line is neither 95ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > the connector's intro email > refuses the asker answering their own ask from the connector's email 66ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > the intro thread after the joint introduction > sends each their own copy, and passes replies both ways while the asker reads them in the app 83ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > the intro thread after the joint introduction > refuses the outside person's address used by someone else, and the connector never sees the thread 60ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > a helper email > posts the reply as the helper's answer under the ask 80ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > with no reply domain > sends no reply address, says to reply in the app, and routes no reply 66ms
- ✓ src/shell/email-replies.test.ts > answering by replying to the email > with no reply domain > keeps the one joint introduction to both, answered by reply all 50ms
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > posts the reply into the conversation, without the quoted email or the signature
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > posts once when Resend sends the same reply twice
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > refuses a reply from another address, posts nothing of it, and sends that address one plain bounce
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > ignores an out-of-office reply, and decodes an HTML-only reply
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > uses the real address when a made-up one is listed before it
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > uses the address made for the sender when the other member's is listed first
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > refuses a forged address and mails nobody
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > a new-message email > bounces a reply that is empty once the quoted email is gone, or too long
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > the connector's intro email > takes YES with the person's address: the intro moves on, and the person asked gets the note
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > the connector's intro email > takes NO, and asks again when the first line is neither
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > the connector's intro email > never sends the note to an address in the signature
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > the connector's intro email > refuses the asker answering their own ask from the connector's email
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > the intro thread after the joint introduction > sends each their own copy, and passes replies both ways while the asker reads them in the app
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > the intro thread after the joint introduction > refuses the outside person's address used by someone else, and the connector never sees the thread
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > a helper email > posts the reply as the helper's answer under the ask
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > with no reply domain > sends no reply address, says to reply in the app, and routes no reply
+ ✓ src/shell/email-replies.test.ts > answering by replying to the email > with no reply domain > keeps the one joint introduction to both, answered by reply all
  Test Files  1 passed (1)
-      Tests  13 passed (13)
+      Tests  17 passed (17)
