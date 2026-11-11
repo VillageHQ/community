@@ -44,3 +44,8 @@ renders an intros button and a network panel, each only when its module is on.
 ## Proof and estimate
 Proof: screenshots of the profile with the button and the dialog (390 and 1280 px), the panel with Village on, and the
 real HTTP run of the whole named-ask flow. Build about 3 hours, tests about 1 hour.
+
+## Amendment (2026-11-11, after "search before connecting" merged)
+Fact 3 now reads: the asker of any ask only needs to be an active member. The connector of a path ask must also have
+joined the Village group, and leaving it closes the ask; a named ask needs no network for either member. Blocks, bans,
+withheld asks and "chosen introducers only" are unchanged.
