@@ -29,6 +29,8 @@ export const INSTANCE_SETTING_KEYS = {
   villageIntroducers: "village_introducers",
   villageChosenIntroducerIds: "village_chosen_introducer_ids",
   villageServiceEmail: "village_service_email",
+  // The group the app's own search identity joined, so members who haven't connected can search the shared networks.
+  villageSearchGroupId: "village_search_group_id",
   // Where this install keeps its data, and whom members ask about it. Only what the admin typed; empty means unset.
   dataLocation: "data_location",
   dataContactName: "data_contact_name",

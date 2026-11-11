@@ -147,6 +147,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Profile fill-in (enrichment) — `src/modules/network/service-fill-in.ts`, nightly, consent-gated (PR #16)
 - **done** · Connect my network — `/api/network/sync-token` (Community)
 - **done** · Pooling consent through a Village Group — `/api/network/consent` (Community)
+- **building** · Search before connecting — any member searches the shared networks at once; connecting is an invitation: [search-first](features/search-first/SPEC.md)
 - **open** · Disconnect — leaves the group, no Village user cancel: [search-without-village](features/search-without-village/SPEC.md)
 - **open** · Warm-path search — paths, "You already know" (Community, PR #19); no 10-minute search cache: [search-without-village](features/search-without-village/SPEC.md)
 - **open** · No key / no path fallbacks — "Ask the community" (PR #16); no member-profile search: [search-without-village](features/search-without-village/SPEC.md)

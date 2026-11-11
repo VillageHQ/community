@@ -87,8 +87,8 @@ export function ConsentStep({ welcome }: { welcome: WelcomeContext }) {
               You get
             </h3>
             <p className="mt-1.5 type-note text-foreground-soft">
-              You gain access to the networks of the other members in return. Search them and see who can introduce
-              you, and why.
+              Your searches cover the people you know too, not just the networks other members share. See who can
+              introduce you, and why.
             </p>
           </div>
         </div>
@@ -113,8 +113,8 @@ export function ConsentStep({ welcome }: { welcome: WelcomeContext }) {
             <NotNowAction welcome={welcome} />
           </div>
           <p className="type-small text-muted-foreground">
-            Not now shares nothing. Network search waits until you share, and you can come back here from Network any
-            time.
+            Not now shares nothing. You can still search what other members share, and come back here from Network
+            any time.
           </p>
         </form>
       </section>

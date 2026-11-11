@@ -24,6 +24,12 @@ export function readLiveConsentHash(token: string) {
   return isInviteTokenShape(token) ? hashInviteToken(token) : null;
 }
 
+// Whoever asks only needs to be an active member: since search-first, a member can ask before sharing their own
+// network. The connector must have joined the group, so they shared theirs.
+export function selectActiveMemberIds(connection: DatabaseOrTransaction, now: Date) {
+  return connection.select({ userId: user.id }).from(user).where(isActiveMember(now));
+}
+
 export function selectActiveJoinedMemberIds(connection: DatabaseOrTransaction, now: Date) {
   return connection
     .select({ userId: memberNetwork.userId })
@@ -50,12 +56,12 @@ function hasConsentLink(connection: DatabaseOrTransaction, tokenHash: string) {
   return inArray(introRequest.id, linkedIntros);
 }
 
-// Open, not withheld, not past its deadline, between two active joined members with no block either way.
+// Open, not withheld, not past its deadline, from an active member to an active joined connector, with no block either way.
 export function isLiveBetweenMembers(connection: DatabaseOrTransaction, now: Date) {
   return and(
     eq(introRequest.isWithheld, false),
     gt(introRequest.expiresAt, now),
-    inArray(introRequest.requesterId, selectActiveJoinedMemberIds(connection, now)),
+    inArray(introRequest.requesterId, selectActiveMemberIds(connection, now)),
     inArray(introRequest.introducerId, selectActiveJoinedMemberIds(connection, now)),
     hasNoBlockBetweenParticipants(connection),
   );

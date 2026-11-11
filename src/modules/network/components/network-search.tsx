@@ -4,7 +4,7 @@ import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-quer
 import { ChevronDown, Search, Waypoints } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import type { ConstellationPerson } from "@/components/constellation";
 import { EmptyState } from "@/components/empty-state";
@@ -29,12 +29,17 @@ import type { WelcomeContext } from "@/modules/members/components/shared/welcome
 const PROMPT_FIELD = "prompt";
 const STACKED_FACES = 4;
 
-function readSearchScope(sharingMemberCount: number) {
+export function readSearchScope(sharingMemberCount: number, includesOwnNetwork: boolean) {
+  if (!includesOwnNetwork) {
+    if (sharingMemberCount < 2) return "Search the networks your community's members shared.";
+    return `Search the networks ${sharingMemberCount} members shared.`;
+  }
   if (sharingMemberCount < 2) return "Search your community's shared networks, including yours.";
   return `Search ${sharingMemberCount} members' networks, including yours.`;
 }
 
-function readPeopleHeading(count: number) {
+export function readPeopleHeading(count: number, includesOwnNetwork: boolean) {
+  if (!includesOwnNetwork) return count === 1 ? "1 person members can reach" : `${count} people members can reach`;
   return count === 1 ? "1 person in your network" : `${count} people in your network`;
 }
 
@@ -95,7 +100,7 @@ function SearchResults({ prompt, viewer }: { prompt: string; viewer: Constellati
       <div role="status" className="rounded-panel bg-card shadow-panel">
         <EmptyState
           icon={Search}
-          title="Nobody in your network matches"
+          title={result.includesOwnNetwork ? "Nobody in your network matches" : "Nobody in the shared networks matches"}
           description={
             canAskCommunity
               ? "Try different words, like a role, a company or a city. Or ask the community: someone may know a way in."
@@ -113,7 +118,7 @@ function SearchResults({ prompt, viewer }: { prompt: string; viewer: Constellati
       <section aria-labelledby="results-heading">
         <div role="status">
           <h2 id="results-heading" className="type-h3 mb-3.5">
-            {readPeopleHeading(result.people.length)}
+            {readPeopleHeading(result.people.length, result.includesOwnNetwork)}
           </h2>
         </div>
         <ul aria-label="Search results" className="grid gap-3">
@@ -180,7 +185,7 @@ function NetworkSettings() {
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <h2 className="type-h3">Leave the group</h2>
-            <p className="type-small text-foreground-soft">Stops sharing your network, and your access to others&apos;.</p>
+            <p className="type-small text-foreground-soft">Stops sharing your network. You can still search what others share.</p>
           </div>
           <LeaveGroup />
         </div>
@@ -189,10 +194,15 @@ function NetworkSettings() {
   );
 }
 
-type SearchHeaderProps = { welcome: WelcomeContext; initialPrompt: string; onSearch: (prompt: string) => void };
+type SearchHeaderProps = {
+  welcome: WelcomeContext;
+  initialPrompt: string;
+  includesOwnNetwork: boolean;
+  onSearch: (prompt: string) => void;
+};
 
 // A plain page header: the question, whose networks it searches, and the box.
-function SearchHeader({ welcome, initialPrompt, onSearch }: SearchHeaderProps) {
+function SearchHeader({ welcome, initialPrompt, includesOwnNetwork, onSearch }: SearchHeaderProps) {
   const [draft, setDraft] = useState(initialPrompt);
 
   return (
@@ -216,7 +226,7 @@ function SearchHeader({ welcome, initialPrompt, onSearch }: SearchHeaderProps) {
               ))}
             </span>
           ) : null}
-          <p>{readSearchScope(welcome.sharingMemberCount)}</p>
+          <p>{readSearchScope(welcome.sharingMemberCount, includesOwnNetwork)}</p>
         </div>
       </div>
       <form
@@ -271,7 +281,10 @@ function useSearchFromAddress(startSearch: (prompt: string) => void) {
   }, [raw, prompt, router, startSearch]);
 }
 
-export function NetworkSearch({ welcome }: { welcome: WelcomeContext }) {
+// Before a member connects, `invitation` is the invitation to add their network: the search then covers only the
+// networks others shared, and the member has no network settings yet.
+export function NetworkSearch({ welcome, invitation }: { welcome: WelcomeContext; invitation?: ReactNode }) {
+  const includesOwnNetwork = invitation === undefined;
   const queryClient = useQueryClient();
   const { data: active } = useQuery(activeSearchQuery);
   const startSearch = useCallback(
@@ -286,12 +299,14 @@ export function NetworkSearch({ welcome }: { welcome: WelcomeContext }) {
         key={active?.startedAtMs ?? "new"}
         welcome={welcome}
         initialPrompt={active?.prompt ?? ""}
+        includesOwnNetwork={includesOwnNetwork}
         onSearch={startSearch}
       />
+      {invitation}
       {active ? (
         <QueryBoundary
           key={`${active.prompt}-${active.startedAtMs}`}
-          loadingMessage="Searching your network…"
+          loadingMessage={includesOwnNetwork ? "Searching your network…" : "Searching the community's networks…"}
           failure={NetworkFailure}
           fallback={
             <SearchWaiting
@@ -305,8 +320,8 @@ export function NetworkSearch({ welcome }: { welcome: WelcomeContext }) {
           <SearchResults prompt={active.prompt} viewer={welcome.member} />
         </QueryBoundary>
       ) : null}
-      {welcome.needsFullName ? <FullNameNote /> : null}
-      <NetworkSettings />
+      {welcome.needsFullName && includesOwnNetwork ? <FullNameNote /> : null}
+      {includesOwnNetwork ? <NetworkSettings /> : null}
     </div>
   );
 }
