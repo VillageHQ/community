@@ -161,3 +161,27 @@ Everything else is community data (a), kept Community function (b) or owned else
 4. "Your switches" icon: PASS (Lucide settings-2).
 
 Verdict after repair: PASS. The pairs in `pairs/` were retaken after the repair.
+
+## Follow-up round (2026-11-11): the real delete and "admins see names"
+
+The owner changed two things after the first check: members keep the real "Delete my account", and Your data says the
+admins see who asked whom. So the sections above on the deletion email and on "admins see counts, not names" no longer
+apply: the request flow, its table and its email are removed, and row 63's sentence now matches Founderhall's word for word.
+
+An independent verifier retook Your data at 390 and 1280 px (as a member, after Save, and at the delete confirm step) beside
+Founderhall's `member-me-data`, `-saved`, `-json` and `-delete-asked` shots (pairs in `pairs/member-me-data*.jpg`).
+- Matches: the intros sentence ("…admins see names, states and dates."); the "Privacy settings saved." flash.
+- Owner-decided: the Delete my account sheet uses Community's words and the real delete ("Delete my account" → type
+  "delete" → "Delete my account for good" / "Keep my account") instead of Founderhall's request and "Asked <date>" state.
+- Community data and kept Community functions as before (hosting line, consent rows, Dark mode row, Perks).
+- Found and fixed: a double click on "Delete my account for good" sent a second request whose "already gone" hid the
+  first answer (now one submit per page); a leftover comment in the email list; 8 px too much under "Who can message me"
+  (now 18 px, as Founderhall). Re-check: all three pass.
+
+Delete click-through with made-up members (Priya Shah, Tomas Novak, Zara Ahmed, Noah Berg; `delete-flow/`): a wrong word
+keeps the button disabled; "Keep my account" returns to the button; the right word deletes; with no Village in the demo
+the sheet says what is left to do, and Done goes to `/signin?accountDeleted=true`. In the database each row is now
+"Deleted member" at `deleted-<id>@reclaimed.invalid`, banned, with no sessions; old sessions go to sign-in. The only admin
+gets 409 "This community needs at least one admin."; an admin's own sheet says "You are an admin…".
+
+Verdict: PASS.

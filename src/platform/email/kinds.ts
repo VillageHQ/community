@@ -50,7 +50,6 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.introThread]: null,
   // The one plain answer to an emailed reply: why it didn't land, or the next step after a YES.
   [EMAIL_KINDS.replyNotice]: null,
-  // To each admin: a member asked to delete their account. Admins need it to act.
 };
 
 export const EMAIL_TOPIC_LABELS: Record<EmailTopic, { title: string; description: string }> = {

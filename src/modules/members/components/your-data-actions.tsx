@@ -2,7 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { Download, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,8 @@ function goToSignIn() {
 export function DeleteAccountSheet({ communityName, isAdmin }: { communityName: string; isAdmin: boolean }) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [typed, setTyped] = useState("");
+  // One delete per page: a double click must not send a second request, whose "already gone" would hide the first answer.
+  const hasSubmitted = useRef(false);
   const deletion = useMutation({ mutationFn: deleteOwnAccount, onSuccess: ({ isVillageIncomplete }) => (isVillageIncomplete ? undefined : goToSignIn()) });
   const isTypedRight = typed.trim().toLowerCase() === DELETE_CONFIRMATION_WORD;
   return (
@@ -89,7 +91,9 @@ export function DeleteAccountSheet({ communityName, isAdmin }: { communityName: 
           className="mt-2.5 grid gap-2.5"
           onSubmit={(event) => {
             event.preventDefault();
-            if (isTypedRight) deletion.mutate(typed);
+            if (!isTypedRight || hasSubmitted.current) return;
+            hasSubmitted.current = true;
+            deletion.mutate(typed, { onError: () => (hasSubmitted.current = false) });
           }}
         >
           <div className="grid gap-1.5">

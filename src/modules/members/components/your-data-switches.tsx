@@ -102,7 +102,7 @@ export function SwitchesSheet({ communityName, isHidden, messagePolicy, isMessag
       {isMessagesOn ? (
         <fieldset className="mt-3.5">
           <legend className="fh-label">Who can message me</legend>
-          <div className="mt-2">
+          <div>
             {radio(MESSAGE_POLICIES.communityDefault, "The community’s default", `Now: ${COMMUNITY_DEFAULT_WORDS[COMMUNITY_MESSAGE_POLICY]}.`)}
             {radio(MESSAGE_POLICIES.anyone, `Anyone in ${communityName}`, "Any member can start a conversation.")}
             {radio(MESSAGE_POLICIES.introduced, "Only people I’ve been introduced to", "Members you met through an intro here. Admins can always write.")}
