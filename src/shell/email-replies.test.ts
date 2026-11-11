@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST as postResendWebhook } from "@/app/api/email/resend-webhook/route";
@@ -16,6 +16,7 @@ import { directMessage } from "@/modules/messages/schema";
 import { sendMessage } from "@/modules/messages/service";
 import { networkManifest } from "@/modules/network/manifest";
 import { user } from "@/platform/database/auth-schema";
+import { ROUTES } from "@/platform/http/routes";
 import { EMAIL_KINDS } from "@/platform/email/kinds";
 import { readEmailBranding } from "@/platform/email/outbox";
 import { signResendWebhook } from "@/platform/email/resend-webhook";
@@ -160,13 +161,17 @@ describe("answering by replying to the email", () => {
     it("posts the reply into the conversation, without the quoted email or the signature", async () => {
       const { hana, hanaEmail, conversationId, replyTo, text } = await seedMessageEmail();
       expect(replyTo).toMatch(new RegExp(`^reply\\+m[0-9a-f]{32}-[0-9a-f]{20}@${REPLY_DOMAIN}$`));
-      expect(text).toContain("Reply to this email to answer Alex Asker");
+      expect(text).toContain("Reply to this email to answer, or open it in the portal: ");
 
       const answer = await reply(`Hana Helper <${hanaEmail.toUpperCase()}>`, replyTo, `Thursday works.\n\n-- \nHana\nHelper & Co${QUOTED}`);
 
       expect(answer).toMatchObject({ routed: true, kind: "m", outcome: "posted" });
       const messages = await database.select().from(directMessage).where(and(eq(directMessage.conversationId, conversationId), eq(directMessage.senderId, hana)));
       expect(messages.map(({ body }) => body)).toEqual(["Thursday works."]);
+      // The thread marks it "by email"; one typed in the app is not.
+      expect(messages.map(({ isViaEmail }) => isViaEmail)).toEqual([true]);
+      const [typed] = await database.select().from(directMessage).where(and(eq(directMessage.conversationId, conversationId), ne(directMessage.senderId, hana)));
+      expect(typed?.isViaEmail).toBe(false);
     });
 
     it("posts once when Resend sends the same reply twice", async () => {
@@ -185,7 +190,10 @@ describe("answering by replying to the email", () => {
       expect(await database.select().from(directMessage).where(eq(directMessage.conversationId, conversationId))).toHaveLength(1);
       const bounces = await readQueued(EMAIL_KINDS.replyNotice, samEmail);
       expect(bounces).toHaveLength(1);
+      expect(bounces[0]?.subject).toBe("Your reply did not go through");
       expect(bounces[0]?.text).toContain("different address");
+      expect(bounces[0]?.text).toContain(`Use this link instead: ${APP_URL}${ROUTES.messages}/${conversationId}`);
+      expect(bounces[0]?.text).toMatch(/\n\nSent by .+ via its member portal\.$/);
       expect(bounces[0]?.text).not.toContain("Let me in");
     });
 
@@ -371,7 +379,8 @@ describe("answering by replying to the email", () => {
 
       const [email] = await readQueued(EMAIL_KINDS.directMessage, hanaEmail);
       expect(email?.replyTo).toBeNull();
-      expect(email?.text).toContain("Reply in the app.");
+      expect(email?.text).toContain("Open it in the portal: ");
+      expect(email?.text).not.toContain("Reply to this email");
       expect(await reply(hanaEmail, `reply+m${conversationId.replaceAll("-", "")}-00000000000000000000@${REPLY_DOMAIN}`, "Hi")).toMatchObject({ routed: false });
     });
 

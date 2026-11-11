@@ -10,7 +10,8 @@ import { isBanActive } from "../../platform/auth/member-status.ts";
 import { toContainsPattern } from "../members/reads-directory.ts";
 import { filledFaceColumn, shownCompanyColumn, toShownFaceUrl } from "../members/reads-pictures.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
-import { readPeerId } from "./rules-conversation-pair.ts";
+import { readPeerId, toConversationPair } from "./rules-conversation-pair.ts";
+import { isActiveMember } from "../../platform/auth/member-status.ts";
 import {
   conversationSummarySchema,
   directMessageSchema,
@@ -57,6 +58,7 @@ function selectVisibleMessages(database: Database, viewerId: string) {
       sequence: directMessage.sequence,
       revision: directMessage.revision,
       clientKey: directMessage.clientKey,
+      isViaEmail: directMessage.isViaEmail,
       createdAt: directMessage.createdAt,
     })
     .from(directMessage)
@@ -73,6 +75,7 @@ function toDirectMessage(row: MessageRow, viewerId: string) {
     body: row.body,
     isDeleted: row.deletedAt !== null,
     isReported: row.reportId !== null,
+    isViaEmail: row.isViaEmail,
     sequence: row.sequence,
     clientKey: isMine ? row.clientKey : null,
     createdAt: row.createdAt.toISOString(),
@@ -337,4 +340,20 @@ export async function readInbox(database: Database, viewerId: string, { search, 
         ? { lastMessageAt: lastRow.createdAt.toISOString(), conversationId: lastRow.conversationId }
         : null,
   };
+}
+
+// The page for a first message (`/messages/new?to=`): the member written to, when they are an active member, and the
+// conversation the two already have, if any.
+export async function readNewMessageTarget(database: Database, viewerId: string, memberId: string) {
+  const [member] = await database
+    .select({ id: user.id, name: user.name })
+    .from(user)
+    .where(and(eq(user.id, memberId), isActiveMember()));
+  if (!member) return null;
+  const pair = toConversationPair(viewerId, memberId);
+  const [existing] = await database
+    .select({ id: conversation.id })
+    .from(conversation)
+    .where(and(eq(conversation.memberLowId, pair.memberLowId), eq(conversation.memberHighId, pair.memberHighId)));
+  return { member, conversationId: existing?.id ?? null };
 }

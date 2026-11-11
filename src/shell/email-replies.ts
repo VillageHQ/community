@@ -63,7 +63,9 @@ const AUTOMATIC_SENDER = /^(mailer-daemon|postmaster|no-?reply|do-?not-?reply|bo
 const EMAIL_IN_TEXT = /[^\s<>"'(),;:]+@[^\s<>"'(),;:]+\.[a-z]{2,}/gi;
 const YES_LINES = new Set(["yes", "y", "yes please", "ok", "okay", "sure", "happy to", "yes, happy to"]);
 const NO_LINES = new Set(["no", "n", "no thanks", "no thank you", "not this time", "sorry, no"]);
-const BOUNCE_SUBJECT = "Your reply didn't go through";
+// Founderhall's words (copy/emails/email-reply-did-not-go-through.md); the first line says why.
+const BOUNCE_SUBJECT = "Your reply did not go through";
+const BOUNCE_LINK_LEAD = "Use this link instead: ";
 // Out-of-office and other mail robots: posting them would put "I'm away until Monday" under an ask.
 const AUTOMATIC_SUBJECT =
   /^\s*(automatic reply|auto[- ]?reply|autoreply|out of (the )?office|ooo\b|away from (the )?office|vacation reply|abwesenheitsnotiz|r[ée]ponse automatique|respuesta autom[áa]tica)/i;
@@ -155,18 +157,21 @@ function readOutsideAddress(text: string, exclude: readonly string[], replyDomai
     .find((address) => !exclude.includes(address) && !address.endsWith(`@${replyDomain}`));
 }
 
-type Notice = { to: string; subject: string; lines: readonly string[]; link: string; dedupeKey: string };
+// `linkLead`: words before the link on its line ("Use this link instead: "); `withSignOff`: Founderhall's last line.
+type Notice = { to: string; subject: string; lines: readonly string[]; link: string; dedupeKey: string; linkLead?: string; withSignOff?: boolean };
 
 // One plain email: why a reply didn't land, or the next step after a YES. Transactional, no topic.
-async function sendNotice(database: Database, environment: Environment, { to, subject, lines, link, dedupeKey }: Notice) {
+async function sendNotice(database: Database, environment: Environment, { to, subject, lines, link, dedupeKey, linkLead = "", withSignOff = false }: Notice) {
   try {
     const branding = await readEmailBranding(database, environment);
     if (!branding) return;
-    const text = [...lines, link].join("\n\n");
+    const signOff = withSignOff ? [`Sent by ${branding.name} via its member portal.`] : [];
+    const text = [...lines, `${linkLead}${link}`, ...signOff].join("\n\n");
     const html = [
       `<div style="font-family:Arial,sans-serif;font-size:16px;line-height:24px;color:#0c2427;max-width:520px;margin:0 auto;padding:24px">`,
       ...lines.map((line) => `<p style="margin:0 0 12px">${escapeHtml(line)}</p>`),
-      `<p style="margin:0"><a href="${escapeHtml(link)}">${escapeHtml(link)}</a></p>`,
+      `<p style="margin:0">${escapeHtml(linkLead)}<a href="${escapeHtml(link)}">${escapeHtml(link)}</a></p>`,
+      ...signOff.map((line) => `<p style="margin:12px 0 0">${escapeHtml(line)}</p>`),
       `</div>`,
     ].join("");
     const queued = await queueEmail(database, environment, { kind: EMAIL_KINDS.replyNotice, to, memberId: null, subject, html, text, dedupeKey });
@@ -190,8 +195,10 @@ async function bounce(database: Database, environment: Environment, to: string, 
   await sendNotice(database, environment, {
     to,
     subject: BOUNCE_SUBJECT,
-    lines: [`We couldn't use your reply, so nothing was posted. ${why}`, "You can answer in the app instead:"],
+    lines: [why],
     link,
+    linkLead: BOUNCE_LINK_LEAD,
+    withSignOff: true,
     dedupeKey: `reply-bounce:${to}:${day}`,
   });
 }
@@ -275,7 +282,7 @@ async function land(landing: Landing): Promise<EmailReplyResult> {
   if (target.kind === REPLY_KINDS.introAsk) return answerIntroAsk(landing, member);
   if (target.kind === REPLY_KINDS.message) {
     const body = sendMessageBodySchema.parse({ conversationId: target.id, clientKey: readClientKey(emailId), body: text });
-    await sendMessage(contextFor(landing, member), body, mayMessage);
+    await sendMessage(contextFor(landing, member), body, mayMessage, { isViaEmail: true });
     return posted(target.kind);
   }
   const body = answerAskBodySchema.parse({ askId: target.id, body: text });

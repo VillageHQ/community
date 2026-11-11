@@ -45,6 +45,18 @@ export async function readUnsubscribeToken(database: Database, environment: Envi
   return { memberId, topic };
 }
 
+// Founderhall's own stop line, for the topics whose emails took its words ("Stop emails about new messages: <link>").
+const STOP_WORDS: Partial<Record<EmailTopic, string>> = { messages: "new messages" };
+
+// Founderhall's emails end "Sent by <community> via its member portal."; the stop line sits above that sign-off.
+const SIGN_OFF_PATTERN = /\n\nSent by [^\n]+ via its member portal\.$/;
+
+export function placeTextFooter(text: string, footer: string) {
+  const signOff = text.match(SIGN_OFF_PATTERN);
+  if (!signOff) return `${text}${footer}`;
+  return `${text.slice(0, signOff.index)}${footer}${signOff[0]}`;
+}
+
 export async function buildUnsubscribeParts(database: Database, environment: Environment, target: UnsubscribeTarget) {
   const token = encodeURIComponent(await createUnsubscribeToken(database, environment, target));
   const appUrl = resolveAppUrl(environment);
@@ -56,7 +68,7 @@ export async function buildUnsubscribeParts(database: Database, environment: Env
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
     htmlFooter: `<p style="font-family:Arial,sans-serif;font-size:12px;line-height:18px;color:#566463;max-width:520px;margin:0 auto;padding:0 24px 24px">Don't want these emails? <a href="${escapeHtml(pageUrl)}" style="color:#566463">Turn them off</a>.</p>`,
-    textFooter: `\n\nDon't want these emails? Turn them off: ${pageUrl}`,
+    textFooter: STOP_WORDS[target.topic] ? `\n\nStop emails about ${STOP_WORDS[target.topic]}: ${pageUrl}` : `\n\nDon't want these emails? Turn them off: ${pageUrl}`,
   };
 }
 

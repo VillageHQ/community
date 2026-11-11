@@ -89,7 +89,8 @@ describe("the navigation", () => {
       [ROUTES.editCard, MEMBER_KEYS.me, null],
       [ROUTES.yourData, MEMBER_KEYS.me, null],
       ["/jobs/yours", MEMBER_KEYS.jobs, MEMBER_KEYS.directory],
-      ["/messages/123", MEMBER_KEYS.inbox, MEMBER_KEYS.inbox],
+      ["/inbox/123", MEMBER_KEYS.inbox, MEMBER_KEYS.inbox],
+      [ROUTES.newMessage, MEMBER_KEYS.inbox, MEMBER_KEYS.inbox],
       [ROUTES.network, MEMBER_KEYS.search, MEMBER_KEYS.search],
       [ROUTES.welcome, null, null],
     ])("%s lights %s in the sidebar and %s on the phone", (pathname, sidebarKey, tabKey) => {

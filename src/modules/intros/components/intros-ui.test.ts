@@ -221,7 +221,7 @@ describe("the intro screens", () => {
     it("always offers the existing messages thread", () => {
       renderWithClient(createElement(AskForYouCard, { intro: makeIntro() }));
 
-      expect(screen.getByRole("button", { name: "Message Amara Osei" })).toBeTruthy();
+      expect(screen.getByRole("link", { name: "Message Amara Osei" })).toBeTruthy();
     });
 
     it("renders a note's markup as plain text", () => {
@@ -264,7 +264,7 @@ describe("the intro screens", () => {
     it("offers the conversation and no withdraw once accepted", () => {
       renderWithClient(createElement(YourAskCard, { intro: makeIntro({ ...requesterIntro, state: INTRO_STATES.accepted, acceptedAt: TIMESTAMP }) }));
 
-      expect(screen.getByRole("button", { name: "Message Jonas Lindqvist" })).toBeTruthy();
+      expect(screen.getByRole("link", { name: "Message Jonas Lindqvist" })).toBeTruthy();
       expect(screen.queryByRole("button", { name: "Withdraw my intro request" })).toBeNull();
     });
 
@@ -295,7 +295,7 @@ describe("the intro screens", () => {
     it("doesn't nudge them to message the connector after a no", () => {
       renderWithClient(createElement(YourAskCard, { intro: makeIntro({ ...requesterIntro, state: INTRO_STATES.declined, closedAt: TIMESTAMP }) }));
 
-      expect(screen.queryByRole("button", { name: /Message/ })).toBeNull();
+      expect(screen.queryByRole("link", { name: /Message/ })).toBeNull();
     });
 
     describe("the outcome prompt", () => {
@@ -329,7 +329,7 @@ describe("the intro screens", () => {
     it("hides the message button when the introducer isn't available", () => {
       renderWithClient(createElement(YourAskCard, { intro: makeIntro({ ...requesterIntro, introducer: { ...JONAS, isAvailable: false } }) }));
 
-      expect(screen.queryByRole("button", { name: /Message/ })).toBeNull();
+      expect(screen.queryByRole("link", { name: /Message/ })).toBeNull();
     });
   });
 
