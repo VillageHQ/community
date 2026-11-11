@@ -48,6 +48,7 @@ export function PrivacyForm({ communityName, initial, isIntrosOn, isLookupOn }: 
       router.refresh();
       return null;
     } catch (error) {
+      window.scrollTo({ top: 0 });
       return error instanceof Error ? error.message : FALLBACK_ERROR_MESSAGE;
     }
   }, null);

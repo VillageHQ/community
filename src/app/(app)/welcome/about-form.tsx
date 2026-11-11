@@ -34,8 +34,12 @@ export function AboutForm({ initialValues }: { initialValues: AboutValues }) {
       try {
         await postRequest(API_ROUTES.onboardingWelcome, values, z.object({ message: z.string() }), FALLBACK_ERROR_MESSAGE);
         router.push(ROUTES.welcomePrivacy);
+        // The new name shows in the menu at once.
+        router.refresh();
         return { errorMessage: null, values };
       } catch (error) {
+        // Founderhall answers with the page again, from the top, so the note above the fields is seen.
+        window.scrollTo({ top: 0 });
         return { errorMessage: error instanceof Error ? error.message : FALLBACK_ERROR_MESSAGE, values };
       }
     },
