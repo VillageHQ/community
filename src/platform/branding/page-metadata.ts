@@ -31,6 +31,8 @@ export const PAGE_TITLES = {
   adminFeatures: "Features",
   adminSettings: "Settings",
   adminWeeklyEmail: "Weekly email",
+  adminVillage: "Village check",
+  adminEmailLog: "Email",
   adminChat: "Slack and Discord",
   adminPerks: "Perks admin",
   perks: "Perks",

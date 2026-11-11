@@ -6,6 +6,8 @@ import { HelpableAsksCard } from "@/modules/asks/components/shared/helpable-asks
 import { OwnAsksCard } from "@/modules/asks/components/shared/own-asks-card";
 import { WaitingOnYouCard } from "@/modules/intros/components/waiting-on-you-card";
 import { NewThisWeekCard } from "@/modules/members/components/new-this-week-card";
+import { NewJobsCard } from "@/modules/job-board/components/shared/new-jobs-card";
+import type { NewJobs } from "@/modules/job-board/contract";
 import { PerksCard } from "@/modules/perks/components/shared/perks-card";
 import { ROUTES } from "@/platform/http/routes";
 
@@ -16,10 +18,11 @@ import { isTodayEmpty, type TodayItems } from "./today";
 export const TODAY_END_LINE = "That's everything this week.";
 
 // Only what needs the member this week, in the order they should look at it, then a clear end.
-type TodayListProps = { today: TodayItems; nextSteps: readonly NextStep[]; perksCommunityName?: string | null };
+type TodayListProps = { today: TodayItems; nextSteps: readonly NextStep[]; perksCommunityName?: string | null; newJobs?: NewJobs | null };
 
 // `perksCommunityName` is set while Perks is on and has a marketplace; the card sits after the member's own items.
-export function TodayList({ today, nextSteps, perksCommunityName = null }: TodayListProps) {
+// `newJobs` is set while the job board is on; its card shows only when a job is new this week.
+export function TodayList({ today, nextSteps, perksCommunityName = null, newJobs = null }: TodayListProps) {
   const intros = [...today.introsToAnswer, ...today.introsToFinish];
   return (
     <section aria-label="This week" className="grid gap-5">
@@ -49,6 +52,7 @@ export function TodayList({ today, nextSteps, perksCommunityName = null }: Today
       ) : null}
       {today.ownAsks.length > 0 ? <OwnAsksCard asks={today.ownAsks} /> : null}
       <NewThisWeekCard newMembers={today.newMembers} />
+      {newJobs ? <NewJobsCard newJobs={newJobs} /> : null}
       {perksCommunityName ? <PerksCard communityName={perksCommunityName} /> : null}
       {nextSteps.map((nextStep) => (
         <NextStepCard key={nextStep.title} nextStep={nextStep} />

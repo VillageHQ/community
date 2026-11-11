@@ -23,7 +23,6 @@ import { introsManifest } from "@/modules/intros/manifest";
 import { MemberReachCard } from "@/modules/network/components/member-reach-card";
 import { networkManifest } from "@/modules/network/manifest";
 import { readMemberReach } from "@/modules/network/reads-member-reach";
-import { isModuleEnabled } from "@/platform/modules/enablement";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
@@ -36,6 +35,10 @@ import { INBOX_QUERY_FILTER } from "@/modules/messages/queries";
 import { AdminMemberPanel } from "@/modules/members/components/admin-member-panel";
 import { membersManifest } from "@/modules/members/manifest";
 import { modulePage } from "@/platform/modules/module-page";
+import { isModuleEnabled } from "@/platform/modules/enablement";
+import { CompanyJobsCard } from "@/modules/job-board/components/shared/company-jobs-card";
+import { jobBoardManifest } from "@/modules/job-board/manifest";
+import { readCompanyJobs } from "@/modules/job-board/reads-hiring";
 
 export const metadata: Metadata = { title: PAGE_TITLES.profile };
 
@@ -85,6 +88,7 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
   const { shown } = profile;
   const roleLine = shown.title ? `${shown.title}${shown.company ? ", " : ""}` : "";
   const facts = [profile.stage, profile.sector, profile.cohort].filter(Boolean).join(" · ");
+  const companyJobs = shown.company && (await isModuleEnabled(database, jobBoardManifest)) ? await readCompanyJobs(database, shown.company) : null;
 
   return (
     <div className="mx-auto grid max-w-[820px] gap-5">
@@ -175,6 +179,8 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
       {profile.needs ? <ProfileSection title="What I need right now">{profile.needs}</ProfileSection> : null}
 
       {reach ? <MemberReachCard memberName={profile.name} communityName={communityName} reach={reach} canAsk={canAskForIntro} /> : null}
+
+      {companyJobs && shown.company ? <CompanyJobsCard company={shown.company} companyJobs={companyJobs} /> : null}
 
       {profile.tags.length > 0 ? (
         <Card>

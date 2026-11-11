@@ -194,7 +194,10 @@ describe("the fake Village server", () => {
     ["the linked user's status", () => callFake("/v2/user/status"), 200, VILLAGE_USER_STATUS_SHAPE],
     ["an unlinked user's status", () => callFake("/v2/user/status", { bearer: unlinkedBearer }), 200, VILLAGE_USER_STATUS_SHAPE],
     ["a bad bearer token", () => callFake("/v2/user/status", { bearer: "not-a-token" }), 401, VILLAGE_ERROR_SHAPE],
-    ["the group list", () => callFake("/v2/groups"), 200, VILLAGE_GROUPS_SHAPE],
+    ["the group list", async () => {
+      await callFake("/v2/groups/join", { method: "POST", body: { group_invite_link: "link" } });
+      return callFake("/v2/groups");
+    }, 200, VILLAGE_GROUPS_SHAPE],
     ["a created group", () => callFake("/v2/groups", { method: "POST", body: { name: "Group" } }), 201, VILLAGE_CREATED_GROUP_SHAPE],
     ["a join", () => callFake("/v2/groups/join", { method: "POST", body: { group_invite_link: "link" } }), 200, VILLAGE_GROUP_CHANGE_SHAPE],
     ["a leave", () => callFake("/v2/groups/leave", { method: "POST", body: { group_id: "group-1" } }), 200, VILLAGE_GROUP_CHANGE_SHAPE],

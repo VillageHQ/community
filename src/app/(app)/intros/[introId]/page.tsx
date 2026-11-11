@@ -15,6 +15,8 @@ import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 
 import { IntroDetailView } from "@/modules/intros/components/intro-detail";
+import { IntroThread } from "@/modules/intros/components/intro-thread";
+import { readIntroThreadForRequester } from "@/modules/intros/service-thread";
 import { introsManifest } from "@/modules/intros/manifest";
 import { modulePage } from "@/platform/modules/module-page";
 
@@ -30,6 +32,8 @@ export default modulePage(introsManifest, async function IntroPage({ params }: {
   const intro = await readIntroForViewer(getDatabase(), member.id, parsedId.data);
   if (!intro) notFound();
 
+  // Only the asker's own intro has a thread for them; anyone else gets null.
+  const thread = await readIntroThreadForRequester(getDatabase(), intro.id, member.id);
   const queryClient = new QueryClient();
   queryClient.setQueryData(introDetailQuery(intro.id).queryKey, intro);
 
@@ -48,6 +52,7 @@ export default modulePage(introsManifest, async function IntroPage({ params }: {
           <IntroDetailView introId={intro.id} />
         </QueryBoundary>
       </HydrationBoundary>
+      {thread ? <IntroThread entries={thread} targetName={intro.target.name} /> : null}
     </div>
   );
 });

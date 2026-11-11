@@ -156,6 +156,17 @@ export type BoardJob = {
 
 export type PublicJob = Pick<BoardJob, "id" | "title" | "location" | "url" | "company" | "companySlug">;
 
+// A company's open jobs on a member's profile: up to 5, and how many there are in all.
+export type CompanyJobs = { jobs: Pick<BoardJob, "id" | "title" | "location" | "url">[]; total: number; companySlug: string | null };
+
+// Today's jobs card: jobs new this week at the community's companies.
+export type NewJobs = { jobs: Pick<BoardJob, "id" | "title" | "location" | "url" | "company" | "companySlug" | "companyLogoUrl">[]; total: number };
+
+// The members' board filtered to one company.
+export function toCompanyBoardHref(companySlug: string) {
+  return `${JOB_BOARD_PAGES.board}?${new URLSearchParams({ [COMPANY_PARAM]: companySlug }).toString()}`;
+}
+
 export type BoardCompany = { slug: string; name: string; jobCount: number };
 
 export type SourceJob = { id: string; title: string; location: string; url: string; isManual: boolean };

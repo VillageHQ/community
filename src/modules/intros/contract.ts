@@ -29,6 +29,9 @@ export const INTRO_LIMITS = {
   emailLength: 254,
   shownPerList: 100,
   shownInRail: 2,
+  threadMessageLength: 4000,
+  // Replies between the asker and the person asked are passed on for this long after the introduction.
+  threadDays: 90,
 } as const;
 
 export const INTRO_STATES = {

@@ -1,5 +1,5 @@
 {
-  "id": "053dd5bc-7f0f-4c8e-bb7e-8b20cdbc4340",
+  "id": "38243869-f5f2-4eb2-89e1-9548bb2dcc20",
   "prevId": "6c9f9c4a-a1b3-43cd-9dd2-1891528bd67f",
   "version": "7",
   "dialect": "postgresql",
@@ -2969,7 +2969,7 @@
           "name": "introducer_linkedin_slug",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "reason": {
           "name": "reason",
@@ -3137,19 +3137,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "is_named_target": {
-          "name": "is_named_target",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "suggested_target_email": {
-          "name": "suggested_target_email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -3295,10 +3282,6 @@
         "intro_request_target_email_while_open": {
           "name": "intro_request_target_email_while_open",
           "value": "\"intro_request\".\"target_email\" is null or \"intro_request\".\"state\" in ('asking_target', 'target_agreed')"
-        },
-        "intro_request_suggested_email_while_open": {
-          "name": "intro_request_suggested_email_while_open",
-          "value": "\"intro_request\".\"suggested_target_email\" is null or \"intro_request\".\"state\" in ('requested', 'accepted', 'asking_target', 'target_agreed')"
         },
         "intro_request_target_answer_known": {
           "name": "intro_request_target_answer_known",
@@ -5245,6 +5228,140 @@
           ]
         }
       },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.village_check": {
+      "name": "village_check",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "checked_at": {
+          "name": "checked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "keys": {
+          "name": "keys",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "group_state": {
+          "name": "group_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "group_member_count": {
+          "name": "group_member_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checked_by_id": {
+          "name": "checked_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "village_check_checked_by_id_user_id_fk": {
+          "name": "village_check_checked_by_id_user_id_fk",
+          "tableFrom": "village_check",
+          "tableTo": "user",
+          "columnsFrom": [
+            "checked_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.village_member_check": {
+      "name": "village_member_check",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_provisioned": {
+          "name": "is_provisioned",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "network_status": {
+          "name": "network_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_in_group": {
+          "name": "is_in_group",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "checked_at": {
+          "name": "checked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "village_member_check_user_id_user_id_fk": {
+          "name": "village_member_check_user_id_user_id_fk",
+          "tableFrom": "village_member_check",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

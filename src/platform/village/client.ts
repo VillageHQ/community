@@ -119,6 +119,12 @@ export function joinVillageGroup(session: VillageSession, inviteLink: string) {
   return session.village.groups.join(inviteLink, withinDeadline(session));
 }
 
+// The groups this member is in. Free; the Village check reads it to see who is in the community group.
+export async function listVillageGroupIds(session: VillageSession) {
+  const { groups } = await session.village.groups.list(withinDeadline(session));
+  return groups.map(({ id }) => id);
+}
+
 export function leaveVillageGroup(session: VillageSession, groupId: string) {
   return session.village.groups.leave(groupId, withinDeadline(session));
 }

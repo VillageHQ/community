@@ -135,3 +135,38 @@ export const introConsentLink = pgTable(
   },
   (table) => [index("intro_consent_link_intro_idx").on(table.introId)],
 );
+
+// After an introduction made by email with replies on, the asker and the person asked write to each other by
+// replying. The app keeps the thread and passes each reply on. The outside person's address lives here, not on the
+// intro, because the intro clears it once it completes; it goes with the thread.
+export const introThread = pgTable("intro_thread", {
+  introId: uuid("intro_id")
+    .primaryKey()
+    .references(() => introRequest.id, { onDelete: "cascade" }),
+  targetEmail: text("target_email").notNull(),
+  createdAt: introTimestamp("created_at").notNull().defaultNow(),
+});
+
+export const INTRO_THREAD_AUTHORS = { requester: "requester", target: "target" } as const;
+
+export type IntroThreadAuthor = (typeof INTRO_THREAD_AUTHORS)[keyof typeof INTRO_THREAD_AUTHORS];
+
+export const introThreadMessage = pgTable(
+  "intro_thread_message",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    introId: uuid("intro_id")
+      .notNull()
+      .references(() => introThread.introId, { onDelete: "cascade" }),
+    author: text("author").$type<IntroThreadAuthor>().notNull(),
+    body: text("body").notNull(),
+    // The received email's id, so a webhook Resend sends again never posts twice.
+    sourceEmailId: text("source_email_id").unique(),
+    createdAt: introTimestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("intro_thread_message_intro_idx").on(table.introId, table.createdAt),
+    check("intro_thread_message_author_check", sql`${table.author} in (${toSqlLiterals(Object.values(INTRO_THREAD_AUTHORS))})`),
+    check("intro_thread_message_body_check", sql`char_length(${table.body}) between 1 and ${toSqlNumber(INTRO_LIMITS.threadMessageLength)}`),
+  ],
+);
