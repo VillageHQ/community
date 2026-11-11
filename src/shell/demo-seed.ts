@@ -195,13 +195,13 @@ const CURRENT_INTROS: readonly IntroSeed[] = [
   },
   {
     requester: "ravi.menon",
-    introducer: "sam.lee",
+    introducer: "julia.weber",
     target: "alex-morgan-demo",
-    state: "completed",
+    state: "accepted",
     daysAgo: 9,
-    reason: "Sam hired Alex's team for a sales workshop.",
-    note: "Sam, Alex is the VP Sales I mentioned at the dinner. Would love a warm intro while we're hiring a US head of sales.",
-    extra: (createdAt) => completed(createdAt, "helped", ["hire"]),
+    reason: "Julia hired Alex's team for a sales workshop.",
+    note: "Julia, Alex is the VP Sales I mentioned at the dinner. Would love a warm intro while we're hiring a US head of sales.",
+    extra: (createdAt) => ({ acceptedAt: new Date(createdAt.getTime() + DAY_MS) }),
   },
   {
     requester: "lena.fischer",

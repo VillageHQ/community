@@ -13,7 +13,6 @@ import { memberFillIn, memberLookup, memberNetwork, memberProfile } from "./sche
 import { readShownCard } from "./rules-fill-in.ts";
 import {
   FILL_IN_BASES,
-  FILL_IN_FIELD_LABELS,
   FILL_IN_FIELD_VALUES,
   FILL_IN_FIELDS,
   FILL_IN_REFRESH_DAYS,

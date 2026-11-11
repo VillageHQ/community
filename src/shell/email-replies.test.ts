@@ -348,7 +348,7 @@ describe("answering by replying to the email", () => {
       const askId = created?.id ?? "";
       await routeAskToHelpers(context(alex, alexEmail), askId, async () => null);
       const [email] = await readQueued(EMAIL_KINDS.askHelper, hanaEmail);
-      expect(email?.text).toContain("we'll post it as your answer");
+      expect(email?.text).toContain("Or reply to this email: your reply shows under the ask, from you.");
 
       expect(await reply(samEmail, email?.replyTo ?? "", "Not me.")).toMatchObject({ reason: "wrong_sender" });
       expect(await reply(hanaEmail, email?.replyTo ?? "", `I raised from two fintech funds last year.${QUOTED}`)).toMatchObject({ kind: "h", outcome: "posted" });

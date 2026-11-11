@@ -196,7 +196,6 @@ const REPEATED_WHITESPACE = /\s+/g;
 const timestampSchema = z.iso.datetime();
 const askCategorySchema = z.enum(ASK_CATEGORIES, "Choose what kind of help you need.");
 const askOutcomeSchema = z.enum(ASK_OUTCOMES, "Choose how this ask ended.");
-const askTitleSchema = feedTextSchema("what you need", ASK_LIMITS.titleLength).overwrite((title) => title.replace(REPEATED_WHITESPACE, " "));
 const askDetailSchema = feedTextSchema("the details", ASK_LIMITS.detailLength);
 const offerNoteSchema = feedTextSchema("a short note", ASK_LIMITS.noteLength);
 const answerSchema = feedTextSchema("your answer", ASK_LIMITS.answerLength);

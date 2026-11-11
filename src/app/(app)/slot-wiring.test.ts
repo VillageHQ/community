@@ -3,11 +3,9 @@ import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { feedManifest } from "@/modules/feed/manifest";
 import { introsManifest } from "@/modules/intros/manifest";
 import { MemberConversationSlot } from "@/modules/members/slots";
 import { messagesManifest } from "@/modules/messages/manifest";
-import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { saveModuleState } from "@/platform/modules/enablement";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";

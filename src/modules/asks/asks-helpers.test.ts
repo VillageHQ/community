@@ -198,7 +198,7 @@ describe("asks that reach helpers", () => {
       expect(helperCount).toBe(2);
       const emails = await readHelperEmails();
       expect(emails.map(({ memberId }) => memberId).toSorted()).toEqual([jonas.userId, noor.userId].toSorted());
-      expect(emails.find(({ memberId }) => memberId === jonas.userId)?.text).toContain("May know Clara Bergström");
+      expect(emails.find(({ memberId }) => memberId === jonas.userId)?.text).toContain("Why you: You know Clara Bergström. Both worked at Corvane Logistics.");
       const rows = await database.select({ helperId: askHelper.helperId, reason: askHelper.reason }).from(askHelper).where(eq(askHelper.askId, id));
       expect(rows).toHaveLength(2);
       expect(rows.find(({ helperId }) => helperId === jonas.userId)?.reason).toBe(ASK_HELPER_REASONS.path);
@@ -219,7 +219,7 @@ describe("asks that reach helpers", () => {
         [jonas.userId, true],
         [noor.userId, false],
       ]);
-      expect((await readBoard(noor)).asks[0]?.whyYou).toBe("Can help with freight, pricing");
+      expect((await readBoard(noor)).asks[0]?.whyYou).toMatch(/^can help with “Freight/u);
       expect((await readBoard(gardener)).asks[0]?.whyYou).toBeNull();
     });
 
@@ -283,7 +283,7 @@ describe("asks that reach helpers", () => {
         expect(await readTodayAskIds(member)).toEqual(emailed.includes(member.userId) ? [id] : []);
       }
       const [pathAsk] = await readAsksYouCouldHelp(database, jonas.userId);
-      expect(pathAsk?.why).toContain("May know Clara Bergström");
+      expect(pathAsk?.whyYou).toBe("You know Clara Bergström. Both worked at Corvane Logistics.");
     });
 
     it("never matches on everyday words like first, with, help or team", async () => {
@@ -305,7 +305,7 @@ describe("asks that reach helpers", () => {
 
       expect(helperCount).toBe(1);
       const [email] = await readHelperEmails();
-      expect(email?.text).toContain("Can help with fundraising, pricing");
+      expect(email?.text).toContain("Why you: Your profile says you can help with “Fundraising and pricing”.");
       const [today] = await readAsksYouCouldHelp(database, noor.userId);
       expect(today?.id).toBe(id);
       expect(today?.matchedWords.toSorted()).toEqual(["fundraising", "pricing"]);
@@ -494,13 +494,15 @@ describe("asks that reach helpers", () => {
   });
 
   describe("answers", () => {
-    it("posts one answer under an ask, which anyone can report and an admin can remove", async () => {
+    it("posts answers under an ask (a double tap once), which anyone can report and an admin can remove", async () => {
       const { id: askId } = await post(amara);
       const first = await call(postAnswer, noor, { askId, body: "We priced by lane, and it worked." });
-      const again = await call(postAnswer, noor, { askId, body: "Twice" });
+      const again = await call(postAnswer, noor, { askId, body: "We priced by lane, and it worked." });
       const { id: answerId } = createdAnswerSchema.parse(await first.json());
       expect(createdAnswerSchema.parse(await again.json())).toEqual({ id: answerId, wasAlreadyAnswered: true });
       expect((await readBoard(gardener)).asks[0]?.answers.map(({ body }) => body)).toEqual(["We priced by lane, and it worked."]);
+      expect((await call(postAnswer, noor, { askId, body: "And one more thing." })).status).toBe(OK_STATUS);
+      expect((await readBoard(gardener)).asks[0]?.answers).toHaveLength(2);
 
       expect((await call(postReportAnswer, noor, { answerId })).status).toBe(UNPROCESSABLE_STATUS);
       expect((await call(postReportAnswer, gardener, { answerId })).status).toBe(OK_STATUS);
@@ -509,15 +511,17 @@ describe("asks that reach helpers", () => {
 
       const removed = await call(postReportDelete, admin, { reportId: reports[0]?.id, targetType: REPORT_TARGETS.askAnswer });
       expect(removed.status).toBe(OK_STATUS);
-      expect((await readBoard(gardener)).asks[0]?.answers).toEqual([]);
+      expect((await readBoard(gardener)).asks[0]?.answers.map(({ body }) => body)).toEqual(["And one more thing."]);
     });
 
-    it("can't go on your own ask or on an update", async () => {
+    it("lets the author answer their own ask, and anyone answer an update (as Founderhall)", async () => {
       const { id: askId } = await post(amara);
       const { id: updateId } = await post(amara, { kind: ASK_KINDS.update, title: "We won", category: ASK_CATEGORIES.other, targetLinkedin: null });
 
-      expect((await call(postAnswer, amara, { askId, body: "Me" })).status).toBe(UNPROCESSABLE_STATUS);
-      expect((await call(postAnswer, noor, { askId: updateId, body: "Nice" })).status).toBe(UNPROCESSABLE_STATUS);
+      expect((await call(postAnswer, amara, { askId, body: "Introduced, thank you." })).status).toBe(OK_STATUS);
+      expect((await call(postAnswer, noor, { askId: updateId, body: "Nice" })).status).toBe(OK_STATUS);
+      await block(gardener, amara);
+      expect((await call(postAnswer, gardener, { askId, body: "Hidden" })).status).toBe(404);
     });
 
     it("hides an answer from a member who blocked its author", async () => {
