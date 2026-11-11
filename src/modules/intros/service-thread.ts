@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, count, eq, gt } from "drizzle-orm";
+import { and, asc, count, eq, gt, or } from "drizzle-orm";
 
 import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { user } from "../../platform/database/auth-schema.ts";
@@ -17,6 +17,7 @@ import { RequestError } from "../../platform/http/request-error.ts";
 import { ROUTES } from "../../platform/http/routes.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import { INTRO_LIMITS, INTRO_STATES } from "./contract.ts";
+import { introductionSubject } from "./email-copy.ts";
 import { INTRO_THREAD_AUTHORS, introRequest, introThread, introThreadMessage, type IntroThreadAuthor } from "./schema.ts";
 
 const DAY_MS = 24 * 60 * 60_000;
@@ -28,11 +29,11 @@ const EMAIL_FRAME = "font-family:Arial,sans-serif;font-size:16px;line-height:24p
 
 export const INTRO_THREAD_ERROR_CODES = { closed: "intro_thread_closed", tooMany: "intro_thread_too_many" } as const;
 
-export function introThreadSubject(requesterName: string, targetName: string) {
-  return `${toSingleLine(readFirstName(targetName))}, meet ${toSingleLine(readFirstName(requesterName))}`;
+export function introThreadSubject(requesterName: string, targetName: string, introducerName: string) {
+  return introductionSubject(requesterName, targetName, introducerName);
 }
 
-// The two addresses of one intro thread: the asker's (a member) and the outside person's (their email).
+// The addresses of one intro thread: the asker's and the connector's (members) and the outside person's (their email).
 export function introThreadReplyTo(signer: ReplySigner, introId: string, person: { memberId: string } | { email: string }) {
   return createReplyAddress(signer, REPLY_KINDS.introThread, introId, person);
 }
@@ -53,6 +54,8 @@ export async function readIntroThreadParties(connection: DatabaseOrTransaction, 
       requesterEmail: user.email,
       requesterName: user.name,
       targetName: introRequest.targetName,
+      introducerId: introRequest.introducerId,
+      introducerName: introRequest.introducerName,
       state: introRequest.state,
     })
     .from(introThread)
@@ -81,31 +84,51 @@ function renderRelayEmail({ authorName, body, subject, closing, link }: { author
   return { subject: `Re: ${subject}`, html, text };
 }
 
+async function readMemberEmail(connection: DatabaseOrTransaction, memberId: string, now: Date) {
+  const [member] = await connection.select({ email: user.email }).from(user).where(and(eq(user.id, memberId), isActiveMember(now)));
+  return member?.email ?? null;
+}
+
+const AUTHOR_NAMES: Record<IntroThreadAuthor, (parties: ThreadParties) => string> = {
+  [INTRO_THREAD_AUTHORS.requester]: (parties) => removeBidiControls(parties.requesterName),
+  [INTRO_THREAD_AUTHORS.target]: (parties) => parties.targetName,
+  [INTRO_THREAD_AUTHORS.introducer]: (parties) => parties.introducerName,
+};
+
+// One reply goes to the two others in the thread: the asker, the person asked and the connector (copied).
 async function queueRelay(connection: DatabaseOrTransaction, environment: Environment, signer: ReplySigner, parties: ThreadParties, author: IntroThreadAuthor, body: string) {
-  const subject = introThreadSubject(parties.requesterName, parties.targetName);
-  const requesterName = removeBidiControls(parties.requesterName);
-  if (author === INTRO_THREAD_AUTHORS.requester) {
-    return queueEmail(connection, environment, {
+  const subject = introThreadSubject(parties.requesterName, parties.targetName, parties.introducerName);
+  const authorName = AUTHOR_NAMES[author](parties);
+  const authorFirst = readFirstName(authorName);
+  const link = `${resolveAppUrl(environment)}${ROUTES.intros}/${parties.introId}`;
+  if (author !== INTRO_THREAD_AUTHORS.target) {
+    await queueEmail(connection, environment, {
       kind: EMAIL_KINDS.introThread,
       to: parties.targetEmail,
       memberId: null,
       replyTo: introThreadReplyTo(signer, parties.introId, { email: parties.targetEmail }),
-      ...renderRelayEmail({ authorName: requesterName, body, subject, closing: `Reply to this email to answer ${readFirstName(requesterName)}.`, link: null }),
+      ...renderRelayEmail({ authorName, body, subject, closing: `Reply to this email to answer ${authorFirst}.`, link: null }),
     });
   }
-  return queueEmail(connection, environment, {
-    kind: EMAIL_KINDS.introThread,
-    to: parties.requesterEmail,
-    memberId: parties.requesterId,
-    replyTo: introThreadReplyTo(signer, parties.introId, { memberId: parties.requesterId }),
-    ...renderRelayEmail({
-      authorName: parties.targetName,
-      body,
-      subject,
-      closing: `Reply to this email to answer ${readFirstName(parties.targetName)}. The conversation is also on your intro's page.`,
-      link: `${resolveAppUrl(environment)}${ROUTES.intros}/${parties.introId}`,
-    }),
-  });
+  if (author !== INTRO_THREAD_AUTHORS.requester) {
+    await queueEmail(connection, environment, {
+      kind: EMAIL_KINDS.introThread,
+      to: parties.requesterEmail,
+      memberId: parties.requesterId,
+      replyTo: introThreadReplyTo(signer, parties.introId, { memberId: parties.requesterId }),
+      ...renderRelayEmail({ authorName, body, subject, closing: `Reply to this email to answer ${authorFirst}. The conversation is also on your intro's page.`, link }),
+    });
+  }
+  const introducerEmail = author === INTRO_THREAD_AUTHORS.introducer ? null : await readMemberEmail(connection, parties.introducerId, new Date());
+  if (introducerEmail) {
+    await queueEmail(connection, environment, {
+      kind: EMAIL_KINDS.introThread,
+      to: introducerEmail,
+      memberId: parties.introducerId,
+      replyTo: introThreadReplyTo(signer, parties.introId, { memberId: parties.introducerId }),
+      ...renderRelayEmail({ authorName, body, subject, closing: `Reply to this email to answer ${authorFirst}.`, link: null }),
+    });
+  }
 }
 
 type ThreadReply = { introId: string; author: IntroThreadAuthor; body: string; sourceEmailId: string | null };
@@ -136,13 +159,13 @@ export async function postIntroThreadReply(database: Database, environment: Envi
 
 export type IntroThreadEntry = { id: string; author: IntroThreadAuthor; body: string; createdAt: string };
 
-// The thread on the asker's intro page. Only the asker sees it; the connector and admins never do.
-export async function readIntroThreadForRequester(database: Database, introId: string, requesterId: string) {
+// The thread on the intro's page, for the asker and the connector (copied on it). Admins never see it.
+export async function readIntroThreadForRequester(database: Database, introId: string, memberId: string) {
   const [thread] = await database
     .select({ introId: introThread.introId })
     .from(introThread)
     .innerJoin(introRequest, eq(introRequest.id, introThread.introId))
-    .where(and(eq(introThread.introId, introId), eq(introRequest.requesterId, requesterId)));
+    .where(and(eq(introThread.introId, introId), or(eq(introRequest.requesterId, memberId), eq(introRequest.introducerId, memberId))));
   if (!thread) return null;
   const rows = await database
     .select({ id: introThreadMessage.id, author: introThreadMessage.author, body: introThreadMessage.body, createdAt: introThreadMessage.createdAt })

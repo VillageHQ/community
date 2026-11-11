@@ -10,6 +10,9 @@ export async function register() {
     import("./platform/demo/mode"),
   ]);
   const isDemo = isDemoMode(process.env);
+  // The weekly allowance spans Asks and Intros; intro emails say how many asks are left.
+  const [{ provideWeeklyAllowance }, { readAskAllowance }] = await Promise.all([import("./platform/allowance/weekly-allowance"), import("./shell/ask-helpers")]);
+  provideWeeklyAllowance(readAskAllowance);
   // Demo mode: before anything can call out, every server-side fetch goes through the demo's guard.
   if (isDemo) (await import("./platform/demo/outbound")).installDemoFetchGuard(process.env);
 

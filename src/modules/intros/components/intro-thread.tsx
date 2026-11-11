@@ -1,33 +1,45 @@
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { readFirstName } from "@/platform/design/avatar-identity";
-import { formatShortDate } from "@/platform/text/format-date";
-import { INTRO_THREAD_AUTHORS } from "@/modules/intros/schema";
+import { formatDayMonth } from "@/platform/text/format-date";
+import { INTRO_THREAD_AUTHORS, type IntroThreadAuthor } from "@/modules/intros/schema";
 import type { IntroThreadEntry } from "@/modules/intros/service-thread";
 
-// The replies between the asker and the person they met, passed on by email. Read here; answered by email.
-export function IntroThread({ entries, targetName }: { entries: readonly IntroThreadEntry[]; targetName: string }) {
-  const targetFirst = readFirstName(targetName);
+type ThreadNames = { requesterName: string; targetName: string; introducerName: string; viewerAuthor: IntroThreadAuthor };
+
+// The replies to the introduction email, passed on between the asker, the person and the connector (copied). Read here;
+// answered by email. Founderhall's thread rows: who and when, then the words.
+export function IntroThread({ entries, names }: { entries: readonly IntroThreadEntry[]; names: ThreadNames }) {
+  const nameOf: Record<IntroThreadAuthor, string> = {
+    [INTRO_THREAD_AUTHORS.requester]: names.requesterName,
+    [INTRO_THREAD_AUTHORS.target]: names.targetName,
+    [INTRO_THREAD_AUTHORS.introducer]: names.introducerName,
+  };
+  const others = Object.values(INTRO_THREAD_AUTHORS)
+    .filter((author) => author !== names.viewerAuthor)
+    .map((author) => readFirstName(nameOf[author]));
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Your conversation with {targetFirst}</CardTitle>
-        <CardDescription>Reply to the introduction email to write to {targetFirst}. We pass replies on both ways.</CardDescription>
-      </CardHeader>
+    <section className="fh-section">
+      <p className="fh-small fh-muted">Reply to the introduction email to write to {others.join(" and ")}. Replies show here.</p>
       {entries.length === 0 ? (
-        <p className="type-small mt-4 text-foreground-soft">No replies yet.</p>
+        <div data-slot="empty-state" className="fh-empty mt-3.5">
+          <h2 className="fh-h2">No replies yet</h2>
+          <p>Replies to the introduction email show here.</p>
+        </div>
       ) : (
-        <ol className="mt-4 grid gap-3">
+        <ol className="fh-rows mt-3.5">
           {entries.map((entry) => (
-            <li key={entry.id} className="grid gap-1 rounded-lg border border-border p-3">
-              <p className="type-small font-bold text-foreground">
-                {entry.author === INTRO_THREAD_AUTHORS.requester ? "You" : targetFirst}
-                <span className="font-normal text-foreground-soft"> · {formatShortDate(entry.createdAt)}</span>
-              </p>
-              <p className="whitespace-pre-wrap break-words text-foreground">{entry.body}</p>
+            <li key={entry.id} className="fh-r">
+              <span />
+              <span className="fh-who">
+                <b>{entry.author === names.viewerAuthor ? "You" : nameOf[entry.author]}</b>
+                <span className="whitespace-pre-wrap">{entry.body}</span>
+              </span>
+              <span className="fh-end">
+                <small>{formatDayMonth(entry.createdAt)}</small>
+              </span>
             </li>
           ))}
         </ol>
       )}
-    </Card>
+    </section>
   );
 }

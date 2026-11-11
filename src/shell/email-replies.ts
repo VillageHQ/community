@@ -121,9 +121,11 @@ async function resolveRecipient(database: Database, target: ReplyTarget): Promis
   if (!parties) return { status: "forged" };
   const asTarget: ReplyPerson = { email: parties.targetEmail };
   if (target.isSignedFor(asTarget)) return { status: "ok", recipient: { email: parties.targetEmail, member: null, threadAuthor: INTRO_THREAD_AUTHORS.target } };
-  const resolved = await resolveMemberAmong(database, target, [parties.requesterId]);
+  // The connector is copied on the introduction, so their replies land in the thread too.
+  const resolved = await resolveMemberAmong(database, target, [parties.requesterId, parties.introducerId]);
   if (resolved.status !== "ok") return resolved;
-  return { status: "ok", recipient: { ...resolved.recipient, threadAuthor: INTRO_THREAD_AUTHORS.requester } };
+  const isConnector = target.isSignedFor({ memberId: parties.introducerId });
+  return { status: "ok", recipient: { ...resolved.recipient, threadAuthor: isConnector ? INTRO_THREAD_AUTHORS.introducer : INTRO_THREAD_AUTHORS.requester } };
 }
 
 // A stable message key per received email, so a webhook Resend sends twice posts once.
@@ -149,10 +151,15 @@ export function readFirstLineAnswer(text: string) {
   return null;
 }
 
-// Only the YES line counts, as the email asks: a signature or a colleague's address further down never gets the note.
+// The YES line or the line after it, as the email asks ("put their email on the next line"): a signature or a
+// colleague's address further down never gets the note.
 function readOutsideAddress(text: string, exclude: readonly string[], replyDomain: string) {
-  const first = text.split("\n").find((line) => line.trim()) ?? "";
-  return (first.match(EMAIL_IN_TEXT) ?? [])
+  const answerLines = text
+    .split("\n")
+    .filter((line) => line.trim())
+    .slice(0, 2)
+    .join(" ");
+  return (answerLines.match(EMAIL_IN_TEXT) ?? [])
     .map((address) => address.toLowerCase())
     .find((address) => !exclude.includes(address) && !address.endsWith(`@${replyDomain}`));
 }

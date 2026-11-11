@@ -22,6 +22,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - order: waiting on an unfinished item = hidden · each open item waiting on it = +1, at most +2 · touching the files of an open pull request = ranked after it
 
 ## Now (in flight)
+- [ ] Founderhall transplant, area 3, intros: Founderhall's Your intros, tracker, one-step connector answer, public answer links for the connector, the person and the outcome, the opt-out page and every intro email word for word — fh-intros — open pull request — [spec](features/fh-intros/SPEC.md)
 - [ ] Founderhall transplant, foundation: Founderhall's look, shared parts and shell (menus, console, phone bars, footers, flash) on every Community screen, and a parts review page — fh-foundation — open pull request — [spec](features/fh-foundation/SPEC.md)
 - [ ] Founderhall transplant, Set up and the plumbing pages: Founderhall's Set up, Settings, Mail, Village, Import members, Sign-in links, Integrations, Perks and Audit log on Community's engine — fh-setup-plumbing — open pull request — [spec](features/fh-setup-plumbing/SPEC.md)
 - [ ] Founderhall transplant, dark mode: a dark version of Founderhall's look (owner's pick), token layer only, every pair WCAG AA — fh-dark — open pull request — [spec](features/fh-dark/SPEC.md)
@@ -39,7 +40,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 ## Next (queued)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
 - [ ] Intros from a profile without Village, and "Who <name> can introduce you to" — intros-no-village — open pull request, [PR #40](https://github.com/VillageHQ/community/pull/40) — [charter](features/intros-no-village/CHARTER.md) · [spec](features/intros-from-profile/SPEC.md)
-- [ ] The finer intro rules: 7 days per step, the admin's outcome day, an event history, the connector on the joining email — parity — [spec](features/intros-from-profile/SPEC.md)
+- [ ] The finer intro rules: the admin's outcome day, an event history (7 days per step and the connector on the joining email: fh-intros) — parity — [spec](features/intros-from-profile/SPEC.md)
 - [x] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
 
 ### From the final check of the merged app (2026-11-10), not covered by another part

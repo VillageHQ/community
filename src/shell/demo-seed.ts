@@ -40,7 +40,7 @@ import { saveVillageKeys } from "@/platform/village/settings";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
-const INTRO_LIFETIME_DAYS = 14;
+const INTRO_LIFETIME_DAYS = 7;
 const INVITE_LIFETIME_DAYS = 14;
 
 type Ids = ReadonlyMap<string, string>;
@@ -140,64 +140,71 @@ function headline(demoPerson: DemoPerson) {
   return `${demoPerson.title} at ${demoPerson.company}`;
 }
 
+// Sam's intros are Founderhall's demo intros, so the two apps can be compared side by side: Marcus waits on Sam's
+// answer about Rachel Kim, and Sam's ask to Alex Kim through Priya was introduced. Other members' intros fill the rest.
 const CURRENT_INTROS: readonly IntroSeed[] = [
+  {
+    requester: "marcus.webb",
+    introducer: "sam.lee",
+    target: "rachel-kim-demo",
+    state: "requested",
+    daysAgo: 1,
+    reason: "Sam and Rachel worked together on clinic supply contracts.",
+    note: "I’m Marcus, CTO of Brightwater Logistics: route planning for inland shipping.\n\nBrightside is moving its supply contracts in-house, and I’d value 20 minutes with Rachel on how they plan deliveries.\n\nWe cut late deliveries by 40% for two Dutch hospital groups.",
+  },
   {
     requester: "sam.lee",
     introducer: "priya.shah",
-    target: "dana-whitfield-demo",
-    state: "requested",
-    daysAgo: 1,
-    reason: "Priya and Dana sat on the same fintech panel last spring.",
-    note: "Hi Priya! Dana runs procurement at Lakeshore Health. We're looking for our first hospital group and a warm word from you would mean a lot.",
+    target: "alex-kim-demo",
+    state: "completed",
+    daysAgo: 11,
+    reason: "Priya worked with Alex for three years at Brightline Payments.",
+    note: "I’m Sam, co-founder & CEO of Tallyhealth: prior-authorisation automation for outpatient clinics.\n\nHalcyon is choosing its 2027 tools, and I’d value 20 minutes on how procurement decides.\n\nWe cut approval time from 9 days to 2 at our first clinic.",
+    extra: (createdAt) => ({
+      askedTargetAt: new Date(createdAt.getTime() + DAY_MS),
+      targetAgreedAt: new Date(createdAt.getTime() + 2 * DAY_MS),
+      closedAt: new Date(createdAt.getTime() + 2 * DAY_MS),
+    }),
   },
   {
-    requester: "sam.lee",
-    introducer: "marcus.webb",
-    target: "nina-patel-demo",
+    requester: "ada.okafor",
+    introducer: "amara.diallo",
+    target: "claire-dubois-demo",
     state: "asking_target",
-    daysAgo: 3,
-    reason: "Marcus advised St. Ambrose on their data platform.",
-    note: "Marcus, could you ask Nina if she'd take a 20-minute call about prior-authorisation? Happy to send a short deck first.",
+    daysAgo: 4,
+    reason: "Amara and Claire co-invested in two climate rounds.",
+    note: "I’m Ada, founder of Gridwise: smart meters for small solar grids in West Africa.\n\nWe open our seed round in January, and Riviera backs grid hardware.\n\n40 households pay monthly in our pilot, with no churn in four months.",
     extra: (createdAt) => ({ askedTargetAt: new Date(createdAt.getTime() + DAY_MS), askedEmailAt: createdAt }),
   },
   {
-    requester: "sam.lee",
-    introducer: "julia.weber",
-    target: "claire-dubois-demo",
-    state: "target_agreed",
-    daysAgo: 6,
-    reason: "Julia and Claire co-invested in two climate rounds.",
-    note: "Julia, we're opening our seed extension next month. Claire's fund would be a great fit if she's open to a chat.",
-    extra: (createdAt) => ({ askedTargetAt: new Date(createdAt.getTime() + DAY_MS), targetAgreedAt: new Date(createdAt.getTime() + 2 * DAY_MS) }),
+    requester: "tomas.novak",
+    introducer: "ravi.menon",
+    target: "luca-bianchi-demo",
+    state: "accepted",
+    daysAgo: 3,
+    reason: "Ravi and Luca were in the same accelerator batch.",
+    note: "Ravi, Luca runs insurance operations at Assicura Nord. We're looking for a design partner for claims documents. Would you introduce us?",
+    extra: (createdAt) => ({ acceptedAt: new Date(createdAt.getTime() + DAY_MS) }),
   },
   {
-    requester: "sam.lee",
+    requester: "zara.ahmed",
     introducer: "ada.okafor",
-    target: "mei-chen-demo",
+    target: "dana-whitfield-demo",
     state: "declined",
     daysAgo: 20,
-    reason: "Ada met Mei at a supply-chain meetup.",
-    note: "Ada, would you introduce me to Mei? We're exploring a pilot with a food cooperative's clinic network.",
-    extra: (createdAt) => ({ closedAt: new Date(createdAt.getTime() + DAY_MS), declineKind: "not_this_time", declineReason: "Mei is heads-down on a merger this month. Ask me again in the new year!" }),
+    reason: "Ada met Dana at a supply-chain meetup.",
+    note: "Ada, would you introduce me to Dana? We're exploring contract review for hospital procurement.",
+    extra: (createdAt) => ({ closedAt: new Date(createdAt.getTime() + DAY_MS), declineKind: "not_this_time" }),
   },
   {
-    requester: "tomas.novak",
-    introducer: "sam.lee",
-    target: "luca-bianchi-demo",
-    state: "requested",
-    daysAgo: 0,
-    reason: "Sam and Luca were in the same accelerator batch.",
-    note: "Sam, Luca runs insurance operations at Assicura Nord. We're looking for a design partner for claims documents. Would you introduce us?",
-  },
-  {
-    requester: "ravi.menon",
-    introducer: "sam.lee",
-    target: "alex-morgan-demo",
-    state: "accepted",
-    daysAgo: 9,
-    reason: "Sam hired Alex's team for a sales workshop.",
-    note: "Sam, Alex is the VP Sales I mentioned at the dinner. Would love a warm intro while we're hiring a US head of sales.",
-    extra: (createdAt) => ({ acceptedAt: new Date(createdAt.getTime() + DAY_MS) }),
+    requester: "elena.rossi",
+    introducer: "julia.weber",
+    target: "jonas-lind-demo",
+    state: "target_agreed",
+    daysAgo: 5,
+    reason: "Julia and Jonas co-invested in two rounds.",
+    note: "Julia, Jonas backs fintech founders in the Nordics. Would you introduce us ahead of our seed round?",
+    extra: (createdAt) => ({ askedTargetAt: new Date(createdAt.getTime() + DAY_MS), targetAgreedAt: new Date(createdAt.getTime() + 2 * DAY_MS) }),
   },
   {
     requester: "lena.fischer",
@@ -229,16 +236,6 @@ const CURRENT_INTROS: readonly IntroSeed[] = [
     note: "Julia, we'd love ten minutes with Omar about contract review for the bank's legal team.",
     extra: (createdAt) => ({ askedTargetAt: new Date(createdAt.getTime() + DAY_MS), closedAt: new Date(createdAt.getTime() + 3 * DAY_MS) }),
   },
-  {
-    requester: "sam.lee",
-    introducer: "elena.rossi",
-    target: "jonas-lind-demo",
-    state: "completed",
-    daysAgo: 40,
-    reason: "Elena's first angel cheque came from Jonas.",
-    note: "Elena, Jonas backs health founders in the Nordics. Would you introduce us ahead of our seed round?",
-    extra: (createdAt) => completed(createdAt, "helped", ["investor"]),
-  },
 ];
 
 function completed(createdAt: Date, outcome: "helped" | "not_yet" | "not_helped", results: readonly ("customer" | "hire" | "investor")[] = []) {
@@ -260,7 +257,7 @@ const HISTORY_PAIRS: readonly [string, string][] = [
   ["diego.alvarez", "lena.fischer"],
   ["amara.diallo", "julia.weber"],
   ["ravi.menon", "tomas.novak"],
-  ["oliver.grant", "sam.lee"],
+  ["oliver.grant", "grace.kim"],
   ["felix.moreau", "amara.diallo"],
   ["tomas.novak", "ravi.menon"],
   ["zara.ahmed", "elena.rossi"],

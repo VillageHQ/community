@@ -392,4 +392,7 @@ export const DEMO_OUTSIDERS: readonly DemoOutsider[] = [
   { slug: "alex-morgan-demo", name: "Alex Morgan", title: "VP Sales", company: "Countwise", location: "London" },
   { slug: "nina-patel-demo", name: "Nina Patel", title: "Chief Innovation Officer", company: "St. Ambrose Hospitals", location: "Boston" },
   { slug: "luca-bianchi-demo", name: "Luca Bianchi", title: "Head of Insurance Operations", company: "Assicura Nord", location: "Milan" },
+  // The intro targets of Founderhall's demo, so both apps show the same intros side by side.
+  { slug: "alex-kim-demo", name: "Alex Kim", title: "Head of Procurement", company: "Halcyon Health", location: "Boston" },
+  { slug: "rachel-kim-demo", name: "Rachel Kim", title: "CFO", company: "Brightside Clinics", location: "Amsterdam" },
 ];

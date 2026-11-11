@@ -3,119 +3,154 @@ import { eq } from "drizzle-orm";
 import { readBranding } from "../../platform/branding/branding.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { pickOnAccent } from "../../platform/design/accent.ts";
-import { readFirstName } from "../../platform/design/avatar-identity.ts";
-import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
+import { EMAIL_KINDS, type EmailKind } from "../../platform/email/kinds.ts";
+import { cancelQueuedEmail, queueEmail } from "../../platform/email/outbox.ts";
+import { sendQueuedEmailNow } from "../../platform/email/outbox-sender.ts";
 import { resolveReplySigner } from "../../platform/email/reply-address.ts";
 import { readResendConfig, sendResendEmail } from "../../platform/email/resend.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
 import { ROUTES } from "../../platform/http/routes.ts";
-import type { Intro } from "./contract.ts";
+import { memberProfile } from "../members/schema.ts";
+import { shownCompanyColumn } from "../members/reads-pictures.ts";
+import { TARGET_CHOICES, type Intro } from "./contract.ts";
 import { readWhyTheyWrote } from "./copy.ts";
+import { renderIntroduction, renderTargetAsk, toRoleAndCompany, type IntroductionReader } from "./email-copy.ts";
 import type { introRequest } from "./schema.ts";
-import { introThreadReplyTo, introThreadSubject, openIntroThread } from "./service-thread.ts";
+import { introThreadReplyTo, openIntroThread } from "./service-thread.ts";
 
 const IDEMPOTENCY_TOKEN_PREFIX_LENGTH = 16;
-const EMAIL_FRAME = "font-family:Arial,sans-serif;font-size:16px;line-height:24px;color:#0c2427;max-width:520px;margin:0 auto;padding:24px";
 
-type ConsentAskFacts = { requesterName: string; introducerName: string; targetName: string; communityName: string };
+type OutsideEmail = { to: string; memberId: string | null; kind: EmailKind; dedupeKey: string; replyTo?: string; subject: string; text: string; html: string };
 
-export function renderConsentAskEmail(facts: ConsentAskFacts, link: string, accentColor: string) {
-  const requesterName = toSingleLine(facts.requesterName);
-  const introducerName = toSingleLine(facts.introducerName);
-  const targetFirst = toSingleLine(readFirstName(facts.targetName));
-  const communityName = toSingleLine(facts.communityName);
-  const requesterFirst = readFirstName(requesterName);
-  const subject = `${readFirstName(introducerName)} asked if you'd like to meet ${requesterFirst}`;
-  const greeting = `Hi ${targetFirst},`;
-  const body = `${requesterName} asked ${introducerName} for an intro to you through ${communityName}. Read their note and say yes or no thanks. It takes a few seconds, and you don't need an account. Nothing happens unless you say yes.`;
-  const action = "Read the note";
-  const html = [
-    `<div style="${EMAIL_FRAME}">`,
-    `<p style="margin:0 0 12px">${escapeHtml(greeting)}</p>`,
-    `<p style="margin:0 0 24px">${escapeHtml(body)}</p>`,
-    `<a href="${escapeHtml(link)}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${accentColor};color:${pickOnAccent(accentColor)};font-weight:700;text-decoration:none">${escapeHtml(action)}</a>`,
-    `</div>`,
-  ].join("");
-  return { subject, html, text: `${greeting}\n\n${body}\n\n${action}: ${link}` };
+// One email through the outbox, sent now. Throws when it didn't go, and takes it back out of the queue, so the caller
+// can undo its own claim without the timed sender sending it later anyway.
+async function sendThroughOutbox(database: Database, environment: Environment, { replyTo, ...email }: OutsideEmail) {
+  const queuedId = await queueEmail(database, environment, { ...email, replyTo: replyTo ?? null });
+  if (!queuedId) throw new Error("The email wasn't queued.");
+  if (await sendQueuedEmailNow(database, environment, queuedId)) return;
+  await cancelQueuedEmail(database, queuedId);
+  throw new Error("The email didn't go out.");
 }
 
-export function renderTargetReminderEmail(facts: ConsentAskFacts, link: string, accentColor: string) {
-  const requesterName = toSingleLine(facts.requesterName);
-  const introducerName = toSingleLine(facts.introducerName);
-  const targetFirst = toSingleLine(readFirstName(facts.targetName));
-  const communityName = toSingleLine(facts.communityName);
-  const subject = `Still there? ${readFirstName(requesterName)} would like to meet you`;
-  const greeting = `Hi ${targetFirst},`;
-  const body = `A few days ago ${introducerName} asked if you'd like to meet ${requesterName} through ${communityName}. If you haven't had a chance, read their note and say yes or no thanks. Nothing happens unless you say yes, and this is the only reminder.`;
-  const action = "Read the note";
-  const html = [
-    `<div style="${EMAIL_FRAME}">`,
-    `<p style="margin:0 0 12px">${escapeHtml(greeting)}</p>`,
-    `<p style="margin:0 0 24px">${escapeHtml(body)}</p>`,
-    `<a href="${escapeHtml(link)}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${accentColor};color:${pickOnAccent(accentColor)};font-weight:700;text-decoration:none">${escapeHtml(action)}</a>`,
-    `</div>`,
-  ].join("");
-  return { subject, html, text: `${greeting}\n\n${body}\n\n${action}: ${link}` };
+export type TargetAskFacts = {
+  requesterName: string;
+  requesterHeadline: string | null;
+  introducerName: string;
+  targetName: string;
+  communityName: string;
+  note: string;
+};
+
+// The person's page (`/i/<token>`) and their "stop intro asks" page (`/intro/optout/<token>`), from one consent token.
+export function readConsentLinks(environment: Environment, token: string) {
+  const appUrl = resolveAppUrl(environment);
+  const page = `${appUrl}${ROUTES.introConsent}/${token}`;
+  return { page, yes: `${page}?a=${TARGET_CHOICES.yes}`, no: `${page}?a=${TARGET_CHOICES.no}`, optOut: `${appUrl}${ROUTES.introOptOut}/${token}` };
+}
+
+export function renderConsentAskEmail(facts: TargetAskFacts, environment: Environment, token: string, isReminder = false) {
+  const links = readConsentLinks(environment, token);
+  return renderTargetAsk({
+    community: facts.communityName,
+    connector: facts.introducerName,
+    asker: facts.requesterName,
+    askerAbout: facts.requesterHeadline,
+    target: facts.targetName,
+    note: facts.note,
+    links: { yes: links.yes, no: links.no },
+    optOutLink: links.optOut,
+    isReminder,
+  });
+}
+
+export function renderTargetReminderEmail(facts: TargetAskFacts, environment: Environment, token: string) {
+  return renderConsentAskEmail(facts, environment, token, true);
 }
 
 type ConsentAskRequest = { intro: Intro; token: string; targetEmail: string };
 
 export async function sendConsentAskEmail(database: Database, environment: Environment, { intro, token, targetEmail }: ConsentAskRequest) {
-  const config = readResendConfig(environment);
-  if (!config) throw new Error("Email isn't configured.");
-  const { name: communityName, accentColor } = await readBranding(database);
-  const link = `${resolveAppUrl(environment)}${ROUTES.introConsent}/${token}`;
-  const facts = { requesterName: intro.requester.name, introducerName: intro.introducer.name, targetName: intro.target.name, communityName };
-  await sendResendEmail(config, {
+  if (!readResendConfig(environment)) throw new Error("Email isn't configured.");
+  const { name: communityName } = await readBranding(database);
+  const facts = {
+    requesterName: intro.requester.name,
+    requesterHeadline: intro.requester.headline,
+    introducerName: intro.introducer.name,
+    targetName: intro.target.name,
+    communityName,
+    note: readWhyTheyWrote(intro.note, intro.introducer.name, intro.target.name),
+  };
+  await sendThroughOutbox(database, environment, {
+    kind: EMAIL_KINDS.introTargetReminder,
     to: targetEmail,
-    idempotencyKey: `intro-consent-${token.slice(0, IDEMPOTENCY_TOKEN_PREFIX_LENGTH)}`,
-    ...renderConsentAskEmail(facts, link, accentColor),
+    memberId: null,
+    // One row per send: a later email to a corrected address is a new email, not a repeat of the first.
+    dedupeKey: `intro-consent-${token.slice(0, IDEMPOTENCY_TOKEN_PREFIX_LENGTH)}-${Date.now()}`,
+    ...renderConsentAskEmail(facts, environment, token),
   });
 }
 
-type JoiningFacts = { requesterName: string; introducerName: string; targetName: string; communityName: string; note: string };
+type JoiningFacts = {
+  communityName: string;
+  requesterName: string;
+  requesterHeadline: string | null;
+  requesterEmail: string;
+  introducerName: string;
+  targetName: string;
+  targetHeadline: string | null;
+  targetEmail: string;
+  note: string;
+};
 
-// Who one copy of the joint introduction goes to, when replies run through the app's intro thread. Without
-// replies, one email goes to both and they reply all.
-type JoiningReader = "both" | "requester" | "target";
-
-function joiningClosing(reader: JoiningReader, requesterFirst: string, targetFirst: string) {
-  if (reader === "both") return "You're both on this email, so reply all to say hello. This is the only email we'll send about this intro.";
-  const other = reader === "requester" ? targetFirst : requesterFirst;
-  return `Reply to this email to say hello to ${other}. We pass your reply on, and ${other}'s replies come back the same way.`;
+// One copy of the introduction. The connector's copy never shows the asker's address: members never see each
+// other's addresses.
+export function renderJoiningEmail(facts: JoiningFacts, reader: IntroductionReader) {
+  const isConnector = reader === "connector";
+  return renderIntroduction(
+    {
+      community: facts.communityName,
+      asker: facts.requesterName,
+      askerAbout: facts.requesterHeadline,
+      target: facts.targetName,
+      targetAbout: facts.targetHeadline,
+      connector: facts.introducerName,
+      askerEmail: isConnector ? null : facts.requesterEmail,
+      targetEmail: isConnector ? null : facts.targetEmail,
+      note: facts.note,
+    },
+    reader,
+  );
 }
 
-export function renderJoiningEmail({ requesterName, introducerName, targetName, communityName, note }: JoiningFacts, reader: JoiningReader = "both") {
-  const targetFirst = toSingleLine(readFirstName(targetName));
-  const requesterFirst = toSingleLine(readFirstName(requesterName));
-  const subject = introThreadSubject(requesterName, targetName);
-  const opening = `${targetFirst}, meet ${requesterFirst}. ${requesterFirst}, meet ${targetFirst}.`;
-  const context = `${toSingleLine(introducerName)} connected you through ${toSingleLine(communityName)}, and ${targetFirst} said yes. Here's what ${requesterFirst} wrote:`;
-  const closing = joiningClosing(reader, requesterFirst, targetFirst);
-  const html = [
-    `<div style="${EMAIL_FRAME}">`,
-    `<p style="margin:0 0 12px;font-weight:700">${escapeHtml(opening)}</p>`,
-    `<p style="margin:0 0 12px">${escapeHtml(context)}</p>`,
-    `<p style="margin:0 0 24px;white-space:pre-wrap">${escapeHtml(note)}</p>`,
-    `<p style="margin:0">${escapeHtml(closing)}</p>`,
-    `</div>`,
-  ].join("");
-  return { subject, html, text: `${opening}\n\n${context}\n\n${note}\n\n${closing}` };
+async function readMemberFacts(database: Database, memberId: string) {
+  const [member] = await database
+    .select({ email: user.email, title: memberProfile.title, company: shownCompanyColumn(user.id) })
+    .from(user)
+    .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
+    .where(eq(user.id, memberId));
+  return member ?? null;
 }
 
+// The introduction, as Founderhall sends it: one email each to the asker, the person and the connector, whose replies
+// run through the app's intro thread so everyone in it gets them. Without replies by email, one email goes to the
+// asker and the person, who reply all; the connector then gets the app's notice instead. Returns whether the
+// connector was copied.
 export async function sendJoiningEmail(database: Database, environment: Environment, intro: typeof introRequest.$inferSelect, requesterName: string) {
   const config = readResendConfig(environment);
   if (!config || !intro.targetEmail) throw new Error("Email isn't configured.");
-  const [requester] = await database.select({ email: user.email }).from(user).where(eq(user.id, intro.requesterId));
+  const [requester, introducer] = await Promise.all([readMemberFacts(database, intro.requesterId), readMemberFacts(database, intro.introducerId)]);
   if (!requester) throw new Error("The requester is gone.");
   const { name: communityName } = await readBranding(database);
-  const facts = {
+  const facts: JoiningFacts = {
+    communityName,
     requesterName,
+    requesterHeadline: [requester.title, requester.company].filter(Boolean).join(", ") || null,
+    requesterEmail: requester.email,
     introducerName: intro.introducerName,
     targetName: intro.targetName,
-    communityName,
+    targetHeadline: toRoleAndCompany(intro.targetHeadline),
+    targetEmail: intro.targetEmail,
     note: readWhyTheyWrote(intro.note, intro.introducerName, intro.targetName),
   };
   const signer = await resolveReplySigner(database, environment);
@@ -124,23 +159,35 @@ export async function sendJoiningEmail(database: Database, environment: Environm
       to: [intro.targetEmail, requester.email],
       // Not "intro-joined-…": that key belongs to the connector's notice for the same event, and Resend refuses a reused key.
       idempotencyKey: `intro-joining-${intro.id}`,
-      ...renderJoiningEmail(facts),
+      ...renderJoiningEmail(facts, "both"),
     });
-    return;
+    return { isConnectorCopied: false };
   }
-  // With replies on, each gets their own copy whose reply address is theirs, and the app keeps the thread. Neither
-  // sees the other's address.
   await openIntroThread(database, intro.id, intro.targetEmail);
-  await sendResendEmail(config, {
+  await sendThroughOutbox(database, environment, {
+    kind: EMAIL_KINDS.introThread,
     to: intro.targetEmail,
-    idempotencyKey: `intro-joining-${intro.id}-target`,
+    memberId: null,
+    dedupeKey: `intro-joining-${intro.id}-target`,
     replyTo: introThreadReplyTo(signer, intro.id, { email: intro.targetEmail }),
     ...renderJoiningEmail(facts, "target"),
   });
-  await sendResendEmail(config, {
+  await sendThroughOutbox(database, environment, {
+    kind: EMAIL_KINDS.introThread,
     to: requester.email,
-    idempotencyKey: `intro-joining-${intro.id}-requester`,
+    memberId: intro.requesterId,
+    dedupeKey: `intro-joining-${intro.id}-requester`,
     replyTo: introThreadReplyTo(signer, intro.id, { memberId: intro.requesterId }),
-    ...renderJoiningEmail(facts, "requester"),
+    ...renderJoiningEmail(facts, "asker"),
   });
+  if (!introducer) return { isConnectorCopied: false };
+  await sendThroughOutbox(database, environment, {
+    kind: EMAIL_KINDS.introThread,
+    to: introducer.email,
+    memberId: intro.introducerId,
+    dedupeKey: `intro-joining-${intro.id}-introducer`,
+    replyTo: introThreadReplyTo(signer, intro.id, { memberId: intro.introducerId }),
+    ...renderJoiningEmail(facts, "connector"),
+  });
+  return { isConnectorCopied: true };
 }
