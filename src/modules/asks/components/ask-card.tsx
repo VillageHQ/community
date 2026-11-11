@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Flag, HandHelping, Inbox, Lightbulb, Megaphone, Sparkles, Trash2, UsersRound } from "lucide-react";
+import { BadgeCheck, CircleCheck, Flag, HandHelping, Hourglass, Inbox, Lightbulb, Megaphone, Pin, PinOff, RotateCcw, Sparkles, Trash2, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 
@@ -15,15 +15,15 @@ import { FormField } from "@/components/form-field";
 import { Label } from "@/components/ui/label";
 import { Tag } from "@/components/ui/tag";
 import { Textarea } from "@/components/ui/textarea";
-import { ASK_KINDS, ASK_LIMITS, type AskAnswer, type BoardAsk, type OfferResult } from "@/modules/asks/contract";
+import { ASK_KINDS, ASK_LIMITS, ASK_STATES, type AskAnswer, type BoardAsk, type OfferResult } from "@/modules/asks/contract";
 import { describeAge } from "@/modules/asks/rules-time";
 import { MemberConversationSlot } from "@/modules/members/slots";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { ROUTES } from "@/platform/http/routes";
 
-import { ASK_AVATAR_SIZE_PX, CATEGORY_DISPLAY, describeOfferCount, readMemberLine } from "./ask-display";
+import { ASK_AVATAR_SIZE_PX, BOARD_OUTCOME_LABELS, CATEGORY_DISPLAY, describeOfferCount, readMemberLine } from "./ask-display";
 import { CharactersLeft } from "./characters-left";
-import { useAnswerAsk, useKnowSomeone, useOfferHelp, useRemoveAsk, useReportAnswer, useReportAsk } from "./use-ask-mutations";
+import { useAnswerAsk, useKnowSomeone, useOfferHelp, usePinAsk, useRemoveAsk, useReopenAsk, useReportAnswer, useReportAsk } from "./use-ask-mutations";
 
 const CARD_MODES = {
   reading: "reading",
@@ -304,20 +304,34 @@ export function AskCard({ ask, canIntro, isViewerAdmin, onSeeYourAsks }: BoardAs
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const reportAsk = useReportAsk();
   const removeAsk = useRemoveAsk();
+  const pinAsk = usePinAsk(setResultMessage);
+  const reopenAsk = useReopenAsk(setResultMessage);
+  const isOpen = ask.state === ASK_STATES.open;
   const { label: categoryLabel, icon: CategoryIcon, tone } = CATEGORY_DISPLAY[ask.category];
   const memberLine = readMemberLine(ask.author);
   const isUpdate = ask.kind === ASK_KINDS.update;
   const noun = isUpdate ? "update" : "ask";
-  const canOffer = !isUpdate && !ask.isMine && !ask.myOffer;
-  const canAnswer = !isUpdate && !ask.isMine && !ask.answers.some(({ isMine }) => isMine);
+  const canOffer = isOpen && !isUpdate && !ask.isMine && !ask.myOffer;
+  const canAnswer = isOpen && !isUpdate && !ask.isMine && !ask.answers.some(({ isMine }) => isMine);
   const isFormOpen = mode === CARD_MODES.offering || mode === CARD_MODES.knowingSomeone || mode === CARD_MODES.answering;
   const target = describeTarget(ask);
   const backToReading = () => setMode(CARD_MODES.reading);
 
   const menuActions: ContentAction[] = [
     ...(ask.isMine ? [] : [{ id: "report", label: `Report this ${noun}`, icon: Flag, movesFocus: true, onSelect: () => setMode(CARD_MODES.confirmingReport) }]),
+    ...(isViewerAdmin && isOpen
+      ? [
+          {
+            id: "pin",
+            label: ask.isPinned ? "Unpin from the top" : "Pin to the top",
+            icon: ask.isPinned ? PinOff : Pin,
+            onSelect: () => pinAsk.mutate({ askId: ask.id, isPinned: !ask.isPinned }),
+          },
+        ]
+      : []),
     ...(isViewerAdmin ? [{ id: "remove", label: `Remove this ${noun}`, icon: Trash2, movesFocus: true, onSelect: () => setMode(CARD_MODES.confirmingRemoval) }] : []),
   ];
+  const actionError = pinAsk.error?.message ?? reopenAsk.error?.message ?? null;
 
   return (
     <article aria-label={`Ask from ${ask.author.name}: ${ask.title}`} className="grid gap-3.5 rounded-card-phone bg-card p-card-phone shadow-panel sm:rounded-card sm:p-6">
@@ -353,6 +367,24 @@ export function AskCard({ ask, canIntro, isViewerAdmin, onSeeYourAsks }: BoardAs
             {categoryLabel}
           </Tag>
         )}
+        {ask.isPinned ? (
+          <Tag tone="accent">
+            <Pin aria-hidden="true" />
+            Pinned
+          </Tag>
+        ) : null}
+        {ask.state === ASK_STATES.closed && ask.outcome ? (
+          <Tag tone="sage">
+            <CircleCheck aria-hidden="true" />
+            {BOARD_OUTCOME_LABELS[ask.outcome]}
+          </Tag>
+        ) : null}
+        {ask.state === ASK_STATES.expired ? (
+          <Tag tone="gold">
+            <Hourglass aria-hidden="true" />
+            Came down after 30 days
+          </Tag>
+        ) : null}
         {ask.isMine ? <Tag tone="neutral">Your {noun}</Tag> : null}
       </div>
       <h3 className="type-h3 wrap-anywhere">{ask.title}</h3>
@@ -407,6 +439,7 @@ export function AskCard({ ask, canIntro, isViewerAdmin, onSeeYourAsks }: BoardAs
           {resultMessage}
         </Alert>
       ) : null}
+      <FormError message={actionError} />
       {startedIntroId ? <IntroStarted introId={startedIntroId} ask={ask} /> : null}
       <MyOffer ask={ask} resultMessage={startedIntroId ? null : resultMessage} />
       {mode === CARD_MODES.offering && canOffer ? (
@@ -430,7 +463,15 @@ export function AskCard({ ask, canIntro, isViewerAdmin, onSeeYourAsks }: BoardAs
         />
       ) : null}
       {mode === CARD_MODES.answering && canAnswer ? <AnswerForm ask={ask} onAnswered={backToReading} onCancel={backToReading} /> : null}
-      {isUpdate || isFormOpen ? null : (
+      {ask.canReopen ? (
+        <footer className="flex flex-wrap gap-2">
+          <Button type="button" size="lg" variant="soft" disabled={reopenAsk.isPending} onClick={() => reopenAsk.mutate(ask.id)} className="max-sm:w-full">
+            <RotateCcw aria-hidden="true" />
+            {reopenAsk.isPending ? "Reopening…" : "Reopen this ask"}
+          </Button>
+        </footer>
+      ) : null}
+      {isUpdate || isFormOpen || !isOpen ? null : (
         <footer className="flex flex-wrap items-center justify-between gap-3">
           <p className="type-small flex items-center gap-2 font-semibold text-foreground-soft">
             <UsersRound aria-hidden="true" className="size-icon-small shrink-0" />

@@ -17,11 +17,13 @@ import {
   type AskCategory,
   type AskCursor,
   type AskDraft,
+  type AskBoardTab,
   type AskHelperBody,
   type AskKind,
   type CloseAskBody,
   type KnowSomeoneDraft,
   type OfferHelpBody,
+  type PinAskBody,
 } from "./contract.ts";
 
 export const ASK_QUERY_KEYS = {
@@ -32,10 +34,12 @@ export const ASK_QUERY_KEYS = {
 
 const FIRST_PAGE: AskCursor | null = null;
 
-export function askBoardQuery(category: AskCategory | null, kind: AskKind | null = null) {
+export type AskBoardRequest = { tab: AskBoardTab; search: string | null; category: AskCategory | null; kind: AskKind | null };
+
+export function askBoardQuery({ tab, search, category, kind }: AskBoardRequest) {
   return infiniteQueryOptions({
-    queryKey: [ASK_QUERY_KEYS.board, category, kind],
-    queryFn: ({ pageParam }) => postRequest(ASK_API_ROUTES.board, { category, kind, cursor: pageParam }, askBoardPageSchema),
+    queryKey: [ASK_QUERY_KEYS.board, tab, search, category, kind],
+    queryFn: ({ pageParam }) => postRequest(ASK_API_ROUTES.board, { tab, search, category, kind, cursor: pageParam }, askBoardPageSchema),
     initialPageParam: FIRST_PAGE,
     getNextPageParam: ({ nextCursor }) => nextCursor,
     staleTime: INBOX_POLL_MS,
@@ -107,4 +111,12 @@ export function askHelperRequest(body: AskHelperBody) {
 
 export function saveAllowanceRequest(weeklyAllowance: number) {
   return postRequest(ASK_API_ROUTES.allowance, { weeklyAllowance }, allowanceSettingSchema);
+}
+
+export function pinAskRequest(body: PinAskBody) {
+  return postRequest(ASK_API_ROUTES.pin, body, acknowledgedResponseSchema);
+}
+
+export function reopenAskRequest(askId: string) {
+  return postRequest(ASK_API_ROUTES.reopen, { askId }, acknowledgedResponseSchema);
 }

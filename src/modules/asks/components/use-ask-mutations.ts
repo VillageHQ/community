@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-import type { AnswerAskBody, AskDraft, AskHelperBody, CloseAskBody, KnowSomeoneDraft, OfferHelpBody, OfferResult } from "@/modules/asks/contract";
+import type { AnswerAskBody, AskDraft, AskHelperBody, CloseAskBody, KnowSomeoneDraft, OfferHelpBody, OfferResult, PinAskBody } from "@/modules/asks/contract";
 import {
   answerAskRequest,
   ASK_QUERY_KEYS,
@@ -15,7 +15,9 @@ import {
   createAskRequest,
   markOffersSeenRequest,
   offerHelpRequest,
+  pinAskRequest,
   removeAskRequest,
+  reopenAskRequest,
   renewAskRequest,
   reportAskRequest,
 } from "@/modules/asks/queries";
@@ -118,4 +120,26 @@ export function useAskHelper(onAsked: (introId: string) => void) {
 export function useSaveAllowance() {
   const queryClient = useQueryClient();
   return useMutation({ mutationFn: (weeklyAllowance: number) => saveAllowanceRequest(weeklyAllowance), onSuccess: () => refreshAsks(queryClient) });
+}
+
+export function usePinAsk(onDone?: (message: string) => void) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: PinAskBody) => pinAskRequest(body),
+    onSuccess: ({ message }) => {
+      onDone?.(message);
+      return refreshAsks(queryClient);
+    },
+  });
+}
+
+export function useReopenAsk(onDone?: (message: string) => void) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (askId: string) => reopenAskRequest(askId),
+    onSuccess: ({ message }) => {
+      onDone?.(message);
+      return refreshAsks(queryClient);
+    },
+  });
 }

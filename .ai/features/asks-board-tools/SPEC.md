@@ -1,6 +1,6 @@
 ---
 id: asks-board-tools
-status: idea
+status: built
 waits-on: []
 size:
 touches: ["src/modules/asks/"]
@@ -22,3 +22,9 @@ Answered and All tabs, text search, reopen, admin pin. (Merge plan: "Ask answers
 
 ## Open questions
 - None known.
+
+## Update 2026-11-11: built (asks-tools)
+Tabs Open, Mine, Answered, Closed; one search over every ask and its answers, closed ones too; admins pin up to 3
+open asks; the author or an admin reopens a closed ask; both audited. Founderhall's separate "answered" status was
+left out: an ask here closes with an outcome. How it works: `.ai/features/asks-tools/NOTES.md`; the approved scope:
+`.ai/features/asks-tools/CHARTER.md`.

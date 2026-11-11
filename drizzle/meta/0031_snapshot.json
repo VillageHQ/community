@@ -1,5 +1,5 @@
 {
-  "id": "a55919f4-e216-4535-9a3b-37dfd206dbfb",
+  "id": "fd23748f-e38a-45e9-86f8-e0baa6b492c9",
   "prevId": "a67228a5-ff13-4061-b2a5-00a4deb5560d",
   "version": "7",
   "dialect": "postgresql",
@@ -1615,6 +1615,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "pinned_at": {
+          "name": "pinned_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pinned_by_user_id": {
+          "name": "pinned_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp (3) with time zone",
@@ -1696,6 +1708,19 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "ask_pinned_by_user_id_user_id_fk": {
+          "name": "ask_pinned_by_user_id_user_id_fk",
+          "tableFrom": "ask",
+          "tableTo": "user",
+          "columnsFrom": [
+            "pinned_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1721,6 +1746,10 @@
         "ask_closed_with_outcome": {
           "name": "ask_closed_with_outcome",
           "value": "(\"ask\".\"closed_at\" is null) = (\"ask\".\"outcome\" is null)"
+        },
+        "ask_pinned_only_open": {
+          "name": "ask_pinned_only_open",
+          "value": "\"ask\".\"pinned_at\" is null or \"ask\".\"closed_at\" is null"
         },
         "ask_title_length": {
           "name": "ask_title_length",
@@ -2969,7 +2998,7 @@
           "name": "introducer_linkedin_slug",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "reason": {
           "name": "reason",
@@ -3137,19 +3166,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "is_named_target": {
-          "name": "is_named_target",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "suggested_target_email": {
-          "name": "suggested_target_email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -3295,10 +3311,6 @@
         "intro_request_target_email_while_open": {
           "name": "intro_request_target_email_while_open",
           "value": "\"intro_request\".\"target_email\" is null or \"intro_request\".\"state\" in ('asking_target', 'target_agreed')"
-        },
-        "intro_request_suggested_email_while_open": {
-          "name": "intro_request_suggested_email_while_open",
-          "value": "\"intro_request\".\"suggested_target_email\" is null or \"intro_request\".\"state\" in ('requested', 'accepted', 'asking_target', 'target_agreed')"
         },
         "intro_request_target_answer_known": {
           "name": "intro_request_target_answer_known",

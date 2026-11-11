@@ -10,6 +10,7 @@ import { JOB_BOARD_PAGES } from "@/modules/job-board/contract";
 import { ROUTES } from "@/platform/http/routes";
 import { CHAT_ADMIN_PAGE } from "@/modules/chat/contract";
 import { PERKS_ADMIN_PAGE } from "@/modules/perks/contract";
+import { ASKS_ADMIN_PAGE } from "@/modules/asks/contract";
 
 type AdminTab = { label: string; href: string; readBadge: (facts: AdminTabFacts) => number; badgeDescription: (count: number) => string };
 
@@ -41,6 +42,7 @@ const ADMIN_TABS: AdminTab[] = [
     readBadge: ({ creditsBadge }) => creditsBadge,
     badgeDescription: () => "Out of Village credits",
   },
+  { label: "Asks", href: ASKS_ADMIN_PAGE, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Jobs", href: JOB_BOARD_PAGES.admin, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Features", href: ROUTES.adminFeatures, readBadge: () => 0, badgeDescription: () => "" },
   { label: "Weekly email", href: ROUTES.adminWeeklyEmail, readBadge: () => 0, badgeDescription: () => "" },

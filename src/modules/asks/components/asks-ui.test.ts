@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ASK_API_ROUTES, ASK_CATEGORIES, ASK_KINDS, type AskBoardPage, type BoardAsk } from "@/modules/asks/contract";
+import { ASK_API_ROUTES, ASK_BOARD_TABS, ASK_CATEGORIES, ASK_KINDS, ASK_STATES, type AskBoardPage, type BoardAsk } from "@/modules/asks/contract";
 import { askBoardQuery } from "@/modules/asks/queries";
 import { MemberConversationSlotContext } from "@/modules/members/slots";
 
@@ -26,10 +26,16 @@ const ASK: BoardAsk = {
   myOffer: null,
   answers: [],
   whyYou: null,
+  state: ASK_STATES.open,
+  outcome: null,
+  isPinned: false,
+  canReopen: false,
 };
 
+const OPEN_BOARD = { tab: ASK_BOARD_TABS.open, search: null, category: null, kind: null };
+
 function toPage(asks: BoardAsk[], canIntro = false): AskBoardPage {
-  return { asks, nextCursor: null, canIntro };
+  return { asks, pinnedAsks: [], nextCursor: null, canIntro };
 }
 
 function respond(body: unknown) {
@@ -38,8 +44,8 @@ function respond(body: unknown) {
 
 function renderBoard(asks: BoardAsk[], withMessages: boolean) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Number.POSITIVE_INFINITY } } });
-  queryClient.setQueryData(askBoardQuery(null).queryKey, { pages: [toPage(asks)], pageParams: [null] });
-  const board = createElement(AskBoard, { category: null, isViewerAdmin: false, onAsk: vi.fn(), onSeeEverything: vi.fn(), onSeeYourAsks: vi.fn() });
+  queryClient.setQueryData(askBoardQuery(OPEN_BOARD).queryKey, { pages: [toPage(asks)], pageParams: [null] });
+  const board = createElement(AskBoard, { tab: ASK_BOARD_TABS.open, search: null, category: null, isViewerAdmin: false, onAsk: vi.fn(), onSeeEverything: vi.fn(), onSeeYourAsks: vi.fn() });
   const slot = (children: ReactNode) =>
     withMessages ? createElement(MemberConversationSlotContext.Provider, { value: ({ label }) => createElement("button", { type: "button" }, label) }, children) : children;
   render(createElement(QueryClientProvider, { client: queryClient }, slot(board)));
@@ -54,12 +60,12 @@ describe("the asks board", () => {
   it("invites the first ask when the board is empty", () => {
     const onAsk = vi.fn();
     const queryClient = new QueryClient();
-    queryClient.setQueryData(askBoardQuery(null).queryKey, { pages: [toPage([])], pageParams: [null] });
+    queryClient.setQueryData(askBoardQuery(OPEN_BOARD).queryKey, { pages: [toPage([])], pageParams: [null] });
     render(
       createElement(
         QueryClientProvider,
         { client: queryClient },
-        createElement(AskBoard, { category: null, isViewerAdmin: false, onAsk, onSeeEverything: vi.fn(), onSeeYourAsks: vi.fn() }),
+        createElement(AskBoard, { tab: ASK_BOARD_TABS.open, search: null, category: null, isViewerAdmin: false, onAsk, onSeeEverything: vi.fn(), onSeeYourAsks: vi.fn() }),
       ),
     );
 
