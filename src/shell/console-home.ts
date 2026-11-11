@@ -28,8 +28,8 @@ import { readIntroLog, type IntroLogRow } from "../modules/admin/reads-intro-log
 import { readEnabledIds } from "./enabled-modules.ts";
 
 // The console's Home (Founderhall's /admin): every intro counted since launch, the members, the latest of the intro
-// log, and the network, lookups, asks and mail at a glance. Counts only, except the intro log rows, whose names
-// follow ADMIN_SEES_INTRO_NAMES.
+// log, and the network, lookups, asks and mail at a glance. Counts only, except the intro log rows, which name who
+// asked whom (admins see names; notes stay private).
 
 const LATEST_INTRO_ROWS = 6;
 const WAITING_INVITE_ROWS = 5;

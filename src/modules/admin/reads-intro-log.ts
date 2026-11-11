@@ -7,11 +7,9 @@ import type { Database } from "../../platform/database/client.ts";
 import { INTRO_OUTCOMES, INTRO_STATES, OPEN_INTRO_STATES, type IntroOutcome, type IntroState } from "../intros/contract.ts";
 import { expireDueIntros } from "../intros/reads.ts";
 import { introRequest } from "../intros/schema.ts";
-import { ADMIN_SEES_INTRO_NAMES, HIDDEN_INTRO_NAMES } from "./intro-privacy.ts";
 
 // The console's intro log (Founderhall's /admin/intros, Home's "Latest in the intro log"): one row per intro asked,
-// with its state and dates. Never the note or the reason. Names load only while ADMIN_SEES_INTRO_NAMES is on;
-// otherwise each reads as a placeholder, so who asked whom never leaves the database.
+// with who asked whom, its state and dates (admins see names, the owner's decision). Never the note or the reason.
 
 export const INTRO_LOG_FILTERS = { all: "all", open: "open", made: "made", declined: "declined", withdrawn: "withdrawn" } as const;
 
@@ -56,7 +54,6 @@ export type IntroLogRow = {
   answeredAt: Date | null;
   introducedAt: Date | null;
   outcome: IntroOutcome | null;
-  isNamed: boolean;
 };
 
 const OPEN_STATES: readonly string[] = OPEN_INTRO_STATES;
@@ -117,10 +114,10 @@ export async function readIntroLog(database: Database, { from = null, to = null,
       targetAgreedAt: introRequest.targetAgreedAt,
       closedAt: introRequest.closedAt,
       outcome: introRequest.outcome,
-      // Names only behind the switch: with it off, these read nothing.
-      ...(ADMIN_SEES_INTRO_NAMES
-        ? { askerName: requester.name, connectorName: introducer.name, targetName: introRequest.targetName, targetHeadline: introRequest.targetHeadline }
-        : {}),
+      askerName: requester.name,
+      connectorName: introducer.name,
+      targetName: introRequest.targetName,
+      targetHeadline: introRequest.targetHeadline,
     })
     .from(introRequest)
     .leftJoin(requester, eq(requester.id, introRequest.requesterId))
@@ -130,16 +127,15 @@ export async function readIntroLog(database: Database, { from = null, to = null,
   const rows = await (limit ? base.limit(limit) : base);
   return rows.map((row) => {
     const state = row.state as IntroState;
-    const named = row as typeof row & { askerName?: string | null; connectorName?: string | null; targetName?: string; targetHeadline?: string | null };
     const filter = readFilter(state);
     const answeredAt = row.acceptedAt ?? row.askedTargetAt ?? (state === INTRO_STATES.declined ? row.closedAt : null);
     return {
       id: row.id,
       askedAt: row.createdAt,
-      asker: ADMIN_SEES_INTRO_NAMES ? (named.askerName ?? "Deleted member") : HIDDEN_INTRO_NAMES.asker,
-      target: ADMIN_SEES_INTRO_NAMES ? (named.targetName ?? "") : HIDDEN_INTRO_NAMES.target,
-      targetCompany: ADMIN_SEES_INTRO_NAMES ? readCompanyFromHeadline(named.targetHeadline ?? null) : null,
-      connector: ADMIN_SEES_INTRO_NAMES ? (named.connectorName ?? "") : HIDDEN_INTRO_NAMES.connector,
+      asker: row.askerName ?? "Deleted member",
+      target: row.targetName,
+      targetCompany: readCompanyFromHeadline(row.targetHeadline ?? null),
+      connector: row.connectorName ?? "Deleted member",
       state,
       stateWord: readStateWord({ state, acceptedAt: row.acceptedAt, askedTargetAt: row.askedTargetAt, targetAgreedAt: row.targetAgreedAt }),
       tone: TONE_OF[filter],
@@ -147,7 +143,6 @@ export async function readIntroLog(database: Database, { from = null, to = null,
       answeredAt,
       introducedAt: state === INTRO_STATES.completed ? row.closedAt : null,
       outcome: (row.outcome as IntroOutcome | null) ?? null,
-      isNamed: ADMIN_SEES_INTRO_NAMES,
     };
   });
 }

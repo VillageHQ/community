@@ -1,7 +1,7 @@
 import type { ConsolePeriod } from "./console-periods.ts";
 import { OUTCOME_WORDS, type IntroLogRow } from "./reads-intro-log.ts";
 
-// The Intro log as a CSV: states and dates, never a note. Names follow ADMIN_SEES_INTRO_NAMES like the page.
+// The Intro log as a CSV: who asked whom, states and dates, never a note, like the page.
 
 const FORMULA_START = /^[=+\-@\t\r]/;
 const NEEDS_QUOTES = /[",\n\r]/;

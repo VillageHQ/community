@@ -3,7 +3,6 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
 import { POST as postCsv } from "@/app/api/admin/intro-log/csv/route";
 import { POST as postOutcomeDays } from "@/app/api/admin/intro-log/outcome-days/route";
-import { ADMIN_SEES_INTRO_NAMES, HIDDEN_INTRO_NAMES } from "@/modules/admin/intro-privacy";
 import { renderIntroLogCsv } from "@/modules/admin/intro-log-csv";
 import { countIntroLog, readIntroLog } from "@/modules/admin/reads-intro-log";
 import { INTRO_OUTCOMES, INTRO_STATES } from "@/modules/intros/contract";
@@ -83,8 +82,7 @@ describe("the console's intro log", () => {
     await clearDatabase(database);
   });
 
-  it("shows states and dates, and never who asked whom while names are off", async () => {
-    expect(ADMIN_SEES_INTRO_NAMES).toBe(false);
+  it("shows who asked whom, states and dates, and never the note or reason", async () => {
     const asked = daysAgo(3);
     await seedIntro({ createdAt: asked });
     await seedIntro({ createdAt: asked, state: INTRO_STATES.askingTarget, acceptedAt: daysAgo(2), askedTargetAt: daysAgo(2) });
@@ -101,15 +99,16 @@ describe("the console's intro log", () => {
     expect(made.introducedAt).not.toBeNull();
 
     for (const text of [JSON.stringify(rows), renderIntroLogCsv(rows)]) {
-      for (const secret of [ASKER_NAME, CONNECTOR_NAME, TARGET_NAME, "Countwise", NOTE, REASON]) expect(text).not.toContain(secret);
-      expect(text).toContain(HIDDEN_INTRO_NAMES.asker);
+      for (const name of [ASKER_NAME, CONNECTOR_NAME, TARGET_NAME, "Countwise"]) expect(text).toContain(name);
+      for (const secret of [NOTE, REASON]) expect(text).not.toContain(secret);
     }
 
     const response = await call(postCsv, admin, { period: "all" });
     expect(response.status).toBe(200);
     const csv = await response.text();
     expect(csv.split("\r\n")[0]).toBe("asked_at,asker,target,target_company,connector,state,answered_at,introduced_at,outcome");
-    for (const secret of [ASKER_NAME, CONNECTOR_NAME, TARGET_NAME, NOTE]) expect(csv).not.toContain(secret);
+    expect(csv).toContain(`${ASKER_NAME},${TARGET_NAME},Countwise,${CONNECTOR_NAME}`);
+    expect(csv).not.toContain(NOTE);
   });
 
   it("keeps the CSV and the outcome setting to admins", async () => {

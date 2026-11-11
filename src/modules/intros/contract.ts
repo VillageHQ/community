@@ -113,7 +113,7 @@ export const INTRO_OUTCOMES = { helped: "helped", notYet: "not_yet", notHelped: 
 
 export type IntroOutcome = (typeof INTRO_OUTCOMES)[keyof typeof INTRO_OUTCOMES];
 
-// What came of an intro that helped, ticked by the requester with their answer. Admins only ever see totals.
+// What came of an intro that helped, ticked by the requester with their answer. The partner report shows only totals.
 export const INTRO_RESULTS = { customer: "customer", hire: "hire", investor: "investor" } as const;
 
 export type IntroResult = (typeof INTRO_RESULTS)[keyof typeof INTRO_RESULTS];

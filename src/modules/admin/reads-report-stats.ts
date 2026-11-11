@@ -2,7 +2,6 @@ import "server-only";
 
 import { aliasedTable, and, eq, gte, inArray, lt, min, sql } from "drizzle-orm";
 
-import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { readBranding } from "../../platform/branding/branding.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
@@ -14,13 +13,11 @@ import { expireDueIntros } from "../intros/reads.ts";
 import { introRequest } from "../intros/schema.ts";
 import { memberProfile } from "../members/schema.ts";
 import { readConsolePeriod, type ConsolePeriodParam } from "./console-periods.ts";
-import { ADMIN_SEES_INTRO_NAMES } from "./intro-privacy.ts";
 import { readReportOptions } from "./reads-partner-report.ts";
 import { computeReportStats, readReportTitle, readSummaryLine, type AskStats, type ReportIntroRow, type ReportStats } from "./report-stats.ts";
 
 // The partner report for one period, read once: the page, its CSV and its email all render this object.
-// No asker, target or note is read. A connector's name is read, and kept only when they turned on "credit me in
-// reports" and are an active member (or while ADMIN_SEES_INTRO_NAMES is on).
+// No asker, target or note is read. Connectors are named in Top connectors (admins see names, the owner's decision).
 
 type Period = { from: Date | null; to: Date | null };
 
@@ -29,13 +26,12 @@ const HOUR_MS = 60 * 60 * 1000;
 
 const requesterProfile = aliasedTable(memberProfile, "report_requester_profile");
 const connector = aliasedTable(user, "report_connector");
-const connectorProfile = aliasedTable(memberProfile, "report_connector_profile");
 
 function inPeriod(column: typeof introRequest.createdAt | typeof ask.createdAt, { from, to }: Period) {
   return and(from ? gte(column, from) : undefined, to ? lt(column, to) : undefined);
 }
 
-async function readIntroRows(database: Database, period: Period, now: Date): Promise<ReportIntroRow[]> {
+async function readIntroRows(database: Database, period: Period): Promise<ReportIntroRow[]> {
   const rows = await database
     .select({
       state: introRequest.state,
@@ -48,7 +44,6 @@ async function readIntroRows(database: Database, period: Period, now: Date): Pro
       outcomeResults: introRequest.outcomeResults,
       connectorKey: introRequest.introducerId,
       connectorName: connector.name,
-      isNameable: sql<boolean>`coalesce(${connectorProfile.creditInReports} and ${isActiveMember(now, connector)}, false)`,
       sector: requesterProfile.sector,
       cohort: requesterProfile.cohort,
       need: ask.category,
@@ -56,12 +51,10 @@ async function readIntroRows(database: Database, period: Period, now: Date): Pro
     .from(introRequest)
     .leftJoin(requesterProfile, eq(requesterProfile.userId, introRequest.requesterId))
     .leftJoin(connector, eq(connector.id, introRequest.introducerId))
-    .leftJoin(connectorProfile, eq(connectorProfile.userId, introRequest.introducerId))
     .leftJoin(ask, eq(ask.id, introRequest.askId))
     .where(and(eq(introRequest.isWithheld, false), inPeriod(introRequest.createdAt, period)));
-  return rows.map(({ isNameable, connectorName, need, ...row }) => ({
+  return rows.map(({ need, ...row }) => ({
     ...row,
-    connectorName: connectorName && (ADMIN_SEES_INTRO_NAMES || isNameable) ? connectorName : null,
     need: (need as AskCategory | null) ?? null,
   }));
 }
@@ -115,7 +108,7 @@ export async function readReportStats(database: Database, param: ConsolePeriodPa
   const [{ isAsksOn }, branding, rows, firstAskAt, outcomeDays] = await Promise.all([
     readReportOptions(database),
     readBranding(database),
-    readIntroRows(database, period, now),
+    readIntroRows(database, period),
     readFirstAskAt(database),
     readOutcomeDays(database),
   ]);

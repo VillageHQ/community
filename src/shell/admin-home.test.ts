@@ -151,7 +151,7 @@ describe("the admin home", () => {
     expect(readAdminHomeItems(facts, { pendingInvites: 0, stuckIntros: 0, isNetworkOn: true })).toEqual([expect.objectContaining({ href: ROUTES.adminVillage })]);
   });
 
-  it("counts every intro like Founderhall's ledger and never names anyone while names are off", async () => {
+  it("counts every intro like Founderhall's ledger and names who asked whom, never the note", async () => {
     const now = new Date();
     await seedIntro({ state: INTRO_STATES.completed, acceptedAt: now, askedTargetAt: now, targetAgreedAt: now, closedAt: now, outcome: INTRO_OUTCOMES.helped });
     await seedIntro({ state: INTRO_STATES.askingTarget, askedTargetAt: now });
@@ -176,7 +176,8 @@ describe("the admin home", () => {
       answered: 1,
       helpful: 1,
     });
-    expect(JSON.stringify(log)).not.toMatch(/Target Tess|Connector Cleo/);
+    expect(JSON.stringify(log)).toMatch(/Target Tess/);
+    expect(JSON.stringify(log)).not.toContain("A note.");
   });
 
   it("opens on the launch checklist on a fresh install, and on the dashboard once all four steps are done", async () => {

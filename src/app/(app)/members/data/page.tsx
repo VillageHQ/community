@@ -97,7 +97,7 @@ function readStoredItems(communityName: string, { isFeedOn, isAsksOn, isIntrosOn
     ...(isFeedOn ? [{ term: "Your posts and replies", detail: "In the feed, for members to read." }] : []),
     ...(isAsksOn ? [{ term: "Your asks, answers and offers", detail: "Asks and answers are for members to read. An offer is only for the person who asked." }] : []),
     ...(isIntrosOn
-      ? [{ term: "Your intros", detail: "Who asked whom, the states and dates, and the note. Only the people in an intro see its note. Admins see counts, not names." }]
+      ? [{ term: "Your intros", detail: "Who asked whom, the states and dates, and the note. Only the people in an intro see its note; admins see names, states and dates." }]
       : []),
     ...(isMessagesOn ? [{ term: "Your messages", detail: "Only you and the other member read them. Admins see one only if someone reports it." }] : []),
     ...(isNetworkOn ? [{ term: "Your network link", detail: "Your LinkedIn address and the dates you joined network search. Your contacts are never stored here." }] : []),

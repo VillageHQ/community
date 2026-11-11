@@ -404,7 +404,7 @@ ${HELP_NOTE}`;
       expect(sample.text).not.toContain("token=");
     });
 
-    it("previews another member's digest with who asked whom hidden, while admins see no names", async () => {
+    it("previews another member's digest with who asked whom, and never the note", async () => {
       const { hana } = await seedCommunity();
       const admin = await seedMember(database, { name: "Ada Admin" });
       await database.update(user).set({ role: "admin" }).where(eq(user.id, admin));
@@ -413,9 +413,8 @@ ${HELP_NOTE}`;
       const preview = await previewMemberDigest(database, environment(), session, hana);
 
       expect(preview?.text).toContain(`1. Alex Asker asks: ${ASK_TITLE}`);
-      expect(preview?.text).toContain("2. A member asks you to introduce them to Someone.");
-      expect(preview?.text).not.toContain("Rae Requester");
-      expect(preview?.text).not.toContain("Jo Rivera");
+      expect(preview?.text).toContain("2. Rae Requester asks you to introduce them to Jo Rivera.");
+      expect(preview?.text).not.toContain("Jo built the design team I want to build.");
       expect(preview?.text).not.toContain("token=");
     });
 

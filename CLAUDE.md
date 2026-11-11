@@ -27,7 +27,7 @@ Better Auth, Vitest, pnpm. Village is optional (network search, intro paths and 
 ## Regressions worth guarding
 - Module boundaries and 404-when-off (`src/test/architecture/`).
 - Public repo hygiene: no real people, keys or community data (`src/test/public-repo.test.ts`).
-- Admins see intro counts, never who asked whom; members never see each other's email addresses.
+- Admins see who asked whom (the owner's decision, 2026-11-11), never an intro's note or reason; members never see each other's email addresses.
 - Every email goes through the outbox in its change's transaction, and is sent once.
 
 ## Where the notes are
@@ -40,7 +40,7 @@ Better Auth, Vitest, pnpm. Village is optional (network search, intro paths and 
   `.ai/features/reply-by-email/NOTES.md`,
   `.ai/features/jobs-on-cards/NOTES.md`,
   `.ai/features/asks-tools/NOTES.md`, `.ai/features/search-first/NOTES.md`, `.ai/features/intros-no-village/NOTES.md`, `.ai/features/demo-portraits/SPEC.md` (no notes; the spec says how to add a portrait),
-  `.ai/features/fh-foundation/NOTES.md` (look, parts, shell).
+  `.ai/features/fh-foundation/NOTES.md` (look, parts, shell), `.ai/features/fh-console/NOTES.md` (the admin console screens).
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (guides), `drizzle/` (generated), `site/` (has its README), `public/` (demo pictures),
   `vercel.json` (the Vercel Cron Job running the timed jobs daily). Every deploy setup runs the job runner;
   `src/test/deploy-setups.test.ts` guards it.

@@ -20,10 +20,11 @@ become Founderhall's screens exactly: structure, sections in order, parts, words
 - **Emails** of this area word for word: the invite, the partner report, the digest test.
 - Old routes keep working through permanent redirects; links in emails follow.
 
-## Rule kept until the owner decides
-Admins see intro states, dates and counts, never who asked whom. The Intro log, Home's "Latest in the intro log"
-and the report follow Founderhall's layout, but names sit behind ONE named constant
-(`ADMIN_SEES_INTRO_NAMES` in `src/modules/admin/intro-privacy.ts`); switching it is a one-line change.
+## Who asked whom (owner decided, 2026-11-11)
+Admins see who asked whom, exactly like Founderhall: names in the Intro log, Home and the partner report's Top
+connectors; notes stay private. The temporary switch is gone (names on for good), the tests that enforced
+counts-only now check names show and notes never do, and members are told on Your data. The one line on the
+intro-ask page belongs to the search-and-ask area and goes to the orchestrator.
 
 ## Out
 Set up and its plumbing pages (another area), the member screens, sign-in and public pages.

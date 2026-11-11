@@ -100,7 +100,7 @@ export function OutcomePrompt({ intro }: { intro: Intro }) {
             Did your intro to {targetFirst} help?
           </h3>
           <p className="type-note text-foreground-soft">
-            {readFirstName(intro.introducer.name)} connected you a while ago. Your answer helps this community see what works. Admins only see totals.
+            {readFirstName(intro.introducer.name)} connected you a while ago. Your answer helps this community see what works. Admins see your answer.
           </p>
         </div>
         <FormError message={record.error?.message ?? null} />

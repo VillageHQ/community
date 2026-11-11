@@ -29,7 +29,6 @@ import { readEnabledIds } from "./enabled-modules";
 import { needsMemberThisWeek, numberWeeklyItems, readTodayItems, type TodayItems } from "./today";
 import { ITEM_ACTIONS, renderWeeklyEmail, type ItemLinks } from "./weekly-email-compose";
 import { readWeeklyEmailEnabled } from "./weekly-email-settings";
-import { ADMIN_SEES_INTRO_NAMES, HIDDEN_INTRO_NAMES } from "@/modules/admin/intro-privacy";
 
 const MEMBERS_PER_BATCH = 50;
 const DAY_MS = 24 * 60 * 60_000;
@@ -269,25 +268,16 @@ export async function previewWeeklyEmail(database: Database, environment: Enviro
   return { ...rendered, isEmpty: !needsMemberThisWeek(items), recipientName: recipient.name };
 }
 
-// What an admin's preview shows of a member's intros. With ADMIN_SEES_INTRO_NAMES off, who asked whom stays private:
-// every name in an intro reads as a placeholder (the community's rule; the owner may switch it).
-function hideIntroNames(items: TodayItems): TodayItems {
-  if (ADMIN_SEES_INTRO_NAMES) return items;
-  const hide = (intro: TodayItems["introsToAnswer"][number]) => ({
-    ...intro,
-    note: "",
-    reason: "",
-    requester: { ...intro.requester, name: HIDDEN_INTRO_NAMES.asker },
-    introducer: { ...intro.introducer, name: HIDDEN_INTRO_NAMES.connector },
-    target: { ...intro.target, name: HIDDEN_INTRO_NAMES.target },
-  });
+// What an admin's preview shows of a member's intros: who asked whom (admins see names), never the note or reason.
+function hideIntroNotes(items: TodayItems): TodayItems {
+  const hide = (intro: TodayItems["introsToAnswer"][number]) => ({ ...intro, note: "", reason: "" });
   return { ...items, introsToAnswer: items.introsToAnswer.map(hide), introsToFinish: items.introsToFinish.map(hide) };
 }
 
 export const SAMPLE_PREVIEW = "sample";
 
 // The digest preview (Asks & digest › Preview): any active member's digest as it would go out this week, or the
-// made-up member's. Buttons go nowhere that acts; intro names follow the console's privacy switch.
+// made-up member's. Buttons go nowhere that acts; intro notes stay private.
 export async function previewMemberDigest(database: Database, environment: Environment, admin: SessionMember, memberId: string) {
   if (memberId === SAMPLE_PREVIEW) return previewWeeklyEmail(database, environment, admin, WEEKLY_PREVIEW_SOURCES.sample);
   const [branding, enabledIds, [row]] = await Promise.all([
@@ -297,7 +287,7 @@ export async function previewMemberDigest(database: Database, environment: Envir
   ]);
   if (!row) return null;
   const read = await readTodayItems(database, row.id, enabledIds);
-  const items = row.id === admin.id ? read : hideIntroNames(read);
+  const items = row.id === admin.id ? read : hideIntroNotes(read);
   const numbered = numberWeeklyItems(items);
   const rendered = compose(environment, { recipient: row, items, numbered, links: placeholderLinks(environment, numbered), branding, canReply: readReplyDomain(environment) !== null, isTest: false });
   return { ...rendered, isEmpty: !needsMemberThisWeek(items), recipientName: row.name };

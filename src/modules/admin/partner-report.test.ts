@@ -20,7 +20,6 @@ import { memberProfile } from "@/modules/members/schema";
 import { readReportCredit } from "@/modules/members/service-report-credit";
 import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import { adminAuditEntry } from "@/platform/audit/schema";
-import { user } from "@/platform/database/auth-schema";
 import { EMAIL_KINDS } from "@/platform/email/kinds";
 import { emailOutbox, emailSuppression } from "@/platform/email/schema";
 import { saveModuleState } from "@/platform/modules/enablement";
@@ -293,35 +292,29 @@ describe("the partner report", () => {
       return { csv, preview, report: JSON.stringify(await readReportStats(database, "all")) };
     }
 
-    it("names no asker, target or note anywhere, and names the credited connector", async () => {
+    it("names no asker, target or note anywhere, and names every connector (admins see names)", async () => {
       const { csv, preview, report } = await readEverything();
 
       for (const text of [csv, preview, report]) {
         expect(text).not.toContain(ASKER_NAME);
         expect(text).not.toContain(TARGET_NAME);
         expect(text).not.toContain(NOTE);
-        expect(text).not.toContain(QUIET_NAME);
         expect(text).not.toContain(asker.userId);
         expect(text).toContain(CREDITED_NAME);
+        expect(text).toContain(QUIET_NAME);
       }
       expect(await readCsv(database)).toContain(`Top connectors,${CREDITED_NAME},6,6,2,2,2`);
-      expect(await readCsv(database)).toContain("Top connectors,Other connectors,6,1,1,3,1");
+      expect(await readCsv(database)).toContain(`Top connectors,${QUIET_NAME},6,1,1,3,1`);
+      expect(await readCsv(database)).not.toContain("Other connectors");
     });
 
-    it("stops naming a connector who turns credit off", async () => {
+    it("names a connector whatever their credit setting", async () => {
       await call(postReportCredit, credited, { isOn: false });
 
       const { csv, preview } = await readEverything();
 
-      expect(csv).not.toContain(CREDITED_NAME);
-      expect(preview).not.toContain(CREDITED_NAME);
-      expect(await readCsv(database)).toContain("Top connectors,Other connectors,12,7,3,5,3");
-    });
-
-    it("doesn't name a credited connector who was removed", async () => {
-      await database.update(user).set({ banned: true }).where(eq(user.id, credited.userId));
-
-      expect(await readCsv(database)).not.toContain(CREDITED_NAME);
+      expect(csv).toContain(CREDITED_NAME);
+      expect(preview).toContain(CREDITED_NAME);
     });
 
     it("names at most five, counts the rest, and keeps two people with one name apart", async () => {
