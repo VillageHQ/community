@@ -1,6 +1,6 @@
 # Verification: jobs on cards, profiles, directory and Today
 
-Independent verifier, 2026-11-11, branch `absi-agent/jobs-on-cards` (head 7e0b05e). Code not edited.
+Independent verifier, 2026-11-11, this build's branch (head 7e0b05e). Code not edited.
 Setup: `next dev` against my own databases `verify_demo` (DEMO_MODE=true, port 55723) and `verify_plain`
 (no demo, `JOB_FEEDS_FAKE_ORIGIN=http://127.0.0.1:55725`, port 55724), plus a fake Greenhouse feed in
 `.ai/tmp/verify-fake-feed.mjs`: `/greenhouse/ok*` serves `src/test/fixtures/jobs/greenhouse-stripe.json` as-is, and
