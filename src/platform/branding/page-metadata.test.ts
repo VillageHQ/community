@@ -4,7 +4,7 @@ import { metadata as adminMetadata } from "@/app/(app)/admin/page";
 import { metadata as networkMetadata } from "@/app/(app)/search/page";
 import { metadata as notFoundMetadata } from "@/app/not-found";
 import { metadata as setupMetadata } from "@/app/setup/page";
-import { metadata as signInMetadata } from "@/app/sign-in/page";
+import { metadata as signInMetadata } from "@/app/signin/page";
 import { metadata as signUpMetadata } from "@/app/sign-up/page";
 
 import { PAGE_TITLES, toRootMetadata } from "./page-metadata";

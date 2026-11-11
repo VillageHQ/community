@@ -136,7 +136,7 @@ describe("demo mode", () => {
         const sessions = await database.select({ id: session.id }).from(session).where(eq(session.userId, member?.id ?? ""));
         expect(sessions.length).toBe(1);
       }
-      expect((await postDemoSignIn("someone-else")).headers.get("location")).toBe("/sign-in?demo=unknown");
+      expect((await postDemoSignIn("someone-else")).headers.get("location")).toBe("/signin?demo=unknown");
     });
 
     it("restores the seed at the nightly reset, after edits", async () => {
@@ -184,7 +184,7 @@ describe("demo mode", () => {
       expect(await startDemo(database, DEMO_ENVIRONMENT)).toEqual({ outcome: "refused", message: DEMO_REFUSAL_MESSAGE });
       expect(DEMO_REFUSAL_MESSAGE).toContain("holds real members");
       await expect(resetDemo(database, DEMO_ENVIRONMENT)).rejects.toThrow(DEMO_REFUSAL_MESSAGE);
-      expect((await postDemoSignIn("member")).headers.get("location")).toBe("/sign-in?demo=missing");
+      expect((await postDemoSignIn("member")).headers.get("location")).toBe("/signin?demo=missing");
       expect(await countRows(user)).toBe(1);
     });
 

@@ -1,0 +1,32 @@
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
+import type { Metadata } from "next";
+
+import { getDatabase } from "@/platform/database/client";
+import { readAuditLog } from "@/modules/admin/reads-audit";
+import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { requireAdmin } from "@/platform/auth/session";
+
+import { AdminSection } from "@/shell/admin-section";
+import { AuditLog } from "@/modules/admin/components/audit-log";
+import { auditPageQuery } from "@/modules/admin/queries-audit";
+import { adminManifest } from "@/modules/admin/manifest";
+import { modulePage } from "@/platform/modules/module-page";
+
+const FIRST_PAGE = 1;
+
+export const metadata: Metadata = { title: PAGE_TITLES.adminAuditLog };
+
+export default modulePage(adminManifest, async function AdminAuditLogPage() {
+  await requireAdmin();
+  const auditPage = await readAuditLog(getDatabase(), FIRST_PAGE);
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(auditPageQuery(FIRST_PAGE).queryKey, auditPage);
+
+  return (
+    <AdminSection title="Audit log" description="Who changed what, newest first. Kept in this portal’s own database.">
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <AuditLog />
+      </HydrationBoundary>
+    </AdminSection>
+  );
+});

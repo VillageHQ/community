@@ -41,14 +41,14 @@ async function sendResetEmail(database: Database, environment: Environment, { me
   const { isLimited } = await recordFailedAttempt(database, `password-reset-email|${memberId}`, MAXIMUM_RESET_EMAILS_PER_MINUTE);
   if (isLimited) return;
 
-  const { name: communityName, accentColor } = await readBranding(database);
+  const { name: communityName } = await readBranding(database);
   const link = `${resolveAppUrl(environment)}${ROUTES.resetPassword}?token=${encodeURIComponent(token)}`;
   const queuedId = await queueEmail(database, environment, {
     kind: EMAIL_KINDS.passwordReset,
     to: member.email,
     memberId,
     expiresAt: readLinkEmailExpiry(PASSWORD_RESET_LIFETIME_SECONDS),
-    ...renderPasswordResetEmail({ link, communityName, accentColor }),
+    ...renderPasswordResetEmail({ link, communityName }),
   });
   await sendQueuedEmailNow(database, environment, queuedId);
 }

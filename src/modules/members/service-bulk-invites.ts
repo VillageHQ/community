@@ -43,9 +43,9 @@ function toInviteValues(person: BulkPerson, inviter: Inviter, token: string) {
   };
 }
 
-type ChunkContext = { request: RequestContext; inviter: Inviter; branding: EmailBranding | null };
+type ChunkContext = { request: RequestContext; inviter: Inviter; branding: EmailBranding | null; auditDetail: string };
 
-async function inviteChunk(transaction: Transaction, { request, inviter, branding }: ChunkContext, people: BulkPerson[]) {
+async function inviteChunk(transaction: Transaction, { request, inviter, branding, auditDetail }: ChunkContext, people: BulkPerson[]) {
   const emails = people.map(({ email }) => email);
   const members = await transaction.select({ email: user.email }).from(user).where(inArray(user.email, emails));
   const memberEmails = new Set(members.map(({ email }) => email));
@@ -101,7 +101,7 @@ async function inviteChunk(transaction: Transaction, { request, inviter, brandin
     issued.map(({ email, isRenewed }) => ({
       action: isRenewed ? AUDIT_ACTIONS.inviteResent : AUDIT_ACTIONS.inviteCreated,
       targetName: email,
-      detail: BULK_AUDIT_DETAIL,
+      detail: auditDetail,
     })),
   );
   return { issued, skipped };
@@ -109,11 +109,14 @@ async function inviteChunk(transaction: Transaction, { request, inviter, brandin
 
 // Each person gets the same single-use 14-day invite as one invited by hand. Members and pending invites are
 // skipped and named; an expired invite is renewed. Each email is queued in the transaction that issues its invite,
-// so none is lost; the outbox sends them and retries a failed one.
-export async function createBulkInvites(context: RequestContext, parsed: ParsedBulkInvites): Promise<BulkInviteResult> {
+// so none is lost; the outbox sends them and retries a failed one. With sendEmail false (Import members with
+// "Email each person their invite now" off) nothing is queued: the invites wait on Sign-in links.
+type BulkInviteOptions = { sendEmail?: boolean; auditDetail?: string };
+
+export async function createBulkInvites(context: RequestContext, parsed: ParsedBulkInvites, { sendEmail = true, auditDetail = BULK_AUDIT_DETAIL }: BulkInviteOptions = {}): Promise<BulkInviteResult> {
   const inviter = await readInviter(context);
-  const branding = await readEmailBranding(context.database, context.environment);
-  const chunkContext: ChunkContext = { request: context, inviter, branding };
+  const branding = sendEmail ? await readEmailBranding(context.database, context.environment) : null;
+  const chunkContext: ChunkContext = { request: context, inviter, branding, auditDetail };
   const issued: IssuedInvite[] = [];
   const skipped = [...parsed.skipped];
 

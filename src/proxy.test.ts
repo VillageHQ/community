@@ -13,8 +13,12 @@ const REWRITE_HEADER = "x-middleware-rewrite";
 
 const toggleable = MODULES.map(({ manifest }) => manifest).filter((manifest): manifest is ToggleableManifest => manifest.kind === MODULE_KINDS.toggleable);
 
-function rewriteOf(path: string) {
-  return proxy(new NextRequest(`${APP_URL}${path}`)).then((response) => response.headers.get(REWRITE_HEADER));
+const SESSION_COOKIE = "better-auth.session_token=signed-in";
+const VISITOR_JOBS_PAGE = "/public/board";
+
+function rewriteOf(path: string, { isSignedIn = false } = {}) {
+  const headers = isSignedIn ? { cookie: SESSION_COOKIE } : undefined;
+  return proxy(new NextRequest(`${APP_URL}${path}`, { headers })).then((response) => response.headers.get(REWRITE_HEADER));
 }
 
 describe("a page of a switched-off module, before it renders", () => {
@@ -36,10 +40,25 @@ describe("a page of a switched-off module, before it renders", () => {
       for (const page of pages) expect(await rewriteOf(page), page).toContain("/_module-off");
     });
 
+    it("goes to the not-found page inside the app for a signed-in member", async () => {
+      await saveModuleState(database, manifest, false);
+      for (const page of pages) expect(await rewriteOf(page, { isSignedIn: true }), page).toContain("/not-here/_module-off");
+    });
+
     it("renders as usual when on", async () => {
       await saveModuleState(database, manifest, true);
-      for (const page of pages) expect(await rewriteOf(page), page).toBeNull();
+      for (const page of pages) expect(await rewriteOf(page, { isSignedIn: true }), page).toBeNull();
     });
+  });
+
+  it("shows a visitor at /jobs the public board, and a member the members' board", async () => {
+    const jobBoard = toggleable.find(({ id }) => id === "job-board");
+    if (!jobBoard) throw new Error("no job board module");
+    await saveModuleState(database, jobBoard, true);
+    expect(await rewriteOf("/jobs")).toContain(VISITOR_JOBS_PAGE);
+    expect(await rewriteOf("/jobs?company=kilnworks")).toContain(`${VISITOR_JOBS_PAGE}?company=kilnworks`);
+    expect(await rewriteOf("/jobs", { isSignedIn: true })).toBeNull();
+    expect(await rewriteOf("/jobs/yours")).toBeNull();
   });
 
   it("leaves core pages alone", async () => {

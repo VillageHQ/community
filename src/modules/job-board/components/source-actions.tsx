@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, RefreshCw, Trash2 } from "lucide-react";
+import { Eye, EyeOff, RefreshCw } from "lucide-react";
 
 import { FormError } from "@/components/form-error";
 import { Alert } from "@/components/ui/alert";
@@ -25,7 +25,7 @@ export function SourceActions({ sourceId, company, hidden, canPull, canToggleHid
       <div className="flex flex-wrap gap-2">
         {canPull ? (
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             disabled={isBusy}
             onClick={() => {
@@ -39,7 +39,7 @@ export function SourceActions({ sourceId, company, hidden, canPull, canToggleHid
         ) : null}
         {canToggleHidden ? (
           <Button
-            variant="outline"
+            variant="secondary"
             size="sm"
             disabled={isBusy}
             onClick={() => {
@@ -48,8 +48,7 @@ export function SourceActions({ sourceId, company, hidden, canPull, canToggleHid
             }}
           >
             {hidden ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />}
-            {hidden ? "Show" : "Hide"}
-            <span className="sr-only"> {company}&apos;s jobs</span>
+            {hidden ? "Show this company on the board" : "Hide this company from the board"}
           </Button>
         ) : null}
         {canRemove ? (
@@ -63,7 +62,6 @@ export function SourceActions({ sourceId, company, hidden, canPull, canToggleHid
               remove.mutate({ sourceId });
             }}
           >
-            <Trash2 aria-hidden="true" />
             Remove
           </Button>
         ) : null}

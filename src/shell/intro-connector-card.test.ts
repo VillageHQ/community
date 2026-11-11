@@ -71,7 +71,7 @@ describe("a connector", () => {
       renderCard(MEMBER_CONNECTOR);
 
       expect(screen.getByRole("link", { name: "See Jonas Lindqvist's profile" }).getAttribute("href")).toBe("/members/jonas");
-      expect(screen.getByRole("button", { name: "Message Jonas Lindqvist" })).toBeTruthy();
+      expect(screen.getByRole("link", { name: "Message Jonas Lindqvist" }).getAttribute("href")).toBe("/messages/new?to=jonas");
     });
 
     it("replaces the ask with a link once one is open", () => {
@@ -89,7 +89,7 @@ describe("a connector", () => {
 
       expect(screen.getByText(OUTSIDE_COMMUNITY_LABEL)).toBeTruthy();
       expect(screen.queryByRole("button", { name: /Ask/ })).toBeNull();
-      expect(screen.queryByRole("button", { name: /Message/ })).toBeNull();
+      expect(screen.queryByRole("link", { name: /Message/ })).toBeNull();
       expect(screen.getByText(/ask directly on LinkedIn/)).toBeTruthy();
       expect(screen.getByRole("link", { name: /Sofia on LinkedIn/ }).getAttribute("href")).toBe("https://www.linkedin.com/in/sofia-weber");
     });

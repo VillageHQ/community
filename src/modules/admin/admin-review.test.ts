@@ -60,6 +60,7 @@ import { POST as postVillageKeys } from "@/app/api/admin/village/keys/route";
 import { POST as postLinkReset } from "@/app/api/admin/village/links/reset/route";
 import { saveModuleState } from "@/platform/modules/enablement";
 import { feedManifest } from "@/modules/feed/manifest";
+import { readInviteToken } from "@/test/invite-link";
 
 const APP_URL = "http://localhost:3000";
 const OK_STATUS = 200;
@@ -592,7 +593,7 @@ describe("the review fixes", () => {
 
   describe("inviting someone back as a new account", () => {
     async function acceptLink(link: string) {
-      const token = link.split("/").at(-1);
+      const token = readInviteToken(link);
       const response = await postAccept(jsonRequest(null, { token, name: "Mo Again", password: PASSWORD }));
       return { response, cookie: response.headers.getSetCookie()[0]?.split(";")[0] ?? "" };
     }

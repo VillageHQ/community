@@ -1,6 +1,7 @@
 // The job board: link detection for every tool, each feed reader on a saved sample feed (src/test/fixtures/jobs),
 // the pull through a local fake feed server, the boards, the widget and who may change what. Made-up people only;
 // no real hiring tool is called.
+import { ROUTES } from "@/platform/http/routes";
 import { readFileSync } from "node:fs";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -21,7 +22,7 @@ import { POST as postPull } from "@/app/api/job-board/sources/pull/route";
 import { POST as postRemove } from "@/app/api/job-board/sources/remove/route";
 import { GET as getWidgetScript } from "@/app/api/job-board/widget.js/route";
 import { POST as postDirectory } from "@/app/api/members/directory/route";
-import PublicJobsPage from "@/app/public/jobs/page";
+import PublicJobsPage from "@/app/public/board/page";
 import { FEED_TOOLS, JOB_BOARD_LIMITS, type FeedTool } from "@/modules/job-board/contract";
 import { jobBoardManifest } from "@/modules/job-board/manifest";
 import { readAllSources, readBoardCompanies, readBoardJobs, readMemberSources } from "@/modules/job-board/reads";
@@ -440,7 +441,8 @@ describe("the job board", () => {
     await linkGreenhouse();
 
     expect((await visit(getEmbed, "/api/job-board/embed")).status).toBe(404);
-    expect(await readDigest(PublicJobsPage({ searchParams: Promise.resolve({}) }))).toBe(NOT_FOUND_DIGEST);
+    // /jobs is the members' board then: a visitor is asked to sign in.
+    expect(await readDigest(PublicJobsPage({ searchParams: Promise.resolve({}) }))).toBe(`NEXT_REDIRECT;replace;${ROUTES.signIn};307;`);
     expect((await call(postPublicSwitch, founder, { isPublic: true })).status).toBe(403);
 
     await call(postPublicSwitch, admin, { isPublic: true });

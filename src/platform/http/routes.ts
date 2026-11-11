@@ -3,22 +3,27 @@ export const ACCOUNT_DELETED_PARAM = "accountDeleted";
 
 export const ROUTES = {
   feed: "/",
-  signIn: "/sign-in",
-  signInLink: "/sign-in/link",
-  signInAsNewAdmin: `/sign-in?${ADMIN_CREATED_PARAM}=true`,
-  signInAfterDeletion: `/sign-in?${ACCOUNT_DELETED_PARAM}=true`,
+  // Founderhall's paths. The old ones (/sign-in, /sign-in/link, /join/<token>) redirect here (next.config.mjs).
+  signIn: "/signin",
+  signInLink: "/auth",
+  signInAsNewAdmin: `/signin?${ADMIN_CREATED_PARAM}=true`,
+  signInAfterDeletion: `/signin?${ACCOUNT_DELETED_PARAM}=true`,
   signUp: "/sign-up",
   forgotPassword: "/forgot-password",
   resetPassword: "/reset-password",
   recoverAdmin: "/recover-admin",
   setup: "/setup",
   landing: "/start",
-  join: "/join",
+  join: "/invite",
   welcome: "/welcome",
+  welcomePrivacy: "/welcome/privacy",
   confirmEmail: "/confirm-email",
   unsubscribe: "/unsubscribe",
   weeklyAnswer: "/weekly",
-  messages: "/messages",
+  // Founderhall's Inbox; the old /messages addresses redirect here (next.config.mjs).
+  messages: "/inbox",
+  // A first message to a member: the empty thread page; the first Send starts the conversation.
+  newMessage: "/messages/new",
   intros: "/intros",
   introConsent: "/meet",
   members: "/members",
@@ -35,22 +40,30 @@ export const ROUTES = {
   adminSetup: "/admin/setup",
   adminMembers: "/admin/members",
   adminReports: "/admin/reports",
-  adminAuditLog: "/admin/audit-log",
+  adminAuditLog: "/admin/audit",
   adminHealth: "/admin/health",
   adminReport: "/admin/report",
-  adminCredits: "/admin/credits",
   adminFeatures: "/admin/features",
   adminSettings: "/admin/settings",
   adminWeeklyEmail: "/admin/weekly-email",
   adminVillage: "/admin/village",
-  adminEmail: "/admin/email",
+  adminMail: "/admin/mail",
+  adminImport: "/admin/import",
+  adminLinks: "/admin/links",
   // The console's Intro log and Invites (Founderhall's menu). Until their pages are built they forward to where
   // that work lives today: the partner report and Members.
   adminIntroLog: "/admin/intros",
   adminInvites: "/admin/invites",
   // The parts review page: off unless SHOW_PARTS_PAGE=true (development and review copies only).
   parts: "/parts",
+  // A switched-off module's page, for a signed-in member: a 404 inside the app (src/proxy.ts).
+  notHere: "/not-here",
 } as const;
+
+// An invite's page: Founderhall's /invite?token=…
+export function toInvitePath(token: string) {
+  return `${ROUTES.join}?token=${encodeURIComponent(token)}`;
+}
 
 export const AUTH_BASE_PATH = "/api/auth";
 
@@ -162,6 +175,8 @@ export const API_ROUTES = {
   profileDelete: "/api/profile/delete",
   onboardingIntroAsks: "/api/onboarding/intro-asks",
   onboarding: "/api/onboarding",
+  onboardingWelcome: "/api/onboarding/welcome",
+  onboardingPrivacy: "/api/onboarding/privacy",
   villageKeys: "/api/admin/village/keys",
   villageGroup: "/api/admin/village/group",
   villageSettings: "/api/admin/village/settings",

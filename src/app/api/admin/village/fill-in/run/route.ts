@@ -1,6 +1,7 @@
 
 import { emptyBodySchema } from "@/platform/http/contract";
 import { runFillInNow, type FillInRun } from "@/modules/network/service-fill-in";
+import { FILL_IN_TRIGGERS, recordFillInRun } from "@/modules/network/service-village-admin";
 import { logAdminAction } from "@/platform/observability/route-logging";
 import { networkRoutes } from "@/modules/network/routes";
 
@@ -20,6 +21,7 @@ export const POST = networkRoutes.member(
   emptyBodySchema,
   async (context) => {
     const run = await runFillInNow(context);
+    await recordFillInRun(context.database, run, FILL_IN_TRIGGERS.admin);
     logAdminAction("fill_in_run", context.member.id, String(run.checked));
     return Response.json({ message: describeRun(run) });
   },

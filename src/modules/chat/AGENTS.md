@@ -10,7 +10,7 @@ Posts new asks and a weekly line to a Slack or Discord channel, and answers Slac
 - `service-secrets.ts`: sealing with `SETUP_TOKEN`, like the Village secret. The only place a token is opened.
 - `service.ts`: connect, channel, test post, pause, disconnect, and the single send.
 - `service-posts.ts`: `postChatItems`, the ledger claim and send.
-- `components/chat-forms.tsx`: the admin forms. The page is `src/app/(app)/admin/chat/page.tsx`.
+- `components/chat-forms.tsx`: the admin forms. The page is `src/app/(app)/admin/integrations/page.tsx` (Set up › Integrations; `/admin/chat` redirects there).
 
 Rules:
 

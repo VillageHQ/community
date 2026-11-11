@@ -462,10 +462,10 @@ async function seedAsks(transaction: Transaction, ids: Ids, ago: ReturnType<type
   }
 }
 
-const THREAD: readonly [string, string, number][] = [
-  ["priya.shah", "Saw your ask about hospital procurement. I know Dana at Lakeshore Health. Want me to reach out?", 26],
-  ["sam.lee", "That would be amazing, thank you! I've sent the intro request with a short note.", 25],
-  ["priya.shah", "Got it. I'll forward it this week. Can you send a one-pager I can attach?", 5],
+// The same thread as Founderhall's demo; Sam answered Priya by replying to the email.
+const THREAD: readonly [string, string, number, boolean][] = [
+  ["priya.shah", "Saw your VP Sales ask. Want to compare scorecards on Thursday? 30 minutes is plenty.", 50, false],
+  ["sam.lee", "Yes please. Thursday 4pm London works. I’ll bring our job spec.", 48, true],
 ];
 
 async function seedMessages(transaction: Transaction, ids: Ids, ago: ReturnType<typeof makeClock>) {
@@ -475,7 +475,7 @@ async function seedMessages(transaction: Transaction, ids: Ids, ago: ReturnType<
     .values({ memberLowId: low ?? "", memberHighId: high ?? "", lastRevision: THREAD.length, createdAt: ago(1, 26) })
     .returning({ id: conversation.id });
   if (!created) return;
-  for (const [index, [sender, body, hoursAgo]] of THREAD.entries()) {
+  for (const [index, [sender, body, hoursAgo, isViaEmail]] of THREAD.entries()) {
     await transaction.insert(directMessage).values({
       conversationId: created.id,
       senderId: ids.get(sender) ?? "",
@@ -483,12 +483,13 @@ async function seedMessages(transaction: Transaction, ids: Ids, ago: ReturnType<
       body,
       sequence: index + 1,
       revision: index + 1,
+      isViaEmail,
       createdAt: ago(0, hoursAgo),
     });
   }
-  // Sam has read all but the last message, so the demo opens with one unread.
+  // Both have read everything: Sam wrote last.
   await transaction.insert(conversationReadCursor).values([
-    { conversationId: created.id, memberId: ids.get("sam.lee") ?? "", lastReadSequence: THREAD.length - 1 },
+    { conversationId: created.id, memberId: ids.get("sam.lee") ?? "", lastReadSequence: THREAD.length },
     { conversationId: created.id, memberId: ids.get("priya.shah") ?? "", lastReadSequence: THREAD.length },
   ]);
 }
@@ -525,7 +526,7 @@ async function seedFillIn(transaction: Transaction, ids: Ids, ago: ReturnType<ty
   }
 }
 
-// Four founders linked their hiring tool and a pull found their jobs. The demo's pull never fetches, so they stay.
+// Three founders linked their hiring tool and a pull found their jobs. The demo's pull never fetches, so they stay.
 async function seedJobs(transaction: Transaction, ids: Ids, ago: ReturnType<typeof makeClock>, now: Date) {
   for (const seed of DEMO_JOB_SOURCES) {
     const founder = person(seed.founder);
