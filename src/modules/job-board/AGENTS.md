@@ -1,14 +1,13 @@
 # Job board
 
-Founders show their companies' open jobs. A member links the company's hiring tool by pasting its careers link, or adds jobs by hand; the app reads the tool's public job feed (no key) every hour. Toggleable, off by default, needs no Village account. The id is `job-board` so it doesn't read like the platform's timed-jobs runner.
+Founders show their companies' open jobs. A member links the company's hiring tool by pasting its careers link, or adds jobs by hand; the app reads the tool's public job feed (no key) every hour. Toggleable, off by default, no Village needed. Its id is `job-board`, unlike the timed-jobs runner.
 
 - `manifest.ts`: identity, nav entry, the admin tab and owned paths (`/jobs`, `/admin/jobs`, `/public/jobs`, `/api/job-board`, `/api/admin/jobs`). `integration.ts`: the pull job.
 - `contract.ts`: paths, limits, the 12 tools, Zod schemas, shapes, `toCompanySlug`. Client-safe.
 - `schema.ts`: `job_source` (one linked tool or a "manual" source) and `job_posting`.
 - `rules-feeds.ts`: one reader per tool: find the board's name in a link, build the feed address, map its jobs. Pure.
 - `service-pull.ts`: `fetchBoard` (15 s, 2 MB cap, Ashby 20 MB, one redirect inside the tool's domain, plain-word `FeedError`), `pullSource`, and `pullDueSources`, which the job runner calls every 5 minutes.
-- `service.ts`: link, add by hand, pull now, hide, remove, the public switch. `reads.ts`: the boards, the companies, the sources.
-- `reads-hiring.ts`: a company's jobs for a profile, the directory's hiring count (`companyJobCountColumn`), Today's new jobs. `components/shared/`: the profile and Today cards.
+- `service.ts`: link, add by hand, pull now, hide, remove, the public switch. `reads.ts`: boards, companies, sources; `reads-hiring.ts`: profiles, directory, Today.
 - `rules-widget.ts`: the website widget's script, the frame's script, the frame's HTML and headers, the embed snippets.
 - `components/`: the UI.
 
