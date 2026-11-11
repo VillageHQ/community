@@ -64,6 +64,11 @@ export const nextConfig = {
   ],
   redirects: async () => [
     { source: "/feed", destination: "/", permanent: false },
+    // Set up's pages took Founderhall's addresses; old links and bookmarks land on the new ones.
+    { source: "/admin/email", destination: "/admin/mail", permanent: true },
+    { source: "/admin/audit-log", destination: "/admin/audit", permanent: true },
+    { source: "/admin/chat", destination: "/admin/integrations", permanent: true },
+    { source: "/admin/credits", destination: "/admin/village", permanent: true },
     // Demo faces moved from drawn .svg to .webp portraits; a demo seeded before that keeps the old links until its reset.
     { source: "/demo/faces/:name([a-z0-9-]+)\.svg", destination: "/demo/faces/:name.webp", permanent: true },
   ],

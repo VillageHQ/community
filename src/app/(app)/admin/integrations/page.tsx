@@ -22,7 +22,7 @@ import { describeSchedule } from "@/platform/weekly-email/schedule";
 import { readWeeklySchedule } from "@/platform/weekly-email/schedule-store";
 import { AdminSection } from "@/shell/admin-section";
 
-export const metadata: Metadata = { title: PAGE_TITLES.adminChat };
+export const metadata: Metadata = { title: PAGE_TITLES.adminIntegrations };
 
 function StatusTag({ connection }: { connection: ChatConnectionView | null }) {
   if (!connection) return <Tag>Not connected</Tag>;

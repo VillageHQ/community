@@ -75,7 +75,7 @@ function DoNotSendList({ entries }: { entries: Awaited<ReturnType<typeof readDoN
   );
 }
 
-export const metadata: Metadata = { title: PAGE_TITLES.adminEmailLog };
+export const metadata: Metadata = { title: PAGE_TITLES.adminMail };
 
 export default modulePage(adminManifest, async function AdminEmailPage() {
   await requireAdmin();

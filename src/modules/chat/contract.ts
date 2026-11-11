@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const CHAT_ADMIN_PAGE = "/admin/chat";
+export const CHAT_ADMIN_PAGE = "/admin/integrations";
 export const CHAT_PAGE_TITLE = "Slack and Discord";
 
 export const CHAT_API_ROUTES = {
