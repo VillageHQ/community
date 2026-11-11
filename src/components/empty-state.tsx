@@ -50,7 +50,7 @@ export function EmptyState({
     <div data-slot="empty-state" className="flex flex-col items-center px-4 py-10 text-center sm:px-10 sm:py-14">
       <EmptyStateArt icon={icon} />
       <Heading className="type-h2">{title}</Heading>
-      <p className="type-lead mt-2.5 max-w-[440px] text-foreground-soft">{description}</p>
+      <p className="type-lead mt-2.5 max-w-[440px] wrap-anywhere text-foreground-soft">{description}</p>
       {children ? <div className="mt-6 flex flex-col items-center gap-2">{children}</div> : null}
     </div>
   );

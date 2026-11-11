@@ -22,6 +22,13 @@ export const OUTCOME_LABELS: Record<AskOutcome, string> = {
 
 export const OUTCOMES = Object.values(ASK_OUTCOMES);
 
+// How an ask ended, as anyone reading the board sees it.
+export const BOARD_OUTCOME_LABELS: Record<AskOutcome, string> = {
+  [ASK_OUTCOMES.solvedHere]: "Closed: someone here helped",
+  [ASK_OUTCOMES.solvedElsewhere]: "Closed: solved elsewhere",
+  [ASK_OUTCOMES.noLongerNeeded]: "Closed: no longer needed",
+};
+
 export const ASK_AVATAR_SIZE_PX = 48;
 export const OFFER_AVATAR_SIZE_PX = 44;
 

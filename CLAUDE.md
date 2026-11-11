@@ -38,7 +38,8 @@ Better Auth, Vitest, pnpm. Village is optional (network search and profile fill-
   `.ai/features/today-weekly/NOTES.md`, `.ai/features/two-sided-intros/NOTES.md`, `.ai/features/your-data/NOTES.md`,
   `.ai/features/admin-home/NOTES.md`, `.ai/features/admin-firstrun/NOTES.md`, `.ai/features/faces-logos/NOTES.md`, `.ai/features/demo-jobs-perks/NOTES.md`, `.ai/features/village-check/NOTES.md`,
   `.ai/features/reply-by-email/NOTES.md`,
-  `.ai/features/jobs-on-cards/NOTES.md`, `.ai/features/search-first/NOTES.md`.
+  `.ai/features/jobs-on-cards/NOTES.md`,
+  `.ai/features/asks-tools/NOTES.md`, `.ai/features/search-first/NOTES.md`.
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (guides), `drizzle/` (generated), `site/` (has its README), `public/` (demo pictures),
   `vercel.json` (the Vercel Cron Job running the timed jobs daily). Every deploy setup runs the job runner;
   `src/test/deploy-setups.test.ts` guards it.
