@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { openSyncModal } from "@villagehq/sdk";
-import { Clock, KeyRound, Link2, RefreshCw, ShieldAlert } from "lucide-react";
+import { Clock, KeyRound, Link2, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 

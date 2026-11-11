@@ -84,7 +84,6 @@ type OneStepAskProps = {
   connectorName: string;
   connectorSlug: string;
   targetSlug: string;
-  targetName: string;
   draftNote: string;
   cap: number;
   // Why the ask can't go now (the week's asks are used, the member paused asks), or null.
@@ -92,7 +91,7 @@ type OneStepAskProps = {
 };
 
 // The one-step ask from a search result: one note, the allowance in one line, one Send (Founderhall's oneStepAskPage).
-export function OneStepAskForm({ connectorName, connectorSlug, targetSlug, targetName, draftNote, cap, blockedReason }: OneStepAskProps) {
+export function OneStepAskForm({ connectorName, connectorSlug, targetSlug, draftNote, cap, blockedReason }: OneStepAskProps) {
   const [note, setNote] = useState(draftNote);
   const ask = useAsk();
   const connectorFirst = readFirstName(connectorName);

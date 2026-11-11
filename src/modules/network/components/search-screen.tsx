@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { KeyRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import { QueryBoundary } from "@/components/query-boundary";
 import { ExampleChips } from "@/components/ui/chip";
@@ -16,7 +16,10 @@ import { SEARCH_PROMPT_MAX_LENGTH, SEARCH_PROMPT_PARAM, SEARCH_SCOPE_PARAM, SEAR
 import { activeSearchQuery, type ActiveSearch } from "@/modules/network/queries";
 
 import { NetworkFailure } from "./network-failure";
-import { SearchResults, type SearchViewer } from "./search-results";
+import { SearchResults } from "./search-results";
+import type { SearchScreenProps } from "./search-types";
+
+export type { SearchScreenProps } from "./search-types";
 import { SearchWaiting } from "./search-waiting";
 
 const EXAMPLES = ["Head of procurement at a US hospital", "someone at Halcyon Health", "seed investors in climate", "a former CFO"];
@@ -26,20 +29,6 @@ const SCOPE_SEGMENTS = [
 ] as const;
 const QUERY_FIELD = "q";
 
-export type SearchScreenProps = {
-  viewer: SearchViewer;
-  communityName: string;
-  // Members other than the viewer who share their network.
-  sharingMemberCount: number;
-  // The viewer's own network is in (they joined and synced).
-  isConnected: boolean;
-  // Village is connected for this community; without it search finds member profiles only.
-  isVillageOn: boolean;
-  defaultScope: SearchWhere;
-  canAskIntro: boolean;
-  canAskCommunity: boolean;
-  digestDay: string;
-};
 
 export function toSearchHref(query: string, scope: SearchWhere) {
   return `${ROUTES.network}?${new URLSearchParams({ [SEARCH_PROMPT_PARAM]: query, [SEARCH_SCOPE_PARAM]: scope }).toString()}`;
@@ -76,13 +65,8 @@ export function SearchScreen(props: SearchScreenProps) {
   const queryClient = useQueryClient();
   const query = (searchParams.get(SEARCH_PROMPT_PARAM) ?? "").trim().slice(0, SEARCH_PROMPT_MAX_LENGTH);
   const scope = readScope(searchParams.get(SEARCH_SCOPE_PARAM), defaultScope);
-  const [draft, setDraft] = useState(query);
-  const [chosenScope, setChosenScope] = useState(scope);
   // The search runs from the browser (it can take two minutes), never while the server renders the page.
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => setIsMounted(true), []);
-  useEffect(() => setDraft(query), [query]);
-  useEffect(() => setChosenScope(scope), [scope]);
+  const isInBrowser = useSyncExternalStore(subscribeToNothing, () => true, () => false);
 
   const search = (words: string, where: SearchWhere) => {
     const prompt = words.trim();
@@ -99,45 +83,7 @@ export function SearchScreen(props: SearchScreenProps) {
           <label htmlFor={QUERY_FIELD}>Who are you trying to reach?</label>
         </h1>
       </div>
-      <form
-        role="search"
-        onSubmit={(event) => {
-          event.preventDefault();
-          search(draft, chosenScope);
-        }}
-      >
-        <SearchBox
-          id={QUERY_FIELD}
-          name={QUERY_FIELD}
-          autoComplete="off"
-          placeholder="A person, a company or a role"
-          maxLength={SEARCH_PROMPT_MAX_LENGTH}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-        />
-        {isVillageOn ? (
-          <div className="fh-period" style={{ marginTop: 12 }}>
-            <SegmentedControl
-              label="Where to search"
-              segments={SCOPE_SEGMENTS}
-              value={chosenScope}
-              onChange={(where) => {
-                setChosenScope(where);
-                if (draft.trim()) search(draft, where);
-              }}
-            />
-          </div>
-        ) : null}
-        {query ? null : (
-          <ExampleChips>
-            {EXAMPLES.map((example) => (
-              <button key={example} type="button" onClick={() => search(example, chosenScope)}>
-                {example}
-              </button>
-            ))}
-          </ExampleChips>
-        )}
-      </form>
+      <SearchForm key={`${query}|${scope}`} query={query} scope={scope} isVillageOn={isVillageOn} onSearch={search} />
       {isVillageOn ? <StripWords sharingMemberCount={sharingMemberCount} isConnected={isConnected} /> : null}
       <div id="results">
         {isVillageOn ? null : (
@@ -145,7 +91,7 @@ export function SearchScreen(props: SearchScreenProps) {
             {communityName} hasn’t switched on network search yet, so this searches member profiles only.
           </Note>
         )}
-        {query && isMounted ? (
+        {query && isInBrowser ? (
           <QueryBoundary
             key={`${query}-${scope}`}
             loadingMessage="Searching…"
@@ -157,5 +103,58 @@ export function SearchScreen(props: SearchScreenProps) {
         ) : null}
       </div>
     </>
+  );
+}
+
+function subscribeToNothing() {
+  return () => {};
+}
+
+type SearchFormProps = { query: string; scope: SearchWhere; isVillageOn: boolean; onSearch: (words: string, where: SearchWhere) => void };
+
+// The field, In our network | Everywhere and the examples. It starts again from the address on every search.
+function SearchForm({ query, scope, isVillageOn, onSearch }: SearchFormProps) {
+  const [draft, setDraft] = useState(query);
+  const [chosenScope, setChosenScope] = useState(scope);
+  return (
+    <form
+      role="search"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSearch(draft, chosenScope);
+      }}
+    >
+      <SearchBox
+        id={QUERY_FIELD}
+        name={QUERY_FIELD}
+        autoComplete="off"
+        placeholder="A person, a company or a role"
+        maxLength={SEARCH_PROMPT_MAX_LENGTH}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+      />
+      {isVillageOn ? (
+        <div className="fh-period" style={{ marginTop: 12 }}>
+          <SegmentedControl
+            label="Where to search"
+            segments={SCOPE_SEGMENTS}
+            value={chosenScope}
+            onChange={(where) => {
+              setChosenScope(where);
+              if (draft.trim()) onSearch(draft, where);
+            }}
+          />
+        </div>
+      ) : null}
+      {query ? null : (
+        <ExampleChips>
+          {EXAMPLES.map((example) => (
+            <button key={example} type="button" onClick={() => onSearch(example, chosenScope)}>
+              {example}
+            </button>
+          ))}
+        </ExampleChips>
+      )}
+    </form>
   );
 }

@@ -16,9 +16,7 @@ import { SEARCH_WHERE, type NetworkSearchResult, type SearchMember, type SearchP
 import { activeSearchQuery, networkSearchQuery } from "@/modules/network/queries";
 import { readFirstWord, readPeopleCountLine, toPossessive, toReachPhrase } from "@/modules/network/rules-search-words";
 
-import type { SearchScreenProps } from "./search-screen";
-
-export type SearchViewer = { id: string; name: string; imageUrl: string | null };
+import type { SearchScreenProps, SearchViewer } from "./search-types";
 type SearchPerson = NetworkSearchResult["people"][number];
 
 const MORE_PATHS_FROM = 2;
@@ -115,7 +113,7 @@ function PersonRow({ person, viewer, communityName, canAskIntro, query, scope }:
       <article className="fh-result fh-known">
         {top}
         <p className="fh-pathtext" style={{ marginTop: 10 }}>
-          <CircleCheck aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} /> <b>You already know {first}: reach out yourself</b>
+          <CircleCheck aria-hidden="true" className="fh-i fh-xs inline-block align-[-2px]" strokeWidth={1.5} /> <b>You already know {first}: reach out yourself</b>
           {person.direct.how ? ` · ${person.direct.how}` : null}
           <WarmthWord warmth={person.direct.warmth} />
         </p>

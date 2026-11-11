@@ -2,7 +2,9 @@
 
 Village search, sync, the community group and intro paths. Toggleable. The only module using Village.
 
-- `service.ts`: joining, search, paths, keys, the group, leaving and link approval.
+- `service.ts`: joining, search, paths, keys, the group, leaving and link approval. Search takes a scope, reads the page's paths in one bulk call (`paths_bulk`), caches them as the member's paths and keeps the answer 10 minutes.
+- `reads-member-matches.ts`: the "Member" rows. `rules-search-words.ts`: search's words.
+- `components/search-*.tsx`: `/search`. `components/my-network-screen.tsx`: `/me/network`.
 - `service-search-pool.ts`: members who haven't joined search as the app's identity (in the group, unsynced).
 - `service-departure.ts`: takes a removed member out of the group. Never throws.
 - `service-settings.ts`, `contract-village-settings.ts`: group, daily limit, and the Village settings: search scope, who can introduce, the service email.
@@ -11,7 +13,7 @@ Village search, sync, the community group and intro paths. Toggleable. The only 
 - `service-fill-in.ts`, `rules-fill-in.ts`, `integration.ts`: the profile fill-in: email first, then LinkedIn every 30 days; nightly (02:00–05:59 UTC) or on request. Lookups run as the app's public identity, never as a member.
 - `service-nudge.ts`: the connect meter and the admin's reminder to unconnected members, at most one per member every 30 days.
 - `components/village-disclosure.tsx`: "What Village receives", on the member's card page. Update it when a call sends Village something new.
-- `*-village-check.ts`: the admin's Village check and the member's Meet line. Free calls only, once a minute; members who never reached Village aren't asked.
+- `*-village-check.ts`: the admin's Village check and the member's line on My network. Free calls only, once a minute; members who never reached Village aren't asked.
 - `slots.tsx`: `ConnectorAskSlot` and `ConnectorPromiseSlot`. Intros fills them, so network never imports intros.
 
 The Village client, credentials, credit ledger and error mapping live in `src/platform/village`. `health.ts` there records Village's last answer and any trouble since; admins see it, members see "Search is unavailable right now".

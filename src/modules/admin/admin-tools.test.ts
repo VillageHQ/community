@@ -1048,15 +1048,16 @@ describe("the admin tools", () => {
         village.state.linkedMembers.set(network?.villageExternalId ?? "", { status: "ready", email: member.email });
       });
 
-      function search() {
-        return send(postNetworkSearch, member, { prompt: "founders" });
+      // Another prompt each time: the same search within 10 minutes is answered without a lookup.
+      function search(prompt = "founders") {
+        return send(postNetworkSearch, member, { prompt });
       }
 
       it("enforces a lowered limit on the next lookup, with the number in the message", async () => {
         await send(postDailyLimit, admin, { limit: 1 });
         await search();
 
-        const response = await search();
+        const response = await search("founders in Lisbon");
         const body = failureSchema.parse(await response.json());
 
         expect(body.code).toBe(NETWORK_ERROR_CODES.dailyLimitReached);

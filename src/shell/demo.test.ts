@@ -237,12 +237,13 @@ describe("demo mode", () => {
         headers: { Authorization: `Bearer ${data.token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: "hospital procurement" }),
       });
-      const search = (await searchResponse.json()) as { data: { linkedin_url: string }[] };
-      expect(search.data.length).toBeGreaterThan(5);
+      const search = (await searchResponse.json()) as { data: { full_name: string; linkedin_url: string }[] };
+      // The story Founderhall's demo tells: two people Sam knows first-hand, and Rosa through Marcus.
+      expect(search.data.map(({ full_name }) => full_name)).toEqual(["Alex Kim", "Dana Morris", "Rosa Lindqvist"]);
       const pathsResponse = await guarded("https://village.demo.invalid/v2/people/paths", {
         method: "POST",
         headers: { Authorization: `Bearer ${data.token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ linkedin_url: search.data[0]?.linkedin_url }),
+        body: JSON.stringify({ linkedin_url: search.data[2]?.linkedin_url }),
       });
       const paths = (await pathsResponse.json()) as { data: { paths: { introducer: { profile: { linkedin_url: string } } }[] } };
       expect(paths.data.paths[0]?.introducer.profile.linkedin_url).toContain("-northwind-demo");

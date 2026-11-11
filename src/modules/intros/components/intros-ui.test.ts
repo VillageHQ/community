@@ -354,7 +354,7 @@ describe("the intro screens", () => {
       renderWithClient(createElement(IntroBoardView), makeBoard());
 
       expect(screen.getByRole("heading", { name: "Your first intro is one search away" })).toBeTruthy();
-      expect(screen.getByRole("link", { name: "Find someone to meet" }).getAttribute("href")).toBe("/network");
+      expect(screen.getByRole("link", { name: "Find someone to meet" }).getAttribute("href")).toBe("/search");
     });
 
     it("says truthfully who may read the note", () => {

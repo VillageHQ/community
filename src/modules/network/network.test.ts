@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { forgetSavedSearches } from "@/modules/network/service";
 
 import { memberDailyUsage } from "@/platform/village/schema";
 import { readVillageHealth, VILLAGE_TROUBLES } from "@/platform/village/health";
@@ -456,6 +457,12 @@ describe("the member network API", () => {
       return postSearch(jsonRequest(member, { prompt }));
     }
 
+    // The same search within 10 minutes is answered from the saved one; these tests need Village asked each time.
+    async function searchAgain(prompt = "founders") {
+      forgetSavedSearches();
+      return search(prompt);
+    }
+
     async function readSearch() {
       return networkSearchResultSchema.parse(await (await search()).json());
     }
@@ -780,9 +787,17 @@ describe("the member network API", () => {
 
       it("counts each search", async () => {
         await search();
-        await search();
+        await searchAgain();
 
         expect((await readTodayUsage())[0]?.callCount).toBe(2);
+      });
+
+      it("answers the same search within 10 minutes without a second lookup", async () => {
+        await search();
+        const again = networkSearchResultSchema.parse(await (await search()).json());
+
+        expect(again.isCached).toBe(true);
+        expect((await readTodayUsage())[0]?.callCount).toBe(1);
       });
 
       it("refuses searches past the limit without calling Village", async () => {
@@ -887,25 +902,25 @@ describe("the member network API", () => {
       it("tells the admin when Village is down or refuses the keys, with when it last worked, until it answers again", async () => {
         vi.spyOn(console, "error").mockImplementation(() => undefined);
         await vi.waitFor(async () => {
-          await search();
+          await searchAgain();
           expect((await readVillageHealth(database)).lastOkAt).not.toBeNull();
         });
         const { lastOkAt } = await readVillageHealth(database);
 
         const previousUrl = process.env.VILLAGE_API_URL;
         process.env.VILLAGE_API_URL = "http://127.0.0.1:9";
-        await search();
+        await searchAgain();
         process.env.VILLAGE_API_URL = previousUrl;
 
         expect(await readVillageHealth(database)).toMatchObject({ trouble: VILLAGE_TROUBLES.down, troubleAt: expect.any(String), lastOkAt });
         expect((await readAdminTabFacts(database, process.env)).villageTrouble).toMatchObject({ trouble: VILLAGE_TROUBLES.down, lastOkAt });
 
         village.state.failures.set(SEARCH_PATH, { status: 401, type: "unauthorized" });
-        await search();
+        await searchAgain();
         expect((await readVillageHealth(database)).trouble).toBe(VILLAGE_TROUBLES.keysRejected);
 
         village.state.failures.delete(SEARCH_PATH);
-        await search();
+        await searchAgain();
         await vi.waitFor(async () => expect((await readVillageHealth(database)).trouble).toBeNull());
         expect((await readAdminTabFacts(database, process.env)).villageTrouble).toBeNull();
       });

@@ -1242,7 +1242,7 @@ describe("intro requests", () => {
       return JSON.stringify(resend.state.emails.map(({ body }) => body));
     }
 
-    it("emails the introducer about a new ask, without the note", async () => {
+    it("emails the introducer about a new ask, with the note to forward and never the path's reason", async () => {
       configureResend();
 
       await createIntro();
@@ -1252,7 +1252,8 @@ describe("intro requests", () => {
       expect(bodies).toContain(jonas.email);
       expect(bodies).toContain("Clara Bergström");
       expect(bodies).toContain(`${APP_URL}/intros/`);
-      expect(bodies).not.toContain(NOTE);
+      // Founderhall's email carries the asker's note, written so the connector can forward it.
+      expect(bodies).toContain(NOTE);
       expect(bodies).not.toContain("Corvane");
     });
 

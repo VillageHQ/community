@@ -69,7 +69,6 @@ export default modulePage(networkManifest, async function SearchAskPage({ search
           connectorName={connector.name}
           connectorSlug={ask.connectorSlug}
           targetSlug={targetSlug}
-          targetName={ask.targetName}
           draftNote={draftShortNote(asker, { targetName: ask.targetName, targetCompany: ask.targetAbout?.split(", ").slice(1).join(", ") || null })}
           cap={allowance.cap}
           blockedReason={blockedReason}

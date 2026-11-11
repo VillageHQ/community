@@ -110,11 +110,11 @@ export function NeedStep() {
       </div>
       <p className="fh-btn-row" style={{ marginTop: 18 }}>
         <Link href={ROUTES.network}>
-          <Search aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />
+          <Search aria-hidden="true" className="fh-i fh-xs inline-block align-[-2px]" strokeWidth={1.5} />
           Search everyone
         </Link>
         <Link href={ROUTES.members}>
-          <BookUser aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />
+          <BookUser aria-hidden="true" className="fh-i fh-xs inline-block align-[-2px]" strokeWidth={1.5} />
           Browse the directory
         </Link>
       </p>
