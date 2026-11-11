@@ -1,6 +1,6 @@
 ---
 id: reply-by-email
-status: idea
+status: shipped
 waits-on: []
 size:
 touches: ["src/app/api/email/", "src/modules/messages/", "src/modules/intros/", "src/modules/asks/"]
@@ -22,3 +22,6 @@ Reply by email for direct messages, intro threads with outside guests, ask answe
 
 ## Open questions
 - How do outside guests join an intro thread without an account?
+
+## Now (2026-11-11)
+Built through Resend only: replying to the new-message, connector ask (YES/NO), joint introduction (an intro thread the app keeps) and helper emails lands in the conversation, the intro, the thread or as an answer on the ask. Each reply is checked (signed address, sender, size) and a failed one gets one plain bounce-back. Postmark, raw MIME and writing into the intro thread from the app are not built. How it works: `NOTES.md`; scope: `CHARTER.md`.

@@ -5,7 +5,7 @@ import { and, eq, inArray, or, sql } from "drizzle-orm";
 import type { Transaction } from "../../platform/database/client.ts";
 import { DELETED_MEMBER_NAME } from "../members/contract-privacy.ts";
 import { INTRO_STATES, OPEN_INTRO_STATES } from "./contract.ts";
-import { introRequest } from "./schema.ts";
+import { introRequest, introThread } from "./schema.ts";
 
 export const ERASED_INTRO_TEXT = "(deleted)";
 const SOMEONE = "Someone";
@@ -28,6 +28,10 @@ export async function anonymizeMemberIntros(transaction: Transaction, { memberId
     .update(introRequest)
     .set({ state: INTRO_STATES.withdrawn, closedAt: now, targetEmail: null, requesterHasUpdate: false })
     .where(and(isPartOf, inArray(introRequest.state, [...OPEN_INTRO_STATES])));
+
+  // The intro threads they were in go, with the outside person's address and every reply.
+  const partOf = transaction.select({ id: introRequest.id }).from(introRequest).where(isPartOf);
+  await transaction.delete(introThread).where(inArray(introThread.introId, partOf));
 
   // As the one who asked: what they wrote, and whom they wanted to meet.
   await transaction
