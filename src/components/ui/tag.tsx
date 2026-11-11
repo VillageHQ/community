@@ -2,22 +2,35 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
 import type { ComponentProps } from "react";
 
-const tagVariants = cva(
-  "type-micro inline-flex min-h-7 items-center gap-1.5 rounded-full px-3 py-1 [&_svg]:size-[15px] [&_svg]:shrink-0",
-  {
-    variants: {
-      tone: {
-        neutral: "bg-muted text-foreground-soft",
-        accent: "bg-secondary text-secondary-foreground",
-        gold: "bg-gold-soft text-gold-text",
-        sage: "bg-sage-soft text-sage-text",
-        destructive: "bg-destructive-soft text-destructive-text",
-      },
+// Founderhall's tag (design-system.md §3.3): 24 px, radius 5, Vellum, 13 px. Tones carry the pills' tints.
+const tagVariants = cva("fh-tag gap-1.5 [&_svg]:size-[14px] [&_svg]:shrink-0", {
+  variants: {
+    tone: {
+      neutral: "",
+      accent: "bg-fund-tint text-fund-deep",
+      gold: "bg-ribbon-tint text-ribbon",
+      sage: "bg-spine-tint text-spine",
+      destructive: "bg-ribbon-tint text-ribbon",
     },
-    defaultVariants: { tone: "neutral" },
   },
-);
+  defaultVariants: { tone: "neutral" },
+});
 
 export function Tag({ className, tone, ...props }: ComponentProps<"span"> & VariantProps<typeof tagVariants>) {
   return <span data-slot="tag" className={cn(tagVariants({ tone }), className)} {...props} />;
+}
+
+// A row of tags, 6 px apart.
+export function Tags({ className, ...props }: ComponentProps<"div">) {
+  return <div data-slot="tags" className={cn("fh-tags", className)} {...props} />;
+}
+
+// The source badge on a profile line: "You" (fund tint) or "Village" (Vellum).
+export function SourceBadge({ source }: { source: "you" | "village" }) {
+  return <span className={cn("fh-src", source === "you" ? "fh-you" : "fh-village")}>{source === "you" ? "You" : "Village"}</span>;
+}
+
+// Warmth of a path ("Close", "Met"): fund tint, or Vellum when they only met.
+export function Warmth({ isMet = false, children }: { isMet?: boolean; children: string }) {
+  return <span className={cn("fh-warm", isMet && "fh-met")}>{children}</span>;
 }

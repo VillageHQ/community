@@ -38,6 +38,12 @@ export const ROUTES = {
   adminWeeklyEmail: "/admin/weekly-email",
   adminVillage: "/admin/village",
   adminEmail: "/admin/email",
+  // The console's Intro log and Invites (Founderhall's menu). Until their pages are built they forward to where
+  // that work lives today: the partner report and Members.
+  adminIntroLog: "/admin/intros",
+  adminInvites: "/admin/invites",
+  // The parts review page: off unless SHOW_PARTS_PAGE=true (development and review copies only).
+  parts: "/parts",
 } as const;
 
 export const AUTH_BASE_PATH = "/api/auth";

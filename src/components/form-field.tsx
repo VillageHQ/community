@@ -1,39 +1,49 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-type FormFieldProps = ComponentProps<typeof Input> & { name: string; label: string; hint?: string };
+// Founderhall's field (crop form-field.png): a 600 14 label above, the field, a 13 px Graphite hint below, and an
+// error line in Ribbon. Fields sit 16 px apart (`.field`).
+type FieldProps = { htmlFor: string; label: ReactNode; hint?: ReactNode; error?: ReactNode; children: ReactNode; className?: string };
 
-export function FormField({ name, label, hint, ...inputProps }: FormFieldProps) {
-  const hintId = `${name}-hint`;
+export function Field({ htmlFor, label, hint, error, children, className }: FieldProps) {
   return (
-    <div className="grid gap-2">
-      <Label htmlFor={name}>{label}</Label>
-      <Input id={name} name={name} aria-describedby={hint ? hintId : undefined} {...inputProps} />
+    <div data-slot="field" className={className}>
+      <label htmlFor={htmlFor} className="fh-label">
+        {label}
+      </label>
+      {children}
       {hint ? (
-        <p id={hintId} className="type-small text-muted-foreground">
+        <p id={`${htmlFor}-hint`} className="fh-hint">
           {hint}
+        </p>
+      ) : null}
+      {error ? (
+        <p id={`${htmlFor}-error`} role="alert" className="fh-hint fh-err">
+          {error}
         </p>
       ) : null}
     </div>
   );
 }
 
+type FormFieldProps = ComponentProps<typeof Input> & { name: string; label: string; hint?: string };
+
+export function FormField({ name, label, hint, ...inputProps }: FormFieldProps) {
+  return (
+    <Field htmlFor={name} label={label} hint={hint}>
+      <Input id={name} name={name} aria-describedby={hint ? `${name}-hint` : undefined} {...inputProps} />
+    </Field>
+  );
+}
+
 type TextareaFieldProps = ComponentProps<typeof Textarea> & { name: string; label: string; hint?: string };
 
 export function TextareaField({ name, label, hint, ...textareaProps }: TextareaFieldProps) {
-  const hintId = `${name}-hint`;
   return (
-    <div className="grid gap-2">
-      <Label htmlFor={name}>{label}</Label>
-      <Textarea id={name} name={name} aria-describedby={hint ? hintId : undefined} {...textareaProps} />
-      {hint ? (
-        <p id={hintId} className="type-small text-muted-foreground">
-          {hint}
-        </p>
-      ) : null}
-    </div>
+    <Field htmlFor={name} label={label} hint={hint}>
+      <Textarea id={name} name={name} aria-describedby={hint ? `${name}-hint` : undefined} {...textareaProps} />
+    </Field>
   );
 }

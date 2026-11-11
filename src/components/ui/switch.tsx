@@ -3,23 +3,18 @@
 import { Switch as SwitchPrimitive } from "radix-ui";
 import type { ComponentProps } from "react";
 
-const SWITCH_SIZES = {
-  default: { root: "h-8 w-12", thumb: "size-6 translate-x-1 data-[state=checked]:translate-x-5" },
-  large: { root: "h-11 w-[72px]", thumb: "size-9 translate-x-1 data-[state=checked]:translate-x-8" },
-};
-
+// Founderhall's switch (crop switch.png): 44×26, off #B7B0A1, on the fund colour, a 20 px Leaf knob.
 // A dialog trigger overwrites data-state on its child, so the track follows aria-checked, which only the switch sets.
-type SwitchProps = ComponentProps<typeof SwitchPrimitive.Root> & { size?: keyof typeof SWITCH_SIZES };
+type SwitchProps = ComponentProps<typeof SwitchPrimitive.Root> & { size?: "default" | "large" };
 
-export function Switch({ size = "default", ...props }: SwitchProps) {
-  const { root, thumb } = SWITCH_SIZES[size];
+export function Switch({ size: _size = "default", ...props }: SwitchProps) {
   return (
     <SwitchPrimitive.Root
       data-slot="switch"
-      className={`relative block shrink-0 rounded-full bg-muted shadow-[inset_0_0_0_1.5px_var(--input)] disabled:opacity-50 aria-checked:bg-primary aria-checked:shadow-[inset_0_0_0_1.5px_var(--brand-edge)] ${root}`}
+      className="relative block h-[26px] w-11 shrink-0 rounded-[13px] bg-[#b7b0a1] transition-colors duration-200 disabled:opacity-45 aria-checked:bg-fund"
       {...props}
     >
-      <SwitchPrimitive.Thumb className={`block rounded-full bg-foreground transition-transform duration-150 data-[state=checked]:bg-primary-foreground ${thumb}`} />
+      <SwitchPrimitive.Thumb className="block size-5 translate-x-[3px] rounded-full bg-[#fffdf8] shadow-[0_1px_2px_rgba(0,0,0,.2)] transition-transform duration-200 data-[state=checked]:translate-x-[21px]" />
     </SwitchPrimitive.Root>
   );
 }

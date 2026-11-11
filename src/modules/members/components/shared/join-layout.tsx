@@ -12,6 +12,7 @@ export function JoinLayout({ welcome, children }: { welcome: WelcomeContext; chi
   return (
     <SplitLayout
       isTakeover
+      isNoteShown
       copyAs="div"
       community={community}
       you={member}
