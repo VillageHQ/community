@@ -43,8 +43,12 @@ export async function readPrivacy(database: DatabaseOrTransaction, memberId: str
   if (!row) return { ...DEFAULT_PRIVACY, messagePolicy: await readCommunityMessagePolicy(database) };
   return {
     isHidden: row.isHidden,
-    // A member who never chose follows the community's default.
-    messagePolicy: row.messagePolicyChangedAt === null ? await readCommunityMessagePolicy(database) : (row.messagePolicy as MessagePolicy),
+    // A member who never chose (no change time and the column's default) follows the community's default; a stored
+    // "introduced" is always a choice, also one made before the change time was kept.
+    messagePolicy:
+      row.messagePolicyChangedAt === null && row.messagePolicy === MESSAGE_POLICIES.anyone
+        ? await readCommunityMessagePolicy(database)
+        : (row.messagePolicy as MessagePolicy),
     acceptsIntroAsks: row.acceptsIntroAsks,
     introAsksAnsweredAt: row.introAsksAnsweredAt,
     introAsksAnsweredPlace: row.introAsksAnsweredPlace as ChoicePlace | null,
