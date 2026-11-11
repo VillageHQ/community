@@ -42,6 +42,11 @@ function isExpiryEmailDue(connection: DatabaseOrTransaction, now: Date) {
   );
 }
 
+async function wasTargetAsked(connection: DatabaseOrTransaction, introId: string) {
+  const [row] = await connection.select({ askedTargetAt: introRequest.askedTargetAt }).from(introRequest).where(eq(introRequest.id, introId));
+  return row?.askedTargetAt !== null && row?.askedTargetAt !== undefined;
+}
+
 const QUIET_INTRO_EMAILS = {
   connectorReminder: { event: INTRO_EMAIL_EVENTS.connectorReminder, key: "connectorReminderAt", isDue: isConnectorReminderDue },
   expired: { event: INTRO_EMAIL_EVENTS.expired, key: "expiryEmailAt", isDue: isExpiryEmailDue },
@@ -71,7 +76,12 @@ async function sendQuietIntroEmails(database: Database, environment: Environment
           .where(and(eq(introRequest.id, id), kind.isDue(transaction, now)))
           .returning({ id: introRequest.id });
         if (!claimed) return false;
-        return (await queueIntroEmail(transaction, environment, branding, id, kind.event)) !== null;
+        const queued = (await queueIntroEmail(transaction, environment, branding, id, kind.event)) !== null;
+        // The connector who said yes hears that the person never answered (Founderhall's "closed" email).
+        if (kind.event === INTRO_EMAIL_EVENTS.expired && (await wasTargetAsked(transaction, id))) {
+          await queueIntroEmail(transaction, environment, branding, id, INTRO_EMAIL_EVENTS.closedUnanswered);
+        }
+        return queued;
       });
       if (isQueued) sent += 1;
     } catch (error) {

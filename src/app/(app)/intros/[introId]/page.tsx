@@ -1,58 +1,49 @@
-import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
-import { QueryBoundary } from "@/components/query-boundary";
-import { Button } from "@/components/ui/button";
-import { getDatabase } from "@/platform/database/client";
-import { PAGE_TITLES } from "@/platform/branding/page-metadata";
-import { introDetailQuery } from "@/modules/intros/queries";
-import { readIntroForViewer } from "@/modules/intros/reads";
-import { ROUTES } from "@/platform/http/routes";
-import { requireMember } from "@/platform/auth/session";
-
-import { IntroDetailView } from "@/modules/intros/components/intro-detail";
-import { IntroThread } from "@/modules/intros/components/intro-thread";
-import { readIntroThreadForRequester } from "@/modules/intros/service-thread";
+import { IntroPage } from "@/modules/intros/components/intro-page";
+import { readIntroTitle } from "@/modules/intros/components/intro-words";
 import { introsManifest } from "@/modules/intros/manifest";
+import { markIntrosSeen, readIntroForViewer } from "@/modules/intros/reads";
+import { readIntroThreadForRequester } from "@/modules/intros/service-thread";
+import { IntroOtherPathsSlot } from "@/modules/intros/slots";
+import { requireMember } from "@/platform/auth/session";
+import { readBrandingForPage } from "@/platform/branding/branding";
+import { getDatabase } from "@/platform/database/client";
+import { readResendConfig } from "@/platform/email/resend";
 import { modulePage } from "@/platform/modules/module-page";
-
-export const metadata: Metadata = { title: PAGE_TITLES.intro };
 
 const introIdSchema = z.uuid();
 
-export default modulePage(introsManifest, async function IntroPage({ params }: { params: Promise<{ introId: string }> }) {
+type Params = { params: Promise<{ introId: string }> };
+
+async function readViewedIntro({ params }: Params) {
   const member = await requireMember();
   const parsedId = introIdSchema.safeParse((await params).introId);
   if (!parsedId.success) notFound();
-
   const intro = await readIntroForViewer(getDatabase(), member.id, parsedId.data);
   if (!intro) notFound();
+  return { member, intro };
+}
 
-  // Only the asker's own intro has a thread for them; anyone else gets null.
-  const thread = await readIntroThreadForRequester(getDatabase(), intro.id, member.id);
-  const queryClient = new QueryClient();
-  queryClient.setQueryData(introDetailQuery(intro.id).queryKey, intro);
+export async function generateMetadata(props: Params): Promise<Metadata> {
+  const { intro } = await readViewedIntro(props);
+  return { title: readIntroTitle(intro) };
+}
 
+export default modulePage(introsManifest, async function IntroDetailPage(props: Params) {
+  const { member, intro } = await readViewedIntro(props);
+  const database = getDatabase();
+  const [community, thread] = await Promise.all([readBrandingForPage(), readIntroThreadForRequester(database, intro.id, member.id)]);
+  if (intro.hasUpdate) await markIntrosSeen(database, member.id, intro.id);
   return (
-    <div className="mx-auto grid max-w-[720px] gap-4">
-      <div>
-        <Button asChild variant="quiet" size="sm">
-          <Link href={ROUTES.intros}>
-            <ArrowLeft aria-hidden="true" />
-            All intros
-          </Link>
-        </Button>
-      </div>
-      <HydrationBoundary state={dehydrate(queryClient)}>
-        <QueryBoundary loadingMessage="Opening this intro request…">
-          <IntroDetailView introId={intro.id} />
-        </QueryBoundary>
-      </HydrationBoundary>
-      {thread ? <IntroThread entries={thread} targetName={intro.target.name} /> : null}
-    </div>
+    <IntroPage
+      intro={intro}
+      community={community.name}
+      canEmail={readResendConfig(process.env) !== null}
+      hasThread={thread !== null}
+      otherPaths={<IntroOtherPathsSlot intro={intro} />}
+    />
   );
 });

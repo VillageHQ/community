@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Check, ExternalLink, Flag, HeartHandshake, Lock, UserRoundX, X } from "lucide-react";
+import { Check, Flag, HeartHandshake, Lock } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { CopyButton } from "@/components/copy-button";
@@ -14,45 +14,10 @@ import { formatShortDate } from "@/platform/text/format-date";
 import { INTRO_ACTIONS, INTRO_DECLINE_KINDS, INTRO_LIMITS, INTRO_STATES, type Intro, type IntroDeclineKind } from "@/modules/intros/contract";
 import { composeForwardableBlurb, composeJoiningMessage } from "@/modules/intros/copy";
 import { reportIntroNoteRequest } from "@/modules/intros/queries";
-import { linkedinUrl } from "@villagehq/sdk";
 
-import {
-  IntroCardFrame,
-  IntroMessageButton,
-  IntroNote,
-  IntroPersonRow,
-  IntroReason,
-  IntroStateTag,
-  readIntroLinkLabel,
-  type HeadingLevel,
-} from "./intro-parts";
 import { ConfirmAction } from "@/components/confirm-action";
 import { ConsentLinkPanel } from "./consent-link-panel";
 import { useIntroTransition } from "./use-intro-actions";
-
-function TargetLink({ intro }: { intro: Intro }) {
-  const { name, headline, linkedinSlug } = intro.target;
-  if (!linkedinSlug) {
-    return (
-      <span className="font-bold wrap-anywhere text-foreground">
-        {name}
-        {intro.target.isNamed && headline ? <span className="font-normal text-foreground-soft"> at {headline}</span> : null}
-      </span>
-    );
-  }
-  return (
-    <a
-      href={linkedinUrl(linkedinSlug)}
-      target="_blank"
-      rel="noreferrer"
-      className="inline-flex items-center gap-1 font-bold text-brand-emphasis underline underline-offset-3 hover:no-underline"
-    >
-      <span className="wrap-anywhere">{name}</span>
-      <ExternalLink aria-hidden="true" className="size-3.5 shrink-0" />
-      <span className="sr-only"> on LinkedIn (opens in a new tab)</span>
-    </a>
-  );
-}
 
 type DeclineFormProps = { intro: Intro; kind: IntroDeclineKind; submitLabel: string; onCancel: () => void };
 
@@ -97,78 +62,6 @@ function DeclineForm({ intro, kind, submitLabel, onCancel }: DeclineFormProps) {
         </Button>
       </div>
     </form>
-  );
-}
-
-const DECLINE_LABELS: Record<IntroDeclineKind, string> = {
-  [INTRO_DECLINE_KINDS.notThisTime]: "Not this time",
-  [INTRO_DECLINE_KINDS.doNotKnowThem]: "I don't know them well enough",
-};
-
-function RequestedActions({ intro }: { intro: Intro }) {
-  const transition = useIntroTransition();
-  const [declineKind, setDeclineKind] = useState<IntroDeclineKind | null>(null);
-  const declineButton = useRef<HTMLButtonElement>(null);
-  const targetFirst = readFirstName(intro.target.name);
-
-  if (declineKind) {
-    return (
-      <DeclineForm
-        intro={intro}
-        kind={declineKind}
-        submitLabel={DECLINE_LABELS[declineKind]}
-        onCancel={() => {
-          setDeclineKind(null);
-          requestAnimationFrame(() => declineButton.current?.focus());
-        }}
-      />
-    );
-  }
-
-  return (
-    <>
-      <FormError message={transition.error?.message ?? null} />
-      <div className="grid gap-2">
-        <Button
-          type="button"
-          size="hero"
-          disabled={transition.isPending}
-          className="w-full whitespace-normal"
-          onClick={() => transition.mutate({ introId: intro.id, action: INTRO_ACTIONS.accept })}
-        >
-          <Check aria-hidden="true" />
-          {transition.isPending ? "Saving…" : `Yes, I'll ask ${targetFirst}`}
-        </Button>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Button
-            ref={declineButton}
-            type="button"
-            size="lg"
-            variant="outline"
-            disabled={transition.isPending}
-            className="whitespace-normal"
-            onClick={() => setDeclineKind(INTRO_DECLINE_KINDS.notThisTime)}
-          >
-            <X aria-hidden="true" />
-            {DECLINE_LABELS[INTRO_DECLINE_KINDS.notThisTime]}
-          </Button>
-          <Button
-            type="button"
-            size="lg"
-            variant="outline"
-            disabled={transition.isPending}
-            className="whitespace-normal"
-            onClick={() => setDeclineKind(INTRO_DECLINE_KINDS.doNotKnowThem)}
-          >
-            <UserRoundX aria-hidden="true" />
-            {DECLINE_LABELS[INTRO_DECLINE_KINDS.doNotKnowThem]}
-          </Button>
-        </div>
-      </div>
-      <p className="type-small text-muted-foreground">
-        Say no as freely as yes. {targetFirst} hears nothing unless you say yes. If you do nothing, this intro request closes on {formatShortDate(intro.expiresAt)}.
-      </p>
-    </>
   );
 }
 
@@ -270,20 +163,8 @@ function AcceptedActions({ intro }: { intro: Intro }) {
   );
 }
 
-function readClosedNote({ state, requester, target, declineReason }: Intro) {
-  const firstName = readFirstName(requester.name);
-  const targetFirst = readFirstName(target.name);
-  const notes: Partial<Record<Intro["state"], string>> = {
-    [INTRO_STATES.completed]: `Thanks for connecting ${firstName} with ${targetFirst}.`,
-    [INTRO_STATES.declined]: declineReason ? `You passed on this one. Your private note: "${declineReason}"` : `You passed on this one. ${firstName} got a kind note.`,
-    [INTRO_STATES.targetDeclined]: `${targetFirst} said no thanks. ${firstName} sees that this intro isn't happening, not who answered. Nothing more to do.`,
-    [INTRO_STATES.withdrawn]: `${firstName} withdrew this intro request. Nothing more to do.`,
-    [INTRO_STATES.expired]: "This intro request closed by itself. Nothing more to do.",
-  };
-  return notes[state] ?? null;
-}
-
-function ReportNote({ intro }: { intro: Intro }) {
+// Community's "Report this note" (no Founderhall part), with its confirmation: admins read the note only then.
+export function ReportNote({ intro }: { intro: Intro }) {
   const [isConfirming, setIsConfirming] = useState(false);
   const reportButton = useRef<HTMLButtonElement>(null);
   const report = useMutation({ mutationFn: reportIntroNoteRequest, onSuccess: () => setIsConfirming(false) });
@@ -321,38 +202,11 @@ function ReportNote({ intro }: { intro: Intro }) {
   );
 }
 
-type AskForYouCardProps = { intro: Intro; headingLevel?: HeadingLevel };
-
-export function AskForYouCard({ intro, headingLevel: Heading = "h3" }: AskForYouCardProps) {
-  const { requester, state, note, reason } = intro;
-  const firstName = readFirstName(requester.name);
-  const closedNote = readClosedNote(intro);
-  const isRequested = state === INTRO_STATES.requested;
-  const isAccepted = state === INTRO_STATES.accepted;
-  const isAskingTarget = state === INTRO_STATES.askingTarget;
-  const isTargetAgreed = state === INTRO_STATES.targetAgreed;
-
-  return (
-    <IntroCardFrame id={intro.id} label={readIntroLinkLabel(intro)}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <IntroPersonRow person={requester} line={requester.headline} />
-        <IntroStateTag state={state} />
-      </div>
-      <Heading className="type-h2 wrap-anywhere">
-        {firstName} would like an intro to <TargetLink intro={intro} />
-      </Heading>
-      <IntroNote label={`${firstName}'s note to you`} note={note} />
-      <ReportNote intro={intro} />
-      <div>
-        <p className="type-micro mb-1.5 font-bold text-foreground-soft">Why they asked you</p>
-        <IntroReason reason={reason} />
-      </div>
-      {isRequested ? <RequestedActions intro={intro} /> : null}
-      {isAccepted ? <AcceptedActions intro={intro} /> : null}
-      {isAskingTarget ? <AskingTargetActions intro={intro} /> : null}
-      {isTargetAgreed ? <TargetAgreedActions intro={intro} /> : null}
-      {closedNote ? <p className="type-note rounded-field bg-muted p-4 wrap-anywhere text-foreground-soft">{closedNote}</p> : null}
-      <IntroMessageButton person={requester} isPrimary={false} />
-    </IntroCardFrame>
-  );
+// Community's own follow-ups after the connector's yes (no Founderhall screen): share the person's link by hand when the
+// community sends no email, or join them by hand when the person said yes without an address.
+export function ConnectorFollowUp({ intro }: { intro: Intro }) {
+  if (intro.state === INTRO_STATES.askingTarget) return <AskingTargetActions intro={intro} />;
+  if (intro.state === INTRO_STATES.targetAgreed) return <TargetAgreedActions intro={intro} />;
+  if (intro.state === INTRO_STATES.accepted) return <AcceptedActions intro={intro} />;
+  return null;
 }

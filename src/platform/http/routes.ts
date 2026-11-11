@@ -29,7 +29,10 @@ export const ROUTES = {
   // A first message to a member: the empty thread page; the first Send starts the conversation.
   newMessage: "/messages/new",
   intros: "/intros",
-  introConsent: "/meet",
+  // Founderhall's public intro pages: a yes or no without signing in, and "stop intro asks". `/meet` redirects here.
+  introConsent: "/i",
+  introOptOut: "/intro/optout",
+  introConsentOld: "/meet",
   members: "/members",
   editCard: "/members/card",
   yourData: "/members/data",
@@ -164,6 +167,8 @@ export const API_ROUTES = {
   introConsentAnswer: "/api/intros/consent/answer",
   introConsentLink: "/api/intros/consent/link",
   introConsentEmail: "/api/intros/consent/email",
+  introConnectorAnswer: "/api/intros/answer",
+  introLinkAnswer: "/api/intros/link/answer",
   memberDirectory: "/api/members/directory",
   members: "/api/members",
   profile: "/api/profile",

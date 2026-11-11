@@ -807,10 +807,11 @@ describe("intro requests", () => {
       expect(new Date(accepted.expiresAt).getTime()).toBeGreaterThan(Date.now() + (TARGET_ANSWER_MINIMUM_DAYS - 1) * MILLISECONDS_PER_DAY);
     });
 
-    it("keeps the original deadline after an early yes", async () => {
+    it("gives the person asked their own week after the connector's yes", async () => {
       const accepted = introSchema.parse(await (await transition(jonas, intro.id, INTRO_ACTIONS.accept)).json());
 
-      expect(accepted.expiresAt).toBe(intro.expiresAt);
+      expect(new Date(accepted.expiresAt).getTime()).toBeGreaterThanOrEqual(new Date(intro.expiresAt).getTime());
+      expect(new Date(accepted.expiresAt).getTime()).toBeGreaterThan(Date.now() + (TARGET_ANSWER_MINIMUM_DAYS - 1) * MILLISECONDS_PER_DAY);
     });
 
     describe("a decline reason", () => {
@@ -1242,7 +1243,7 @@ describe("intro requests", () => {
       return JSON.stringify(resend.state.emails.map(({ body }) => body));
     }
 
-    it("emails the introducer about a new ask, without the note", async () => {
+    it("emails the introducer about a new ask, with the note to forward and a link that answers", async () => {
       configureResend();
 
       await createIntro();
@@ -1251,8 +1252,9 @@ describe("intro requests", () => {
       const bodies = readEmailBodies();
       expect(bodies).toContain(jonas.email);
       expect(bodies).toContain("Clara Bergström");
-      expect(bodies).toContain(`${APP_URL}/intros/`);
-      expect(bodies).not.toContain(NOTE);
+      expect(bodies).toContain(`${APP_URL}/i/`);
+      expect(bodies).toContain("?a=yes");
+      expect(bodies).toContain("Would you introduce them?");
       expect(bodies).not.toContain("Corvane");
     });
 
@@ -1269,6 +1271,10 @@ describe("intro requests", () => {
     });
 
     describe("cooling down new-ask emails", () => {
+      function readAskSubjects() {
+        return resend.state.emails.map(({ body }) => (body as { subject: string }).subject).filter((subject) => subject.includes("would you introduce"));
+      }
+
       async function askAndWithdraw(times: number) {
         await lookUpPaths();
         for (let attempt = 0; attempt < times; attempt += 1) {
@@ -1278,14 +1284,17 @@ describe("intro requests", () => {
         }
       }
 
-      it("sends one email however often a requester asks and withdraws", async () => {
+      it("sends one ask however often a requester asks and withdraws, and one withdrawal for the ask that went", async () => {
         configureResend();
 
         await askAndWithdraw(EMAIL_CYCLES);
         await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThan(0), EVENTUALLY);
         await new Promise((resolve) => setTimeout(resolve, EMAIL_SETTLE_MS));
 
-        expect(resend.state.emails).toHaveLength(1);
+        const subjects = resend.state.emails.map(({ body }) => (body as { subject: string }).subject);
+        expect(subjects.filter((subject) => subject.includes("would you introduce"))).toHaveLength(1);
+        expect(subjects.filter((subject) => subject.endsWith(": closed"))).toHaveLength(1);
+        expect(subjects).toHaveLength(2);
       });
 
       it("still shows the newest ask on the badge", async () => {
@@ -1303,7 +1312,8 @@ describe("intro requests", () => {
 
         await ask(amara, { connectorSlug: NOOR_SLUG });
 
-        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2), EVENTUALLY);
+        // The asks only: the first connector also hears that the ask was withdrawn.
+        await vi.waitFor(() => expect(readAskSubjects()).toHaveLength(2), EVENTUALLY);
       });
 
       it("emails again after the cooldown", async () => {
@@ -1313,7 +1323,7 @@ describe("intro requests", () => {
 
         await ask();
 
-        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2), EVENTUALLY);
+        await vi.waitFor(() => expect(readAskSubjects()).toHaveLength(2), EVENTUALLY);
       });
     });
 

@@ -12,6 +12,9 @@ import type { Environment } from "../../platform/environment.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
 import { TARGET_REMINDER_AFTER_DAYS } from "./contract.ts";
 import { renderTargetReminderEmail } from "./email-target.ts";
+import { readWhyTheyWrote } from "./copy.ts";
+import { memberProfile } from "../members/schema.ts";
+import { shownCompanyColumn } from "../members/reads-pictures.ts";
 import { isTargetOptedOut } from "./opt-out.ts";
 import { isAwaitingTarget } from "./reads-consent.ts";
 import { introRequest } from "./schema.ts";
@@ -36,7 +39,12 @@ function isReminderDue(database: Database, now: Date) {
 // when it is not sent (the person asked to stop all asks): one reminder at most, ever.
 async function remindOne(database: Database, environment: Environment, introId: string, now: Date) {
   const [requester, branding] = await Promise.all([
-    database.select({ name: user.name }).from(introRequest).innerJoin(user, eq(user.id, introRequest.requesterId)).where(eq(introRequest.id, introId)),
+    database
+      .select({ name: user.name, title: memberProfile.title, company: shownCompanyColumn(introRequest.requesterId) })
+      .from(introRequest)
+      .innerJoin(user, eq(user.id, introRequest.requesterId))
+      .leftJoin(memberProfile, eq(memberProfile.userId, introRequest.requesterId))
+      .where(eq(introRequest.id, introId)),
     readBranding(database),
   ]);
   return database.transaction(async (transaction) => {
@@ -50,13 +58,21 @@ async function remindOne(database: Database, environment: Environment, introId: 
 
     const { tokenHash, consentIssue } = issueConsent(environment);
     await saveConsentLink(transaction, claimed.id, tokenHash);
-    const facts = { requesterName: requester[0]?.name ?? "", introducerName: claimed.introducerName, targetName: claimed.targetName, communityName: branding.name };
+    const asker = requester[0];
+    const facts = {
+      requesterName: asker?.name ?? "",
+      requesterHeadline: [asker?.title, asker?.company].filter(Boolean).join(", ") || null,
+      introducerName: claimed.introducerName,
+      targetName: claimed.targetName,
+      communityName: branding.name,
+      note: readWhyTheyWrote(claimed.note, claimed.introducerName, claimed.targetName),
+    };
     const queuedId = await queueEmail(transaction, environment, {
       kind: EMAIL_KINDS.introTargetReminder,
       to: claimed.targetEmail,
       memberId: null,
       dedupeKey: `intro-target-reminder-${claimed.id}`,
-      ...renderTargetReminderEmail(facts, consentIssue.link, branding.accentColor),
+      ...renderTargetReminderEmail(facts, environment, consentIssue.token),
     });
     return queuedId !== null;
   });
