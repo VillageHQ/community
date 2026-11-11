@@ -4,12 +4,13 @@ Village search, sync, the community group and intro paths. Toggleable. The only 
 
 - `service.ts`: the join flow, search, paths, keys, the group, leaving and link approval.
 - `service-departure.ts`: taking a removed member out of the Village group. It never throws.
-- `service-settings.ts`, `contract-village-settings.ts`: group, the admin's daily limit, and the Village settings: where searches look (members' networks or everyone), who can introduce (every sharing member or chosen ones), and the service email for the app's own lookups.
+- `service-settings.ts`, `contract-village-settings.ts`: group, daily limit, and the Village settings: search scope, who can introduce, the service email.
 - `reads-*.ts`: progress for next steps, reachable members and credit usage.
 - `contract*.ts`: Zod schemas and constants. `queries.ts`: client requests. `components/`: the UI.
-- `service-fill-in.ts`, `rules-fill-in.ts`, `integration.ts`: the profile fill-in. Email first, then LinkedIn every 30 days; nightly between 02:00 and 05:59 UTC, the member's "Fill in now" and the admin's "Fill in everyone now". Lookups run as the app's public identity, never as a member.
+- `service-fill-in.ts`, `rules-fill-in.ts`, `integration.ts`: the profile fill-in: email first, then LinkedIn every 30 days; nightly (02:00–05:59 UTC) or on request. Lookups run as the app's public identity, never as a member.
 - `service-nudge.ts`: the connect meter and the admin's reminder to unconnected members, at most one per member every 30 days.
 - `components/village-disclosure.tsx`: "What Village receives", on the member's card page. Update it when a call sends Village something new.
+- `*-village-check.ts`: the admin's Village check and the member's Meet line. Free calls only, once a minute; members who never reached Village aren't asked.
 - `slots.tsx`: `ConnectorAskSlot` and `ConnectorPromiseSlot`. Intros fills them, so network never imports intros.
 
 The Village client (a thin layer over `@villagehq/sdk`), credentials, credit ledger and error mapping live in `src/platform/village`. `health.ts` there records when Village last answered and any trouble since (down, or keys refused); every admin page shows it, and members see "Search is unavailable right now".

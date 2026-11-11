@@ -190,6 +190,13 @@
       "when": 1794338278872,
       "tag": "0027_faces_logos",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1794366759264,
+      "tag": "0028_village_check",
+      "breakpoints": true
     }
   ]
 }

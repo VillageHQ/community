@@ -1,5 +1,6 @@
 import { ExternalLink, Mail, MailX, PackageCheck } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { ExternalTextLink } from "@/components/external-text-link";
 import { Button } from "@/components/ui/button";
@@ -165,6 +166,12 @@ async function VillageSettingsCard({ database }: { database: Database }) {
   return (
     <SettingCard title="Village" tag={<Tag>Network</Tag>}>
       <VillageSettingsForm settings={{ ...settings, serviceEmail: settings.serviceEmail ?? "" }} sharingMembers={sharingMembers} defaultServiceEmail={defaultServiceEmail} />
+      <div className="grid gap-2 border-t border-rule pt-4">
+        <p className="type-small text-foreground-soft">See what Village says about your keys, the group and each member. It uses no credits.</p>
+        <Button asChild variant="outline" className="max-sm:w-full sm:justify-self-start">
+          <Link href={ROUTES.adminVillage}>Check Village</Link>
+        </Button>
+      </div>
     </SettingCard>
   );
 }
