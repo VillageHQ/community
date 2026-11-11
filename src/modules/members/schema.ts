@@ -198,6 +198,8 @@ export const memberFillIn = pgTable(
     value: text("value").notNull(),
     filledAt: timestamp("filled_at", { withTimezone: true }).notNull(),
     hiddenAt: timestamp("hidden_at", { withTimezone: true }),
+    // The member said "Right" on Today. A refresh that changes the value clears it, so the new words are asked again.
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.field] }),

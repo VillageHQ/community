@@ -18,6 +18,7 @@ import {
   INTRO_STATES,
   OUTCOME_PROMPT_AFTER_DAYS,
   OUTCOME_PROMPT_WINDOW_DAYS,
+  REQUESTER_SEES_WHO_ANSWERED,
   STATES_WAITING_ON_INTRODUCER,
   TARGET_ANSWER_MINIMUM_DAYS,
   introSchema,
@@ -161,13 +162,17 @@ function readRequesterDeadline({ createdAt, expiresAt, targetAgreedAt, acceptedA
   return targetAgreedAt || acceptedAt ? expiresAt : readIntroDeadline(createdAt);
 }
 
+// Once the person said yes, the asker may know the connector said yes first; before that, only with Founderhall's rule.
+const STATES_AFTER_BOTH_YES: readonly string[] = [INTRO_STATES.targetAgreed, INTRO_STATES.completed];
+
 function readIntroForRequester(request: typeof introRequest.$inferSelect, now: Date) {
+  const showsTargetStep = REQUESTER_SEES_WHO_ANSWERED || STATES_AFTER_BOTH_YES.includes(request.state);
   return {
-    state: readRequesterState(request.state),
+    state: REQUESTER_SEES_WHO_ANSWERED ? request.state : readRequesterState(request.state),
     declineReason: null,
     declineKind: null,
     hasUpdate: request.requesterHasUpdate,
-    askedTargetAt: null,
+    askedTargetAt: showsTargetStep ? toIso(request.askedTargetAt) : null,
     outcome: request.outcome,
     isOutcomeDue: isOutcomeDue(request, now),
     expiresAt: readRequesterDeadline(request).toISOString(),

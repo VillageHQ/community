@@ -5,10 +5,12 @@ import { CONNECTOR_ERROR_CODES, CONNECTOR_LIMITS } from "../../platform/village/
 import { feedTextSchema } from "../../platform/text/text-schema.ts";
 import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
 
-export const INTRO_LIFETIME_DAYS = 14;
+// Each step (the connector, then the person asked) has 7 days, as on Founderhall.
+export const INTRO_LIFETIME_DAYS = 7;
 export const TARGET_ANSWER_MINIMUM_DAYS = 7;
 export const OUTCOME_PROMPT_AFTER_DAYS = 14;
-export const OUTCOME_REMINDER_AFTER_DAYS = 3;
+// Founderhall: the outcome question 14 days after the intro, one reminder 14 days after that.
+export const OUTCOME_REMINDER_AFTER_DAYS = 14;
 // The one reminder to the person asked, this many days after the app last emailed them.
 export const TARGET_REMINDER_AFTER_DAYS = 4;
 // The one reminder to a connector who hasn't answered, this many days after the ask.
@@ -18,6 +20,34 @@ export const CONNECTOR_REMINDER_AFTER_DAYS = 4;
 export const EXPIRY_EMAIL_WINDOW_DAYS = 2;
 export const OUTCOME_PROMPT_WINDOW_DAYS = 45;
 export const CONSENT_TOKEN_MAXIMUM_LENGTH = 128;
+
+// PENDING THE OWNER'S DECISION. Founderhall shows the asker who said no ("Marcus said yes and asked Rosa", "Rosa can't
+// take this one"); Community never lets the asker tell the connector's no from the person's no. false keeps
+// Community's rule: the asker sees the connector's step until the end, and every no reads as the connector's.
+export const REQUESTER_SEES_WHO_ANSWERED = false;
+
+// The owner decided (2026-11-11): admins see who asked whom, like Founderhall, and members are told so here.
+export const ADMINS_SEE_INTRO_NAMES = true;
+
+// The connector's three answers, as Founderhall words them and as its email links carry them (`?a=yes`).
+export const CONNECTOR_CHOICES = { yes: "yes", notNow: "not_now", dontKnow: "dont_know" } as const;
+
+export type ConnectorChoice = (typeof CONNECTOR_CHOICES)[keyof typeof CONNECTOR_CHOICES];
+
+// The person asked: yes or no thanks (`?a=yes`, `?a=no`).
+export const TARGET_CHOICES = { yes: "yes", no: "no" } as const;
+
+export type TargetChoice = (typeof TARGET_CHOICES)[keyof typeof TARGET_CHOICES];
+
+// The asker's answer to "Was it helpful?" (`?a=helpful`).
+export const OUTCOME_CHOICES = { helpful: "helpful", notReally: "not_really", tooEarly: "too_early" } as const;
+
+export type OutcomeChoice = (typeof OUTCOME_CHOICES)[keyof typeof OUTCOME_CHOICES];
+
+// A link that answers without signing in: the connector's (from the ask email) or the asker's outcome link.
+export const INTRO_LINK_PURPOSES = { connector: "connector", outcome: "outcome" } as const;
+
+export type IntroLinkPurpose = (typeof INTRO_LINK_PURPOSES)[keyof typeof INTRO_LINK_PURPOSES];
 
 export const INTRO_LIMITS = {
   noteLength: 1000,
@@ -113,6 +143,12 @@ export const INTRO_OUTCOMES = { helped: "helped", notYet: "not_yet", notHelped: 
 
 export type IntroOutcome = (typeof INTRO_OUTCOMES)[keyof typeof INTRO_OUTCOMES];
 
+export const OUTCOME_BY_CHOICE: Record<OutcomeChoice, IntroOutcome> = {
+  [OUTCOME_CHOICES.helpful]: INTRO_OUTCOMES.helped,
+  [OUTCOME_CHOICES.notReally]: INTRO_OUTCOMES.notHelped,
+  [OUTCOME_CHOICES.tooEarly]: INTRO_OUTCOMES.notYet,
+};
+
 // What came of an intro that helped, ticked by the requester with their answer. Admins only ever see totals.
 export const INTRO_RESULTS = { customer: "customer", hire: "hire", investor: "investor" } as const;
 
@@ -143,6 +179,8 @@ export const INTRO_ERROR_CODES = {
   targetRefuses: "intro_target_refuses",
   notTakingAsks: "intro_not_taking_asks",
   networkOff: "intro_network_off",
+  targetEmailMissing: "intro_target_email_missing",
+  noteInvalid: "intro_note_invalid",
 } as const;
 
 const slugSchema = z.string().trim().toLowerCase().min(1).max(INTRO_LIMITS.slugLength);
@@ -301,6 +339,35 @@ export const consentEmailBodySchema = z.object({
   targetEmail: targetEmailSchema,
 });
 
+// The connector's answer, from the intro page or from the link in the ask email (no sign-in).
+const connectorAnswerFields = {
+  choice: z.enum(CONNECTOR_CHOICES),
+  targetEmail: z
+    .string()
+    .trim()
+    .max(INTRO_LIMITS.emailLength)
+    .nullable()
+    .default(null)
+    .transform((value) => value?.toLowerCase() || null),
+  // The note as the connector edited it before it goes on. Null or unchanged keeps the asker's note.
+  note: z.string().max(INTRO_LIMITS.noteLength * 2).nullable().default(null),
+  // Community's private note with a no: the connector's own, never shown to the asker.
+  reason: declineReasonSchema.default(null),
+};
+
+export const connectorAnswerBodySchema = z.object({ introId: z.uuid(), ...connectorAnswerFields });
+
+const outcomeLinkFields = {
+  outcome: z.enum(OUTCOME_CHOICES),
+  results: z.array(z.enum(INTRO_RESULTS)).max(Object.keys(INTRO_RESULTS).length).default([]),
+};
+
+// An answer through a link without signing in: the connector's, or the asker's outcome.
+export const linkAnswerBodySchema = z.discriminatedUnion("purpose", [
+  z.object({ purpose: z.literal(INTRO_LINK_PURPOSES.connector), token: z.string().max(CONSENT_TOKEN_MAXIMUM_LENGTH), ...connectorAnswerFields }),
+  z.object({ purpose: z.literal(INTRO_LINK_PURPOSES.outcome), token: z.string().max(CONSENT_TOKEN_MAXIMUM_LENGTH), ...outcomeLinkFields }),
+]);
+
 export const markIntrosSeenBodySchema = z.object({ introId: z.uuid().nullable().default(null) });
 
 const timestampSchema = z.iso.datetime();
@@ -368,6 +435,10 @@ export type IntroOutcomeRequest = z.input<typeof introOutcomeBodySchema>;
 export type ConsentAnswerBody = z.infer<typeof consentAnswerBodySchema>;
 export type ConsentEmailBody = z.infer<typeof consentEmailBodySchema>;
 export type ConsentIssue = z.infer<typeof consentIssueSchema>;
+export type ConnectorAnswerBody = z.infer<typeof connectorAnswerBodySchema>;
+export type ConnectorAnswerRequest = z.input<typeof connectorAnswerBodySchema>;
+export type LinkAnswerBody = z.infer<typeof linkAnswerBodySchema>;
+export type LinkAnswerRequest = z.input<typeof linkAnswerBodySchema>;
 
 export function isOpenIntroState(state: IntroState) {
   return INTRO_TRANSITIONS[state].length > 0;

@@ -220,13 +220,18 @@ export function buildSampleItems(now = new Date()): TodayItems {
         title: "Who knows a good fractional CFO for a seed-stage startup?",
         author: { id: "sample-asker", name: "Priya Shah", avatarUrl: null },
         listedAt: at,
+        createdAt: at,
         matchedWords: ["finance"],
         why: null,
+        who: "a fractional CFO",
+        whyYou: "Your profile says you can help with “finance for seed-stage startups.”",
       },
     ],
     introsToAnswer: [intro],
     introsToFinish: [],
     profileLines: [],
+    ownPosts: [],
+    introsInMotion: [],
     ownAsks: [
       {
         id: "00000000-0000-4000-8000-000000000003",

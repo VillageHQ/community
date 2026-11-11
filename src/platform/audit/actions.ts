@@ -37,6 +37,7 @@ export const AUDIT_ACTIONS = {
   askPinned: "ask_pinned",
   askUnpinned: "ask_unpinned",
   askReopened: "ask_reopened",
+  askClosed: "ask_closed",
   introAsksStopped: "intro_asks_stopped",
   fillInBasisChanged: "fill_in_basis_changed",
   fillInRunStarted: "fill_in_run_started",

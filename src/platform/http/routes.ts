@@ -3,6 +3,10 @@ export const ACCOUNT_DELETED_PARAM = "accountDeleted";
 
 export const ROUTES = {
   feed: "/",
+  // Founderhall's Today. "/" sends a member here.
+  today: "/today",
+  // The switchable feed's own page (Community-only).
+  feedPage: "/feed",
   // Founderhall's paths. The old ones (/sign-in, /sign-in/link, /join/<token>) redirect here (next.config.mjs).
   signIn: "/signin",
   signInLink: "/auth",
@@ -25,7 +29,10 @@ export const ROUTES = {
   // A first message to a member: the empty thread page; the first Send starts the conversation.
   newMessage: "/messages/new",
   intros: "/intros",
-  introConsent: "/meet",
+  // Founderhall's public intro pages: a yes or no without signing in, and "stop intro asks". `/meet` redirects here.
+  introConsent: "/i",
+  introOptOut: "/intro/optout",
+  introConsentOld: "/meet",
   members: "/members",
   editCard: "/members/card",
   yourData: "/members/data",
@@ -130,6 +137,7 @@ export const API_ROUTES = {
   networkFillIn: "/api/network/fill-in",
   profileLookupChoice: "/api/profile/lookup-choice",
   profileFillIn: "/api/profile/fill-in",
+  profileFillInCheck: "/api/profile/fill-in/check",
   feedReport: "/api/feed/report",
   introReport: "/api/intros/report",
   networkConfirmation: "/api/members/confirmation",
@@ -165,6 +173,8 @@ export const API_ROUTES = {
   introConsentAnswer: "/api/intros/consent/answer",
   introConsentLink: "/api/intros/consent/link",
   introConsentEmail: "/api/intros/consent/email",
+  introConnectorAnswer: "/api/intros/answer",
+  introLinkAnswer: "/api/intros/link/answer",
   memberDirectory: "/api/members/directory",
   members: "/api/members",
   profile: "/api/profile",

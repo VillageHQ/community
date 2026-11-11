@@ -12,7 +12,7 @@ export const feedManifest = {
   isOnByDefault: false,
   needsVillage: false,
   requires: [],
-  navigation: [{ label: "Feed", href: ROUTES.feed, icon: House, section: NAVIGATION_SECTIONS.primary }],
+  navigation: [{ label: "Feed", href: ROUTES.feedPage, icon: House, section: NAVIGATION_SECTIONS.primary }],
   adminTabs: [],
-  paths: { pages: [], api: [API_ROUTES.feed] },
+  paths: { pages: [ROUTES.feedPage], api: [API_ROUTES.feed] },
 } satisfies ToggleableManifest;

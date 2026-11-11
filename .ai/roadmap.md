@@ -22,12 +22,14 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - order: waiting on an unfinished item = hidden · each open item waiting on it = +1, at most +2 · touching the files of an open pull request = ranked after it
 
 ## Now (in flight)
+- [ ] Founderhall transplant, area 3, intros: Founderhall's Your intros, tracker, one-step connector answer, public answer links for the connector, the person and the outcome, the opt-out page and every intro email word for word — fh-intros — open pull request — [spec](features/fh-intros/SPEC.md)
 - [ ] Founderhall transplant, foundation: Founderhall's look, shared parts and shell (menus, console, phone bars, footers, flash) on every Community screen, and a parts review page — fh-foundation — open pull request — [spec](features/fh-foundation/SPEC.md)
 - [ ] Founderhall transplant, Search and asking for an intro: Founderhall's Search (/search), the intro ask as a page (from a search result and from a profile), the guided ask (/ask), My network (/me/network) and the connector's email, on Community's engine — fh-search-ask — open pull request, [PR #52](https://github.com/VillageHQ/community/pull/52) — [spec](features/fh-search-ask/SPEC.md)
 - [ ] Founderhall transplant, Set up and the plumbing pages: Founderhall's Set up, Settings, Mail, Village, Import members, Sign-in links, Integrations, Perks and Audit log on Community's engine — fh-setup-plumbing — open pull request — [spec](features/fh-setup-plumbing/SPEC.md)
 - [ ] Founderhall transplant, dark mode: a dark version of Founderhall's look (owner's pick), token layer only, every pair WCAG AA — fh-dark — open pull request — [spec](features/fh-dark/SPEC.md)
 - [ ] Founderhall transplant, area 8: sign-in by emailed link first, one-button invites, the two welcome steps and every public page in Founderhall's card — fh-public-signin — open pull request — [spec](features/fh-public-signin/SPEC.md)
 - [ ] Founderhall transplant, area 5: Inbox, Jobs and Perks on Founderhall's screens, addresses and email words — fh-inbox-jobs-perks — open pull request — [spec](features/fh-inbox-jobs-perks/SPEC.md)
+- [ ] Founderhall transplant, area 1: Today and Asks & updates in Founderhall's screens, a page for each ask, Is this right?, Founderhall's emails — fh-today-asks — open pull request — [spec](features/fh-today-asks/SPEC.md)
 - [ ] A Village check through Village's own API (keys, group, each member), the member's own status on Meet, a sent-email list with the do-not-send list, and no Vercel button on the website for now — village-check — open pull request — [spec](features/village-check/SPEC.md)
 - [ ] The small known bugs: sign-in keeps the typed email, switched-off pages answer 404, Today's "Check your card", Perks from the menu, Slack /ask follow-up, hyphenated words in matching, cohort on a single invite, long fund names on phones — fix-small — open pull request — [charter](features/fix-small/CHARTER.md)
 - [x] Intro fixes from the final check: empty "no" note, the yes on a forwarded link, reminders for quiet intros, a connector who said no, the "no thanks" page — fix-intros — merged, [PR #27](https://github.com/VillageHQ/community/pull/27)
@@ -40,7 +42,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 ## Next (queued)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
 - [ ] Intros from a profile without Village, and "Who <name> can introduce you to" — intros-no-village — open pull request, [PR #40](https://github.com/VillageHQ/community/pull/40) — [charter](features/intros-no-village/CHARTER.md) · [spec](features/intros-from-profile/SPEC.md)
-- [ ] The finer intro rules: 7 days per step, the admin's outcome day, an event history, the connector on the joining email — parity — [spec](features/intros-from-profile/SPEC.md)
+- [ ] The finer intro rules: the admin's outcome day, an event history (7 days per step and the connector on the joining email: fh-intros) — parity — [spec](features/intros-from-profile/SPEC.md)
 - [x] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
 
 ### From the final check of the merged app (2026-11-10), not covered by another part

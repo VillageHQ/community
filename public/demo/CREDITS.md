@@ -51,6 +51,7 @@ anyone: each was generated from a text prompt alone, then cropped to 256 × 256 
 | `nina-patel.webp` | 51-year-old Indian American woman, shoulder-length dark hair with grey streaks, burgundy blazer | 1210 | Generated, SDXL 1.0, AGPL-3.0 (model: Open RAIL++-M, no rights claimed) |
 | `luca-bianchi.webp` | 44-year-old Italian man, dark wavy hair, stubble, light grey suit jacket | 1217 | Generated, SDXL 1.0, AGPL-3.0 (model: Open RAIL++-M, no rights claimed) |
 | `alex-kim.webp` | 33-year-old Korean man, short black hair, black t-shirt | 1224 | Generated, SDXL 1.0, AGPL-3.0 (model: Open RAIL++-M, no rights claimed) |
+| `rachel-kim.webp` | 38-year-old Korean American woman, straight black hair in a low ponytail, charcoal blazer over a white blouse | 1240 | Generated, SDXL 1.0, AGPL-3.0 (model: Open RAIL++-M, no rights claimed) |
 | `dana-morris.webp` | 40-year-old African American woman, natural curly hair, coral blouse | 1231 | Generated, SDXL 1.0, AGPL-3.0 (model: Open RAIL++-M, no rights claimed) |
 | `grace-ito.webp` | 26-year-old Japanese woman, long black hair, denim jacket | 1238 | Generated, SDXL 1.0, AGPL-3.0 (model: Open RAIL++-M, no rights claimed) |
 | `jonas-weber.webp` | 43-year-old German man, short dark blond hair, trimmed beard, dark green sweater | 1245 | Generated, SDXL 1.0, AGPL-3.0 (model: Open RAIL++-M, no rights claimed) |

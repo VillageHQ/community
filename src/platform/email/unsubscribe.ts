@@ -17,6 +17,9 @@ const TOKEN_SEPARATOR = ".";
 const PAYLOAD_SEPARATOR = ":";
 
 export const UNSUBSCRIBE_PAGE_FIELD = "fromPage";
+// A plain-text email (Founderhall's words) places its own "Stop … : <link>" line: the sender puts the member's
+// unsubscribe page where this mark is, instead of adding the usual footer.
+export const UNSUBSCRIBE_URL_MARK = "[[unsubscribe-url]]";
 
 export type UnsubscribeTarget = { memberId: string; topic: EmailTopic };
 
@@ -59,6 +62,7 @@ export async function buildUnsubscribeParts(database: Database, environment: Env
   const appUrl = resolveAppUrl(environment);
   const pageUrl = `${appUrl}${ROUTES.unsubscribe}?token=${token}`;
   return {
+    pageUrl,
     headers: {
       "List-Unsubscribe": `<${appUrl}${API_ROUTES.emailUnsubscribe}?token=${token}>`,
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",

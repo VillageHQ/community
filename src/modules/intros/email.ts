@@ -3,12 +3,10 @@ import { alias } from "drizzle-orm/pg-core";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
+import { describeAllowanceLeft, readWeeklyAllowanceFor } from "../../platform/allowance/weekly-allowance.ts";
 import { introRequest } from "./schema.ts";
-import { memberProfile } from "../members/schema.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
-import { pickOnAccent } from "../../platform/design/accent.ts";
 import { readFirstName } from "../../platform/design/avatar-identity.ts";
-import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
 import { EMAIL_KINDS, type EmailKind } from "../../platform/email/kinds.ts";
 import { queueEmail, readEmailBranding, type EmailBranding } from "../../platform/email/outbox.ts";
 import { createReplyAddress, REPLY_KINDS, resolveReplySigner } from "../../platform/email/reply-address.ts";
@@ -17,8 +15,24 @@ import type { Environment } from "../../platform/environment.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import { ROUTES } from "../../platform/http/routes.ts";
+import { memberProfile } from "../members/schema.ts";
+import { shownCompanyColumn } from "../members/reads-pictures.ts";
+import { CONNECTOR_CHOICES, INTRO_LINK_PURPOSES, INTRO_STATES, OUTCOME_CHOICES, REQUESTER_SEES_WHO_ANSWERED } from "./contract.ts";
+import {
+  CONNECTOR_UPDATES,
+  renderAskEnded,
+  renderConnectorAsk,
+  renderConnectorUpdate,
+  renderOutcomeQuestion,
+  renderPlainHtml,
+  renderThanksToConnector,
+  toRoleAndCompany,
+  type ConnectorUpdate,
+} from "./email-copy.ts";
+import { issueAnswerLink, readAnswerLinkUrl } from "./answer-links.ts";
 
 export const ASKED_EMAIL_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+const MILLISECONDS_PER_DAY = 86_400_000;
 
 export const INTRO_EMAIL_EVENTS = {
   asked: "asked",
@@ -31,76 +45,16 @@ export const INTRO_EMAIL_EVENTS = {
   outcomeReminder: "outcome_reminder",
   connectorReminder: "connector_reminder",
   expired: "expired",
+  // To the connector: the asker withdrew, or the person asked never answered.
+  withdrawn: "withdrawn",
+  closedUnanswered: "closed_unanswered",
+  // To the connector, when the asker said the intro helped.
+  thanks: "thanks",
 } as const;
 
 export type IntroEmailEvent = (typeof INTRO_EMAIL_EVENTS)[keyof typeof INTRO_EMAIL_EVENTS];
 
-type IntroEmailNames = { requesterName: string; introducerName: string; targetName: string };
-type IntroEmailCopy = { subject: string; heading: string; body: string; action: string };
-
-const INTRO_EMAIL_COPY: Record<IntroEmailEvent, (names: IntroEmailNames) => IntroEmailCopy> = {
-  [INTRO_EMAIL_EVENTS.asked]: ({ requesterName, targetName }) => ({
-    subject: `${requesterName} asked you for an intro`,
-    heading: "Someone asked you for an intro",
-    body: `${requesterName} would like an intro to ${targetName}. Read their note and say yes or no. ${readFirstName(targetName)} hears nothing unless you say yes.`,
-    action: "Read the intro request",
-  }),
-  [INTRO_EMAIL_EVENTS.declined]: ({ targetName }) => ({
-    subject: `Your intro to ${targetName} isn't happening this time`,
-    heading: "Not this time",
-    body: `Your intro to ${targetName} isn't happening this time. That's normal, and we don't share who answered. Someone else may be able to help.`,
-    action: "See other ways in",
-  }),
-  [INTRO_EMAIL_EVENTS.targetAgreed]: ({ introducerName, targetName }) => ({
-    subject: `${readFirstName(targetName)} said yes to your intro`,
-    heading: "Good news",
-    body: `${targetName} said yes. ${readFirstName(introducerName)} will connect you both with one message.`,
-    action: "See your intro request",
-  }),
-  [INTRO_EMAIL_EVENTS.targetDeclined]: ({ requesterName, targetName }) => ({
-    subject: `${readFirstName(targetName)} said no thanks`,
-    heading: "No thanks this time",
-    body: `${targetName} said no thanks to meeting ${requesterName}. ${readFirstName(requesterName)} sees that this intro isn't happening, not who answered. Nothing more to do.`,
-    action: "See the intro request",
-  }),
-  [INTRO_EMAIL_EVENTS.joinNeeded]: ({ requesterName, targetName }) => ({
-    subject: `${readFirstName(targetName)} said yes`,
-    heading: "One last step",
-    body: `${targetName} said yes to meeting ${requesterName}. Send the message that joins them, then mark it as introduced.`,
-    action: "Connect them",
-  }),
-  [INTRO_EMAIL_EVENTS.joined]: ({ requesterName, targetName }) => ({
-    subject: `${readFirstName(targetName)} said yes, and they're connected`,
-    heading: "They're connected",
-    body: `${targetName} said yes to meeting ${requesterName}, so we emailed them both. Nothing more to do. Thank you.`,
-    action: "See the intro request",
-  }),
-  [INTRO_EMAIL_EVENTS.outcomeAsked]: ({ introducerName, targetName }) => ({
-    subject: `Did your intro to ${readFirstName(targetName)} help?`,
-    heading: "Did it help?",
-    body: `${readFirstName(introducerName)} introduced you to ${targetName} a couple of weeks ago. Did it help? One tap tells ${readFirstName(introducerName)} their intro mattered, and helps this community see which intros work.`,
-    action: "Answer in one tap",
-  }),
-  [INTRO_EMAIL_EVENTS.outcomeReminder]: ({ introducerName, targetName }) => ({
-    subject: `A quick one: did meeting ${readFirstName(targetName)} help?`,
-    heading: "One tap, then we'll stop asking",
-    body: `Did ${readFirstName(introducerName)}'s intro to ${targetName} help? "Not yet" is a fine answer too. This is the last time we'll email about it.`,
-    action: "Answer in one tap",
-  }),
-  [INTRO_EMAIL_EVENTS.connectorReminder]: ({ requesterName, targetName }) => ({
-    subject: `Still waiting: ${readFirstName(requesterName)} asked you for an intro`,
-    heading: "A quick reminder",
-    body: `A few days ago ${requesterName} asked you for an intro to ${targetName}. Yes, not this time, or "I don't know them well enough" are all fine answers, and it takes a few seconds. ${readFirstName(targetName)} hears nothing unless you say yes. This is the only reminder.`,
-    action: "Answer the intro request",
-  }),
-  // Never names who didn't answer: the asker can't tell a quiet connector from a quiet person asked.
-  [INTRO_EMAIL_EVENTS.expired]: ({ targetName }) => ({
-    subject: `Your intro to ${readFirstName(targetName)} closed without an answer`,
-    heading: "No answer this time",
-    body: `Your intro request to ${targetName} closed without an answer. That happens, and it says nothing about your ask. Someone else may be able to help, and you can ask again.`,
-    action: "See other ways in",
-  }),
-};
+type IntroEmailParticipants = { requesterId: string; introducerId: string };
 
 const RECIPIENT_BY_EVENT: Record<IntroEmailEvent, keyof IntroEmailParticipants> = {
   [INTRO_EMAIL_EVENTS.asked]: "introducerId",
@@ -113,9 +67,10 @@ const RECIPIENT_BY_EVENT: Record<IntroEmailEvent, keyof IntroEmailParticipants> 
   [INTRO_EMAIL_EVENTS.outcomeReminder]: "requesterId",
   [INTRO_EMAIL_EVENTS.connectorReminder]: "introducerId",
   [INTRO_EMAIL_EVENTS.expired]: "requesterId",
+  [INTRO_EMAIL_EVENTS.withdrawn]: "introducerId",
+  [INTRO_EMAIL_EVENTS.closedUnanswered]: "introducerId",
+  [INTRO_EMAIL_EVENTS.thanks]: "introducerId",
 };
-
-type IntroEmailParticipants = { requesterId: string; introducerId: string };
 
 const KIND_BY_EVENT: Record<IntroEmailEvent, EmailKind> = {
   [INTRO_EMAIL_EVENTS.asked]: EMAIL_KINDS.introAsked,
@@ -128,91 +83,153 @@ const KIND_BY_EVENT: Record<IntroEmailEvent, EmailKind> = {
   [INTRO_EMAIL_EVENTS.outcomeReminder]: EMAIL_KINDS.introUpdate,
   [INTRO_EMAIL_EVENTS.connectorReminder]: EMAIL_KINDS.introAsked,
   [INTRO_EMAIL_EVENTS.expired]: EMAIL_KINDS.introDeclined,
+  [INTRO_EMAIL_EVENTS.withdrawn]: EMAIL_KINDS.introUpdate,
+  [INTRO_EMAIL_EVENTS.closedUnanswered]: EMAIL_KINDS.introUpdate,
+  [INTRO_EMAIL_EVENTS.thanks]: EMAIL_KINDS.introUpdate,
 };
 
-export type IntroEmailFacts = IntroEmailParticipants & IntroEmailNames & { introId: string; event: IntroEmailEvent };
+export type IntroEmailFacts = IntroEmailParticipants & { requesterName: string; introducerName: string; targetName: string; introId: string; event: IntroEmailEvent };
 
 // The connector answers these by replying YES or NO, when replies are on.
 const ANSWERABLE_BY_REPLY: readonly IntroEmailEvent[] = [INTRO_EMAIL_EVENTS.asked, INTRO_EMAIL_EVENTS.connectorReminder];
 
-export const INTRO_REPLY_LINES = {
-  on: "Or reply to this email with YES or NO on the first line. To have us email them the note, put their email address after YES.",
-  off: "Reply in the app.",
-} as const;
-
-export function renderIntroEmail(event: IntroEmailEvent, names: IntroEmailNames, link: string, accentColor: string, canReply = false) {
-  const { subject, heading, body, action } = INTRO_EMAIL_COPY[event]({
-    requesterName: toSingleLine(names.requesterName),
-    introducerName: toSingleLine(names.introducerName),
-    targetName: toSingleLine(names.targetName),
-  });
-  const replyLine = ANSWERABLE_BY_REPLY.includes(event) ? (canReply ? INTRO_REPLY_LINES.on : INTRO_REPLY_LINES.off) : null;
-  const html = [
-    `<div style="font-family:Arial,sans-serif;font-size:16px;line-height:24px;color:#0c2427;max-width:520px;margin:0 auto;padding:24px">`,
-    `<h1 style="font-size:24px;line-height:30px;margin:0 0 12px">${escapeHtml(heading)}</h1>`,
-    `<p style="margin:0 0 24px">${escapeHtml(body)}</p>`,
-    replyLine ? `<p style="margin:0 0 24px">${escapeHtml(replyLine)}</p>` : "",
-    `<a href="${escapeHtml(link)}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${accentColor};color:${pickOnAccent(accentColor)};font-weight:700;text-decoration:none">${escapeHtml(action)}</a>`,
-    `</div>`,
-  ].join("");
-  return { subject, html, text: [body, replyLine, `${action}: ${link}`].filter(Boolean).join("\n\n") };
+// Everything an intro email says, read inside the move's transaction.
+async function readEmailFacts(connection: DatabaseOrTransaction, introId: string) {
+  const [row] = await connection
+    .select({
+      requesterId: introRequest.requesterId,
+      introducerId: introRequest.introducerId,
+      introducerName: introRequest.introducerName,
+      targetName: introRequest.targetName,
+      targetHeadline: introRequest.targetHeadline,
+      note: introRequest.note,
+      state: introRequest.state,
+      closedAt: introRequest.closedAt,
+      isWithheld: introRequest.isWithheld,
+      askedEmailAt: introRequest.askedEmailAt,
+      requesterName: user.name,
+      requesterTitle: memberProfile.title,
+      requesterCompany: shownCompanyColumn(introRequest.requesterId),
+    })
+    .from(introRequest)
+    .innerJoin(user, eq(user.id, introRequest.requesterId))
+    .leftJoin(memberProfile, eq(memberProfile.userId, introRequest.requesterId))
+    .where(eq(introRequest.id, introId));
+  return row ?? null;
 }
 
-// The ask to the connector, as Founderhall writes it: plain words, the asker's note to forward, three answers and the
-// reply line. Its answer links open the intro, signed in, with the answer picked.
-export type AskedEmailFacts = {
-  communityName: string;
-  requesterName: string;
-  requesterAbout: string | null;
-  introducerName: string;
-  targetName: string;
-  targetAbout: string | null;
-  note: string;
-  link: string;
+type EmailFacts = NonNullable<Awaited<ReturnType<typeof readEmailFacts>>>;
+
+export function readRequesterAbout({ requesterTitle, requesterCompany }: Pick<EmailFacts, "requesterTitle" | "requesterCompany">) {
+  return removeBidiControls([requesterTitle, requesterCompany].filter(Boolean).join(", ")) || null;
+}
+
+type RenderContext = {
+  connection: DatabaseOrTransaction;
+  environment: Environment;
+  community: string;
+  introId: string;
+  facts: EmailFacts;
+  canReply: boolean;
 };
 
-export const ASKED_ANSWERS = { yes: "yes", notNow: "not_now", dontKnow: "dont_know" } as const;
-export const ASKED_ANSWER_PARAM = "a";
+type RenderedEmail = { subject: string; text: string; html: string };
 
-function withAnswer(link: string, answer: string) {
-  return `${link}?${ASKED_ANSWER_PARAM}=${answer}`;
+// The Community-only notices (no Founderhall email): the person said yes but the community sends no email, so the
+// connector joins them by hand.
+function renderLegacyNotice(lines: readonly string[], link: string): RenderedEmail {
+  const text = [...lines.slice(1), link].join("\n\n");
+  return { subject: lines[0] ?? "", text, html: renderPlainHtml(text) };
 }
 
-export function renderAskedEmail(facts: AskedEmailFacts, canReply: boolean) {
-  const requester = toSingleLine(facts.requesterName);
-  const target = toSingleLine(facts.targetName);
-  const community = toSingleLine(facts.communityName);
-  const connectorFirst = readFirstName(toSingleLine(facts.introducerName));
-  const requesterFirst = readFirstName(requester);
-  const targetFirst = readFirstName(target);
-  const about = (text: string | null) => (text ? ` (${toSingleLine(text)})` : "");
-  const note = facts.note
-    .replace(/\r\n/g, "\n")
-    .trim()
-    .split("\n")
-    .map((line) => (line.trim() ? `  ${line}` : ""))
-    .join("\n");
-  const paragraphs = [
-    `Hi ${connectorFirst},`,
-    `${requester}${about(facts.requesterAbout)} asked ${community} for an intro to ${target}${about(facts.targetAbout)}, through you.`,
-    `${requesterFirst}'s note, written so you can forward it:`,
-    note,
-    "Would you introduce them?",
-    [
-      `Yes, introduce them: ${withAnswer(facts.link, ASKED_ANSWERS.yes)}`,
-      `Not this time: ${withAnswer(facts.link, ASKED_ANSWERS.notNow)}`,
-      `I don't know them well enough: ${withAnswer(facts.link, ASKED_ANSWERS.dontKnow)}`,
-    ].join("\n"),
-    canReply
-      ? `Or reply to this email with YES or NO on the first line. With a yes, put ${targetFirst}'s email on the next line: we email ${targetFirst} once, from ${community}, and introduce you only if ${targetFirst} says yes too.`
-      : null,
-    `If you say no, ${requesterFirst} is told you can't make this one, never why. Nobody is introduced without saying yes.`,
-    `Sent by ${community} via its member portal.`,
-  ].filter((paragraph): paragraph is string => paragraph !== null);
-  const text = paragraphs.join("\n\n");
-  const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:22px;color:#1B2420;max-width:600px;white-space:pre-wrap">${escapeHtml(text)}</div>`;
-  return { subject: `${connectorFirst}, would you introduce ${requester} to ${target}?`, html, text };
+function readAppLink(environment: Environment, path: string) {
+  return `${resolveAppUrl(environment)}${path}`;
 }
+
+async function renderConnectorAskFor({ connection, environment, community, introId, facts, canReply }: RenderContext, isReminder: boolean) {
+  const token = await issueAnswerLink(connection, introId, INTRO_LINK_PURPOSES.connector);
+  const link = readAnswerLinkUrl(environment, token);
+  return renderConnectorAsk({
+    community,
+    asker: facts.requesterName,
+    askerAbout: readRequesterAbout(facts),
+    connector: facts.introducerName,
+    target: facts.targetName,
+    targetAbout: toRoleAndCompany(facts.targetHeadline),
+    note: facts.note,
+    links: { yes: `${link}?a=${CONNECTOR_CHOICES.yes}`, notNow: `${link}?a=${CONNECTOR_CHOICES.notNow}`, dontKnow: `${link}?a=${CONNECTOR_CHOICES.dontKnow}` },
+    canReply,
+    isReminder,
+  });
+}
+
+async function renderOutcomeFor({ connection, environment, community, introId, facts }: RenderContext, isReminder: boolean) {
+  const token = await issueAnswerLink(connection, introId, INTRO_LINK_PURPOSES.outcome);
+  const link = readAnswerLinkUrl(environment, token);
+  const introducedAt = facts.closedAt ?? new Date();
+  return renderOutcomeQuestion({
+    community,
+    asker: facts.requesterName,
+    target: facts.targetName,
+    connector: facts.introducerName,
+    links: { helpful: `${link}?a=${OUTCOME_CHOICES.helpful}`, notReally: `${link}?a=${OUTCOME_CHOICES.notReally}`, tooEarly: `${link}?a=${OUTCOME_CHOICES.tooEarly}` },
+    // Whole days, so a run a few hours after day 14 still reads "Two weeks ago".
+    daysAgo: Math.floor((Date.now() - introducedAt.getTime()) / MILLISECONDS_PER_DAY),
+    isReminder,
+  });
+}
+
+// Who the asker hears said no: Founderhall names them; with Community's rule nobody is named.
+function readWhoDeclined(facts: EmailFacts) {
+  if (!REQUESTER_SEES_WHO_ANSWERED) return "They";
+  return readFirstName(facts.state === INTRO_STATES.targetDeclined ? facts.targetName : facts.introducerName);
+}
+
+async function renderAskEndedFor({ connection, environment, community, facts }: RenderContext, isExpired: boolean) {
+  const allowance = await readWeeklyAllowanceFor(connection, facts.requesterId);
+  return renderAskEnded({
+    community,
+    asker: facts.requesterName,
+    who: readWhoDeclined(facts),
+    target: facts.targetName,
+    allowanceLeft: allowance ? describeAllowanceLeft(allowance) : null,
+    findLink: readAppLink(environment, ROUTES.members),
+    isExpired,
+  });
+}
+
+function renderUpdateFor({ community, facts }: RenderContext, kind: ConnectorUpdate) {
+  return renderConnectorUpdate({ community, connector: facts.introducerName, asker: facts.requesterName, target: facts.targetName, kind });
+}
+
+const RENDERERS: Record<IntroEmailEvent, (context: RenderContext) => RenderedEmail | Promise<RenderedEmail>> = {
+  [INTRO_EMAIL_EVENTS.asked]: (context) => renderConnectorAskFor(context, false),
+  [INTRO_EMAIL_EVENTS.connectorReminder]: (context) => renderConnectorAskFor(context, true),
+  [INTRO_EMAIL_EVENTS.declined]: (context) => renderAskEndedFor(context, false),
+  [INTRO_EMAIL_EVENTS.expired]: (context) => renderAskEndedFor(context, true),
+  [INTRO_EMAIL_EVENTS.targetDeclined]: (context) => renderUpdateFor(context, CONNECTOR_UPDATES.declined),
+  [INTRO_EMAIL_EVENTS.withdrawn]: (context) => renderUpdateFor(context, CONNECTOR_UPDATES.withdrawn),
+  [INTRO_EMAIL_EVENTS.closedUnanswered]: (context) => renderUpdateFor(context, CONNECTOR_UPDATES.expired),
+  [INTRO_EMAIL_EVENTS.outcomeAsked]: (context) => renderOutcomeFor(context, false),
+  [INTRO_EMAIL_EVENTS.outcomeReminder]: (context) => renderOutcomeFor(context, true),
+  [INTRO_EMAIL_EVENTS.thanks]: ({ community, facts }) =>
+    renderThanksToConnector({ community, connector: facts.introducerName, asker: facts.requesterName, target: facts.targetName }),
+  [INTRO_EMAIL_EVENTS.targetAgreed]: ({ environment, introId, facts }) =>
+    renderLegacyNotice(
+      [`${readFirstName(facts.targetName)} said yes to your intro`, `${facts.targetName} said yes. ${readFirstName(facts.introducerName)} will connect you both with one message.`],
+      readAppLink(environment, `${ROUTES.intros}/${introId}`),
+    ),
+  [INTRO_EMAIL_EVENTS.joinNeeded]: ({ environment, introId, facts }) =>
+    renderLegacyNotice(
+      [`${readFirstName(facts.targetName)} said yes`, `${facts.targetName} said yes to meeting ${facts.requesterName}. Send the message that joins them, then mark it as introduced.`],
+      readAppLink(environment, `${ROUTES.intros}/${introId}`),
+    ),
+  [INTRO_EMAIL_EVENTS.joined]: ({ environment, introId, facts }) =>
+    renderLegacyNotice(
+      [`${readFirstName(facts.targetName)} said yes, and they're connected`, `${facts.targetName} said yes to meeting ${facts.requesterName}, so we emailed them both. Nothing more to do. Thank you.`],
+      readAppLink(environment, `${ROUTES.intros}/${introId}`),
+    ),
+};
 
 const recentAsk = alias(introRequest, "recent_ask");
 
@@ -248,49 +265,29 @@ export async function queueIntroEmail(
 ) {
   if (!branding) return null;
 
-  const [intro] = await transaction
-    .select({
-      requesterId: introRequest.requesterId,
-      introducerId: introRequest.introducerId,
-      introducerName: introRequest.introducerName,
-      targetName: introRequest.targetName,
-      targetHeadline: introRequest.targetHeadline,
-      note: introRequest.note,
-      requesterName: user.name,
-      requesterTitle: memberProfile.title,
-      requesterCompany: memberProfile.company,
-    })
-    .from(introRequest)
-    .innerJoin(user, eq(user.id, introRequest.requesterId))
-    .leftJoin(memberProfile, eq(memberProfile.userId, introRequest.requesterId))
-    .where(eq(introRequest.id, introId));
-  if (!intro) return null;
-  if (event === INTRO_EMAIL_EVENTS.asked && !(await claimAskedEmail(transaction, introId, intro))) return null;
+  const facts = await readEmailFacts(transaction, introId);
+  if (!facts) return null;
+  if (event === INTRO_EMAIL_EVENTS.asked && !(await claimAskedEmail(transaction, introId, facts))) return null;
 
-  const recipientId = intro[RECIPIENT_BY_EVENT[event]];
+  const recipientKey = RECIPIENT_BY_EVENT[event];
+  // A withheld ask never reached the connector, so nothing about it does either.
+  if (recipientKey === "introducerId" && facts.isWithheld) return null;
+  // "Sam withdrew the ask" only to a connector who got the ask by email (the cooldown may have held it back).
+  if (event === INTRO_EMAIL_EVENTS.withdrawn && !facts.askedEmailAt) return null;
+  const recipientId = facts[recipientKey];
   const [recipient] = await transaction.select({ email: user.email }).from(user).where(eq(user.id, recipientId));
   if (!recipient) return null;
 
-  const link = `${resolveAppUrl(environment)}${ROUTES.intros}/${introId}`;
-  const names = { requesterName: removeBidiControls(intro.requesterName), introducerName: intro.introducerName, targetName: intro.targetName };
   const signer = ANSWERABLE_BY_REPLY.includes(event) ? await resolveReplySigner(transaction, environment) : null;
   const replyTo = signer ? createReplyAddress(signer, REPLY_KINDS.introAsk, introId, { memberId: recipientId }) : null;
-  const rendered =
-    event === INTRO_EMAIL_EVENTS.asked
-      ? renderAskedEmail(
-          {
-            communityName: branding.name,
-            requesterName: names.requesterName,
-            requesterAbout: [intro.requesterTitle, intro.requesterCompany].filter(Boolean).join(", ") || null,
-            introducerName: intro.introducerName,
-            targetName: intro.targetName,
-            targetAbout: intro.targetHeadline,
-            note: intro.note,
-            link,
-          },
-          replyTo !== null,
-        )
-      : renderIntroEmail(event, names, link, branding.accentColor, replyTo !== null);
+  const rendered = await RENDERERS[event]({
+    connection: transaction,
+    environment,
+    community: branding.name,
+    introId,
+    facts: { ...facts, requesterName: removeBidiControls(facts.requesterName) },
+    canReply: replyTo !== null,
+  });
   return queueEmail(transaction, environment, {
     kind: KIND_BY_EVENT[event],
     to: recipient.email,
@@ -304,7 +301,7 @@ export async function queueIntroEmail(
 // For moves that happen outside a member's request (a target's answer, the outcome emails).
 // Resolves true once the email has gone out. A failed try stays queued, and the timed sender
 // keeps trying it. Failures are logged, never thrown.
-export async function deliverIntroEmail(database: Database, environment: Environment, facts: IntroEmailFacts) {
+export async function deliverIntroEmail(database: Database, environment: Environment, facts: Pick<IntroEmailFacts, "introId" | "event"> & Partial<IntroEmailFacts>) {
   try {
     const branding = await readEmailBranding(database, environment);
     if (!branding) return false;

@@ -73,6 +73,8 @@ export function toSlackAskBody(words: string): CreateAskBody {
     detail: isLong ? flat : null,
     category: ASK_CATEGORIES.other,
     kind: ASK_KINDS.ask,
+    targetText: null,
+    targetCompany: null,
     targetLinkedin: null,
   };
 }

@@ -152,21 +152,23 @@ async function completeJoinedIntro(database: Database, introId: string, now: Dat
 }
 
 async function tryJoiningByEmail(database: Database, environment: Environment, intro: IntroFacts, requesterName: string) {
-  if (!intro.targetEmail || !readResendConfig(environment)) return false;
+  if (!intro.targetEmail || !readResendConfig(environment)) return null;
   try {
-    await sendJoiningEmail(database, environment, intro, requesterName);
+    const sent = await sendJoiningEmail(database, environment, intro, requesterName);
     await completeJoinedIntro(database, intro.id, new Date());
-    return true;
+    return sent;
   } catch (error) {
     logError("intro-joining-email", error);
-    return false;
+    return null;
   }
 }
 
 async function tellEveryoneAboutYes(database: Database, environment: Environment, intro: IntroFacts) {
   const { requesterName } = await readConsentParticipants(database, intro.requesterId);
-  if (await tryJoiningByEmail(database, environment, intro, requesterName)) {
-    await deliverIntroEmail(database, environment, toEmailFacts(intro, requesterName, INTRO_EMAIL_EVENTS.joined));
+  const joined = await tryJoiningByEmail(database, environment, intro, requesterName);
+  // Joined by email: the connector is copied on the introduction itself, or else told by the app's notice.
+  if (joined) {
+    if (!joined.isConnectorCopied) await deliverIntroEmail(database, environment, toEmailFacts(intro, requesterName, INTRO_EMAIL_EVENTS.joined));
     return;
   }
   await Promise.all([
@@ -227,4 +229,35 @@ async function readEarlierAnswer(database: Database, environment: Environment, i
   const settled = current ? await readSettledAnswer(database, environment, current) : null;
   if (!settled) throw closedLinkError();
   return { answer: settled, isRepeat: true };
+}
+
+// "Don't send me intro asks" from the link in the person's email (Founderhall's opt-out page). It works on a link whose
+// ask already closed too: the choice is saved, and any ask still waiting for them closes, nobody told why.
+export async function stopIntroAsks(context: AnswerContext, token: string) {
+  const { database, environment, request, viewerId } = context;
+  const tokenHash = readLiveConsentHash(token);
+  const linked = tokenHash ? await readLinkedIntro(database, tokenHash) : null;
+  if (!linked) return respondToFailedAttempt(database, request, environment);
+  if (viewerId && [linked.requesterId, linked.introducerId].includes(viewerId)) {
+    throw new RequestError(FORBIDDEN_STATUS, INTRO_ERROR_CODES.consentLinkNotForYou, `This link is for ${linked.targetName}, so we didn't change anything.`);
+  }
+  const answered = await answerConsentAsk(context, { token, answer: CONSENT_ANSWERS.stopAllAsks }).catch((error: unknown) => {
+    if (error instanceof RequestError && error.code === INTRO_ERROR_CODES.consentLinkClosed) return null;
+    throw error;
+  });
+  if (answered && !answered.isRepeat) return answered;
+  const targetSlugHash = await hashTargetSlug(database, environment, linked.targetLinkedinSlug);
+  const closed = await database.transaction(async (transaction) => {
+    await saveOptOut(transaction, targetSlugHash);
+    return closeTargetsOtherAsks(transaction, linked.targetLinkedinSlug, null, new Date(), CONSENT_ANSWERS.stopAllAsks);
+  });
+  if (closed.length > 0) runAfterResponse(() => tellEveryoneAboutNo(database, environment, closed));
+  return { answer: CONSENT_ANSWERS.stopAllAsks, isRepeat: false };
+}
+
+// The address the opt-out page names: the person's, while the ask still has it.
+export async function readOptOutAddress(database: Database, token: string) {
+  const tokenHash = readLiveConsentHash(token);
+  const linked = tokenHash ? await readLinkedIntro(database, tokenHash) : null;
+  return linked ? { email: linked.targetEmail, targetName: linked.targetName } : null;
 }
