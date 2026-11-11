@@ -15,6 +15,13 @@ import { user } from "@/platform/database/auth-schema";
 import type { Database } from "@/platform/database/client";
 import { fetchReceivedText, type ReceivedEmail } from "@/platform/email/inbound";
 import { readResendConfig } from "@/platform/email/resend";
+import { describeEmailFoot, renderPlainTextHtml } from "@/platform/email/email-text";
+import { EMAIL_KINDS } from "@/platform/email/kinds";
+import { queueEmail, readEmailBranding } from "@/platform/email/outbox";
+import { sendQueuedEmailsSoon } from "@/platform/email/outbox-sender";
+import { resolveAppUrl } from "@/platform/http/app-url";
+import { ROUTES } from "@/platform/http/routes";
+import { logError } from "@/platform/observability/route-logging";
 import type { Environment } from "@/platform/environment";
 import { createRequestContext } from "@/platform/http/request-context";
 import { RequestError } from "@/platform/http/request-error";
@@ -130,6 +137,26 @@ export async function answerFromLink(database: Database, environment: Environmen
   return answerItem(database, environment, { ...link, via: ACTION_SOURCES.link, words });
 }
 
+// Founderhall's digestHint, word for word: why a reply to the digest did nothing, and where to answer instead. At most
+// one a day per address, so two mail robots can't loop through us.
+export function renderDigestHint(communityName: string, why: string, link: string) {
+  const text = [why, "", `Open this week’s items instead: ${link}`, "", describeEmailFoot(communityName)].join("\n");
+  return { subject: "Your reply to the digest did not go through", html: renderPlainTextHtml(text), text };
+}
+
+async function sendDigestHint(database: Database, environment: Environment, to: string, why: string) {
+  try {
+    const branding = await readEmailBranding(database, environment);
+    if (!branding) return;
+    const rendered = renderDigestHint(branding.name, why, `${resolveAppUrl(environment)}${ROUTES.today}`);
+    const day = new Date().toISOString().slice(0, 10);
+    const queued = await queueEmail(database, environment, { kind: EMAIL_KINDS.replyNotice, to, memberId: null, ...rendered, dedupeKey: `digest-hint:${to}:${day}` });
+    if (queued) sendQueuedEmailsSoon(database, environment);
+  } catch (error) {
+    logError("digest-reply-hint", error);
+  }
+}
+
 export type ReplyResult = { routed: boolean; reason: string | null; results: { code: string; outcome: AnswerOutcome }[] };
 
 export async function readReplyText(environment: Environment, received: ReceivedEmail) {
@@ -151,7 +178,10 @@ export async function answerFromReply(database: Database, environment: Environme
 
   const text = await readReplyText(environment, received);
   const codes = parseReplyCodes(text ?? "");
-  if (codes.length === 0) return { routed: true, reason: "no_codes", results: [] };
+  if (codes.length === 0) {
+    await sendDigestHint(database, environment, member.email, "We couldn’t read a code like HELP 1 in your reply.");
+    return { routed: true, reason: "no_codes", results: [] };
+  }
 
   const results: ReplyResult["results"] = [];
   for (const { code, itemNumber, words } of codes) {

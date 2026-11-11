@@ -81,10 +81,10 @@ export function numberWeeklyItems({ helpableAsks, introsToAnswer }: TodayItems):
   return unnumbered.map((item, index) => ({ ...item, number: index + 1 }));
 }
 
-// Something to answer or finish. New members, your own asks and lines to check alone don't make an
-// email: the weekly email has no way to answer a line yet.
+// Something to answer or finish, or a line on their profile to check (Founderhall's digest goes for any of them).
+// New members and your own asks alone don't make an email.
 export function needsMemberThisWeek(items: TodayItems) {
-  return items.helpableAsks.length + items.introsToAnswer.length + items.introsToFinish.length > 0;
+  return items.helpableAsks.length + items.introsToAnswer.length + items.introsToFinish.length + items.profileLines.length > 0;
 }
 
 export function isTodayEmpty(items: TodayItems) {

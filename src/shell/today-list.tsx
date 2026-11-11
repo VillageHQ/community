@@ -174,7 +174,7 @@ export function TodayPage({ today, memberName, communityName, digestDay, dateLab
               {facts.map((fact) => (
                 <article key={fact.field} className="fh-titem fh-fact" id={`fact-${fact.field}`}>
                   <p className="fh-small fh-muted">
-                    <RefreshCw {...ICON} /> Filled in from public profiles · refreshed {new Date(fact.filledAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                    <RefreshCw {...ICON} className="fh-i fh-xs inline-block align-[-2px]" /> Filled in from public profiles · refreshed {new Date(fact.filledAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                   </p>
                   <p className="fh-factline">
                     <b>{fact.label}</b> {fact.value}

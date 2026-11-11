@@ -57,7 +57,7 @@ export function AnswerForm({ askId }: { askId: string }) {
         <label className="fh-sr" htmlFor="c-body">
           Your answer
         </label>
-        <Input className="fh-input" id="c-body" name="body" maxLength={ASK_LIMITS.answerLength} placeholder="Write an answer" required />
+        <input className="fh-input" id="c-body" name="body" maxLength={ASK_LIMITS.answerLength} placeholder="Write an answer" required />
         <Button size="sm" type="submit" disabled={isPending}>
           <Send aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />
           Send

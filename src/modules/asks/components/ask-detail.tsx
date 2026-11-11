@@ -209,7 +209,7 @@ export function AskDetail({ detail, viewer, isViewerAdmin, flash, now }: AskDeta
           {!isOwn && isOpen && isAsk ? (
             <section className="fh-sheet fh-helpbox" id="help">
               <h2 className="fh-h3">
-                <Hand aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} /> I can help
+                <Hand aria-hidden="true" className="fh-i fh-s inline-block align-[-3px]" strokeWidth={1.5} /> I can help
               </h2>
               {post.viewerWhyYou && viewerHelper ? (
                 <p className="fh-small" style={{ marginTop: 6 }}>
