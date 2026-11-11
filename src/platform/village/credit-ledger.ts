@@ -3,7 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "../database/client.ts";
 import type { Environment } from "../environment.ts";
 import { logError } from "../observability/route-logging.ts";
-import { memberDailyUsage, villageMonthlyUsage } from "./schema.ts";
+import { memberDailyUsage, villageCreditCall, villageMonthlyUsage } from "./schema.ts";
 import { isVillageErrorResponse } from "./client.ts";
 import { CREDIT_CALL_KINDS, ESTIMATED_CREDITS, NEAR_CAP_PERCENT, type CreditCallKind } from "./contract.ts";
 import { CREDIT_WARNING_LEVELS, warnAdminsAboutCredits, type CreditWarningLevel } from "./credit-warnings.ts";
@@ -157,6 +157,15 @@ async function warnSafely(spender: CreditSpender, usageMonth: string, cap: numbe
 
 const ALWAYS_CHARGED = () => true;
 
+// The call's line in Admin › Village's latest lookups. Bookkeeping only: it must never fail the call it records.
+async function recordCreditCall({ database, memberId }: CreditSpender, kind: CreditCallKind) {
+  try {
+    await database.insert(villageCreditCall).values({ kind, credits: ESTIMATED_CREDITS[kind], userId: memberId });
+  } catch (error) {
+    logError("village-credit-call", error);
+  }
+}
+
 function readDailyMemberId({ memberId }: CreditSpender, kind: CreditCallKind) {
   return kind === CREDIT_CALL_KINDS.fillIn ? null : memberId;
 }
@@ -205,6 +214,7 @@ export async function withCreditCall<Result>(
     await release();
     return result;
   }
+  await recordCreditCall(spender, kind);
   await clearVillageOutOfCredits(database);
   await warnSafely(spender, usageMonth, cap, readCrossedLevels(reservedCredits, cap));
   return result;

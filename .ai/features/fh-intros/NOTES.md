@@ -29,7 +29,7 @@ Founderhall's intro screens, steps and emails on Community's intro engine. Found
   closed.
 - **Emails** all go through the outbox now, including the person's ask and the introduction. The introduction goes
   to the asker, the person and the connector (copied); the connector's copy shows no address (members never see each
-  other's addresses). Intro thread replies reach the two others (`INTRO_THREAD_AUTHORS.introducer`, migration 0033).
+  other's addresses). Intro thread replies reach the two others (`INTRO_THREAD_AUTHORS.introducer`, migration 0035).
 - New emails: withdrawn and "no answer" to the connector, thanks to the connector when the asker says it helped.
   "Sam withdrew" goes only to a connector who got the ask by email (the cooldown may have held it).
 - **7 days per step** (`INTRO_LIFETIME_DAYS = 7`): the connector has 7 days, then the person has their own 7. The

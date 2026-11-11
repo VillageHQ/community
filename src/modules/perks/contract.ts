@@ -12,7 +12,8 @@ export const PERKS_LIMITS = { codeCharacters: 20_000 } as const;
 
 export const PERKS_ERROR_CODES = { refused: "perks_refused" } as const;
 
-export const PERKS_REFUSED_MESSAGE = "Paste the embed code from BuiltFirst. Other code isn't accepted.";
+export const PERKS_REFUSED_MESSAGE = "Paste the BuiltFirst embed code; other code is not accepted.";
+export const PERKS_NOT_SAVED_MESSAGE = "That code was not saved.";
 
 // Frames on /perks may come from BuiltFirst only. The page's own policy, on top of the site's.
 export const PERKS_FRAME_SOURCES = "https://builtfirst.com https://*.builtfirst.com";
@@ -61,4 +62,5 @@ export function parsePerksEmbed(code: string): { url: string } | { error: string
   return url ? { url } : { error: PERKS_REFUSED_MESSAGE };
 }
 
-export const savePerksBodySchema = z.object({ code: z.string().max(PERKS_LIMITS.codeCharacters, PERKS_REFUSED_MESSAGE) });
+// Empty code keeps the saved address, so the admin can flip "Show Perks to members" alone.
+export const savePerksBodySchema = z.object({ code: z.string().max(PERKS_LIMITS.codeCharacters, PERKS_REFUSED_MESSAGE), isShown: z.boolean() });

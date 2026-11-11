@@ -9,6 +9,8 @@ import { DEFAULT_ACCENT_COLOR, parseAccentColor } from "../design/accent.ts";
 import { withLoggedFallback } from "../observability/route-logging.ts";
 import { API_ROUTES } from "../http/routes.ts";
 import { LOGO_BACKDROPS, parseLogoBackdrop, type LogoBackdrop, type LogoContentType } from "./logo-rules.ts";
+import { INSTANCE_SETTING_KEYS } from "../settings/schema.ts";
+import { readSettings } from "../settings/store.ts";
 
 export type CommunityLogo = { url: string; backdrop: LogoBackdrop };
 
@@ -41,7 +43,14 @@ function toCommunityLogo(logoUpdatedAt: Date | null, backdrop: string): Communit
   };
 }
 
+// A logo address set in Set up › Settings (https:// or a path on this server) wins over an uploaded logo.
+async function readLogoUrl(database: Database): Promise<CommunityLogo | null> {
+  const url = (await readSettings(database, [INSTANCE_SETTING_KEYS.logoUrl])).get(INSTANCE_SETTING_KEYS.logoUrl);
+  return url ? { url, backdrop: LOGO_BACKDROPS.light } : null;
+}
+
 export async function readBranding(database: Database): Promise<Branding> {
+  const logoFromUrl = await readLogoUrl(database);
   const [row] = await database
     .select({
       name: communityBranding.name,
@@ -53,13 +62,13 @@ export async function readBranding(database: Database): Promise<Branding> {
     })
     .from(communityBranding)
     .where(eq(communityBranding.isSingleton, SINGLETON_ROW));
-  if (!row) return DEFAULT_BRANDING;
+  if (!row) return logoFromUrl ? { ...DEFAULT_BRANDING, logo: logoFromUrl } : DEFAULT_BRANDING;
 
   return {
     name: row.name,
     descriptor: row.descriptor,
     accentColor: parseAccentColor(row.accentColor) ?? DEFAULT_ACCENT_COLOR,
-    logo: toCommunityLogo(row.logoUpdatedAt, row.logoBackdrop),
+    logo: logoFromUrl ?? toCommunityLogo(row.logoUpdatedAt, row.logoBackdrop),
     isSaved: row.savedAt !== null,
   };
 }

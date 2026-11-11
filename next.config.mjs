@@ -66,12 +66,22 @@ export const nextConfig = {
   ],
   redirects: async () => [
     { source: "/feed", destination: "/", permanent: false },
+    // Set up's pages took Founderhall's addresses; old links and bookmarks land on the new ones.
+    { source: "/admin/email", destination: "/admin/mail", permanent: true },
+    { source: "/admin/audit-log", destination: "/admin/audit", permanent: true },
+    { source: "/admin/chat", destination: "/admin/integrations", permanent: true },
+    { source: "/admin/credits", destination: "/admin/village", permanent: true },
     // Founderhall's public paths. Links in emails sent before the rename keep working (the query string carries over).
     { source: "/sign-in", destination: "/signin", permanent: true },
     { source: "/sign-in/link", destination: "/auth", permanent: true },
     { source: "/join/:token", destination: "/invite?token=:token", permanent: true },
     // Demo faces moved from drawn .svg to .webp portraits; a demo seeded before that keeps the old links until its reset.
     { source: "/demo/faces/:name([a-z0-9-]+)\.svg", destination: "/demo/faces/:name.webp", permanent: true },
+    // Founderhall's addresses: Messages became the Inbox, and the public job board moved to /jobs (visitors see it
+    // there; members see their own board). /messages/new stays: it is Founderhall's "Message" page.
+    { source: "/messages", destination: "/inbox", permanent: true },
+    { source: "/messages/:conversationId((?!new$)[^/]+)", destination: "/inbox/:conversationId", permanent: true },
+    { source: "/public/jobs", destination: "/jobs", permanent: true },
   ],
 };
 

@@ -9,7 +9,6 @@ import { inboxQuery } from "@/modules/messages/queries";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 
 import { ConversationList } from "./conversation-list";
-import { NoConversationSelected } from "./no-conversation-selected";
 
 const CREATED_AT = new Date().toISOString();
 const NOOR_ID = "11111111-1111-4111-8111-111111111111";
@@ -36,8 +35,8 @@ function renderWithInbox(
   render(createElement(QueryClientProvider, { client: queryClient }, element));
 }
 
-function renderList(conversations: ConversationSummary[], activeConversationId: string | null = null, nextCursor: InboxCursor | null = null) {
-  renderWithInbox(createElement(ConversationList, { activeConversationId }), conversations, nextCursor);
+function renderList(conversations: ConversationSummary[], nextCursor: InboxCursor | null = null) {
+  renderWithInbox(createElement(ConversationList), conversations, nextCursor);
 }
 
 function stubInbox(respond: (body: { search: string; cursor: InboxCursor | null }) => { conversations: ConversationSummary[]; nextCursor: InboxCursor | null }) {
@@ -59,28 +58,27 @@ describe("the conversation list", () => {
     vi.unstubAllGlobals();
   });
 
-  it("links each conversation and marks the open one", () => {
-    renderList([makeSummary(NOOR_ID, "Noor Haddad"), makeSummary(JONAS_ID, "Jonas Lindqvist")], NOOR_ID);
+  it("links each conversation to its thread in the Inbox, with Founderhall's date", () => {
+    renderList([makeSummary(NOOR_ID, "Noor Haddad"), makeSummary(JONAS_ID, "Jonas Lindqvist", { lastMessage: { preview: "Hi", isMine: false, isDeleted: false, createdAt: "2026-11-09T10:00:00.000Z" } })]);
 
-    const noor = screen.getByRole("link", { name: /Noor Haddad/ });
-    expect(noor.getAttribute("href")).toBe(`${ROUTES.messages}/${NOOR_ID}`);
-    expect(noor.getAttribute("aria-current")).toBe("true");
-    expect(screen.getByRole("link", { name: /Jonas Lindqvist/ }).getAttribute("aria-current")).toBeNull();
+    expect(screen.getByRole("link", { name: /Noor Haddad/ }).getAttribute("href")).toBe(`${ROUTES.messages}/${NOOR_ID}`);
+    expect(within(screen.getByRole("link", { name: /Jonas Lindqvist/ })).getByText("9 Nov")).toBeTruthy();
   });
 
-  it("shows the unread count on the conversation", () => {
+  it("marks a conversation with something unread", () => {
     renderList([makeSummary(NOOR_ID, "Noor Haddad", { unreadCount: 2 })]);
 
-    expect(within(screen.getByRole("link", { name: /Noor Haddad/ })).getByRole("img", { name: "2 unread messages" }).textContent).toBe("2");
+    const noor = screen.getByRole("link", { name: /Noor Haddad, 2 unread messages/ });
+    expect(noor.className).toContain("fh-unread");
   });
 
-  it("marks your own last message and a deleted one", () => {
+  it("shows the last line, and a deleted one", () => {
     renderList([
-      makeSummary(NOOR_ID, "Noor Haddad", { lastMessage: { preview: "See you", isMine: true, isDeleted: false, createdAt: CREATED_AT } }),
+      makeSummary(NOOR_ID, "Noor Haddad", { lastMessage: { preview: "See you\nThursday", isMine: true, isDeleted: false, createdAt: CREATED_AT } }),
       makeSummary(JONAS_ID, "Jonas Lindqvist", { lastMessage: { preview: null, isMine: false, isDeleted: true, createdAt: CREATED_AT } }),
     ]);
 
-    expect(screen.getByText("You: See you")).toBeTruthy();
+    expect(screen.getByText("See you")).toBeTruthy();
     expect(screen.getByText("Message deleted")).toBeTruthy();
   });
 
@@ -90,31 +88,10 @@ describe("the conversation list", () => {
     expect(screen.getByText(/^Blocked\./)).toBeTruthy();
   });
 
-  it("asks the server to narrow by name, and clears", async () => {
-    const everyone = [makeSummary(NOOR_ID, "Noor Haddad"), makeSummary(JONAS_ID, "Jonas Lindqvist")];
-    stubInbox(({ search }) => ({
-      conversations: search ? everyone.filter(({ peer }) => peer.name.toLowerCase().includes(search)) : everyone,
-      nextCursor: null,
-    }));
-    renderList(everyone);
-
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search people" }), { target: { value: "jonas" } });
-    await waitFor(() => expect(screen.queryByRole("link", { name: /Noor Haddad/ })).toBeNull());
-
-    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
-
-    expect(await screen.findByRole("link", { name: /Noor Haddad/ })).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByRole("searchbox", { name: "Search people" }));
-  });
-
-  it("says so when nobody matches, and keeps the search box", async () => {
-    stubInbox(() => ({ conversations: [], nextCursor: null }));
+  it("has no search box on a short inbox, as Founderhall", () => {
     renderList([makeSummary(NOOR_ID, "Noor Haddad")]);
 
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search people" }), { target: { value: "zzz" } });
-
-    expect(await screen.findByText("Nobody matches that.")).toBeTruthy();
-    expect(screen.getByRole("searchbox", { name: "Search people" })).toBeTruthy();
+    expect(screen.queryByRole("searchbox")).toBeNull();
   });
 
   describe("past the first page", () => {
@@ -122,15 +99,30 @@ describe("the conversation list", () => {
 
     it("offers more, then loads them from the cursor and moves focus to the first new one", async () => {
       const fetchStub = stubInbox(() => ({ conversations: [makeSummary(JONAS_ID, "Jonas Lindqvist")], nextCursor: null }));
-      renderList([makeSummary(NOOR_ID, "Noor Haddad")], null, NEXT_CURSOR);
+      renderList([makeSummary(NOOR_ID, "Noor Haddad")], NEXT_CURSOR);
 
-      fireEvent.click(screen.getByRole("button", { name: "Show more conversations" }));
+      fireEvent.click(screen.getByRole("button", { name: "More" }));
 
       const jonas = await screen.findByRole("link", { name: /Jonas Lindqvist/ });
       const [, init] = fetchStub.mock.calls.at(-1) ?? [];
       expect(JSON.parse(String(init?.body))).toEqual({ search: "", cursor: NEXT_CURSOR });
       await waitFor(() => expect(document.activeElement).toBe(jonas));
-      expect(screen.queryByRole("button", { name: "Show more conversations" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "More" })).toBeNull();
+    });
+
+    it("keeps a search box on a long inbox, which asks the server to narrow by name", async () => {
+      const everyone = [makeSummary(NOOR_ID, "Noor Haddad"), makeSummary(JONAS_ID, "Jonas Lindqvist")];
+      stubInbox(({ search }) => ({
+        conversations: search ? everyone.filter(({ peer }) => peer.name.toLowerCase().includes(search)) : everyone,
+        nextCursor: null,
+      }));
+      renderList(everyone, NEXT_CURSOR);
+
+      fireEvent.change(screen.getByRole("searchbox", { name: "Search people" }), { target: { value: "jonas" } });
+      await waitFor(() => expect(screen.queryByRole("link", { name: /Noor Haddad/ })).toBeNull());
+
+      fireEvent.change(screen.getByRole("searchbox", { name: "Search people" }), { target: { value: "zzz" } });
+      expect(await screen.findByText("Nobody matches that.")).toBeTruthy();
     });
 
     it("lists a banned member's conversation", () => {
@@ -140,24 +132,10 @@ describe("the conversation list", () => {
     });
   });
 
-  it("offers Members when there are no conversations", () => {
+  it("shows Founderhall's empty inbox, linking the directory", () => {
     renderList([]);
 
-    expect(screen.getByRole("link", { name: "Meet the members" }).getAttribute("href")).toBe(ROUTES.members);
-  });
-
-  describe("the empty right pane", () => {
-    it("offers Members when there are no conversations", () => {
-      renderWithInbox(createElement(NoConversationSelected), []);
-
-      expect(screen.getByRole("heading", { name: "No conversations yet" })).toBeTruthy();
-      expect(screen.getByText(/whoever runs this community's database could read them/)).toBeTruthy();
-    });
-
-    it("asks you to pick one otherwise", () => {
-      renderWithInbox(createElement(NoConversationSelected), [makeSummary(NOOR_ID, "Noor Haddad")]);
-
-      expect(screen.getByRole("heading", { name: "Pick a conversation" })).toBeTruthy();
-    });
+    expect(screen.getByRole("heading", { name: "No messages yet" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "directory" }).getAttribute("href")).toBe(ROUTES.members);
   });
 });

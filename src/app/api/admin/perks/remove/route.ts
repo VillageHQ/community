@@ -1,13 +1,13 @@
+import { adminRoutes } from "@/modules/admin/routes";
 import { emptyBodySchema } from "@/platform/http/contract";
-import { perksRoutes } from "@/modules/perks/routes";
-import { removePerksEmbed } from "@/modules/perks/service";
+import { removePerksMarketplace } from "@/shell/perks-settings";
 
-export const POST = perksRoutes.member(
+export const POST = adminRoutes.member(
   "admin-perks-remove",
   emptyBodySchema,
   async (context) => {
-    await removePerksEmbed(context);
-    return Response.json({ message: "Removed. Members no longer see Perks." });
+    await removePerksMarketplace(context);
+    return Response.json({ message: "Settings saved." });
   },
   { adminOnly: true },
 );

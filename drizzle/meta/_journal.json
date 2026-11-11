@@ -229,8 +229,22 @@
     {
       "idx": 33,
       "version": "7",
-      "when": 1794419875597,
-      "tag": "0033_intro_answer_links",
+      "when": 1794426218038,
+      "tag": "0033_village_credit_calls",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794426842659,
+      "tag": "0034_message_via_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794427585389,
+      "tag": "0035_intro_answer_links",
       "breakpoints": true
     }
   ]

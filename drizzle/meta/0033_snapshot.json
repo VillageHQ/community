@@ -1,5 +1,5 @@
 {
-  "id": "364c7a31-1f35-4018-bcc7-a61842d012a1",
+  "id": "fc337ebe-6018-45fa-b084-69bb49aee058",
   "prevId": "d3206edc-837e-41d6-aebc-209777187c4d",
   "version": "7",
   "dialect": "postgresql",
@@ -1040,6 +1040,81 @@
           ]
         }
       },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.village_credit_call": {
+      "name": "village_credit_call",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credits": {
+          "name": "credits",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "called_at": {
+          "name": "called_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "village_credit_call_called_at": {
+          "name": "village_credit_call_called_at",
+          "columns": [
+            {
+              "expression": "called_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "village_credit_call_user_id_user_id_fk": {
+          "name": "village_credit_call_user_id_user_id_fk",
+          "tableFrom": "village_credit_call",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -2853,79 +2928,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.intro_answer_link": {
-      "name": "intro_answer_link",
-      "schema": "",
-      "columns": {
-        "token_hash": {
-          "name": "token_hash",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "intro_id": {
-          "name": "intro_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "purpose": {
-          "name": "purpose",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp (3) with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "intro_answer_link_intro_idx": {
-          "name": "intro_answer_link_intro_idx",
-          "columns": [
-            {
-              "expression": "intro_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "intro_answer_link_intro_id_intro_request_id_fk": {
-          "name": "intro_answer_link_intro_id_intro_request_id_fk",
-          "tableFrom": "intro_answer_link",
-          "tableTo": "intro_request",
-          "columnsFrom": [
-            "intro_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "intro_answer_link_purpose_known": {
-          "name": "intro_answer_link_purpose_known",
-          "value": "\"intro_answer_link\".\"purpose\" in ('connector', 'outcome')"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.intro_consent_link": {
       "name": "intro_consent_link",
       "schema": "",
@@ -3562,7 +3564,7 @@
       "checkConstraints": {
         "intro_thread_message_author_check": {
           "name": "intro_thread_message_author_check",
-          "value": "\"intro_thread_message\".\"author\" in ('requester', 'target', 'introducer')"
+          "value": "\"intro_thread_message\".\"author\" in ('requester', 'target')"
         },
         "intro_thread_message_body_check": {
           "name": "intro_thread_message_body_check",

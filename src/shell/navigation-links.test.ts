@@ -122,7 +122,7 @@ describe("the sidebar", () => {
   });
 
   it("lists the console menu under Console on console pages", () => {
-    location.pathname = ROUTES.adminCredits;
+    location.pathname = ROUTES.adminVillage;
     renderShellPart(SidebarNavigation, { isAdmin: true });
 
     expect(screen.getByText("Console")).toBeTruthy();
@@ -192,14 +192,12 @@ describe("the console's Community-only pages", () => {
     creditsBadge: 0,
     chatBadge: 0,
     isSetupComplete: false,
-    hiddenTabHrefs: ["/admin/chat"],
+    hiddenTabHrefs: ["/admin/integrations"],
     villageTrouble: null,
   } as unknown as AdminTabFacts;
 
-  it("keeps every plumbing page one tap from Set up", () => {
-    const labels = readAdminTabs(CONSOLE_KEYS.setup, FACTS).map(({ label }) => label);
-
-    expect(labels).toEqual(["Setup checklist", "Settings", "Email", "Village check", "Credits", "Perks", "Features", "Reports", "Audit log"]);
+  it("leaves the plumbing pages to the Set up list", () => {
+    expect(readAdminTabs(CONSOLE_KEYS.setup, FACTS)).toEqual([]);
   });
 
   it("keeps the weekly email beside Asks & digest", () => {

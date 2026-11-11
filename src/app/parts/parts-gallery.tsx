@@ -857,7 +857,7 @@ export function PartsGallery({ crops, navigation }: { crops: Record<string, Crop
             { href: "#setup-rows", title: "Settings", description: "Your fund’s name, colour and logo, your plan, and who members write to about their data.", status: <Pill tone="made">Set up</Pill> },
             { href: "#setup-rows-mail", title: "Mail", description: "Invites, sign-in links and the weekly digest go out from your own domain.", status: <Pill tone="made">Set up</Pill> },
             { href: "#setup-rows-import", title: "Import members", description: "Bring a whole alumni list in from a spreadsheet (CSV), in one upload.", status: <span className="fh-small">optional</span> },
-            { href: "#setup-rows-audit", title: "Audit log", description: "Every admin action, sign-in and privacy change, newest first.", status: <span className="fh-small">always on</span> },
+            { href: "#setup-rows-audit", title: "Audit log", description: "Every admin action, newest first: invites, settings, members and privacy changes.", status: <span className="fh-small">always on</span> },
           ]}
         />,
         { width: 952 },

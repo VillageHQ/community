@@ -46,6 +46,8 @@ export const directMessage = pgTable(
     sequence: integer("sequence").notNull(),
     revision: integer("revision").notNull(),
     isWithheld: boolean("is_withheld").notNull().default(false),
+    // Sent as a reply to the new-message email, not typed in the app: the thread marks it "by email".
+    isViaEmail: boolean("is_via_email").notNull().default(false),
     createdAt: messageTimestamp("created_at").notNull().defaultNow(),
     deletedAt: messageTimestamp("deleted_at"),
   },

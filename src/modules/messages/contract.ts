@@ -69,6 +69,7 @@ export const directMessageSchema = z.object({
   body: z.string().nullable(),
   isDeleted: z.boolean(),
   isReported: z.boolean(),
+  isViaEmail: z.boolean(),
   sequence: sequenceSchema,
   clientKey: z.uuid().nullable(),
   createdAt: timestampSchema,

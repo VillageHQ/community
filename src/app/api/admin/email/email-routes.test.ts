@@ -10,7 +10,10 @@ import { createSignedInMember } from "@/test/signed-in-member";
 
 // The check route uses the real resolver; here it is a stub that knows no records, so nothing reaches real DNS.
 vi.mock("node:dns", () => ({
-  promises: { resolveTxt: async () => Promise.reject(Object.assign(new Error("not found"), { code: "ENOTFOUND" })) },
+  promises: {
+    resolveTxt: async () => Promise.reject(Object.assign(new Error("not found"), { code: "ENOTFOUND" })),
+    resolveMx: async () => Promise.reject(Object.assign(new Error("not found"), { code: "ENOTFOUND" })),
+  },
 }));
 
 const APP_URL = "http://localhost:3000";
@@ -58,7 +61,7 @@ describe("the admin's email setup", () => {
     await database.$client.end();
   });
 
-  it("shows the records the sending domain is missing", async () => {
+  it("shows the records the sending domain and the reply domain are missing", async () => {
     turnEmailOn();
 
     const response = await call(postCheck, admin);
@@ -70,6 +73,7 @@ describe("the admin's email setup", () => {
       ["missing", "send.mail.test-domain.example"],
       ["missing", "resend._domainkey.mail.test-domain.example"],
       ["missing", "_dmarc.test-domain.example"],
+      ["missing", "reply.test-domain.example"],
     ]);
   });
 
