@@ -1079,6 +1079,13 @@ describe("asks", () => {
       expect(await readBoardTitles(bystander, { search: "100%" })).toEqual([]);
     });
 
+    it("counts every word typed, however many", async () => {
+      await createAsk(asker, { title: "a b c d e f g h" });
+
+      expect(await readBoardTitles(bystander, { search: "a b c d e f g h" })).toEqual(["a b c d e f g h"]);
+      expect(await readBoardTitles(bystander, { search: "a b c d e f g h zzzz" })).toEqual([]);
+    });
+
     it("leaves out what a block hides, answers too", async () => {
       const askId = await createAsk(asker, { title: "Database help" });
       await answer(helper, askId, "A Postgres consultant.");
@@ -1130,6 +1137,25 @@ describe("asks", () => {
 
       await call(postClose, asker, { askId: ids[0], outcome: ASK_OUTCOMES.solvedHere });
       expect((await call(postPin, admin, { askId: ids.at(-1), isPinned: true })).status).toBe(OK_STATUS);
+    });
+  });
+
+  describe("pinning an ask that came down", () => {
+    it("keeps its place while expired, so renewing it never makes a fourth pin", async () => {
+      const ids: string[] = [];
+      for (const member of [asker, helper, bystander]) ids.push(await createAsk(member, { title: `Pinned by ${member.userId}` }));
+      const fourthId = await createAsk(admin, { title: "Fourth" });
+      for (const askId of ids) await call(postPin, admin, { askId, isPinned: true });
+      await ageAsk(ids[0] ?? "", ASK_LIMITS.lifetimeDays + 1);
+
+      expect((await call(postPin, admin, { askId: fourthId, isPinned: true })).status).toBe(CONFLICT_STATUS);
+      expect((await call(postPin, admin, { askId: ids[0], isPinned: true })).status).toBe(CONFLICT_STATUS);
+      expect((await readAdminAsks(database)).pinned.find(({ id }) => id === ids[0])).toMatchObject({ isPinned: true, isExpired: true });
+
+      expect((await call(postRenew, asker, { askId: ids[0] })).status).toBe(OK_STATUS);
+      const board = await readBoard(bystander);
+      expect(board.pinnedAsks).toHaveLength(ASK_LIMITS.pinnedAsks);
+      expect(board.asks.map(({ title }) => title)).toEqual(["Fourth"]);
     });
   });
 
@@ -1191,6 +1217,17 @@ describe("asks", () => {
       expect(page.counts).toEqual({ asked: 5, answered: 1, closed: 3, solvedHere: 1, solvedElsewhere: 1, noLongerNeeded: 1 });
       expect(page.oldest.map(({ title }) => title)).toEqual(["Waiting longest"]);
       expect(page.weeklyAllowance).toBe(ASK_ALLOWANCE.maximum);
+    });
+
+    it("doesn't count an answer from a removed member, as the board doesn't show it", async () => {
+      const askId = await createAsk(asker, { title: "Only a removed member answered" });
+      await call(postAnswer, helper, { askId, body: "Done it." });
+      await database.update(user).set({ banned: true }).where(eq(user.id, helper.userId));
+
+      const page = await readAdminAsks(database);
+
+      expect(page.counts.answered).toBe(0);
+      expect(page.oldest.map(({ id }) => id)).toEqual([askId]);
     });
 
     it("lists reported asks once each, and the pinned ones", async () => {

@@ -11,7 +11,7 @@ import { describeAge } from "@/modules/asks/rules-time";
 
 import { usePinAsk, useRemoveAsk } from "./use-ask-mutations";
 
-export type AdminAskListItem = { id: string; title: string; authorName: string; listedAt: string; isPinned: boolean };
+export type AdminAskListItem = { id: string; title: string; authorName: string; listedAt: string; isPinned: boolean; isExpired: boolean };
 
 function AdminAskRow({ item, canPin }: { item: AdminAskListItem; canPin: boolean }) {
   const router = useRouter();
@@ -25,7 +25,7 @@ function AdminAskRow({ item, canPin }: { item: AdminAskListItem; canPin: boolean
         <p className="type-small text-foreground-soft">
           {item.authorName} ·{" "}
           <time dateTime={item.listedAt} suppressHydrationWarning>
-            on the board {describeAge(item.listedAt)}
+            {item.isExpired ? "came down after 30 days, still pinned" : `on the board ${describeAge(item.listedAt)}`}
           </time>
         </p>
       </div>
@@ -43,12 +43,18 @@ function AdminAskRow({ item, canPin }: { item: AdminAskListItem; canPin: boolean
       ) : (
         <div className="flex flex-wrap gap-2">
           {item.isPinned || canPin ? (
-            <Button type="button" variant="outline" disabled={pinAsk.isPending} className="max-sm:w-full" onClick={() => pinAsk.mutate({ askId: item.id, isPinned: !item.isPinned })}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={pinAsk.isPending}
+              aria-label={item.isPinned ? `Unpin "${item.title}"` : `Pin "${item.title}" to the top`}
+              className="max-sm:w-full"
+              onClick={() => pinAsk.mutate({ askId: item.id, isPinned: !item.isPinned })}>
               {item.isPinned ? <PinOff aria-hidden="true" /> : <Pin aria-hidden="true" />}
               {item.isPinned ? "Unpin" : "Pin to the top"}
             </Button>
           ) : null}
-          <Button type="button" variant="quiet" className="max-sm:w-full" onClick={() => setIsConfirming(true)}>
+          <Button type="button" variant="quiet" aria-label={`Remove "${item.title}"`} className="max-sm:w-full" onClick={() => setIsConfirming(true)}>
             <Trash2 aria-hidden="true" />
             Remove
           </Button>

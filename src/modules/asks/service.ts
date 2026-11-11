@@ -27,7 +27,7 @@ import {
   type OfferHelpBody,
   type PinAskBody,
 } from "./contract.ts";
-import { hasNoBlockBetween, isOpenAsk, readOpenAskCount } from "./reads.ts";
+import { hasNoBlockBetween, readOpenAskCount } from "./reads.ts";
 import { canRenewAsk, readAskState } from "./rules-state.ts";
 import { ask, askAnswer, askHelper, askOffer } from "./schema.ts";
 
@@ -189,8 +189,9 @@ async function lockAskForAdmin(transaction: Transaction, askId: string) {
   return target;
 }
 
-async function readPinnedAskCount(transaction: Transaction, now: Date) {
-  const [row] = await transaction.select({ pinned: count() }).from(ask).where(and(isNotNull(ask.pinnedAt), isOpenAsk(now)));
+// An expired pinned ask keeps its pin and its place, so renewing it can't take the board past the limit.
+async function readPinnedAskCount(transaction: Transaction) {
+  const [row] = await transaction.select({ pinned: count() }).from(ask).where(isNotNull(ask.pinnedAt));
   return row?.pinned ?? 0;
 }
 
@@ -199,11 +200,11 @@ export async function setAskPinned({ database, member }: RequestContext, { askId
     await transaction.execute(sql`select pg_advisory_xact_lock(${ASK_PIN_LOCK_ID})`);
     const target = await lockAskForAdmin(transaction, askId);
     const now = new Date();
-    if (isPinned === (target.pinnedAt !== null)) return;
     if (isPinned && readAskState(target, now) !== ASK_STATES.open) {
       throw new RequestError(CONFLICT_STATUS, ASK_ERROR_CODES.notOpen, "Only an open ask can be pinned. Reopen or renew it first.");
     }
-    if (isPinned && (await readPinnedAskCount(transaction, now)) >= ASK_LIMITS.pinnedAsks) {
+    if (isPinned === (target.pinnedAt !== null)) return;
+    if (isPinned && (await readPinnedAskCount(transaction)) >= ASK_LIMITS.pinnedAsks) {
       throw new RequestError(CONFLICT_STATUS, ASK_ERROR_CODES.pinLimit, `${ASK_LIMITS.pinnedAsks} asks are pinned already. Unpin one first.`);
     }
     await transaction

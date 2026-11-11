@@ -21,6 +21,12 @@ type EmptyBoardProps = {
   onSeeEverything: () => void;
 };
 
+const SHOWN_SEARCH_LENGTH = 40;
+
+function shorten(search: string) {
+  return search.length > SHOWN_SEARCH_LENGTH ? `${search.slice(0, SHOWN_SEARCH_LENGTH)}…` : search;
+}
+
 function EmptyPanel({ title, description, children }: { title: string; description: string; children?: ReactNode }) {
   return (
     <div className="rounded-panel bg-card shadow-panel">
@@ -46,7 +52,11 @@ function EmptyBoard({ tab = ASK_BOARD_TABS.open, search = null, category, kind =
   if (search) {
     return (
       <div className="rounded-panel bg-card shadow-panel">
-        <EmptyState icon={Search} title={`Nothing matches "${search}"`} description="We looked in every ask, closed ones too, and in their answers. Try fewer or other words, or ask for it.">
+        <EmptyState
+          icon={Search}
+          title="Nothing matches your search"
+          description={`We looked for "${shorten(search)}" in every ask, closed ones too, and in their answers. Try fewer or other words, or ask for it.`}
+        >
           {askButton}
         </EmptyState>
       </div>
@@ -95,8 +105,9 @@ function EmptyBoard({ tab = ASK_BOARD_TABS.open, search = null, category, kind =
 type AskBoardProps = EmptyBoardProps & { tab: AskBoardTab; search: string | null; isViewerAdmin: boolean; onSeeYourAsks: () => void };
 
 function describeResults(search: string, count: number, hasMore: boolean) {
-  if (hasMore) return `More than ${count} asks match "${search}", newest first, closed ones too.`;
-  return count === 1 ? `1 ask matches "${search}", closed ones too.` : `${count} asks match "${search}", newest first, closed ones too.`;
+  const shown = shorten(search);
+  if (hasMore) return `More than ${count} asks match "${shown}", newest first, closed ones too.`;
+  return count === 1 ? `1 ask matches "${shown}", closed ones too.` : `${count} asks match "${shown}", newest first, closed ones too.`;
 }
 
 export function AskBoard({ tab, search, category, kind = null, isViewerAdmin, onAsk, onSeeEverything, onSeeYourAsks }: AskBoardProps) {
@@ -110,7 +121,7 @@ export function AskBoard({ tab, search, category, kind = null, isViewerAdmin, on
   return (
     <div className="grid gap-4">
       {search ? (
-        <p role="status" className="type-small font-semibold text-foreground-soft">
+        <p role="status" className="type-small font-semibold wrap-anywhere text-foreground-soft">
           {describeResults(search, asks.length, hasNextPage)}
         </p>
       ) : null}

@@ -28,6 +28,8 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] An admin home that leads with this quarter's intros, then what needs the admin — admin-home — open pull request, [PR #32](https://github.com/VillageHQ/community/pull/32) — [spec](features/admin-home/SPEC.md)
 - [ ] A new admin lands on setup until it is done; the stuck-intros line says it counts older asks — admin-firstrun — open pull request, [PR #33](https://github.com/VillageHQ/community/pull/33) — [spec](features/admin-firstrun/SPEC.md)
 
+- [ ] Asks board tabs (Open, Mine, Answered, Closed), search over every ask and answer, admin pin, reopen, and an Admin › Asks page — asks-tools — open pull request — [charter](features/asks-tools/CHARTER.md) · [spec](features/asks-board-tools/SPEC.md)
+
 ## Next (queued)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
 - [ ] Intros from a profile without Village, and the finer intro rules — parity — [spec](features/intros-from-profile/SPEC.md)
@@ -48,8 +50,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] Text slips: the "Invite someone" link on Admin → Members goes nowhere; "sam's network"; "help with investor"; two different member counts in the welcome steps; "Continue to the feed" with the feed off; a double footer; "Logistics's jobs" — the "Invite someone" link works since PR #32 (checked in the running app on 2026-11-10: it opens the "Invite someone" form; [proof](features/admin-firstrun/reports/invite-button-1280.png))
 
 ## Later (someday / deferred)
-- [ ] Admin console home, member-view switch, mail page lists and asks admin page — parity — [spec](features/admin-console/SPEC.md)
-- [ ] Asks board tabs, search, pin and reopen — parity — [spec](features/asks-board-tools/SPEC.md)
+- [ ] Admin console: member-view switch, mail page lists, Village test connection, the mail setup step (the home and the asks page are built) — parity — [spec](features/admin-console/SPEC.md)
 - [ ] Search and Village fallbacks: member-profile search, search cache, city filter, Village cancel on disconnect — parity — [spec](features/search-without-village/SPEC.md)
 - [ ] The two welcome questions — parity — [spec](features/welcome-questions/SPEC.md)
 - [ ] Invites when email is off: mailto and "Copy all links" — parity — [spec](features/invite-fallbacks/SPEC.md)
@@ -174,9 +175,9 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · "I can help" — `/api/asks/offer`, `/api/asks/know-someone` (PR #15)
 - **done** · Ask via helper — `/api/asks/ask-helper` (PR #15)
 - **open** · Answers (comments) — in the app, reportable (PR #15); not by email: [reply-by-email](features/reply-by-email/SPEC.md)
-- **open** · Tabs and archive search — [asks-board-tools](features/asks-board-tools/SPEC.md)
-- **open** · Status — close with an outcome, renew, admin remove (Community, PR #15); no pin or reopen: [asks-board-tools](features/asks-board-tools/SPEC.md)
-- **open** · Admin › Asks & digest — schedule and allowance are on main (PR #17, PR #15); no stats or moderation page: [admin-console](features/admin-console/SPEC.md)
+- **done** · Tabs and archive search — Open, Mine, Answered, Closed and one search over asks and answers (asks-tools)
+- **done** · Status — close with an outcome, renew, admin remove (PR #15); admin pin and reopen (asks-tools)
+- **done** · Admin › Asks & digest — schedule (PR #17); the Admin › Asks page with counts, waiting asks, pins, reports and the allowance (asks-tools)
 - **done** · Skip ("Not this week") — `/api/asks/skip` (PR #17)
 - **dropped** · Reactions, audiences, editing posts — Founderhall didn't have them; the feed has reactions and editing (Community)
 
@@ -239,7 +240,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Send report to partners — up to 20 addresses (PR #14)
 - **open** · Admin › Mail — DNS check and test send (PR #19); no do-not-send list, counts or sending log: [admin-console](features/admin-console/SPEC.md)
 - **done** · Admin › Village — the Settings Village card, `/admin/credits` (Community, PR #16, PR #19)
-- **open** · Admin › Asks & digest, digest preview — digest preview done (PR #17); no asks admin page: [admin-console](features/admin-console/SPEC.md)
+- **done** · Admin › Asks & digest, digest preview — digest preview (PR #17); the asks admin page (asks-tools)
 - **done** · Admin › Integrations — `/admin/chat` (PR #18)
 - **done** · Admin › Job board, Perks — `/admin/jobs` (PR #21), `/admin/perks` (PR #18)
 - **done** · Audit log — `/admin/audit-log` (Community)

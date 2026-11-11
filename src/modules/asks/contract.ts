@@ -45,7 +45,6 @@ export const ASK_LIMITS = {
   connectorWeeklyCap: 10,
   pinnedAsks: 3,
   searchLength: 120,
-  searchWords: 8,
   adminOldestShown: 10,
 } as const;
 

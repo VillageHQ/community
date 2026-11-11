@@ -31,10 +31,24 @@ function ReportedAskRow({ reported }: { reported: ReportedAsk }) {
       </div>
       <p className="wrap-anywhere whitespace-pre-wrap">{reported.body}</p>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="destructive" disabled={isPending} className="max-sm:w-full" onClick={() => remove.mutate()}>
+        <Button
+          type="button"
+          variant="destructive"
+          disabled={isPending}
+          aria-label={`${isAnswer ? "Remove the answer" : "Remove the ask"}: ${reported.body.slice(0, 60)}`}
+          className="max-sm:w-full"
+          onClick={() => remove.mutate()}
+        >
           {remove.isPending ? "Removing…" : isAnswer ? "Remove the answer" : "Remove the ask"}
         </Button>
-        <Button type="button" variant="outline" disabled={isPending} className="max-sm:w-full" onClick={() => keep.mutate()}>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isPending}
+          aria-label={`Keep it: ${reported.body.slice(0, 60)}`}
+          className="max-sm:w-full"
+          onClick={() => keep.mutate()}
+        >
           {keep.isPending ? "Keeping…" : "Keep it"}
         </Button>
       </div>

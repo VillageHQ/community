@@ -190,7 +190,7 @@ function toContainsPattern(word: string) {
 
 export function readSearchWords(search: string | null | undefined) {
   if (!search) return [];
-  return [...new Set(search.toLowerCase().split(/\s+/).filter(Boolean))].slice(0, ASK_LIMITS.searchWords);
+  return [...new Set(search.toLowerCase().split(/\s+/).filter(Boolean))];
 }
 
 function hasVisibleAnswer(viewerId: string, now: Date, bodyMatches?: SQL) {
