@@ -1,12 +1,12 @@
 # CLAUDE.md
 
-The root map for agents in this repo. The root `AGENTS.md` is not tracked: `next dev` writes its own there, so the root `.gitignore` keeps it out, and this file holds the map instead.
+The root map for agents in this repo. The root `AGENTS.md` is not tracked: `next dev` writes its own there, so `.gitignore` keeps it out, and this file holds the map instead.
 
 ## Project memory (`.ai/`)
 - `.ai/roadmap.md` — the backlog; each item links its spec (lines without a spec link have none yet).
 - `.ai/features/<slug>/SPEC.md` — one folder per feature (spec, charter, ledger, reports).
 - `.ai/journeys/` — the main user journey + core journeys · `.ai/bugs.md` — bug log · `.ai/reports/` — repo-level reports.
-- `.ai/tmp/`, `.ai/logs/` — scratch and run logs, never committed (see `.ai/.gitignore`).
+- `.ai/tmp/`, `.ai/logs/` — scratch and run logs, never committed.
 - `.ai/vision.md` — why the product exists · `.ai/personas.md` — who it serves · `.ai/design/DESIGN.md` — where the design system lives · `.ai/changelog/` — one card per pull request.
 
 > ⚠ RECONSTRUCTED from code on 2026-11-10 — needs confirmation
@@ -40,7 +40,7 @@ Better Auth, Vitest, pnpm. Village is optional (network search, intro paths and 
   `.ai/features/reply-by-email/NOTES.md`,
   `.ai/features/jobs-on-cards/NOTES.md`,
   `.ai/features/asks-tools/NOTES.md`, `.ai/features/search-first/NOTES.md`, `.ai/features/intros-no-village/NOTES.md`, `.ai/features/demo-portraits/SPEC.md` (no notes; the spec says how to add a portrait),
-  `.ai/features/fh-foundation/NOTES.md` (Founderhall's look, parts and shell: read it before any screen work).
+  `.ai/features/fh-foundation/NOTES.md` (look, parts, shell).
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (guides), `drizzle/` (generated), `site/` (has its README), `public/` (demo pictures),
   `vercel.json` (the Vercel Cron Job running the timed jobs daily). Every deploy setup runs the job runner;
   `src/test/deploy-setups.test.ts` guards it.
