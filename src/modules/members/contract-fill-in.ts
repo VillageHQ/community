@@ -59,9 +59,18 @@ export const lookupChoiceBodySchema = z.object({ allowsLookup: z.boolean() });
 
 export const fillInVisibilityBodySchema = z.object({ field: z.enum(FILL_IN_FIELD_VALUES), isHidden: z.boolean() });
 
-// Today asks a member to check the words public profiles put on their card this past week.
-export const LINES_TO_CHECK_DAYS = 7;
+// Today asks a member to check the words public profiles put on their card, until they say "Right", hide or fix them.
+export type CheckedField = typeof FILL_IN_FIELDS.title | typeof FILL_IN_FIELDS.company | typeof FILL_IN_FIELDS.location;
+export const LINE_TO_CHECK_LABELS: Record<CheckedField, string> = { title: "Role", company: "Company", location: "City" };
+export const FACT_ANSWERS = { right: "right", hide: "hide", fix: "fix" } as const;
+export const FACT_FIX_LENGTH = 200;
+export const factAnswerBodySchema = z.object({
+  field: z.enum([FILL_IN_FIELDS.title, FILL_IN_FIELDS.company, FILL_IN_FIELDS.location]),
+  answer: z.enum(FACT_ANSWERS),
+  value: z.string().trim().max(FACT_FIX_LENGTH).default(""),
+});
+export type FactAnswerBody = z.infer<typeof factAnswerBodySchema>;
 
-export type LineToCheck = { field: FillInField; label: string; value: string };
+export type LineToCheck = { field: CheckedField; label: string; value: string; filledAt: string };
 
 export type FilledLine = { field: FillInField; value: string; filledAt: string; isHidden: boolean };

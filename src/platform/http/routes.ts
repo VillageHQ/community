@@ -3,6 +3,10 @@ export const ACCOUNT_DELETED_PARAM = "accountDeleted";
 
 export const ROUTES = {
   feed: "/",
+  // Founderhall's Today. "/" sends a member here.
+  today: "/today",
+  // The switchable feed's own page (Community-only).
+  feedPage: "/feed",
   signIn: "/sign-in",
   signInLink: "/sign-in/link",
   signInAsNewAdmin: `/sign-in?${ADMIN_CREATED_PARAM}=true`,
@@ -111,6 +115,7 @@ export const API_ROUTES = {
   networkFillIn: "/api/network/fill-in",
   profileLookupChoice: "/api/profile/lookup-choice",
   profileFillIn: "/api/profile/fill-in",
+  profileFillInCheck: "/api/profile/fill-in/check",
   feedReport: "/api/feed/report",
   introReport: "/api/intros/report",
   networkConfirmation: "/api/members/confirmation",

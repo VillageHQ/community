@@ -58,20 +58,10 @@ describe("the slots in the app", () => {
     await database.$client.end();
   });
 
-  describe("the home page title", () => {
-    it("says Feed with the feed on", async () => {
-      await saveModuleState(database, feedManifest, true);
-      const { generateMetadata } = await import("./page");
+  it("titles Today as Founderhall does", async () => {
+    const { metadata } = await import("./today/page");
 
-      expect((await generateMetadata()).title).toBe(PAGE_TITLES.feed);
-    });
-
-    it("says Home with the feed off", async () => {
-      await saveModuleState(database, feedManifest, false);
-      const { generateMetadata } = await import("./page");
-
-      expect((await generateMetadata()).title).toBe(PAGE_TITLES.home);
-    });
+    expect(metadata.title).toBe("Today");
   });
 
   it("gives every page in the app the Message button", async () => {

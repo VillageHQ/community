@@ -391,5 +391,6 @@ export const DEMO_OUTSIDERS: readonly DemoOutsider[] = [
   { slug: "sara-lopez-demo", name: "Sara Lopez", title: "Head of Partnerships", company: "Banco Meridia", location: "Madrid" },
   { slug: "alex-morgan-demo", name: "Alex Morgan", title: "VP Sales", company: "Countwise", location: "London" },
   { slug: "nina-patel-demo", name: "Nina Patel", title: "Chief Innovation Officer", company: "St. Ambrose Hospitals", location: "Boston" },
+  { slug: "rachel-kim-demo", name: "Rachel Kim", title: "CFO", company: "Brightside Clinics", location: "Boston" },
   { slug: "luca-bianchi-demo", name: "Luca Bianchi", title: "Head of Insurance Operations", company: "Assicura Nord", location: "Milan" },
 ];

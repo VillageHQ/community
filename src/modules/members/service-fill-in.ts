@@ -17,7 +17,8 @@ import {
   FILL_IN_FIELD_VALUES,
   FILL_IN_FIELDS,
   FILL_IN_REFRESH_DAYS,
-  LINES_TO_CHECK_DAYS,
+  LINE_TO_CHECK_LABELS,
+  type CheckedField,
   LOOKUP_STATUSES,
   type FillInBasis,
   type FillInBasisBody,
@@ -189,7 +190,11 @@ export async function saveFilledProfile(database: Database, memberId: string, pr
       await transaction
         .insert(memberFillIn)
         .values(lines)
-        .onConflictDoUpdate({ target: [memberFillIn.userId, memberFillIn.field], set: { value: sql`excluded.value`, filledAt: sql`excluded.filled_at` } });
+        .onConflictDoUpdate({
+          target: [memberFillIn.userId, memberFillIn.field],
+          // A changed line is asked about again on Today; the same words keep the member's "Right".
+          set: { value: sql`excluded.value`, filledAt: sql`excluded.filled_at`, confirmedAt: sql`case when ${memberFillIn.value} = excluded.value then ${memberFillIn.confirmedAt} else null end` },
+        });
     }
     await transaction.delete(memberFillIn).where(
       and(
@@ -266,20 +271,40 @@ export async function readFilledMemberCount(database: Database) {
   return row?.memberCount ?? 0;
 }
 
-const WORDED_FIELDS: ReadonlySet<FillInField> = new Set([FILL_IN_FIELDS.title, FILL_IN_FIELDS.company, FILL_IN_FIELDS.location, FILL_IN_FIELDS.headline]);
+// Founderhall's "Is this right?" lines, in its order and words: role, company, city.
+const CHECKED_FIELDS: readonly CheckedField[] = [FILL_IN_FIELDS.title, FILL_IN_FIELDS.company, FILL_IN_FIELDS.location];
 
-// The filled-in words on the member's card that arrived this past week: on show (not hidden, and not
-// replaced by the member's own words). Photos and logos are left out; the card shows them.
-export async function readLinesToCheck(database: Database, memberId: string, now = new Date()): Promise<LineToCheck[]> {
-  const [[own], shown] = await Promise.all([
+// The filled-in words on the member's card they haven't said "Right" to: on show (not hidden, and not replaced by
+// their own words). Photos, logos and the headline are left out; the card shows them.
+export async function readLinesToCheck(database: Database, memberId: string): Promise<LineToCheck[]> {
+  const [[own], shown, rows] = await Promise.all([
     database.select({ title: memberProfile.title, company: memberProfile.company, location: memberProfile.location }).from(memberProfile).where(eq(memberProfile.userId, memberId)),
     readShownFillIn(database, memberId),
+    database.select({ field: memberFillIn.field, confirmedAt: memberFillIn.confirmedAt }).from(memberFillIn).where(eq(memberFillIn.userId, memberId)),
   ]);
   const card = readShownCard({ title: own?.title ?? null, company: own?.company ?? null, location: own?.location ?? null, avatarUrl: null }, shown);
-  const since = now.getTime() - LINES_TO_CHECK_DAYS * DAY_MS;
-  return card.filledFields.flatMap((field) => {
+  const confirmed = new Set(rows.filter(({ confirmedAt }) => confirmedAt !== null).map(({ field }) => field));
+  return CHECKED_FIELDS.flatMap((field) => {
     const line = shown.get(field);
-    if (!line || !WORDED_FIELDS.has(field) || line.filledAt.getTime() < since) return [];
-    return [{ field, label: FILL_IN_FIELD_LABELS[field], value: line.value }];
+    if (!line || !card.filledFields.includes(field) || confirmed.has(field)) return [];
+    return [{ field, label: LINE_TO_CHECK_LABELS[field], value: line.value, filledAt: line.filledAt.toISOString() }];
+  });
+}
+
+// "Right" on Today: the line stays, and Today stops asking until a refresh changes it.
+export async function confirmFillInLine(database: Database, memberId: string, field: CheckedField) {
+  const updated = await database
+    .update(memberFillIn)
+    .set({ confirmedAt: new Date() })
+    .where(and(eq(memberFillIn.userId, memberId), eq(memberFillIn.field, field), isNull(memberFillIn.hiddenAt)))
+    .returning({ field: memberFillIn.field });
+  return updated.length > 0;
+}
+
+// "Fix it" on Today: the member's own words go on their card (they always win), and the line counts as checked.
+export async function fixFillInLine(database: Database, memberId: string, field: CheckedField, value: string) {
+  await database.transaction(async (transaction) => {
+    await transaction.insert(memberProfile).values({ userId: memberId, [field]: value }).onConflictDoUpdate({ target: memberProfile.userId, set: { [field]: value, updatedAt: new Date() } });
+    await transaction.update(memberFillIn).set({ confirmedAt: new Date() }).where(and(eq(memberFillIn.userId, memberId), eq(memberFillIn.field, field)));
   });
 }

@@ -14,6 +14,7 @@ export type NavigationBadgeCounts = Partial<Record<string, number>>;
 export const MEMBER_KEYS = {
   today: "today",
   asks: "asks",
+  feed: "feed",
   search: "search",
   directory: "directory",
   jobs: "jobs",

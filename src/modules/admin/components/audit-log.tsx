@@ -78,6 +78,7 @@ const ACTION_SENTENCES: Record<AuditAction, (facts: ActionFacts) => string> = {
   [AUDIT_ACTIONS.askPinned]: ({ target, detail }) => `pinned an ask by ${target}: "${detail}"`,
   [AUDIT_ACTIONS.askUnpinned]: ({ target, detail }) => `unpinned an ask by ${target}: "${detail}"`,
   [AUDIT_ACTIONS.askReopened]: ({ target, detail }) => `reopened an ask by ${target}: "${detail}"`,
+  [AUDIT_ACTIONS.askClosed]: ({ target, detail }) => `closed an ask by ${target}: "${detail}"`,
   [AUDIT_ACTIONS.domainConfirmed]: ({ detail }) => `confirmed the domain ${detail} in Village`,
   [AUDIT_ACTIONS.introAsksStopped]: () => "asked this community to stop sending them intro asks",
   [AUDIT_ACTIONS.fillInBasisChanged]: ({ detail }) => readFillInBasisSentence(detail),

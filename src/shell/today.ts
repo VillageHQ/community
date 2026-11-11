@@ -7,7 +7,8 @@ import { ASK_STATES, type OwnAsk } from "@/modules/asks/contract";
 import type { HelpableAsk } from "@/modules/asks/contract-today";
 import { INTRO_STATES, type Intro } from "@/modules/intros/contract";
 import { introsManifest } from "@/modules/intros/manifest";
-import { readWaitingIntros } from "@/modules/intros/reads";
+import { readIntroBoard, readWaitingIntros } from "@/modules/intros/reads";
+import { readOpenOwnPosts, type BoardPost } from "@/modules/asks/reads-board";
 import type { LineToCheck } from "@/modules/members/contract-fill-in";
 import { readNewMembers } from "@/modules/members/reads-directory";
 import { readLinesToCheck } from "@/modules/members/service-fill-in";
@@ -24,9 +25,14 @@ export type TodayItems = {
   // Words public profiles put on the member's card this past week, to check on Today.
   profileLines: LineToCheck[];
   ownAsks: OwnAsk[];
+  // Founderhall's "Your asks in motion": your open asks with their one line, and your open intro asks.
+  ownPosts: BoardPost[];
+  introsInMotion: Intro[];
   newMembers: Awaited<ReturnType<typeof readNewMembers>>["newMembers"];
   newMemberCount: number;
 };
+
+const INTROS_IN_MOTION: ReadonlySet<string> = new Set([INTRO_STATES.requested, INTRO_STATES.accepted, INTRO_STATES.askingTarget, INTRO_STATES.targetAgreed]);
 
 export const WEEKLY_ITEM_KINDS = { ask: "ask", intro: "intro" } as const;
 
@@ -40,12 +46,14 @@ async function readOwnAsksForToday(database: Database, memberId: string, now: Da
 export async function readTodayItems(database: Database, memberId: string, enabledIds: ReadonlySet<string>, now = new Date()): Promise<TodayItems> {
   const isAsksOn = enabledIds.has(asksManifest.id);
   const isIntrosOn = enabledIds.has(introsManifest.id);
-  const [helpableAsks, ownAsks, waitingIntros, { newCount, newMembers }, profileLines] = await Promise.all([
+  const [helpableAsks, ownAsks, waitingIntros, { newCount, newMembers }, profileLines, ownPosts, introBoard] = await Promise.all([
     isAsksOn ? readAsksYouCouldHelp(database, memberId, now) : [],
     isAsksOn ? readOwnAsksForToday(database, memberId, now) : null,
     isIntrosOn ? readWaitingIntros(database, memberId) : [],
     readNewMembers(database, memberId, now),
-    readLinesToCheck(database, memberId, now),
+    readLinesToCheck(database, memberId),
+    isAsksOn ? readOpenOwnPosts(database, memberId, now) : [],
+    isIntrosOn ? readIntroBoard(database, memberId) : null,
   ]);
   return {
     helpableAsks,
@@ -53,6 +61,8 @@ export async function readTodayItems(database: Database, memberId: string, enabl
     introsToFinish: waitingIntros.filter(({ state }) => state !== INTRO_STATES.requested),
     profileLines,
     ownAsks: ownAsks?.asks.filter(({ state }) => state === ASK_STATES.open) ?? [],
+    ownPosts,
+    introsInMotion: introBoard?.yourAsks.filter(({ state }) => INTROS_IN_MOTION.has(state)) ?? [],
     newMembers,
     newMemberCount: newCount,
   };

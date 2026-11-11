@@ -9,7 +9,8 @@ import { readEmailTopic } from "./kinds.ts";
 import { isEmailWanted, OUTBOX_STATUSES } from "./outbox.ts";
 import { readResendConfig, sendResendEmail, type ResendConfig } from "./resend.ts";
 import { emailOutbox } from "./schema.ts";
-import { buildUnsubscribeParts } from "./unsubscribe.ts";
+import { escapeHtml } from "./email-text.ts";
+import { buildUnsubscribeParts, UNSUBSCRIBE_URL_MARK } from "./unsubscribe.ts";
 
 export const MAXIMUM_SEND_ATTEMPTS = 6;
 const MINUTE_MS = 60_000;
@@ -96,7 +97,10 @@ async function composeEmail(database: Database, environment: Environment, email:
   const base = { to: email.toEmail, subject: email.subject, idempotencyKey: email.id, replyTo: email.replyTo };
   if (!topic || !email.memberId) return { ...base, html: email.html, text: email.text };
 
-  const { headers, htmlFooter, textFooter } = await buildUnsubscribeParts(database, environment, { memberId: email.memberId, topic });
+  const { headers, htmlFooter, textFooter, pageUrl } = await buildUnsubscribeParts(database, environment, { memberId: email.memberId, topic });
+  if (email.text.includes(UNSUBSCRIBE_URL_MARK)) {
+    return { ...base, html: email.html.replaceAll(UNSUBSCRIBE_URL_MARK, escapeHtml(pageUrl)), text: email.text.replaceAll(UNSUBSCRIBE_URL_MARK, pageUrl), headers };
+  }
   return { ...base, html: `${email.html}${htmlFooter}`, text: `${email.text}${textFooter}`, headers };
 }
 
