@@ -8,7 +8,7 @@
 - Members: every active member. Only those with a `member_network` row that agreed to share, linked, or joined are
   asked; the rest are `not_started`, so the check never sends Village a new email. For each asked member: `user.get`
   (`/v2/user/status`; an email means a Village user exists) and, if provisioned, `groups.list` to see the community
-  group's id. 4 at a time, 15 s each; any failure is `unreachable` ("Not checked this time").
+  group's id. 4 at a time, 15 s each; any failure is `unreachable` ("Village didn't answer in time"; "Not asked: the keys didn't work" when the keys failed).
 - Group count: Village has no free "members of a group" call, so it counts checked members whose list holds the group.
 - Store: `village_member_check` is replaced on each run (cascade-deleted with the user).
 - Meet: `reads-village-check.ts` `readOwnVillageState`; connected = provisioned, ready or needs attention, in the group.

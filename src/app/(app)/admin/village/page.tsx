@@ -53,8 +53,9 @@ function Line({ text, isOk }: { text: string; isOk: boolean }) {
 function Summary({ check, members }: { check: Check; members: CheckedMember[] }) {
   const keyLine = KEY_LINES[check.keys ?? VILLAGE_CHECK_KEYS.unreachable] ?? KEY_LINES[VILLAGE_CHECK_KEYS.unreachable];
   const groupLine = readGroupLine(check);
-  const asked = members.filter(({ outcome }) => outcome === MEMBER_CHECK_OUTCOMES.checked);
-  const connected = asked.filter(({ isProvisioned, networkStatus }) => isProvisioned && isConnectedStatus(networkStatus)).length;
+  const started = members.filter(({ outcome }) => outcome !== MEMBER_CHECK_OUTCOMES.notStarted);
+  const connected = started.filter(({ isProvisioned, networkStatus }) => isProvisioned && isConnectedStatus(networkStatus)).length;
+  const notStarted = members.length - started.length;
   return (
     <Card className="grid gap-3">
       <CardTitle>What Village said</CardTitle>
@@ -67,7 +68,12 @@ function Summary({ check, members }: { check: Check; members: CheckedMember[] })
         </p>
       ) : null}
       {groupLine ? <Line {...groupLine} /> : null}
-      {check.keys === VILLAGE_CHECK_KEYS.ok ? <Line text={`${plural(connected, "member has", "members have")} connected their network, of ${members.length}.`} isOk={connected === members.length} /> : null}
+      {check.keys === VILLAGE_CHECK_KEYS.ok ? (
+        <Line
+          text={`${connected} of ${plural(started.length, "member", "members")} who started have connected their network.${notStarted > 0 ? ` ${plural(notStarted, "member hasn't", "members haven't")} started.` : ""}`}
+          isOk={connected === started.length}
+        />
+      ) : null}
       <CardDescription>Checked {formatDateAndTimeUtc(check.checkedAt ?? check.startedAt)}. This check uses no Village credits.</CardDescription>
     </Card>
   );
@@ -88,9 +94,9 @@ function readNetworkTag(networkStatus: string | null) {
   return { text: "Not connected", isOk: false };
 }
 
-function MemberTags({ member }: { member: CheckedMember }) {
+function MemberTags({ member, areKeysOk }: { member: CheckedMember; areKeysOk: boolean }) {
   if (member.outcome === MEMBER_CHECK_OUTCOMES.notStarted) return <StateTag isOk={null}>Hasn&apos;t started connecting, so Village wasn&apos;t asked</StateTag>;
-  if (member.outcome === MEMBER_CHECK_OUTCOMES.unreachable) return <StateTag isOk={null}>Not checked this time</StateTag>;
+  if (member.outcome === MEMBER_CHECK_OUTCOMES.unreachable) return <StateTag isOk={null}>{areKeysOk ? "Village didn't answer in time" : "Not asked: the keys didn't work"}</StateTag>;
   const network = readNetworkTag(member.isProvisioned ? member.networkStatus : null);
   return (
     <>
@@ -101,7 +107,7 @@ function MemberTags({ member }: { member: CheckedMember }) {
   );
 }
 
-function MemberList({ members }: { members: CheckedMember[] }) {
+function MemberList({ members, areKeysOk }: { members: CheckedMember[]; areKeysOk: boolean }) {
   if (members.length === 0) return <CardDescription>No members yet.</CardDescription>;
   return (
     <ul className="grid gap-2.5" aria-label="Members">
@@ -112,9 +118,9 @@ function MemberList({ members }: { members: CheckedMember[] }) {
             <span className="type-small block text-foreground-soft">{member.email}</span>
           </p>
           <div className="flex flex-wrap gap-1.5">
-            <MemberTags member={member} />
+            <MemberTags member={member} areKeysOk={areKeysOk} />
           </div>
-          <p className="type-micro text-foreground-soft">Checked {formatDateAndTimeUtc(member.checkedAt)}</p>
+          <p className="type-micro text-foreground-soft">As of {formatDateAndTimeUtc(member.checkedAt)}</p>
         </li>
       ))}
     </ul>
@@ -135,7 +141,7 @@ export default modulePage(networkManifest, async function AdminVillagePage() {
             <Summary check={check} members={members} />
             <Card className="grid gap-3">
               <CardTitle>Members</CardTitle>
-              <MemberList members={members} />
+              <MemberList members={members} areKeysOk={check.keys === VILLAGE_CHECK_KEYS.ok} />
             </Card>
           </>
         ) : (

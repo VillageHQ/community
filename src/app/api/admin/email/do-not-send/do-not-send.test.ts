@@ -51,6 +51,14 @@ describe("Admin › Email", () => {
     expect(entries).toEqual([expect.objectContaining({ actorId: admin.userId, detail: BOUNCED })]);
   });
 
+  it("removes any address the mail service reported, even one that isn't a plain email", async () => {
+    const admin = await createSignedInMember(database, "admin");
+    await database.insert(emailSuppression).values({ email: "josé@example.com", reason: "bounced" });
+
+    expect((await postRemove(removeRequest(admin, "josé@example.com"))).status).toBe(200);
+    expect(await readDoNotSendList(database)).toEqual([expect.objectContaining({ email: BOUNCED })]);
+  });
+
   it("says when the address isn't on the list, and refuses members who aren't admins", async () => {
     const admin = await createSignedInMember(database, "admin");
     const member = await createSignedInMember(database);

@@ -31,7 +31,7 @@ Out: paid calls, a scheduled check, changing anyone's Village state, a Vercel li
   members whose list holds it.
 - Minting a member token is free and is what the join flow already does; it never connects or joins anyone.
 - Rate limit: one check a minute for the whole community, claimed in one conditional write so two clicks can't both run.
-- The check runs in the request with a 55-second budget; members it couldn't reach in time show "Not checked this time".
+- The check runs in the request with a 55-second budget; members it couldn't reach in time show "Village didn't answer in time".
 
 ## Architecture
 - Network module: `schema.ts` gains `village_check` (one row: when, keys, group, counts) and `village_member_check`
