@@ -9,7 +9,7 @@ type Author = Post["author"];
 export function AuthorName({ author, className }: { author: Author; className?: string }) {
   if (author.isBanned) return <span className={className}>{author.name}</span>;
   return (
-    <Link href={`${ROUTES.members}/${author.id}`} className={`hover:underline ${className ?? ""}`}>
+    <Link href={`${ROUTES.people}/${author.id}`} className={`hover:underline ${className ?? ""}`}>
       {author.name}
     </Link>
   );

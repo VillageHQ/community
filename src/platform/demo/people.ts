@@ -34,6 +34,10 @@ export type DemoPerson = {
   sharesNetwork: boolean;
   joinedDaysAgo: number;
   creditInReports?: boolean;
+  // Earlier roles public profiles list ("Past roles"), newest first; the current role comes first by itself.
+  earlierRoles?: readonly { title: string; company: string; start: number; end: number }[];
+  // The year the current role started.
+  roleSince?: number;
 };
 
 export function toDemoEmail(person: Pick<DemoPerson, "key">) {
@@ -79,6 +83,8 @@ export const DEMO_PEOPLE: readonly DemoPerson[] = [
     sharesNetwork: true,
     joinedDaysAgo: 96,
     creditInReports: true,
+    roleSince: 2023,
+    earlierRoles: [{ title: "Product Manager", company: "Mercy Ridge Hospital", start: 2019, end: 2023 }],
   },
   {
     key: "priya.shah",
@@ -96,6 +102,8 @@ export const DEMO_PEOPLE: readonly DemoPerson[] = [
     sharesNetwork: true,
     joinedDaysAgo: 130,
     creditInReports: true,
+    roleSince: 2021,
+    earlierRoles: [{ title: "Finance Director", company: "Halden & Price", start: 2016, end: 2021 }],
   },
   {
     key: "ada.okafor",
@@ -112,6 +120,8 @@ export const DEMO_PEOPLE: readonly DemoPerson[] = [
     tags: ["Climate", "Hardware"],
     sharesNetwork: true,
     joinedDaysAgo: 88,
+    roleSince: 2024,
+    earlierRoles: [{ title: "Hardware Engineer", company: "SunBox Energy", start: 2019, end: 2023 }],
   },
   {
     key: "marcus.webb",
@@ -129,6 +139,8 @@ export const DEMO_PEOPLE: readonly DemoPerson[] = [
     sharesNetwork: true,
     joinedDaysAgo: 135,
     creditInReports: true,
+    roleSince: 2020,
+    earlierRoles: [{ title: "Head of Data", company: "Portline", start: 2015, end: 2020 }],
   },
   {
     key: "elena.rossi",
@@ -145,6 +157,8 @@ export const DEMO_PEOPLE: readonly DemoPerson[] = [
     tags: ["Fintech", "Regulation"],
     sharesNetwork: true,
     joinedDaysAgo: 120,
+    roleSince: 2022,
+    earlierRoles: [{ title: "Credit Analyst", company: "Banca Lombarda", start: 2018, end: 2022 }],
   },
   {
     key: "oliver.grant",
@@ -193,6 +207,8 @@ export const DEMO_PEOPLE: readonly DemoPerson[] = [
     tags: ["Climate", "Industrial", "Grants"],
     sharesNetwork: true,
     joinedDaysAgo: 100,
+    roleSince: 2022,
+    earlierRoles: [{ title: "Process Engineer", company: "Ciments du Nord", start: 2017, end: 2022 }],
   },
   {
     key: "tomas.novak",

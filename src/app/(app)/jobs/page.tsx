@@ -35,7 +35,7 @@ export default modulePage(jobBoardManifest, async function JobsPage({ searchPara
       <PageHeader title={JOB_BOARD_PAGE_TITLES.board} description="Open jobs at the community's companies." action={yoursButton} />
       <CompanyFilter basePath={JOB_BOARD_PAGES.board} companies={companies} selected={company} />
       {jobs.length > 0 ? (
-        <JobList jobs={jobs} memberHref={(memberId) => `${ROUTES.members}/${memberId}`} />
+        <JobList jobs={jobs} memberHref={(memberId) => `${ROUTES.people}/${memberId}`} />
       ) : (
         <EmptyState
           icon={BriefcaseBusiness}

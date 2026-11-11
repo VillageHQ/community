@@ -47,7 +47,7 @@ export function IntroPersonRow({ person, line }: { person: IntroPerson; line: st
     <div className="flex items-center gap-3">
       <Avatar stableId={person.id} name={person.name} imageUrl={person.avatarUrl} sizePx={PERSON_AVATAR_SIZE_PX} />
       <div className="min-w-0">
-        <Link href={`${ROUTES.members}/${person.id}`} className="type-label wrap-anywhere underline-offset-3 hover:underline">
+        <Link href={`${ROUTES.people}/${person.id}`} className="type-label wrap-anywhere underline-offset-3 hover:underline">
           {person.name}
         </Link>
         {line ? <p className="type-small wrap-anywhere text-foreground-soft">{line}</p> : null}

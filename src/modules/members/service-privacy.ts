@@ -22,7 +22,7 @@ export type MemberPrivacy = {
 
 const DEFAULT_PRIVACY: MemberPrivacy = {
   isHidden: false,
-  messagePolicy: MESSAGE_POLICIES.anyone,
+  messagePolicy: MESSAGE_POLICIES.communityDefault,
   acceptsIntroAsks: null,
   introAsksAnsweredAt: null,
   introAsksAnsweredPlace: null,

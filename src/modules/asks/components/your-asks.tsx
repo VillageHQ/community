@@ -50,7 +50,7 @@ function OfferRow({ offer }: { offer: Offer }) {
         <Avatar stableId={helper.id} name={helper.name} imageUrl={helper.avatarUrl} sizePx={OFFER_AVATAR_SIZE_PX} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Link href={`${ROUTES.members}/${helper.id}`} className="type-label wrap-anywhere hover:underline">
+            <Link href={`${ROUTES.people}/${helper.id}`} className="type-label wrap-anywhere hover:underline">
               {helper.name}
             </Link>
             {isNew ? <Tag tone="accent">New</Tag> : null}
@@ -136,7 +136,7 @@ function HelperRow({ askId, helper, canIntro, isOpen }: { askId: string; helper:
       <div className="flex items-start gap-3">
         <Avatar stableId={person.id} name={person.name} imageUrl={person.avatarUrl} sizePx={OFFER_AVATAR_SIZE_PX} />
         <div className="min-w-0 flex-1">
-          <Link href={`${ROUTES.members}/${person.id}`} className="type-label wrap-anywhere hover:underline">
+          <Link href={`${ROUTES.people}/${person.id}`} className="type-label wrap-anywhere hover:underline">
             {person.name}
           </Link>
           {memberLine ? (
@@ -191,7 +191,7 @@ function AnswersSection({ ask }: { ask: OwnAsk }) {
       <ul className="grid gap-2.5">
         {ask.answers.map((answer) => (
           <li key={answer.id} className="grid gap-1.5 rounded-field bg-muted p-4">
-            <Link href={`${ROUTES.members}/${answer.author.id}`} className="type-label wrap-anywhere hover:underline">
+            <Link href={`${ROUTES.people}/${answer.author.id}`} className="type-label wrap-anywhere hover:underline">
               {answer.author.name}
             </Link>
             <p className="wrap-anywhere whitespace-pre-wrap">{answer.body}</p>

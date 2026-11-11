@@ -261,18 +261,18 @@ describe("an intro asked from a profile, with Village off", () => {
   describe("the member's profile", () => {
     async function renderJonasProfile() {
       session.cookie = amara.cookie;
-      const { default: MemberProfilePage } = await import("@/app/(app)/members/[memberId]/page");
+      const { default: MemberProfilePage } = await import("@/app/(app)/people/[memberId]/page");
       return renderTree(await MemberProfilePage({ params: Promise.resolve({ memberId: jonas.userId }) }));
     }
 
     it("offers the ask", async () => {
-      expect(await renderJonasProfile()).toContain("Ask Jonas for an intro");
+      expect(await renderJonasProfile()).toContain("Ask for an intro via Jonas");
     });
 
     it("hides the ask with intros off", async () => {
       await saveModuleState(database, introsManifest, false);
 
-      expect(await renderJonasProfile()).not.toContain("Ask Jonas for an intro");
+      expect(await renderJonasProfile()).not.toContain("Ask for an intro via Jonas");
     });
 
     it("offers no ask through a member the admins didn't choose, while the network is on", async () => {
@@ -284,7 +284,7 @@ describe("an intro asked from a profile, with Village off", () => {
 
       const page = await renderJonasProfile();
 
-      expect(page).not.toContain("Ask Jonas for an intro");
+      expect(page).not.toContain("Ask for an intro via Jonas");
       expect(page).toContain("intros go through members the admins chose");
     });
 
@@ -292,7 +292,7 @@ describe("an intro asked from a profile, with Village off", () => {
       expect(await renderJonasProfile()).not.toContain("Who Jonas can introduce you to");
 
       await saveModuleState(database, networkManifest, true);
-      expect(await renderJonasProfile()).toContain("Jonas hasn&#x27;t shared a network yet");
+      expect(await renderJonasProfile()).toContain("Jonas hasn’t shared a network, so there are no paths through them yet.");
 
       await joinMemberToGroup(database, jonas.userId, "jonas-lindqvist");
       const page = await renderJonasProfile();

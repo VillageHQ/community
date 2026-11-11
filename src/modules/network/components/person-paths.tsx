@@ -75,7 +75,7 @@ function FellowMemberNote({ memberId, targetName }: { memberId: string; targetNa
       <div className="grid grid-cols-2 gap-2">
         <MemberConversationSlot memberId={memberId} label="Message" accessibleName={`Message ${targetName}`} size="sm" />
         <Button asChild variant="outline" size="sm">
-          <Link href={`${ROUTES.members}/${memberId}`} aria-label={`See ${targetName}'s profile`}>
+          <Link href={`${ROUTES.people}/${memberId}`} aria-label={`See ${targetName}'s profile`}>
             Profile
           </Link>
         </Button>

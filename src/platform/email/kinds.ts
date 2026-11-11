@@ -23,6 +23,7 @@ export const EMAIL_KINDS = {
   emailTest: "email_test",
   introThread: "intro_thread",
   replyNotice: "reply_notice",
+  deletionRequest: "deletion_request",
 } as const;
 
 export type EmailKind = (typeof EMAIL_KINDS)[keyof typeof EMAIL_KINDS];
@@ -50,6 +51,8 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.introThread]: null,
   // The one plain answer to an emailed reply: why it didn't land, or the next step after a YES.
   [EMAIL_KINDS.replyNotice]: null,
+  // To each admin: a member asked to delete their account. Admins need it to act.
+  [EMAIL_KINDS.deletionRequest]: null,
 };
 
 export const EMAIL_TOPIC_LABELS: Record<EmailTopic, { title: string; description: string }> = {

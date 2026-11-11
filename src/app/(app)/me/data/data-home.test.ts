@@ -40,8 +40,9 @@ function findByName(node: ReactNode, name: string): ReactElement | null {
 
 async function readYourDataText(member: Member) {
   session.cookie = member.cookie;
-  const facts = findByName(await YourDataPage(), "DataHomeFacts");
-  return facts ? renderToStaticMarkup(facts) : "";
+  const page = await YourDataPage();
+  const facts = ["HostingLine", "DataQuestionsLine"].map((name) => findByName(page, name)).filter((element) => element !== null);
+  return facts.map((element) => renderToStaticMarkup(element)).join("");
 }
 
 describe("where the data is kept, and whom to ask", () => {
@@ -68,7 +69,6 @@ describe("where the data is kept, and whom to ask", () => {
     });
     const html = await readYourDataText(member);
     expect(html).toContain("EU, Frankfurt, a made-up host");
-    expect(html).toContain("Data protection lead");
     expect(html).toContain('href="mailto:privacy@example.com"');
     expect(await database.select().from(adminAuditEntry).where(eq(adminAuditEntry.action, AUDIT_ACTIONS.dataHomeSaved))).toHaveLength(1);
   });
@@ -87,8 +87,8 @@ describe("where the data is kept, and whom to ask", () => {
     await save(admin, { location: "", contactName: "", contactEmail: "privacy@example.com" });
 
     const html = await readYourDataText(member);
-    expect(html).not.toContain("Where the data is kept");
-    expect(html).toContain("Write to");
+    expect(html).not.toContain("Hosted by");
+    expect(html).toContain("Questions about your data:");
   });
 
   it("refuses a bad email, a name with no email, or hidden characters, in plain words", async () => {

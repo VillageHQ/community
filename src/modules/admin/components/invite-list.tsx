@@ -144,7 +144,7 @@ function InviteRow({ invite, isEmailConfigured, issued, onIssued }: InviteRowPro
           ) : null}
           {state === INVITE_STATES.accepted && acceptedUserId ? (
             <Button asChild variant="soft" size="sm">
-              <Link href={`${ROUTES.members}/${acceptedUserId}`} aria-label={`View profile of ${email}`}>
+              <Link href={`${ROUTES.people}/${acceptedUserId}`} aria-label={`View profile of ${email}`}>
                 View profile
               </Link>
             </Button>

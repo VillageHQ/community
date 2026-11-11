@@ -74,7 +74,7 @@ type ThreadHeaderProps = {
 
 function ThreadHeader({ conversationId, peer, isBlockedByMe, headingRef, onChooseBlock, onUnblock }: ThreadHeaderProps) {
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
-  const profileHref = `${ROUTES.members}/${peer.id}`;
+  const profileHref = `${ROUTES.people}/${peer.id}`;
   return (
     <header className="flex min-h-20 items-center gap-2 border-b px-2 py-2.5 lg:gap-3.5 lg:px-7 lg:py-[18px]">
       <PhoneMessagesHeading />

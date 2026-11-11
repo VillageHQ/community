@@ -205,7 +205,7 @@ function AnswerItem({ answer }: { answer: AskAnswer }) {
       <div className="flex items-start gap-2.5">
         <Avatar stableId={answer.author.id} name={answer.author.name} imageUrl={answer.author.avatarUrl} sizePx={ANSWER_AVATAR_SIZE_PX} />
         <div className="min-w-0 flex-1">
-          <Link href={`${ROUTES.members}/${answer.author.id}`} className="type-label wrap-anywhere hover:underline">
+          <Link href={`${ROUTES.people}/${answer.author.id}`} className="type-label wrap-anywhere hover:underline">
             {answer.author.name}
           </Link>
           <p className="type-small text-muted-foreground">
@@ -338,7 +338,7 @@ export function AskCard({ ask, canIntro, isViewerAdmin, onSeeYourAsks }: BoardAs
       <header className="flex items-start gap-3">
         <Avatar stableId={ask.author.id} name={ask.author.name} imageUrl={ask.author.avatarUrl} sizePx={ASK_AVATAR_SIZE_PX} />
         <div className="min-w-0 flex-1">
-          <Link href={`${ROUTES.members}/${ask.author.id}`} className="type-label wrap-anywhere hover:underline">
+          <Link href={`${ROUTES.people}/${ask.author.id}`} className="type-label wrap-anywhere hover:underline">
             {ask.author.name}
           </Link>
           <p className="type-small wrap-anywhere text-muted-foreground">

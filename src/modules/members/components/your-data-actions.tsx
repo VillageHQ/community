@@ -1,17 +1,19 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Download, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Download, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { z } from "zod";
 
+import { useFlash } from "@/components/flash";
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Pill } from "@/components/ui/pill";
 import { postRequest } from "@/platform/http/post-request";
 import { readResponseFailure } from "@/platform/http/read-response-message";
-import { API_ROUTES, ROUTES } from "@/platform/http/routes";
-import { DELETE_CONFIRMATION_WORD, deleteAccountResponseSchema } from "@/modules/members/contract-privacy";
+import { API_ROUTES } from "@/platform/http/routes";
+import { formatDayMonth } from "@/platform/text/format-date";
+import { toPossessive } from "@/modules/members/rules-words";
 
 const DOWNLOAD_FAILED = "We couldn't make your file. Try again.";
 const FILE_NAME_PATTERN = /filename="([^"]+)"/;
@@ -29,21 +31,19 @@ async function downloadExport() {
   URL.revokeObjectURL(url);
 }
 
-export function ExportCard() {
+// Founderhall's "Take it with you".
+export function ExportSheet() {
   const download = useMutation({ mutationFn: downloadExport });
   return (
-    <section aria-labelledby="export-title" className="grid gap-3 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
-      <h2 id="export-title" className="type-h3">
-        Take it with you
+    <section className="fh-sheet" aria-labelledby="export-title">
+      <h2 id="export-title" className="fh-h3 flex items-center gap-1.5">
+        <Download aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} /> Take it with you
       </h2>
-      <p className="type-small text-foreground-soft">
-        Everything above about you, in one JSON file: your card, choices, posts, asks, answers, offers, the intros you are part of, and the messages you sent. It never
-        holds another member&apos;s private notes or messages.
-      </p>
-      <div>
-        <Button type="button" variant="outline" disabled={download.isPending} onClick={() => download.mutate()} className="max-sm:w-full">
-          <Download aria-hidden="true" />
-          {download.isPending ? "Making your file…" : "Export my data"}
+      <p className="fh-small mt-1.5">Everything above about you, as one JSON file.</p>
+      <div className="fh-btn-row mt-2.5">
+        <Button type="button" variant="secondary" size="sm" disabled={download.isPending} onClick={() => download.mutate()}>
+          <Download aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />
+          Export my data (JSON)
         </Button>
       </div>
       <FormError message={download.error?.message ?? null} />
@@ -51,70 +51,46 @@ export function ExportCard() {
   );
 }
 
-function deleteOwnAccount(confirmation: string) {
-  return postRequest(API_ROUTES.profileDelete, { confirmation }, deleteAccountResponseSchema);
+const deletionRequestResponseSchema = z.object({ requestedAt: z.string() });
+
+function askToDelete() {
+  return postRequest(API_ROUTES.profileDeletionRequest, {}, deletionRequestResponseSchema);
 }
 
-function goToSignIn() {
-  window.location.assign(ROUTES.signInAfterDeletion);
-}
-
-export function DeleteAccountCard({ communityName, isAdmin }: { communityName: string; isAdmin: boolean }) {
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [typed, setTyped] = useState("");
-  // When Village couldn't be reached the member reads what is left to do before leaving; otherwise they go straight on.
-  const deletion = useMutation({ mutationFn: deleteOwnAccount, onSuccess: ({ isVillageIncomplete }) => (isVillageIncomplete ? undefined : goToSignIn()) });
-  const isTypedRight = typed.trim().toLowerCase() === DELETE_CONFIRMATION_WORD;
-
+// Founderhall's "Delete my account": a request to the admins, who delete the account and say so by email.
+export function DeleteRequestSheet({ communityName, requestedAt }: { communityName: string; requestedAt: string | null }) {
+  const router = useRouter();
+  const flash = useFlash();
+  const ask = useMutation({
+    mutationFn: askToDelete,
+    onSuccess: () => {
+      flash("Sent. The admins have your request and tell you by email.");
+      router.refresh();
+    },
+  });
+  const askedAt = requestedAt ?? ask.data?.requestedAt ?? null;
   return (
-    <section aria-labelledby="delete-title" className="grid gap-3 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
-      <h2 id="delete-title" className="type-h3">
-        Delete my account
+    <section className="fh-sheet" id="delete" aria-labelledby="delete-title">
+      <h2 id="delete-title" className="fh-h3 flex items-center gap-1.5">
+        <X aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} /> Delete my account
       </h2>
-      <p className="type-small text-foreground-soft">
-        This deletes your account from {communityName} for good: your card, photo, posts, asks, answers and offers, and the words of every message you sent (the other
-        member sees &quot;deleted&quot;). If you joined network search, Village is asked to remove you too. Intros you were part of stay only as anonymous counts. There is
-        no undo. Export your data first if you want a copy.
-      </p>
-      {isAdmin ? <p className="type-small text-foreground-soft">You are an admin. If you are the only one, make another member an admin first.</p> : null}
-      {deletion.data?.isVillageIncomplete ? (
-        <div role="status" className="grid gap-3 rounded-field bg-muted p-3.5">
-          <p>{deletion.data.message}</p>
-          <div>
-            <Button type="button" onClick={goToSignIn} className="max-sm:w-full">
-              Done
-            </Button>
-          </div>
-        </div>
-      ) : isConfirming ? (
-        <form
-          className="grid gap-3 rounded-field bg-muted p-3.5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (isTypedRight) deletion.mutate(typed);
-          }}
-        >
-          <div className="grid gap-1.5">
-            <Label htmlFor="delete-confirmation">Type &quot;{DELETE_CONFIRMATION_WORD}&quot; to confirm</Label>
-            <Input id="delete-confirmation" autoComplete="off" value={typed} onChange={(event) => setTyped(event.target.value)} autoFocus />
-          </div>
-          <FormError message={deletion.error?.message ?? null} />
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant="destructive" disabled={!isTypedRight || deletion.isPending} className="max-sm:w-full">
-              {deletion.isPending ? "Deleting…" : "Delete my account for good"}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => setIsConfirming(false)} className="max-sm:w-full">
-              Keep my account
-            </Button>
-          </div>
-        </form>
+      {askedAt ? (
+        <>
+          <p className="mt-2">
+            <Pill tone="open">Asked {formatDayMonth(askedAt)}</Pill>
+          </p>
+          <p className="fh-small mt-2">{toPossessive(communityName)} admins have your request. They delete your account and tell you by email.</p>
+        </>
       ) : (
-        <div>
-          <Button type="button" variant="outline" onClick={() => setIsConfirming(true)} className="max-sm:w-full">
-            <Trash2 aria-hidden="true" />
-            Delete my account
-          </Button>
-        </div>
+        <>
+          <p className="fh-small mt-1.5">Sends a request to {toPossessive(communityName)} admins, who delete your profile, asks and messages and tell you by email.</p>
+          <div className="fh-btn-row mt-2.5">
+            <Button type="button" variant="secondary" size="sm" disabled={ask.isPending} onClick={() => ask.mutate()}>
+              Ask to delete my account
+            </Button>
+          </div>
+          <FormError message={ask.error?.message ?? null} />
+        </>
       )}
     </section>
   );

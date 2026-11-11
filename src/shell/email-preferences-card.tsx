@@ -1,63 +1,62 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
+import { useFlash } from "@/components/flash";
 import { FormError } from "@/components/form-error";
+import { Button } from "@/components/ui/button";
+import { SetRow } from "@/components/ui/rows";
 import { Switch } from "@/components/ui/switch";
-import { EMAIL_TOPIC_LABELS, EMAIL_TOPICS, type EmailTopic } from "@/platform/email/kinds";
+import { EMAIL_TOPICS, type EmailTopic } from "@/platform/email/kinds";
 import { postRequest } from "@/platform/http/post-request";
 import { API_ROUTES } from "@/platform/http/routes";
 
 const preferenceSchema = z.object({ topic: z.enum(Object.values(EMAIL_TOPICS)), isOn: z.boolean() });
 
-type EmailTopicSetting = { topic: EmailTopic; isOn: boolean };
+export type EmailSettingRow = { topic: EmailTopic; title: string; description: string; isOn: boolean };
 
-function TopicSwitch({ topic, isOn: initialIsOn }: EmailTopicSetting) {
-  const [isOn, setIsOn] = useState(initialIsOn);
-  const mutation = useMutation({
-    mutationFn: (nextIsOn: boolean) => postRequest(API_ROUTES.emailPreferences, { topic, isOn: nextIsOn }, preferenceSchema),
-    onSuccess: (saved) => setIsOn(saved.isOn),
-  });
-  const { title, description } = EMAIL_TOPIC_LABELS[topic];
-  const labelId = `email-topic-${topic}`;
-  return (
-    <li className="grid gap-2">
-      <div className="flex items-start justify-between gap-4">
-        <div className="grid gap-0.5">
-          <span id={labelId} className="font-bold">
-            {title}
-          </span>
-          <span className="type-small text-foreground-soft">{description}</span>
-        </div>
-        <Switch
-          aria-labelledby={labelId}
-          checked={mutation.isPending ? mutation.variables : isOn}
-          disabled={mutation.isPending}
-          onCheckedChange={(checked) => mutation.mutate(checked)}
-        />
-      </div>
-      <FormError message={mutation.error?.message ?? null} />
-    </li>
-  );
+async function saveChanges(changes: readonly { topic: EmailTopic; isOn: boolean }[]) {
+  for (const change of changes) await postRequest(API_ROUTES.emailPreferences, change, preferenceSchema);
 }
 
-export function EmailPreferencesCard({ settings }: { settings: readonly EmailTopicSetting[] }) {
-  if (settings.length === 0) return null;
+// Founderhall's Email settings (member-me-email): one row per email the member can switch off, and one Save.
+export function EmailSettingsForm({ rows }: { rows: readonly EmailSettingRow[] }) {
+  const router = useRouter();
+  const flash = useFlash();
+  const [choices, setChoices] = useState<Record<string, boolean>>(() => Object.fromEntries(rows.map(({ topic, isOn }) => [topic, isOn])));
+  const save = useMutation({
+    mutationFn: saveChanges,
+    onSuccess: () => {
+      flash("Email settings saved.");
+      router.refresh();
+    },
+  });
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    save.mutate(rows.filter(({ topic, isOn }) => choices[topic] !== isOn).map(({ topic }) => ({ topic, isOn: choices[topic] ?? true })));
+  }
+
   return (
-    <section aria-labelledby="email-preferences-title" className="mt-5 grid gap-4 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
-      <div className="grid gap-1">
-        <h2 id="email-preferences-title" className="type-h3">
-          Email
-        </h2>
-        <p className="type-small text-foreground-soft">Choose what we email you about. Account emails, like password resets, always come.</p>
+    <form className="fh-sheet" onSubmit={submit} aria-label="Email settings">
+      {rows.map(({ topic, title, description }) => (
+        <SetRow
+          key={topic}
+          htmlFor={`email-topic-${topic}`}
+          label={title}
+          hint={description}
+          control={<Switch id={`email-topic-${topic}`} checked={choices[topic] ?? true} onCheckedChange={(isOn) => setChoices((current) => ({ ...current, [topic]: isOn }))} />}
+        />
+      ))}
+      <FormError message={save.error?.message ?? null} />
+      <div className="fh-btn-row mt-3">
+        <Button type="submit" variant="primary" size="sm" disabled={save.isPending}>
+          Save
+        </Button>
       </div>
-      <ul className="grid gap-4">
-        {settings.map((setting) => (
-          <TopicSwitch key={setting.topic} {...setting} />
-        ))}
-      </ul>
-    </section>
+    </form>
   );
 }

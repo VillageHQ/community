@@ -23,7 +23,7 @@ function ConnectorHeading({ connector }: { connector: Connector }) {
   const { name, member } = connector;
   if (member) {
     return (
-      <Link href={`${ROUTES.members}/${member.id}`} className="underline-offset-3 hover:underline">
+      <Link href={`${ROUTES.people}/${member.id}`} className="underline-offset-3 hover:underline">
         {name}
       </Link>
     );
@@ -89,7 +89,7 @@ function MemberActions(props: ConnectorSlotProps) {
           </>
         ) : null}
         <Button asChild variant="link" size="sm" className={QUIET_LINK}>
-          <Link href={`${ROUTES.members}/${member.id}`} aria-label={`See ${name}'s profile`}>
+          <Link href={`${ROUTES.people}/${member.id}`} aria-label={`See ${name}'s profile`}>
             see their profile
           </Link>
         </Button>

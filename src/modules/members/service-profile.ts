@@ -122,6 +122,7 @@ export async function readMemberProfile(database: Database, memberId: string) {
       canHelpWith: memberProfile.canHelpWith,
       needs: memberProfile.needs,
       website: memberProfile.website,
+      profileUpdatedAt: memberProfile.updatedAt,
       linkedinSlug: memberNetwork.linkedinSlug,
       linkedinConfirmedSlug: memberNetwork.linkedinConfirmedSlug,
       avatarUpdatedAt: memberAvatar.updatedAt,
@@ -138,13 +139,15 @@ export async function readMemberProfile(database: Database, memberId: string) {
     readShownFillIn(database, memberId),
   ]);
 
-  const { avatarUpdatedAt, website, linkedinConfirmedSlug, ...fields } = row;
+  const { avatarUpdatedAt, website, linkedinConfirmedSlug, profileUpdatedAt, ...fields } = row;
   const avatarUrl = toAvatarUrl(memberId, avatarUpdatedAt);
   return {
     ...fields,
     isLinkedinConfirmed: fields.linkedinSlug !== null && linkedinConfirmedSlug === fields.linkedinSlug,
     website: website ? parseExternalUrl(website) : null,
     avatarUrl,
+    // "Fresh as of": when they last saved their own words; never saved = when they joined.
+    freshAt: profileUpdatedAt ?? fields.createdAt,
     tags: tags.map(({ tag }) => tag),
     // What others see: the member's own words, with filled-in lines only where they wrote nothing.
     shown: readShownCard({ title: fields.title, company: fields.company, location: fields.location, avatarUrl }, shownFillIn),

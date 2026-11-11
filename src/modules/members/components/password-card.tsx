@@ -41,7 +41,7 @@ function AddPasswordForm() {
       />
       <FormError message={state.errorMessage} />
       <div>
-        <Button type="submit" disabled={isPending} className="max-sm:w-full">
+        <Button type="submit" variant="secondary" size="sm" disabled={isPending}>
           {isPending ? "Adding…" : "Add a password"}
         </Button>
       </div>
@@ -51,18 +51,18 @@ function AddPasswordForm() {
 
 export function PasswordCard({ hasPassword, isLinkOn }: { hasPassword: boolean; isLinkOn: boolean }) {
   return (
-    <section aria-labelledby="password-card-title" className="mt-5 grid gap-3 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
-      <h2 id="password-card-title" className="type-h3">
+    <section aria-labelledby="password-card-title" className="fh-sheet grid gap-3">
+      <h2 id="password-card-title" className="fh-h3">
         How you sign in
       </h2>
       {hasPassword ? (
-        <p className="type-small text-foreground-soft">
+        <p className="fh-small">
           {isLinkOn ? "With your password, or with a link we email you." : "With your email and password."} To change your password, sign out and use
           Forgot your password.
         </p>
       ) : (
         <>
-          <p className="type-small text-foreground-soft">
+          <p className="fh-small">
             You sign in with a link we email you. Add a password if you&apos;d also like to sign in without checking your email.
           </p>
           <AddPasswordForm />

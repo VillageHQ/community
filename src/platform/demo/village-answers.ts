@@ -145,7 +145,18 @@ export function toDemoProfile(person: DemoPerson) {
       end_date: null,
       company: { id: null, name: person.company, domain: toDemoDomain(person.company), image_url: toDemoLogoUrl(person.company) },
     },
-    work_history: [],
+    // The current role, then the earlier ones, so the fill-in finds "Past roles".
+    work_history: person.roleSince
+      ? [
+          { title: person.title, start_date: `${person.roleSince}-01-01`, end_date: null, company: { id: null, name: person.company, domain: toDemoDomain(person.company), image_url: null } },
+          ...(person.earlierRoles ?? []).map((role) => ({
+            title: role.title,
+            start_date: `${role.start}-01-01`,
+            end_date: `${role.end}-12-31`,
+            company: { id: null, name: role.company, domain: null, image_url: null },
+          })),
+        ]
+      : [],
     last_enrichment_at: TIMESTAMP,
   };
 }

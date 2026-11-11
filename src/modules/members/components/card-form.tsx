@@ -184,7 +184,7 @@ function EditCardForm({ profile }: CardFieldsProps) {
   const saveMutation = useMutation({
     mutationFn: saveCardAndContinue,
     onSuccess: () => {
-      router.push(`${ROUTES.members}/${profile.id}`);
+      router.push(`${ROUTES.people}/${profile.id}`);
       router.refresh();
     },
   });

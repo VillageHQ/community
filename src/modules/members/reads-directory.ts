@@ -13,15 +13,20 @@ import { FILL_IN_FIELDS } from "./contract-fill-in.ts";
 import { shownFillInColumn } from "./service-fill-in.ts";
 import { isListedMember } from "./service-privacy.ts";
 
-export const DIRECTORY_PAGE_SIZE = 12;
+// Founderhall lists everyone on one page; a large community pages with a quiet "More".
+export const DIRECTORY_PAGE_SIZE = 60;
 
 // Lists show a filled-in role, company and face where the member left theirs empty, and the company's logo by its rule.
 const filledTitle = shownFillInColumn(FILL_IN_FIELDS.title);
 const filledCompany = shownFillInColumn(FILL_IN_FIELDS.company);
 const filledFace = shownFillInColumn(FILL_IN_FIELDS.face);
+const filledLocation = shownFillInColumn(FILL_IN_FIELDS.location);
 
 const shownTitle = sql<string | null>`coalesce(nullif(${memberProfile.title}, ''), ${filledTitle.line.value})`;
 const shownCompany = sql<string | null>`coalesce(nullif(${memberProfile.company}, ''), ${filledCompany.line.value})`;
+const shownLocation = sql<string | null>`coalesce(nullif(trim(${memberProfile.location}), ''), ${filledLocation.line.value})`;
+// "Fresh as of": when the member last saved their own words; never saved = when they joined.
+const freshAt = sql<Date>`coalesce(${memberProfile.updatedAt}, ${user.createdAt})`.mapWith(user.createdAt);
 
 const MAXIMUM_POPULAR_TAGS = 6;
 const MAXIMUM_NEW_MEMBERS = 3;
@@ -40,10 +45,18 @@ function matchesSearch(database: Database, search: string) {
     .select({ userId: memberTag.userId })
     .from(memberTag)
     .where(and(eq(memberTag.userId, user.id), ilike(memberTag.tag, pattern)));
+  // Founderhall's "Name, company or skill": any of the member's own words, the shown role, company and city, or a tag.
   return or(
     ilike(user.name, pattern),
-    ilike(memberProfile.company, pattern),
+    ilike(shownTitle, pattern),
+    ilike(shownCompany, pattern),
+    ilike(shownLocation, pattern),
+    ilike(memberProfile.bio, pattern),
     ilike(memberProfile.canHelpWith, pattern),
+    ilike(memberProfile.needs, pattern),
+    ilike(memberProfile.stage, pattern),
+    ilike(memberProfile.sector, pattern),
+    ilike(memberProfile.cohort, pattern),
     exists(taggedMember),
   );
 }
@@ -58,7 +71,7 @@ function matchesTag(database: Database, tag: string) {
 }
 
 // A whole value, ignoring case and outer spaces: "seed" finds "Seed", never "Pre-seed".
-function matchesValue(column: typeof memberProfile.stage | typeof memberProfile.sector | typeof memberProfile.cohort, value: string) {
+function matchesValue(column: typeof memberProfile.stage | typeof memberProfile.sector | typeof memberProfile.cohort | SQL, value: string) {
   if (!value) return undefined;
   return sql`lower(trim(${column})) = ${value.toLowerCase()}`;
 }
@@ -67,7 +80,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 function isUpdatedWithin(days: number, now: Date) {
   if (!days) return undefined;
-  return gte(memberProfile.updatedAt, new Date(now.getTime() - days * DAY_MS));
+  return gte(freshAt, new Date(now.getTime() - days * DAY_MS));
 }
 
 // The values active members use, one spelling per value whatever its case, sorted for the filter menus.
@@ -83,13 +96,28 @@ async function readValuesInUse(database: Database, column: typeof memberProfile.
   return rows.flatMap(({ label }) => (label ? [label] : []));
 }
 
+// The cities members show, own or filled in, one spelling per city.
+async function readCitiesInUse(database: Database) {
+  const normalized = sql<string>`lower(trim(${shownLocation}))`;
+  const rows = await database
+    .select({ label: min(sql<string>`trim(${shownLocation})`) })
+    .from(user)
+    .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
+    .leftJoin(filledLocation.line, filledLocation.joinCondition)
+    .where(and(isListedInDirectory(), sql`nullif(trim(${shownLocation}), '') is not null`))
+    .groupBy(normalized)
+    .orderBy(normalized);
+  return rows.flatMap(({ label }) => (label ? [label] : []));
+}
+
 async function readFilterOptions(database: Database) {
-  const [stage, sector, cohort] = await Promise.all([
+  const [stage, sector, city, cohort] = await Promise.all([
     readValuesInUse(database, memberProfile.stage),
     readValuesInUse(database, memberProfile.sector),
+    readCitiesInUse(database),
     readValuesInUse(database, memberProfile.cohort),
   ]);
-  return { stage, sector, cohort };
+  return { stage, sector, city, cohort };
 }
 
 async function readTagsByMember(database: Database, memberIds: string[]) {
@@ -136,6 +164,12 @@ export async function readActiveMemberCount(database: Database) {
   return row?.memberCount ?? 0;
 }
 
+// "8 members of Northwind Founders": the members the directory lists.
+async function readListedMemberCount(database: Database, now: Date) {
+  const [row] = await database.select({ memberCount: count() }).from(user).where(isListedInDirectory(now));
+  return row?.memberCount ?? 0;
+}
+
 // Who the directory lists: active members who didn't choose "hide me from the directory". Posts outside the app
 // (Slack, Discord) name only members it lists; others are "a member".
 export function isListedInDirectory(now = new Date()) {
@@ -147,7 +181,7 @@ export function isListedInDirectory(now = new Date()) {
 export type HiringLookup = { jobCountColumn: (company: SQL) => SQL<number> };
 
 export async function readDirectory(database: Database, filters: Partial<DirectoryFilters>, now = new Date(), hiring: HiringLookup | null = null): Promise<Directory> {
-  const { search, tag, stage, sector, cohort, updatedWithinDays, hiring: onlyHiring, page } = { ...EMPTY_DIRECTORY_FILTERS, ...filters };
+  const { search, tag, stage, sector, city, cohort, updatedWithinDays, hiring: onlyHiring, page } = { ...EMPTY_DIRECTORY_FILTERS, ...filters };
   const hiringJobCount = hiring ? hiring.jobCountColumn(shownCompany) : sql<number>`0`.mapWith(Number);
   const conditions = and(
     isListedInDirectory(now),
@@ -155,16 +189,19 @@ export async function readDirectory(database: Database, filters: Partial<Directo
     matchesTag(database, tag),
     matchesValue(memberProfile.stage, stage),
     matchesValue(memberProfile.sector, sector),
+    matchesValue(shownLocation, city),
     matchesValue(memberProfile.cohort, cohort),
     isUpdatedWithin(updatedWithinDays, now),
     hiring && onlyHiring ? sql`${hiringJobCount} > 0` : undefined,
   );
-  // The shown company may come from a filled-in line, so the count joins it too.
+  // The shown role, company and city may come from filled-in lines, so the count joins them too.
   const [counted] = await database
     .select({ matchCount: count() })
     .from(user)
     .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
+    .leftJoin(filledTitle.line, filledTitle.joinCondition)
     .leftJoin(filledCompany.line, filledCompany.joinCondition)
+    .leftJoin(filledLocation.line, filledLocation.joinCondition)
     .where(conditions);
   const matchCount = counted?.matchCount ?? 0;
   const pageCount = Math.max(1, Math.ceil(matchCount / DIRECTORY_PAGE_SIZE));
@@ -176,7 +213,10 @@ export async function readDirectory(database: Database, filters: Partial<Directo
       name: user.name,
       title: shownTitle,
       company: shownCompany,
+      location: shownLocation,
+      bio: memberProfile.bio,
       canHelpWith: memberProfile.canHelpWith,
+      freshAt,
       stage: memberProfile.stage,
       sector: memberProfile.sector,
       cohort: memberProfile.cohort,
@@ -191,6 +231,7 @@ export async function readDirectory(database: Database, filters: Partial<Directo
     .leftJoin(filledTitle.line, filledTitle.joinCondition)
     .leftJoin(filledCompany.line, filledCompany.joinCondition)
     .leftJoin(filledFace.line, filledFace.joinCondition)
+    .leftJoin(filledLocation.line, filledLocation.joinCondition)
     .where(conditions)
     .orderBy(asc(user.name), asc(user.id))
     .limit(DIRECTORY_PAGE_SIZE)
@@ -199,13 +240,14 @@ export async function readDirectory(database: Database, filters: Partial<Directo
   const [tagsByMember, popularTags, memberCount, filterOptions] = await Promise.all([
     readTagsByMember(database, rows.map(({ id }) => id)),
     readPopularTags(database),
-    readActiveMemberCount(database),
+    readListedMemberCount(database, now),
     readFilterOptions(database),
   ]);
 
   return {
-    members: rows.map(({ avatarUpdatedAt, filledFaceUrl, ...member }) => ({
+    members: rows.map(({ avatarUpdatedAt, filledFaceUrl, freshAt: freshDate, ...member }) => ({
       ...member,
+      freshAt: freshDate.toISOString(),
       avatarUrl: toShownFaceUrl(member.id, avatarUpdatedAt, filledFaceUrl),
       tags: tagsByMember.get(member.id) ?? [],
     })),
