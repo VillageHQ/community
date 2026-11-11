@@ -95,7 +95,7 @@ describe("returning after sign-in", () => {
   );
 
   it("encodes the path so the token survives", () => {
-    expect(toSignInPath("/confirm-email?token=abc")).toBe("/sign-in?next=%2Fconfirm-email%3Ftoken%3Dabc");
+    expect(toSignInPath("/confirm-email?token=abc")).toBe("/signin?next=%2Fconfirm-email%3Ftoken%3Dabc");
   });
 });
 

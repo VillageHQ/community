@@ -1,5 +1,6 @@
 import { getDatabase } from "@/platform/database/client";
 import { getAuth } from "@/platform/auth/auth";
+import { signInUnconfirmedMember } from "@/platform/auth/server-link-sign-in";
 import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/platform/http/body-limit";
 import { acceptFieldsBodySchema, acceptTokenBodySchema, INVITE_ERROR_CODES } from "@/modules/members/contract-invites";
 import { sendEmailConfirmation } from "@/modules/members/service-email-confirmation";
@@ -60,6 +61,16 @@ async function signInNewMember(request: Request, email: string, password: string
   }
 }
 
+async function signInWithoutPassword(request: Request, member: { id: string; email: string }) {
+  try {
+    const result = await signInUnconfirmedMember(getDatabase(), await getAuth(), request, member);
+    return result.isSignedIn ? result.setCookies : [];
+  } catch (error) {
+    logError("invite-accept-sign-in", error);
+    return [];
+  }
+}
+
 function respondAccepted(cookies: string[]) {
   const headers = new Headers({ "Content-Type": "application/json" });
   for (const cookie of cookies) headers.append("Set-Cookie", cookie);
@@ -87,8 +98,10 @@ export const POST = membersRoutes.open(
       return respondMessage(CONFLICT_STATUS, INVITE_ERROR_CODES.signedIn, "Sign out first, then open this link again.");
     }
 
-    const fields = acceptFieldsBodySchema.safeParse(body);
-    if (!fields.success) {
+    // Founderhall's "Accept and sign in" sends only the token. A name and a password (Community's older form) still work.
+    const hasFields = typeof body === "object" && body !== null && "password" in body;
+    const fields = hasFields ? acceptFieldsBodySchema.safeParse(body) : null;
+    if (fields && !fields.success) {
       return respondMessage(
         UNPROCESSABLE_STATUS,
         NETWORK_ERROR_CODES.invalidRequest,
@@ -101,13 +114,15 @@ export const POST = membersRoutes.open(
       return respondMessage(FORBIDDEN_STATUS, INVITE_ERROR_CODES.unusable, "This is a demo, so only made-up example.com addresses can join.");
     }
 
-    const accepted = await acceptInvite(database, submitted.data.token, fields.data);
+    const accepted = await acceptInvite(database, submitted.data.token, fields?.data ?? null);
     if (!accepted) return respondToUnusableLink(request, () => respondUnusableInvite(INVITE_STATES.accepted));
 
-    const cookies = await signInNewMember(request, accepted.email, fields.data.password);
+    const cookies = fields?.data
+      ? await signInNewMember(request, accepted.email, fields.data.password)
+      : await signInWithoutPassword(request, { id: accepted.userId, email: accepted.email });
     await sendEmailConfirmation(database, process.env, {
       id: accepted.userId,
-      name: fields.data.name,
+      name: accepted.name,
       email: accepted.email,
     });
     return respondAccepted(cookies);

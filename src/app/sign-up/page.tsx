@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import { MailOpen } from "lucide-react";
-import Link from "next/link";
 
-import { EmptyState } from "@/components/empty-state";
-import { CommunityNote, SplitLayout } from "@/components/split-layout";
+import { PublicMessage } from "@/components/public-page";
 import { Button } from "@/components/ui/button";
 import { getDatabase } from "@/platform/database/client";
 import { readBrandingForPage } from "@/platform/branding/branding";
@@ -30,23 +27,23 @@ const CLOSED_NOTICES = {
 
 export const metadata: Metadata = { title: PAGE_TITLES.signUp };
 
+// Community-only: there is no sign-up. Founderhall's message page, like its 404.
 export default modulePage(PLATFORM_MANIFEST, async function SignUpPage() {
   const isClaimed = await isFirstAdminClaimed(getDatabase());
   const notice = isClaimed ? CLOSED_NOTICES.inviteOnly : CLOSED_NOTICES.awaitingFirstAdmin;
   const community = await readBrandingForPage();
 
   return (
-    <SplitLayout
+    <PublicMessage
       community={community}
-      note={<CommunityNote community={community}>This is a private community.</CommunityNote>}
+      title="Sign-up is closed"
+      action={
+        <Button asChild variant="secondary">
+          <a href={notice.href}>{notice.linkText}</a>
+        </Button>
+      }
     >
-      <div className="flex min-h-[60dvh] items-center justify-center lg:min-h-[calc(100dvh-140px)]">
-        <EmptyState headingLevel="h1" icon={MailOpen} title="Sign-up is closed" description={notice.description}>
-          <Button asChild size="lg">
-            <Link href={notice.href}>{notice.linkText}</Link>
-          </Button>
-        </EmptyState>
-      </div>
-    </SplitLayout>
+      {notice.description}
+    </PublicMessage>
   );
 });

@@ -14,7 +14,7 @@ Core. Always on. Others build on it; it never imports them.
 - `slots.tsx`: `MemberConversationSlot`, filled by messages. The shell passes the directory its `HiringLookup`.
 - `service-linkedin.ts`: claiming a LinkedIn profile, and whether a member's email is trusted.
 - `*-fill-in.ts`: the fill-in's data: the admin's basis, each member's yes or no (`member_lookup`), the lines (`member_fill_in`). Network calls Village and saves here.
-- `service-onboarding.ts`: onboarding state. `src/shell/onboarding.ts` decides the next step, because that needs network.
+- `service-onboarding.ts`: onboarding state; `src/shell/onboarding.ts` runs the two welcome steps.
 - `contract-privacy.ts`, `service-privacy.ts`: `member_privacy`: hide me, who can message me, accept intro asks (null = never answered, treated as yes). `isListedMember` keeps hidden members out of every directory list.
 - `service-erasure.ts`: the real delete's part here. The `user` row stays as a "Deleted member" placeholder with `deleted-<id>@reclaimed.invalid`; `member_removal.erased_at` marks it. `src/shell/account-deletion.ts` runs the whole delete.
 - `contract-*.ts`: Zod schemas and constants, loaded outside Next too: relative imports, no `server-only`.

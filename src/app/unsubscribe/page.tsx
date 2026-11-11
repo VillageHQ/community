@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
-import { CommunityNote, SplitLayout } from "@/components/split-layout";
+import { PublicPage } from "@/components/public-page";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { getDatabase } from "@/platform/database/client";
@@ -22,8 +21,8 @@ type UnsubscribePageProps = { searchParams: Promise<{ token?: string; done?: str
 function BadLink() {
   return (
     <>
-      <h1 className="type-h1">This link doesn&apos;t work</h1>
-      <p className="type-lead mt-4 text-foreground-soft">It may be cut short. Open it again from the email, or sign in and change your email settings on your card.</p>
+      <h1 className="fh-h2">This link doesn&apos;t work</h1>
+      <p className="fh-lede">It may be cut short. Open it again from the email, or sign in and change your email settings on My profile.</p>
     </>
   );
 }
@@ -37,36 +36,32 @@ export default modulePage(PLATFORM_MANIFEST, async function UnsubscribePage({ se
   const done = target ? (await readOptedOutTopics(database, target.memberId)).has(target.topic) : false;
 
   return (
-    <SplitLayout community={community} note={<CommunityNote community={community}>You choose what lands in your inbox.</CommunityNote>}>
-      <div className="flex min-h-[60dvh] flex-col justify-center lg:min-h-[calc(100dvh-140px)]">
-        {!topic ? (
-          <BadLink />
-        ) : done ? (
-          <>
-            <h1 className="type-h1">You&apos;re unsubscribed</h1>
-            <Alert variant="success" className="mt-6">
-              We won&apos;t email you about {topic.title.toLowerCase()} anymore. You still get account emails, like password resets.
-            </Alert>
-            <p className="mt-4 text-foreground-soft">Changed your mind? Turn it back on from your card in {community.name}.</p>
-          </>
-        ) : (
-          <>
-            <h1 className="type-h1">Stop emails about {topic.title.toLowerCase()}?</h1>
-            <p className="type-lead mt-4 text-foreground-soft">{topic.description} You still get account emails, like password resets.</p>
-            <form method="post" action={`${API_ROUTES.emailUnsubscribe}?token=${encodeURIComponent(token)}`} className="mt-7">
-              <input type="hidden" name={UNSUBSCRIBE_PAGE_FIELD} value="1" />
-              <Button type="submit" size="lg" className="max-sm:w-full">
-                Unsubscribe
-              </Button>
-            </form>
-          </>
-        )}
-        <div className="mt-5">
-          <Button asChild variant="quiet">
-            <Link href={ROUTES.editCard}>Go to my card</Link>
-          </Button>
-        </div>
-      </div>
-    </SplitLayout>
+    <PublicPage community={community}>
+      {!topic ? (
+        <BadLink />
+      ) : done ? (
+        <>
+          <h1 className="fh-h2">You&apos;re unsubscribed</h1>
+          <Alert variant="success" className="mt-4">
+            We won&apos;t email you about {topic.title.toLowerCase()} anymore. You still get account emails, like password resets.
+          </Alert>
+          <p className="fh-small fh-muted mt-3">Changed your mind? Turn it back on from My profile in {community.name}.</p>
+        </>
+      ) : (
+        <>
+          <h1 className="fh-h2">Stop emails about {topic.title.toLowerCase()}?</h1>
+          <p className="fh-lede">{topic.description} You still get account emails, like password resets.</p>
+          <form method="post" action={`${API_ROUTES.emailUnsubscribe}?token=${encodeURIComponent(token)}`} className="mt-[18px]">
+            <input type="hidden" name={UNSUBSCRIBE_PAGE_FIELD} value="1" />
+            <Button type="submit" width="block">
+              Unsubscribe
+            </Button>
+          </form>
+        </>
+      )}
+      <p className="fh-small mt-4">
+        <a href={ROUTES.editCard}>Go to My profile</a>
+      </p>
+    </PublicPage>
   );
 });

@@ -15,8 +15,9 @@ export const DEMO_UNAVAILABLE_PARAM = "demo";
 export const DEMO_EMAIL_NOTE = "Demo: kept in the sending log, not sent.";
 
 export const DEMO_ACCOUNTS = {
-  member: { email: `sam.lee@${DEMO_EMAIL_DOMAIN}`, label: "Try it as Sam, a founder" },
-  admin: { email: `maya.ortiz@${DEMO_EMAIL_DOMAIN}`, label: "Try it as Maya, the admin" },
+  // Founderhall's order and words: the admin first.
+  admin: { email: `maya.ortiz@${DEMO_EMAIL_DOMAIN}`, label: "Try it as Maya (admin)" },
+  member: { email: `sam.lee@${DEMO_EMAIL_DOMAIN}`, label: "Try it as Sam (member)" },
 } as const;
 
 export type DemoAccount = keyof typeof DEMO_ACCOUNTS;

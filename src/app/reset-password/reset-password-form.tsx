@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 
 import { FormError } from "@/components/form-error";
@@ -27,16 +26,16 @@ export function ResetPasswordForm({ token }: { token: string }) {
   const [state, formAction, isPending] = useActionState((_previousState: ResetState, formData: FormData) => submitReset(token, formData), INITIAL_STATE);
   if (state.isDone) {
     return (
-      <div className="grid gap-4">
+      <div className="fh-field grid gap-4">
         <Alert variant="success">Your password changed, and every device was signed out.</Alert>
-        <Button asChild size="lg">
-          <Link href={ROUTES.signIn}>Sign in</Link>
+        <Button asChild width="block">
+          <a href={ROUTES.signIn}>Sign in</a>
         </Button>
       </div>
     );
   }
   return (
-    <form action={formAction} className="grid gap-5">
+    <form action={formAction} className="fh-field grid gap-3.5">
       <FormField
         name="newPassword"
         label="Your new password"
@@ -48,7 +47,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         required
       />
       <FormError message={state.errorMessage} />
-      <Button type="submit" size="lg" disabled={isPending}>
+      <Button type="submit" width="block" disabled={isPending}>
         {isPending ? "Saving…" : "Save my new password"}
       </Button>
     </form>

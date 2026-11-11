@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
-import { CommunityNote, SplitLayout } from "@/components/split-layout";
+import { PublicPage } from "@/components/public-page";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -40,8 +39,8 @@ const PROBLEMS: Record<string, string> = {
 function Problem({ message }: { message: string }) {
   return (
     <>
-      <h1 className="type-h1">This link doesn&apos;t work</h1>
-      <p className="type-lead mt-4 text-foreground-soft">{message}</p>
+      <h1 className="fh-h2">This link doesn&apos;t work</h1>
+      <p className="fh-lede">{message}</p>
     </>
   );
 }
@@ -63,54 +62,50 @@ export default modulePage(PLATFORM_MANIFEST, async function WeeklyAnswerPage({ s
   const question = page.problem === null ? QUESTIONS[page.link.action] : undefined;
 
   return (
-    <SplitLayout community={community} note={<CommunityNote community={community}>One email a week, then you&apos;re done.</CommunityNote>}>
-      <div className="flex min-h-[60dvh] flex-col justify-center lg:min-h-[calc(100dvh-140px)]">
-        {page.problem !== null || !question ? (
-          <Problem message={page.problem ?? "It may be cut short. Open it again from the email."} />
-        ) : page.earlier ? (
-          <>
-            <h1 className="type-h1">{result === ANSWER_OUTCOMES.done ? "Done" : "Already answered"}</h1>
-            <p className="type-lead mt-4 text-foreground-soft">{page.item.title}</p>
-            <Alert variant="success" className="mt-6">
-              {result === ANSWER_OUTCOMES.done || (!result && page.earlier.action === page.link.action)
-                ? (QUESTIONS[page.earlier.action]?.done ?? "Done.")
-                : `You already answered this one ${page.earlier.via === "reply" ? "by email" : "from a link"}, so nothing changed.`}
+    <PublicPage community={community}>
+      {page.problem !== null || !question ? (
+        <Problem message={page.problem ?? "It may be cut short. Open it again from the email."} />
+      ) : page.earlier ? (
+        <>
+          <h1 className="fh-h2">{result === ANSWER_OUTCOMES.done ? "Done" : "Already answered"}</h1>
+          <p className="fh-lede">{page.item.title}</p>
+          <Alert variant="success" className="mt-4">
+            {result === ANSWER_OUTCOMES.done || (!result && page.earlier.action === page.link.action)
+              ? (QUESTIONS[page.earlier.action]?.done ?? "Done.")
+              : `You already answered this one ${page.earlier.via === "reply" ? "by email" : "from a link"}, so nothing changed.`}
+          </Alert>
+        </>
+      ) : (
+        <>
+          <h1 className="fh-h2">{question.title}</h1>
+          <p className="fh-lede">{page.item.title}</p>
+          {result === ANSWER_OUTCOMES.already ? (
+            <Alert variant="info" className="mt-4">
+              You&apos;d already done this in the app, so nothing changed.
             </Alert>
-          </>
-        ) : (
-          <>
-            <h1 className="type-h1">{question.title}</h1>
-            <p className="type-lead mt-4 text-foreground-soft">{page.item.title}</p>
-            {result === ANSWER_OUTCOMES.already ? (
-              <Alert variant="info" className="mt-6">
-                You&apos;d already done this in the app, so nothing changed.
-              </Alert>
-            ) : result && result !== ANSWER_OUTCOMES.done ? (
-              <Alert variant="destructive" className="mt-6">
-                {PROBLEMS[result] ?? "That didn't work. Try again from the app."}
-              </Alert>
-            ) : null}
-            <form method="post" action={`${API_ROUTES.weeklyAnswer}?token=${encodeURIComponent(token)}`} className="mt-7 grid gap-4">
-              {page.link.action === REPLY_CODES.help ? (
-                <div className="grid gap-2">
-                  <Label htmlFor="weekly-answer-words">A note for the asker (optional)</Label>
-                  <Textarea id="weekly-answer-words" name={WEEKLY_ANSWER_WORDS_FIELD} maxLength={500} placeholder="How you can help" />
-                </div>
-              ) : null}
-              <div>
-                <Button type="submit" size="lg" className="max-sm:w-full">
-                  {question.button}
-                </Button>
+          ) : result && result !== ANSWER_OUTCOMES.done ? (
+            <Alert variant="destructive" className="mt-4">
+              {PROBLEMS[result] ?? "That didn't work. Try again from the app."}
+            </Alert>
+          ) : null}
+          <form method="post" action={`${API_ROUTES.weeklyAnswer}?token=${encodeURIComponent(token)}`} className="mt-[18px] grid gap-4">
+            {page.link.action === REPLY_CODES.help ? (
+              <div className="grid gap-2">
+                <Label htmlFor="weekly-answer-words" className="fh-label">A note for the asker (optional)</Label>
+                <Textarea id="weekly-answer-words" name={WEEKLY_ANSWER_WORDS_FIELD} maxLength={500} placeholder="How you can help" />
               </div>
-            </form>
-          </>
-        )}
-        <div className="mt-5">
-          <Button asChild variant="quiet">
-            <Link href={ROUTES.feed}>Open {community.name}</Link>
-          </Button>
-        </div>
-      </div>
-    </SplitLayout>
+            ) : null}
+            <div>
+              <Button type="submit" width="block">
+                {question.button}
+              </Button>
+            </div>
+          </form>
+        </>
+      )}
+      <p className="fh-small mt-4">
+        <a href={ROUTES.feed}>Open {community.name}</a>
+      </p>
+    </PublicPage>
   );
 });

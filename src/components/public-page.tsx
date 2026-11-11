@@ -37,3 +37,23 @@ export function PublicPage({ community, withCredit = false, hosting, isWide = fa
     </div>
   );
 }
+
+type PublicMessageProps = {
+  community: { name: string; logo: CommunityLogo | null };
+  title: ReactNode;
+  children?: ReactNode;
+  // Founderhall's messagePage ends with one secondary button; badLinkPage with one primary.
+  action?: ReactNode;
+};
+
+// Founderhall's messagePage (views-public.mjs): a public card with a heading, a lede and one button row. Used by the
+// Community-only public pages (sign-up closed, unsubscribe, the weekly answer…) so they read like Founderhall's.
+export function PublicMessage({ community, title, children, action }: PublicMessageProps) {
+  return (
+    <PublicPage community={community}>
+      <h1 className="fh-h2">{title}</h1>
+      {children ? <div className="fh-lede">{children}</div> : null}
+      {action ? <div className="fh-btn-row mt-4">{action}</div> : null}
+    </PublicPage>
+  );
+}
