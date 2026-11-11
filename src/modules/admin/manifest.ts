@@ -13,5 +13,5 @@ export const adminManifest = {
   requires: [],
   navigation: [{ label: "Admin", href: ROUTES.admin, icon: ShieldCheck, section: NAVIGATION_SECTIONS.admin, badge: "admin" }],
   adminTabs: [],
-  paths: { pages: [ROUTES.admin], api: [API_ROUTES.branding, API_ROUTES.dataHome, "/api/admin/members", "/api/admin/reports", API_ROUTES.auditLog, API_ROUTES.moduleState, API_ROUTES.partnerReport, API_ROUTES.adminWeeklyEmail, API_ROUTES.adminEmail] },
+  paths: { pages: [ROUTES.admin], api: [API_ROUTES.branding, API_ROUTES.dataHome, "/api/admin/members", "/api/admin/reports", API_ROUTES.auditLog, API_ROUTES.moduleState, API_ROUTES.partnerReport, "/api/admin/intro-log", API_ROUTES.adminWeeklyEmail, API_ROUTES.adminEmail] },
 } satisfies CoreManifest;
