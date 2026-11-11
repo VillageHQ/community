@@ -104,7 +104,9 @@ export function readConsoleTabKey(pathname: string) {
 // Which member item a page lights: the longest menu address the page sits under. My profile and Your data light
 // My profile, never Directory.
 export function readMemberKey(pathname: string, items: readonly MenuPlace[]) {
-  if (isUnder(pathname, ROUTES.editCard) || isUnder(pathname, ROUTES.yourData)) return MEMBER_KEYS.me;
+  if (isUnder(pathname, ROUTES.editCard) || isUnder(pathname, ROUTES.yourData) || isUnder(pathname, ROUTES.myNetwork)) return MEMBER_KEYS.me;
+  // The guided ask is an intro being made (Founderhall lights Intros).
+  if (isUnder(pathname, ROUTES.guidedAsk) && items.some(({ key }) => key === MEMBER_KEYS.intros)) return MEMBER_KEYS.intros;
   const matches = items.filter(({ href }) => isUnder(pathname, href));
   return matches.sort((first, second) => second.href.length - first.href.length)[0]?.key ?? null;
 }

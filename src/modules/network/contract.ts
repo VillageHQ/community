@@ -68,7 +68,40 @@ export type NetworkStage = NetworkStatus["stage"];
 
 export const syncTokenSchema = z.object({ token: z.string() });
 
+// Where a search looks: the networks members share ("In our network"), or everyone Village knows ("Everywhere").
+export const SEARCH_WHERE = { network: "network", global: "global" } as const;
+export const searchWhereSchema = z.enum([SEARCH_WHERE.network, SEARCH_WHERE.global]);
+export type SearchWhere = z.infer<typeof searchWhereSchema>;
+export const SEARCH_SCOPE_PARAM = "scope";
+
+// One way in, through a member who shares their network: who they are, and Village's warmth word ("Close", "Met").
+const searchPathSchema = z.object({
+  memberId: z.string(),
+  name: z.string(),
+  // "CTO, Brightwater Logistics"
+  about: z.string().nullable(),
+  imageUrl: z.string().nullable(),
+  linkedinSlug: z.string().nullable(),
+  warmth: z.string().nullable(),
+});
+
+export type SearchPath = z.infer<typeof searchPathSchema>;
+
+const searchMemberSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  title: z.string().nullable(),
+  company: z.string().nullable(),
+  city: z.string().nullable(),
+  companyLogoUrl: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
+});
+
+export type SearchMember = z.infer<typeof searchMemberSchema>;
+
 export const networkSearchResultSchema = z.object({
+  query: z.string(),
+  scope: searchWhereSchema,
   people: z.array(
     z.object({
       fullName: z.string(),
@@ -78,12 +111,26 @@ export const networkSearchResultSchema = z.object({
       memberId: z.string().nullable(),
       // A member's own face, else the picture Village has of them.
       imageUrl: z.string().nullable(),
+      title: z.string().nullable(),
+      company: z.string().nullable(),
+      companyLogoUrl: z.string().nullable(),
+      city: z.string().nullable(),
+      // The searcher knows them first-hand: reach out yourself, no intro and no ask used.
+      direct: z.object({ how: z.string().nullable(), warmth: z.string().nullable() }).nullable(),
+      // The ways in through members who share, warmest first.
+      paths: z.array(searchPathSchema),
     }),
   ),
+  // Members matching the search, shown first as "Member" rows.
+  members: z.array(searchMemberSchema),
   discardedOffNetworkResults: z.boolean(),
   dailyLookupsLeft: z.number().int(),
   // False before the member connects: the search covered only the networks other members shared.
   includesOwnNetwork: z.boolean(),
+  // The same search in the last 10 minutes: no new lookup was spent.
+  isCached: z.boolean(),
+  // The community hasn't connected Village: only member profiles were searched.
+  isProfilesOnly: z.boolean(),
 });
 
 export type NetworkSearchResult = z.infer<typeof networkSearchResultSchema>;

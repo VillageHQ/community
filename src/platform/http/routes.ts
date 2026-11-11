@@ -24,7 +24,13 @@ export const ROUTES = {
   members: "/members",
   editCard: "/members/card",
   yourData: "/members/data",
-  network: "/network",
+  // Search (Founderhall's "/search"; the old "/network" redirects here), the guided ask, the intro ask page and My network.
+  network: "/search",
+  guidedAsk: "/ask",
+  introAsk: "/intros/new",
+  // The one-step ask from a search result (Founderhall keeps Search lit for it).
+  searchAsk: "/search/ask",
+  myNetwork: "/me/network",
   admin: "/admin",
   adminSetup: "/admin/setup",
   adminMembers: "/admin/members",

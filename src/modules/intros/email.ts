@@ -4,6 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
 import { introRequest } from "./schema.ts";
+import { memberProfile } from "../members/schema.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
 import { pickOnAccent } from "../../platform/design/accent.ts";
 import { readFirstName } from "../../platform/design/avatar-identity.ts";
@@ -157,6 +158,62 @@ export function renderIntroEmail(event: IntroEmailEvent, names: IntroEmailNames,
   return { subject, html, text: [body, replyLine, `${action}: ${link}`].filter(Boolean).join("\n\n") };
 }
 
+// The ask to the connector, as Founderhall writes it: plain words, the asker's note to forward, three answers and the
+// reply line. Its answer links open the intro, signed in, with the answer picked.
+export type AskedEmailFacts = {
+  communityName: string;
+  requesterName: string;
+  requesterAbout: string | null;
+  introducerName: string;
+  targetName: string;
+  targetAbout: string | null;
+  note: string;
+  link: string;
+};
+
+export const ASKED_ANSWERS = { yes: "yes", notNow: "not_now", dontKnow: "dont_know" } as const;
+export const ASKED_ANSWER_PARAM = "a";
+
+function withAnswer(link: string, answer: string) {
+  return `${link}?${ASKED_ANSWER_PARAM}=${answer}`;
+}
+
+export function renderAskedEmail(facts: AskedEmailFacts, canReply: boolean) {
+  const requester = toSingleLine(facts.requesterName);
+  const target = toSingleLine(facts.targetName);
+  const community = toSingleLine(facts.communityName);
+  const connectorFirst = readFirstName(toSingleLine(facts.introducerName));
+  const requesterFirst = readFirstName(requester);
+  const targetFirst = readFirstName(target);
+  const about = (text: string | null) => (text ? ` (${toSingleLine(text)})` : "");
+  const note = facts.note
+    .replace(/\r\n/g, "\n")
+    .trim()
+    .split("\n")
+    .map((line) => (line.trim() ? `  ${line}` : ""))
+    .join("\n");
+  const paragraphs = [
+    `Hi ${connectorFirst},`,
+    `${requester}${about(facts.requesterAbout)} asked ${community} for an intro to ${target}${about(facts.targetAbout)}, through you.`,
+    `${requesterFirst}'s note, written so you can forward it:`,
+    note,
+    "Would you introduce them?",
+    [
+      `Yes, introduce them: ${withAnswer(facts.link, ASKED_ANSWERS.yes)}`,
+      `Not this time: ${withAnswer(facts.link, ASKED_ANSWERS.notNow)}`,
+      `I don't know them well enough: ${withAnswer(facts.link, ASKED_ANSWERS.dontKnow)}`,
+    ].join("\n"),
+    canReply
+      ? `Or reply to this email with YES or NO on the first line. With a yes, put ${targetFirst}'s email on the next line: we email ${targetFirst} once, from ${community}, and introduce you only if ${targetFirst} says yes too.`
+      : null,
+    `If you say no, ${requesterFirst} is told you can't make this one, never why. Nobody is introduced without saying yes.`,
+    `Sent by ${community} via its member portal.`,
+  ].filter((paragraph): paragraph is string => paragraph !== null);
+  const text = paragraphs.join("\n\n");
+  const html = `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:22px;color:#1B2420;max-width:600px;white-space:pre-wrap">${escapeHtml(text)}</div>`;
+  return { subject: `${connectorFirst}, would you introduce ${requester} to ${target}?`, html, text };
+}
+
 const recentAsk = alias(introRequest, "recent_ask");
 
 async function claimAskedEmail(database: DatabaseOrTransaction, introId: string, { requesterId, introducerId }: IntroEmailParticipants) {
@@ -197,10 +254,15 @@ export async function queueIntroEmail(
       introducerId: introRequest.introducerId,
       introducerName: introRequest.introducerName,
       targetName: introRequest.targetName,
+      targetHeadline: introRequest.targetHeadline,
+      note: introRequest.note,
       requesterName: user.name,
+      requesterTitle: memberProfile.title,
+      requesterCompany: memberProfile.company,
     })
     .from(introRequest)
     .innerJoin(user, eq(user.id, introRequest.requesterId))
+    .leftJoin(memberProfile, eq(memberProfile.userId, introRequest.requesterId))
     .where(eq(introRequest.id, introId));
   if (!intro) return null;
   if (event === INTRO_EMAIL_EVENTS.asked && !(await claimAskedEmail(transaction, introId, intro))) return null;
@@ -213,13 +275,29 @@ export async function queueIntroEmail(
   const names = { requesterName: removeBidiControls(intro.requesterName), introducerName: intro.introducerName, targetName: intro.targetName };
   const signer = ANSWERABLE_BY_REPLY.includes(event) ? await resolveReplySigner(transaction, environment) : null;
   const replyTo = signer ? createReplyAddress(signer, REPLY_KINDS.introAsk, introId, { memberId: recipientId }) : null;
+  const rendered =
+    event === INTRO_EMAIL_EVENTS.asked
+      ? renderAskedEmail(
+          {
+            communityName: branding.name,
+            requesterName: names.requesterName,
+            requesterAbout: [intro.requesterTitle, intro.requesterCompany].filter(Boolean).join(", ") || null,
+            introducerName: intro.introducerName,
+            targetName: intro.targetName,
+            targetAbout: intro.targetHeadline,
+            note: intro.note,
+            link,
+          },
+          replyTo !== null,
+        )
+      : renderIntroEmail(event, names, link, branding.accentColor, replyTo !== null);
   return queueEmail(transaction, environment, {
     kind: KIND_BY_EVENT[event],
     to: recipient.email,
     memberId: recipientId,
     dedupeKey: `intro-${event}-${introId}`,
     replyTo,
-    ...renderIntroEmail(event, names, link, branding.accentColor, replyTo !== null),
+    ...rendered,
   });
 }
 
