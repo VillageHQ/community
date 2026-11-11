@@ -14,7 +14,10 @@ import { createSignedInMember } from "@/test/signed-in-member";
 
 import AdminHomePage from "@/app/(app)/admin/page";
 import type { AdminTabFacts } from "./admin-badges";
-import { ADMIN_HOME_ITEMS, readAdminHome, readAdminHomeItems } from "./admin-home";
+import { ADMIN_HOME_ITEMS, readAdminHome, readAdminHomeItems, readConsoleHomePage, readNeedsYouItems } from "./admin-home";
+import { countIntroLedger } from "./console-home";
+import { describeLaunchSteps, readFirstName, LAUNCH_STEPS } from "./console-launch";
+import { readIntroLog } from "@/modules/admin/reads-intro-log";
 
 const session = vi.hoisted(() => ({ cookie: "" }));
 
@@ -137,7 +140,7 @@ describe("the admin home", () => {
       ["Village refused your keys", `${ROUTES.adminSettings}?step=keys`],
       ["1 report waiting", ROUTES.adminReports],
       ["2 people waiting for your OK", ROUTES.adminMembers],
-      ["1 invite not accepted yet", `${ROUTES.adminMembers}#invites`],
+      ["1 invite not accepted yet", ROUTES.adminInvites],
       ["3 setup steps left", ROUTES.adminSetup],
     ]);
   });
@@ -146,6 +149,68 @@ describe("the admin home", () => {
     const facts = { ...QUIET_FACTS, villageTrouble: { trouble: VILLAGE_TROUBLES.keysRejected, troubleAt: null, lastOkAt: null } };
 
     expect(readAdminHomeItems(facts, { pendingInvites: 0, stuckIntros: 0, isNetworkOn: true })).toEqual([expect.objectContaining({ href: ROUTES.adminVillage })]);
+  });
+
+  it("counts every intro like Founderhall's ledger and never names anyone while names are off", async () => {
+    const now = new Date();
+    await seedIntro({ state: INTRO_STATES.completed, acceptedAt: now, askedTargetAt: now, targetAgreedAt: now, closedAt: now, outcome: INTRO_OUTCOMES.helped });
+    await seedIntro({ state: INTRO_STATES.askingTarget, askedTargetAt: now });
+    await seedIntro({});
+    await seedIntro({ state: INTRO_STATES.declined, closedAt: now });
+    await seedIntro({ state: INTRO_STATES.targetDeclined, askedTargetAt: now, closedAt: now });
+    await seedIntro({ state: INTRO_STATES.withdrawn, closedAt: now });
+    await seedIntro({ isWithheld: true });
+
+    const log = await readIntroLog(database);
+
+    expect(countIntroLedger(log)).toEqual({
+      asked: 5,
+      connectorYes: 3,
+      made: 1,
+      declinedByConnector: 1,
+      declinedByTarget: 1,
+      declined: 2,
+      openWithConnector: 1,
+      openWithTarget: 1,
+      open: 2,
+      answered: 1,
+      helpful: 1,
+    });
+    expect(JSON.stringify(log)).not.toMatch(/Target Tess|Connector Cleo/);
+  });
+
+  it("opens on the launch checklist on a fresh install, and on the dashboard once all four steps are done", async () => {
+    const fresh = await readConsoleHomePage(database, process.env);
+
+    expect(fresh.isLaunched).toBe(false);
+    expect(fresh.home).toBeNull();
+    expect(fresh.steps.map(({ key, isDone }) => [key, isDone])).toEqual([
+      [LAUNCH_STEPS.look, false],
+      [LAUNCH_STEPS.invite, false],
+      [LAUNCH_STEPS.plumbing, false],
+      [LAUNCH_STEPS.report, false],
+    ]);
+  });
+
+  it("words each launch step like Founderhall, with its link", () => {
+    const facts = { communityName: "Harbor Ventures", isLookSet: false, hasLogo: false, invitesSent: 2, isMailSet: false, isNetworkSet: false, mailDomain: null, hasMadeIntro: false };
+    const text = describeLaunchSteps(facts).map(({ text: parts }) => parts.map(({ text: words }) => words).join(""));
+
+    expect(text).toEqual([
+      "Your fund’s name, colour and logo on every page and email. Set your look →",
+      "2 invites sent. Invite more →",
+      "Set up mail so invites and digests are emailed. Connect Village so founders can connect their networks and search finds warm paths.",
+      "Appears here the day the first intro is counted. You can send it to partners as a PDF.",
+    ]);
+    expect(describeLaunchSteps({ ...facts, isLookSet: true, hasLogo: true, isMailSet: true, isNetworkSet: true, mailDomain: "mail.harbor.example", hasMadeIntro: true }).map(({ isDone }) => isDone)).toEqual([true, true, true, true]);
+    expect(readFirstName("Dana Whitfield", "x@example.com")).toBe("Dana");
+    expect(readFirstName("", "dana.whitfield@example.com")).toBe("Dana");
+  });
+
+  it("leaves invites and setup out of Home's note: they have their own places there", () => {
+    const items = readAdminHomeItems({ ...QUIET_FACTS, reportsBadge: 1, setupStepsLeft: 2 }, { pendingInvites: 3, stuckIntros: 0 });
+
+    expect(readNeedsYouItems(items).map(({ id }) => id)).toEqual([ADMIN_HOME_ITEMS.reports]);
   });
 
   it("sends a member who isn't an admin away", async () => {

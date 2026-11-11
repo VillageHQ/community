@@ -38,4 +38,6 @@ export const INSTANCE_SETTING_KEYS = {
   // Written only by the demo seed (DEMO_MODE=true). Its presence is what lets demo mode start on a database with members.
   demoSeededAt: "demo_seeded_at",
   demoResetAt: "demo_reset_at",
+  // When the console's launch checklist was first all done; from then on the console opens on Home's dashboard.
+  consoleLaunchedAt: "console_launched_at",
 } as const;
