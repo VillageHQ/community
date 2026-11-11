@@ -8,7 +8,8 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { ASK_KINDS, ASK_LIMITS, ASK_OUTCOMES, type AskCategory } from "../asks/contract.ts";
 import { ask, askAnswer, askOffer } from "../asks/schema.ts";
-import { INTRO_STATES, OUTCOME_PROMPT_AFTER_DAYS } from "../intros/contract.ts";
+import { INTRO_STATES } from "../intros/contract.ts";
+import { readOutcomeDays } from "../intros/reads-outcome-days.ts";
 import { expireDueIntros } from "../intros/reads.ts";
 import { introRequest } from "../intros/schema.ts";
 import { memberProfile } from "../members/schema.ts";
@@ -111,9 +112,15 @@ async function readAskStats(database: Database, period: Period, now: Date): Prom
 export async function readReportStats(database: Database, param: ConsolePeriodParam, now = new Date()): Promise<ReportStats> {
   const period = readConsolePeriod(param, now);
   await expireDueIntros(database, null);
-  const [{ isAsksOn }, branding, rows, firstAskAt] = await Promise.all([readReportOptions(database), readBranding(database), readIntroRows(database, period, now), readFirstAskAt(database)]);
+  const [{ isAsksOn }, branding, rows, firstAskAt, outcomeDays] = await Promise.all([
+    readReportOptions(database),
+    readBranding(database),
+    readIntroRows(database, period, now),
+    readFirstAskAt(database),
+    readOutcomeDays(database),
+  ]);
   const asks = isAsksOn ? await readAskStats(database, period, now) : null;
-  const intros = computeReportStats(rows, { now, outcomeDays: OUTCOME_PROMPT_AFTER_DAYS });
+  const intros = computeReportStats(rows, { now, outcomeDays });
   return {
     communityName: branding.name,
     period,
