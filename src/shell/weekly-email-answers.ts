@@ -132,7 +132,7 @@ export async function answerFromLink(database: Database, environment: Environmen
 
 export type ReplyResult = { routed: boolean; reason: string | null; results: { code: string; outcome: AnswerOutcome }[] };
 
-async function readReplyText(environment: Environment, received: ReceivedEmail) {
+export async function readReplyText(environment: Environment, received: ReceivedEmail) {
   if (received.text !== null) return received.text;
   const config = readResendConfig(environment);
   if (!config || !received.emailId) return null;

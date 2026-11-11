@@ -17,6 +17,7 @@ import { MemberDirectory } from "@/modules/members/components/member-directory";
 import { directoryQuery } from "@/modules/members/queries-directory";
 import { membersManifest } from "@/modules/members/manifest";
 import { modulePage } from "@/platform/modules/module-page";
+import { readHiringLookup } from "@/shell/directory-hiring";
 
 export const metadata: Metadata = { title: PAGE_TITLES.members };
 
@@ -30,7 +31,8 @@ type MembersPageProps = { searchParams: Promise<Record<string, string | string[]
 export default modulePage(membersManifest, async function MembersPage({ searchParams }: MembersPageProps) {
   const { id: viewerId } = await requireMember();
   const filters = parseDirectoryFilters(await searchParams);
-  const [directory, community] = await Promise.all([readDirectory(getDatabase(), filters), readBrandingForPage()]);
+  const database = getDatabase();
+  const [directory, community] = await Promise.all([readDirectory(database, filters, new Date(), await readHiringLookup(database)), readBrandingForPage()]);
 
   const queryClient = new QueryClient();
   queryClient.setQueryData(directoryQuery(filters).queryKey, directory);

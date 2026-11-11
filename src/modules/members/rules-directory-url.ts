@@ -6,9 +6,10 @@ const STAGE_PARAM = "stage";
 const SECTOR_PARAM = "sector";
 const COHORT_PARAM = "cohort";
 const UPDATED_PARAM = "updated";
+const HIRING_PARAM = "hiring";
 const PAGE_PARAM = "page";
 
-export const EMPTY_DIRECTORY_FILTERS: DirectoryFilters = { search: "", tag: "", stage: "", sector: "", cohort: "", updatedWithinDays: 0, page: 1 };
+export const EMPTY_DIRECTORY_FILTERS: DirectoryFilters = { search: "", tag: "", stage: "", sector: "", cohort: "", updatedWithinDays: 0, hiring: false, page: 1 };
 
 type SearchParamValue = string | string[] | undefined;
 
@@ -33,16 +34,17 @@ export function parseDirectoryFilters(params: Record<string, SearchParamValue>):
     sector: readFirstValue(params[SECTOR_PARAM]),
     cohort: readFirstValue(params[COHORT_PARAM]),
     updatedWithinDays: readUpdatedWithinDays(readFirstValue(params[UPDATED_PARAM])),
+    hiring: readFirstValue(params[HIRING_PARAM]) === "1",
     page: readPage(readFirstValue(params[PAGE_PARAM])),
   });
   return filters.success ? filters.data : EMPTY_DIRECTORY_FILTERS;
 }
 
-export function hasDirectoryFilters({ search, tag, stage, sector, cohort, updatedWithinDays }: DirectoryFilters) {
-  return Boolean(search || tag || stage || sector || cohort || updatedWithinDays);
+export function hasDirectoryFilters({ search, tag, stage, sector, cohort, updatedWithinDays, hiring }: DirectoryFilters) {
+  return Boolean(search || tag || stage || sector || cohort || updatedWithinDays || hiring);
 }
 
-export function toDirectoryQueryString({ search, tag, stage, sector, cohort, updatedWithinDays, page }: DirectoryFilters) {
+export function toDirectoryQueryString({ search, tag, stage, sector, cohort, updatedWithinDays, hiring, page }: DirectoryFilters) {
   const params = new URLSearchParams();
   if (search) params.set(SEARCH_PARAM, search);
   if (tag) params.set(TAG_PARAM, tag);
@@ -50,6 +52,7 @@ export function toDirectoryQueryString({ search, tag, stage, sector, cohort, upd
   if (sector) params.set(SECTOR_PARAM, sector);
   if (cohort) params.set(COHORT_PARAM, cohort);
   if (updatedWithinDays) params.set(UPDATED_PARAM, String(updatedWithinDays));
+  if (hiring) params.set(HIRING_PARAM, "1");
   if (page > 1) params.set(PAGE_PARAM, String(page));
   const queryString = params.toString();
   return queryString ? `?${queryString}` : "";

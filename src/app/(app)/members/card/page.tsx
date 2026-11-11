@@ -38,6 +38,10 @@ import { LookupQuestionCard } from "@/modules/members/components/lookup-question
 import { FillInNowButton } from "@/modules/network/components/fill-in-now-button";
 import { VillageDisclosure } from "@/modules/network/components/village-disclosure";
 import { readBrandingForPage } from "@/platform/branding/branding";
+import { isAdminMember } from "@/platform/auth/roles";
+import { CardJobsSection } from "@/modules/job-board/components/card-jobs-section";
+import { jobBoardManifest } from "@/modules/job-board/manifest";
+import { readMemberSources } from "@/modules/job-board/reads";
 
 // A topic with no module is always offered: the weekly email works whatever is on.
 const TOPIC_MODULES = [
@@ -89,7 +93,12 @@ export default modulePage(membersManifest, async function EditCardPage() {
     readFillIn(database, member.id),
     hasPassword(database, member.id),
   ]);
-  const [isIntrosOn, isReportCreditOn] = await Promise.all([isModuleEnabled(database, introsManifest), readReportCredit(database, member.id)]);
+  const [isIntrosOn, isReportCreditOn, isJobBoardOn] = await Promise.all([
+    isModuleEnabled(database, introsManifest),
+    readReportCredit(database, member.id),
+    isModuleEnabled(database, jobBoardManifest),
+  ]);
+  const jobSources = isJobBoardOn ? await readMemberSources(database, member.id) : null;
 
   return (
     <div className="mx-auto max-w-[720px]">
@@ -108,6 +117,7 @@ export default modulePage(membersManifest, async function EditCardPage() {
       <div className="rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
         <CardForm profile={profile} />
       </div>
+      {jobSources ? <CardJobsSection sources={jobSources} company={profile.company ?? ""} isCompanyFixed={!isAdminMember(member)} /> : null}
       {isNetworkOn && fillIn?.state.needsAnswer ? (
         <div className="mt-5">
           <LookupQuestionCard communityName={(await readBrandingForPage()).name} />

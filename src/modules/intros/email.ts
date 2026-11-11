@@ -10,6 +10,7 @@ import { readFirstName } from "../../platform/design/avatar-identity.ts";
 import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
 import { EMAIL_KINDS, type EmailKind } from "../../platform/email/kinds.ts";
 import { queueEmail, readEmailBranding, type EmailBranding } from "../../platform/email/outbox.ts";
+import { createReplyAddress, REPLY_KINDS, resolveReplySigner } from "../../platform/email/reply-address.ts";
 import { sendQueuedEmailNow } from "../../platform/email/outbox-sender.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
@@ -130,20 +131,30 @@ const KIND_BY_EVENT: Record<IntroEmailEvent, EmailKind> = {
 
 export type IntroEmailFacts = IntroEmailParticipants & IntroEmailNames & { introId: string; event: IntroEmailEvent };
 
-export function renderIntroEmail(event: IntroEmailEvent, names: IntroEmailNames, link: string, accentColor: string) {
+// The connector answers these by replying YES or NO, when replies are on.
+const ANSWERABLE_BY_REPLY: readonly IntroEmailEvent[] = [INTRO_EMAIL_EVENTS.asked, INTRO_EMAIL_EVENTS.connectorReminder];
+
+export const INTRO_REPLY_LINES = {
+  on: "Or reply to this email with YES or NO on the first line. To have us email them the note, put their email address after YES.",
+  off: "Reply in the app.",
+} as const;
+
+export function renderIntroEmail(event: IntroEmailEvent, names: IntroEmailNames, link: string, accentColor: string, canReply = false) {
   const { subject, heading, body, action } = INTRO_EMAIL_COPY[event]({
     requesterName: toSingleLine(names.requesterName),
     introducerName: toSingleLine(names.introducerName),
     targetName: toSingleLine(names.targetName),
   });
+  const replyLine = ANSWERABLE_BY_REPLY.includes(event) ? (canReply ? INTRO_REPLY_LINES.on : INTRO_REPLY_LINES.off) : null;
   const html = [
     `<div style="font-family:Arial,sans-serif;font-size:16px;line-height:24px;color:#0c2427;max-width:520px;margin:0 auto;padding:24px">`,
     `<h1 style="font-size:24px;line-height:30px;margin:0 0 12px">${escapeHtml(heading)}</h1>`,
     `<p style="margin:0 0 24px">${escapeHtml(body)}</p>`,
+    replyLine ? `<p style="margin:0 0 24px">${escapeHtml(replyLine)}</p>` : "",
     `<a href="${escapeHtml(link)}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${accentColor};color:${pickOnAccent(accentColor)};font-weight:700;text-decoration:none">${escapeHtml(action)}</a>`,
     `</div>`,
   ].join("");
-  return { subject, html, text: `${body}\n\n${action}: ${link}` };
+  return { subject, html, text: [body, replyLine, `${action}: ${link}`].filter(Boolean).join("\n\n") };
 }
 
 const recentAsk = alias(introRequest, "recent_ask");
@@ -200,12 +211,15 @@ export async function queueIntroEmail(
 
   const link = `${resolveAppUrl(environment)}${ROUTES.intros}/${introId}`;
   const names = { requesterName: removeBidiControls(intro.requesterName), introducerName: intro.introducerName, targetName: intro.targetName };
+  const signer = ANSWERABLE_BY_REPLY.includes(event) ? await resolveReplySigner(transaction, environment) : null;
+  const replyTo = signer ? createReplyAddress(signer, REPLY_KINDS.introAsk, introId, { memberId: recipientId }) : null;
   return queueEmail(transaction, environment, {
     kind: KIND_BY_EVENT[event],
     to: recipient.email,
     memberId: recipientId,
     dedupeKey: `intro-${event}-${introId}`,
-    ...renderIntroEmail(event, names, link, branding.accentColor),
+    replyTo,
+    ...renderIntroEmail(event, names, link, branding.accentColor, replyTo !== null),
   });
 }
 

@@ -58,6 +58,8 @@ export const jobPosting = pgTable(
     postedAt: jobTimestamp("posted_at"),
     // Added by hand: a pull never removes it.
     isManual: boolean("is_manual").notNull().default(false),
+    // When this job first appeared here. A pull keeps it, so Today can tell a new job from one seen before.
+    firstSeenAt: jobTimestamp("first_seen_at").notNull().defaultNow(),
     updatedAt: jobTimestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [unique("job_posting_source_external_unique").on(table.sourceId, table.externalId), index("job_posting_source_idx").on(table.sourceId)],
