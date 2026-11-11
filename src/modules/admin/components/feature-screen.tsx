@@ -6,9 +6,9 @@ import { useState, type ReactNode } from "react";
 
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
+import { SetRow } from "@/components/ui/rows";
 import { Switch } from "@/components/ui/switch";
-import { Tag } from "@/components/ui/tag";
 
 import { setModuleStateRequest } from "../queries-modules";
 import { ConfirmDialog } from "./confirm-dialog";
@@ -27,10 +27,6 @@ export type Feature = {
 
 type CoreModule = { id: string; label: string; description: string; icon: ReactNode };
 
-function FeatureIcon({ children }: { children: ReactNode }) {
-  return <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground [&_svg]:size-icon">{children}</span>;
-}
-
 function toCardId(moduleId: string) {
   return `feature-card-${moduleId}`;
 }
@@ -41,7 +37,7 @@ function TurnOffSwitch({ feature, onChanged }: { feature: Feature; onChanged: Ch
   const { id, label, dependentLabels, turnOffNote } = feature;
   return (
     <ConfirmDialog
-      trigger={<Switch size="large" checked aria-label={label} />}
+      trigger={<Switch checked aria-label={label} />}
       title={`Turn off ${label}?`}
       confirmLabel={`Turn off ${label}`}
       pendingLabel="Turning off…"
@@ -67,7 +63,7 @@ function TurnOnSwitch({ feature, onChanged }: { feature: Feature; onChanged: Cha
   const turnOn = useTurnOn(feature.id, onChanged);
   return (
     <div className="grid justify-items-end gap-2">
-      <Switch size="large" checked={false} aria-label={feature.label} disabled={turnOn.isPending} onCheckedChange={() => turnOn.mutate()} />
+      <Switch checked={false} aria-label={feature.label} disabled={turnOn.isPending} onCheckedChange={() => turnOn.mutate()} />
       <FormError message={turnOn.error?.message ?? null} />
     </div>
   );
@@ -76,8 +72,8 @@ function TurnOnSwitch({ feature, onChanged }: { feature: Feature; onChanged: Cha
 function TurnOnRequirementButton({ requirement, onChanged }: { requirement: { id: string; label: string }; onChanged: ChangeHandler }) {
   const turnOn = useTurnOn(requirement.id, onChanged);
   return (
-    <div className="grid justify-items-start gap-2 max-sm:w-full">
-      <Button type="button" size="lg" className="max-sm:w-full" disabled={turnOn.isPending} onClick={() => turnOn.mutate()}>
+    <div className="grid justify-items-end gap-2">
+      <Button type="button" variant="secondary" size="sm" className="whitespace-nowrap" disabled={turnOn.isPending} onClick={() => turnOn.mutate()}>
         {turnOn.isPending ? "Turning on…" : `Turn on ${requirement.label}`}
       </Button>
       <FormError message={turnOn.error?.message ?? null} />
@@ -90,28 +86,23 @@ function FeatureAction({ feature, onChanged }: { feature: Feature; onChanged: Ch
   return feature.isOn ? <TurnOffSwitch feature={feature} onChanged={onChanged} /> : <TurnOnSwitch feature={feature} onChanged={onChanged} />;
 }
 
-function FeatureStatus({ feature }: { feature: Feature }) {
-  const { isOn, missingRequirement } = feature;
-  if (missingRequirement) return <Tag tone="gold">Paused: needs {missingRequirement.label}</Tag>;
-  return isOn ? <Tag tone="sage">On</Tag> : <Tag>Off</Tag>;
-}
-
-function FeatureCard({ feature, onChanged }: { feature: Feature; onChanged: ChangeHandler }) {
-  const { id, label, description, icon, needsVillage } = feature;
+// One Founderhall setting row per feature (crop setrow.png): its name and one line left, its switch right. A feature
+// paused because what it needs is off says so, and offers to turn that on instead of a switch.
+function FeatureRow({ feature, onChanged }: { feature: Feature; onChanged: ChangeHandler }) {
+  const { id, label, description, needsVillage, missingRequirement } = feature;
   return (
-    <li>
-      <Card id={toCardId(id)} tabIndex={-1} className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
-        <FeatureIcon>{icon}</FeatureIcon>
-        <div className="grid gap-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <CardTitle>{label}</CardTitle>
-            <FeatureStatus feature={feature} />
-            {needsVillage ? <Tag>Needs a Village account</Tag> : null}
-          </div>
-          <CardDescription>{description}</CardDescription>
-        </div>
-        <FeatureAction feature={feature} onChanged={onChanged} />
-      </Card>
+    <li id={toCardId(id)} tabIndex={-1} className="rounded-sm border-b border-rule outline-offset-2 last:border-b-0 [&_.fh-setrow]:border-b-0">
+      <SetRow
+        label={label}
+        hint={
+          <>
+            {description}
+            {needsVillage ? " Needs a Village account." : null}
+            {missingRequirement ? <span className="mt-0.5 font-semibold text-ribbon">Paused: needs {missingRequirement.label}</span> : null}
+          </>
+        }
+        control={<FeatureAction feature={feature} onChanged={onChanged} />}
+      />
     </li>
   );
 }
@@ -127,31 +118,37 @@ export function FeatureScreen({ features, coreModules }: { features: Feature[]; 
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="fh-grid">
       <p role="status" className="sr-only">
         {announcement}
       </p>
-      <ul aria-label="Features you can turn on and off" className="grid gap-3.5">
-        {features.map((feature) => (
-          <FeatureCard key={feature.id} feature={feature} onChanged={handleChanged} />
-        ))}
-      </ul>
-      <section aria-labelledby="always-on-title" className="grid gap-3">
-        <h2 id="always-on-title" className="type-h3">
-          Always on
-        </h2>
-        <ul className="grid gap-2.5 sm:grid-cols-2">
-          {coreModules.map(({ id, label, description, icon }) => (
-            <li key={id} className="flex items-center gap-3.5 rounded-card bg-muted p-4">
-              <FeatureIcon>{icon}</FeatureIcon>
-              <div>
-                <p className="type-label">{label}</p>
-                <p className="type-small text-foreground-soft">{description}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <div className="fh-c7 fh-stack">
+        <Card className="fh-sheet">
+          <h2 className="type-h3">Switches</h2>
+          <p className="fh-small fh-muted mt-1.5">Off hides a feature from members and keeps its data; on brings it all back.</p>
+          <ul aria-label="Features you can turn on and off" className="mt-1.5">
+            {features.map((feature) => (
+              <FeatureRow key={feature.id} feature={feature} onChanged={handleChanged} />
+            ))}
+          </ul>
+        </Card>
+      </div>
+      <div className="fh-c5 fh-stack max-lg:mt-4">
+        <Card className="fh-sheet">
+          <section aria-labelledby="always-on-title">
+            <h2 id="always-on-title" className="type-h3">
+              Always on
+            </h2>
+            <ul className="mt-1.5">
+              {coreModules.map(({ id, label, description }) => (
+                <li key={id} className="border-b border-rule last:border-b-0 [&_.fh-setrow]:border-b-0">
+                  <SetRow label={label} hint={description} control={null} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        </Card>
+      </div>
     </div>
   );
 }

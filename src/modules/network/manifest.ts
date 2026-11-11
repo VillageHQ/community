@@ -14,9 +14,9 @@ export const networkManifest = {
   needsVillage: true,
   requires: [],
   navigation: [{ label: "Meet", href: ROUTES.network, icon: Waypoints, section: NAVIGATION_SECTIONS.primary }],
-  adminTabs: [{ label: "Credits", href: ROUTES.adminCredits }],
+  adminTabs: [{ label: "Village", href: ROUTES.adminVillage }],
   paths: {
-    pages: [ROUTES.network, ROUTES.adminCredits, ROUTES.adminVillage],
+    pages: [ROUTES.network, ROUTES.adminVillage],
     api: ["/api/network", "/api/admin/village", API_ROUTES.dailyLimit, API_ROUTES.monthlyCap],
   },
 } satisfies ToggleableManifest;

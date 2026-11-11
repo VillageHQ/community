@@ -7,7 +7,7 @@ export const POST = chatRoutes.member(
   chatPauseBodySchema,
   async (context, { kind, isPaused }) => {
     await setChatPaused(context, kind, isPaused);
-    return Response.json({ message: isPaused ? "Posting paused." : "Posting is back on. Asks from now on are posted." });
+    return Response.json({ message: isPaused ? "Posting paused." : "Posting is back on." });
   },
   { adminOnly: true },
 );
