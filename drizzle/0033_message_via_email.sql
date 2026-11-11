@@ -1,1 +1,0 @@
-ALTER TABLE "direct_message" ADD COLUMN "is_via_email" boolean DEFAULT false NOT NULL;
