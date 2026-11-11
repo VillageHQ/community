@@ -1,4 +1,5 @@
-// The made-up people's pictures, bundled in public/demo/: a drawn face per person, a drawn mark per company.
+// The made-up people's pictures, bundled in public/demo/: a generated portrait per person (none is a real person,
+// see public/demo/CREDITS.md), a drawn mark per company.
 // Demo mode and the test fakes hand these out as the pictures public profiles found.
 
 const DEMO_PICTURES_PATH = "/demo";
@@ -13,7 +14,7 @@ export function toPictureSlug(text: string) {
 }
 
 export function toDemoFaceUrl(name: string) {
-  return `${DEMO_PICTURES_PATH}/faces/${toPictureSlug(name)}.svg`;
+  return `${DEMO_PICTURES_PATH}/faces/${toPictureSlug(name)}.webp`;
 }
 
 export function toDemoLogoUrl(company: string) {

@@ -25,7 +25,7 @@ async function askDemoVillage(path: string, body: object) {
 }
 
 describe("demo pictures", () => {
-  it("bundles a drawn face for every made-up person and a drawn mark for every made-up company", () => {
+  it("bundles a portrait for every made-up person and a drawn mark for every made-up company", () => {
     const people = [...DEMO_PEOPLE, ...DEMO_INVITEES, ...DEMO_OUTSIDERS];
     expect(people.map(({ name }) => toDemoFaceUrl(name)).filter((url) => !isBundled(url))).toEqual([]);
     expect(people.map(({ company }) => toDemoLogoUrl(company)).filter((url) => !isBundled(url))).toEqual([]);
@@ -38,5 +38,24 @@ describe("demo pictures", () => {
     expect(found.status).toBe(200);
     expect(found.body.data).toMatchObject({ avatar: toDemoFaceUrl(member.name), work_relevant: { company: { image_url: toDemoLogoUrl(member.company) } } });
     expect((await askDemoVillage("/v2/people/enrich/by-email", { email: "someone@example.com" })).status).toBe(404);
+  });
+});
+
+describe("old drawn-face links", () => {
+  it("redirect to the portrait, so a demo seeded before the portraits keeps its faces until its reset", async () => {
+    const { createRequire } = await import("node:module");
+    const { nextConfig } = await import("../../../next.config.mjs");
+    const { pathToRegexp, compile } = createRequire(import.meta.url)("next/dist/compiled/path-to-regexp") as {
+      pathToRegexp: (source: string, keys: { name: string }[], options: object) => RegExp;
+      compile: (path: string) => (params: object) => string;
+    };
+    const rule = (await nextConfig.redirects()).find(({ source }) => source.startsWith("/demo/faces/"));
+    const keys: { name: string }[] = [];
+    const match = pathToRegexp(rule?.source ?? "", keys, { strict: true, sensitive: false, delimiter: "/" }).exec("/demo/faces/sam-lee.svg");
+
+    expect(match?.[1]).toBe("sam-lee");
+    const destination = compile(rule?.destination ?? "")({ [keys[0]?.name ?? ""]: match?.[1] });
+    expect(destination).toBe("/demo/faces/sam-lee.webp");
+    expect(isBundled(destination)).toBe(true);
   });
 });

@@ -22,7 +22,7 @@ from the profile fill-in (Village's public profile of the member), with the same
   fill-in panel and in the export, shown nowhere else).
 - **Safe links only:** a picture is shown only from an https link or the app's own `/demo/...` drawings.
 - **Your data:** the export lists the face and logo links and whether each is on show.
-- **Demo:** drawn made-up faces and company marks in `public/demo/`. Demo mode seeds the fill-in for every made-up
+- **Demo:** generated portraits of people who do not exist (webp, sources and licence in `public/demo/CREDITS.md`) and drawn company marks in `public/demo/`. Demo mode seeds the fill-in for every made-up
   member (Lena said "Don't look me up" and keeps her initials; public profiles still list Grace at her last company,
   so her card shows no logo), and its canned Village answers carry the same pictures. The test fake Village does too.
 - **Not done, on purpose:** emails and the public job board stay text-only; the fund's own logo is the Settings one.
