@@ -36,6 +36,8 @@ export const ROUTES = {
   adminFeatures: "/admin/features",
   adminSettings: "/admin/settings",
   adminWeeklyEmail: "/admin/weekly-email",
+  adminVillage: "/admin/village",
+  adminEmail: "/admin/email",
 } as const;
 
 export const AUTH_BASE_PATH = "/api/auth";
@@ -153,4 +155,6 @@ export const API_ROUTES = {
   villageSettings: "/api/admin/village/settings",
   villageLinks: "/api/admin/village/links",
   villageLinkReset: "/api/admin/village/links/reset",
+  villageCheck: "/api/admin/village/check",
+  adminDoNotSend: "/api/admin/email/do-not-send",
 } as const;

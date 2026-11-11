@@ -17,15 +17,24 @@ function readVercelButtonLinks(file: string) {
 
 // Every supported setup runs the timed jobs (weekly email, reminders, nightly tasks) without the owner adding anything.
 describe("every deploy setup runs the timed jobs", () => {
-  it("Vercel: a cron calls the tick endpoint, and both buttons ask for the CRON_SECRET it sends", () => {
+  it("Vercel: a cron calls the tick endpoint, and the README's button asks for the CRON_SECRET it sends", () => {
     const { crons } = JSON.parse(readRepositoryFile("vercel.json")) as { crons: { path: string; schedule: string }[] };
     expect(crons).toEqual([expect.objectContaining({ path: API_ROUTES.jobsTick })]);
     // Vercel's free plan refuses a cron that runs more than once a day, so the button keeps working there.
     expect(crons[0]?.schedule).toMatch(/^\d+ \d+ \* \* \*$/);
 
-    const links = [...readVercelButtonLinks("README.md"), ...readVercelButtonLinks("site/index.html")];
-    expect(links).toHaveLength(2);
+    const links = readVercelButtonLinks("README.md");
+    expect(links).toHaveLength(1);
     for (const link of links) expect(link.searchParams.get("env")?.split(",")).toEqual(["SETUP_TOKEN", "CRON_SECRET"]);
+  });
+
+  // The website offers no Vercel button until a live test shows the weekly email sends there.
+  it("the website has no Vercel button, and keeps DigitalOcean and the self-host guide", () => {
+    const site = readRepositoryFile("site/index.html");
+    expect(readVercelButtonLinks("site/index.html")).toEqual([]);
+    expect(site).not.toMatch(/Deploy on Vercel/);
+    expect(site).toMatch(/cloud\.digitalocean\.com\/apps\/new/);
+    expect(site).toMatch(/docs\/self-host-vps\.md/);
   });
 
   it("DigitalOcean: the template switches on the self-tick on the port the app listens on", () => {

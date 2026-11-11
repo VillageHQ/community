@@ -123,6 +123,7 @@ Some placements aren't obvious:
 | The real delete | `shell/account-deletion.ts` | It erases rows in every module in one transaction, in a fixed order, after Village is asked to remove the member. Each module's part is its own `service-erasure.ts`. |
 | `ask_tally` | `asks/schema.ts` | A deleted account's asks, as anonymous counts the partner report adds in. |
 | Reports | `admin/service-reports.ts` | Feature routes like `/api/feed/report` call it. |
+| Replies by email | `platform/email/reply-address.ts`, `shell/email-replies.ts` | The signed address is infrastructure; routing a reply to messages, intros or asks reads several modules. The webhook tries the weekly email first. |
 | Credit usage | `network/reads-credits.ts` | It only reads Village usage. |
 | `/admin/credits`, `/api/admin/village/*` | Network | The admin URL is cosmetic. |
 | `resolveOnboardingStep` | `shell/onboarding.ts` | It needs members and network. |

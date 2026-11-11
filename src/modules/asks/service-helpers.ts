@@ -10,6 +10,7 @@ import { readFirstName } from "../../platform/design/avatar-identity.ts";
 import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
 import { EMAIL_KINDS } from "../../platform/email/kinds.ts";
 import { queueEmail, readEmailBranding, type EmailBranding } from "../../platform/email/outbox.ts";
+import { createReplyAddress, REPLY_KINDS, resolveReplySigner } from "../../platform/email/reply-address.ts";
 import { sendQueuedEmailsSoon } from "../../platform/email/outbox-sender.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
@@ -72,23 +73,30 @@ function mergeHelpers(authorId: string, lookup: PathLookup | null, wordHelpers: 
 
 type AskForEmail = { id: string; title: string; authorName: string };
 
-function renderHelperEmail(environment: Environment, branding: EmailBranding, routed: AskForEmail, why: string) {
+export const HELPER_REPLY_LINES = {
+  on: "Or reply to this email with what you'd tell them, and we'll post it as your answer under the ask.",
+  off: "Reply in the app.",
+} as const;
+
+function renderHelperEmail(environment: Environment, branding: EmailBranding, routed: AskForEmail, why: string, canReply: boolean) {
   const authorName = toSingleLine(removeBidiControls(routed.authorName));
   const title = toSingleLine(removeBidiControls(routed.title));
   const link = `${resolveAppUrl(environment)}${ASKS_PAGE}`;
   const subject = `${readFirstName(authorName)} asked for something you may help with`;
   const body = `${authorName} posted an ask in ${branding.name}: "${title}". We thought of you because of this: ${why}`;
   const closing = "If you know someone, or you've done this yourself, one tap on the ask is enough. If not, there's nothing to do.";
+  const replyLine = canReply ? HELPER_REPLY_LINES.on : HELPER_REPLY_LINES.off;
   const action = "See the ask";
   const html = [
     `<div style="font-family:Arial,sans-serif;font-size:16px;line-height:24px;color:#0c2427;max-width:520px;margin:0 auto;padding:24px">`,
     `<h1 style="font-size:24px;line-height:30px;margin:0 0 12px">${escapeHtml("Someone may need you")}</h1>`,
     `<p style="margin:0 0 12px">${escapeHtml(body)}</p>`,
-    `<p style="margin:0 0 24px">${escapeHtml(closing)}</p>`,
+    `<p style="margin:0 0 12px">${escapeHtml(closing)}</p>`,
+    `<p style="margin:0 0 24px">${escapeHtml(replyLine)}</p>`,
     `<a href="${escapeHtml(link)}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${branding.accentColor};color:${pickOnAccent(branding.accentColor)};font-weight:700;text-decoration:none">${escapeHtml(action)}</a>`,
     `</div>`,
   ].join("");
-  return { subject, html, text: `${body}\n\n${closing}\n\n${action}: ${link}` };
+  return { subject, html, text: `${body}\n\n${closing}\n\n${replyLine}\n\n${action}: ${link}` };
 }
 
 // Saves the helpers and queues each one's email in one transaction. A helper already on the ask is skipped, and
@@ -109,6 +117,7 @@ async function saveHelpers(transaction: Transaction, environment: Environment, b
     .returning({ helperId: askHelper.helperId, why: askHelper.why });
   if (!branding) return saved.length;
 
+  const signer = await resolveReplySigner(transaction, environment);
   for (const { helperId, why } of saved) {
     const [claimed] = await transaction
       .update(askHelper)
@@ -117,12 +126,14 @@ async function saveHelpers(transaction: Transaction, environment: Environment, b
       .returning({ helperId: askHelper.helperId });
     const to = emails.get(helperId);
     if (!claimed || !to) continue;
+    const replyTo = signer ? createReplyAddress(signer, REPLY_KINDS.askHelper, routed.id, { memberId: helperId }) : null;
     await queueEmail(transaction, environment, {
       kind: EMAIL_KINDS.askHelper,
       to,
       memberId: helperId,
       dedupeKey: `ask-helper-${routed.id}-${helperId}`,
-      ...renderHelperEmail(environment, branding, routed, why),
+      replyTo,
+      ...renderHelperEmail(environment, branding, routed, why, replyTo !== null),
     });
   }
   return saved.length;

@@ -142,6 +142,12 @@ describe("the admin home", () => {
     ]);
   });
 
+  it("opens the Village check from the Village item when network is on", () => {
+    const facts = { ...QUIET_FACTS, villageTrouble: { trouble: VILLAGE_TROUBLES.keysRejected, troubleAt: null, lastOkAt: null } };
+
+    expect(readAdminHomeItems(facts, { pendingInvites: 0, stuckIntros: 0, isNetworkOn: true })).toEqual([expect.objectContaining({ href: ROUTES.adminVillage })]);
+  });
+
   it("sends a member who isn't an admin away", async () => {
     session.cookie = asker.cookie;
 
