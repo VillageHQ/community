@@ -40,7 +40,7 @@ Better Auth, Vitest, pnpm. Village is optional (network search, intro paths and 
   `.ai/features/reply-by-email/NOTES.md`,
   `.ai/features/jobs-on-cards/NOTES.md`,
   `.ai/features/asks-tools/NOTES.md`, `.ai/features/search-first/NOTES.md`, `.ai/features/intros-no-village/NOTES.md`, `.ai/features/demo-portraits/SPEC.md` (no notes; the spec says how to add a portrait),
-  `.ai/features/fh-foundation/NOTES.md` (look, parts, shell), `.ai/features/fh-search-ask/NOTES.md` (Search, intro ask pages, guided ask, My network).
+  `.ai/features/fh-foundation/NOTES.md` (look, parts, shell), `.ai/features/fh-dark/NOTES.md` (dark mode), `.ai/features/fh-search-ask/NOTES.md` (Search, intro ask pages, guided ask, My network).
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (guides), `drizzle/` (generated), `site/` (has its README), `public/` (demo pictures),
-  `vercel.json` (the Vercel Cron Job running the timed jobs daily). Every deploy setup runs the job runner;
+  `vercel.json` (the daily Vercel Cron Job). Every deploy setup runs the job runner;
   `src/test/deploy-setups.test.ts` guards it.

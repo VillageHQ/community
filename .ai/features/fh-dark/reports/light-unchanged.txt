@@ -1,0 +1,14 @@
+admin-home-1280-light.png        0 of 1195520 pixels differ
+admin-home-390-light.png         0 of 349440 pixels differ
+directory-1280-light.png         0 of 2711040 pixels differ
+directory-390-light.png          0 of 1972620 pixels differ
+intros-1280-light.png            0 of 2483200 pixels differ
+intros-390-light.png             0 of 1090830 pixels differ
+parts-1280-light.png             0 of 56695040 pixels differ
+parts-390-light.png              0 of 26138736 pixels differ
+search-paths-1280-light.png      0 of 1899520 pixels differ
+search-paths-390-light.png       0 of 1062750 pixels differ
+signin-1280-light.png            0 of 1221120 pixels differ
+signin-390-light.png             0 of 370500 pixels differ
+today-1280-light.png             0 of 2323200 pixels differ
+today-390-light.png              0 of 815490 pixels differ

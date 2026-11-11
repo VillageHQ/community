@@ -146,52 +146,66 @@
   --elevation-cta-hover: inset 0 0 0 999px var(--fund-deep);
 }
 
-/* Dark mode waits on the owner (Founderhall has none): the same tokens, dark, only so nothing becomes unreadable. */
+/* Founderhall's look in the dark (the owner's pick; Founderhall has none). A warm charcoal page, sheets one step
+   lighter, fills one step lighter again, hairline rules, and warm paper-coloured text in the same tiers as light.
+   Contrast table: .ai/features/fh-dark/NOTES.md. The fund colour's dark values come from deriveDarkFundColors(). */
 .dark {
   color-scheme: dark;
 
-  --background: #15140f;
-  --foreground: #f7f4ea;
-  --foreground-soft: #cfcbbe;
-  --card: #201e18;
-  --popover: #201e18;
-  --muted: #2a2820;
-  --muted-foreground: #aaa698;
-  --border: #37342b;
-  --rule: #3b382f;
-  --input: #8f8c80;
-  --destructive: #f0a07a;
-  --destructive-foreground: #15140f;
-  --destructive-soft: #45281b;
-  --destructive-text: #f6c2a6;
-  --gold-soft: #45281b;
-  --gold-text: #f6c2a6;
-  --sage-soft: #223621;
-  --sage-text: #b4dcae;
+  --background: #1a1915;
+  --foreground: #e6dfd0;
+  --foreground-soft: #aaa395;
+  --card: #23211c;
+  --popover: #23211c;
+  --muted: #2f2c25;
+  --muted-foreground: #aaa395;
+  --border: #3a362f;
+  --rule: #3a362f;
+  --input: #8a8477;
+  --logo-backdrop-dark: #e6dfd0;
+  --destructive: #e7a57e;
+  --destructive-foreground: #1a1915;
+  --destructive-soft: #3d2a1f;
+  --destructive-text: #e7a57e;
+  --gold-soft: #3d2a1f;
+  --gold-text: #e7a57e;
+  --sage-soft: #243329;
+  --sage-text: #9fc5ae;
 
-  --tint-a-bg: #2b3f3e;
-  --tint-a-fg: #f7f4ea;
-  --tint-b-bg: #2b3d31;
-  --tint-b-fg: #f7f4ea;
-  --tint-c-bg: #463a28;
-  --tint-c-fg: #f7f4ea;
-  --tint-d-bg: #3a3a30;
-  --tint-d-fg: #f7f4ea;
-  --tint-e-bg: #2b3d31;
-  --tint-e-fg: #f7f4ea;
-  --tint-f-bg: #463a28;
-  --tint-f-fg: #f7f4ea;
+  --tint-a-bg: #2c3c3b;
+  --tint-a-fg: #e6dfd0;
+  --tint-b-bg: #2b3b31;
+  --tint-b-fg: #e6dfd0;
+  --tint-c-bg: #40372a;
+  --tint-c-fg: #e6dfd0;
+  --tint-d-bg: #38372e;
+  --tint-d-fg: #e6dfd0;
+  --tint-e-bg: #2b3b31;
+  --tint-e-fg: #e6dfd0;
+  --tint-f-bg: #40372a;
+  --tint-f-fg: #e6dfd0;
 
-  --ink: #f7f4ea;
-  --spine: #b4dcae;
-  --graphite: #aaa698;
-  --ribbon: #f6c2a6;
-  --paper: #15140f;
-  --leaf: #201e18;
-  --vellum: #2a2820;
-  --side: #1b1a15;
-  --ribbon-tint: #45281b;
-  --spine-tint: #223621;
+  --ink: #e6dfd0;
+  --spine: #9fc5ae;
+  --graphite: #aaa395;
+  --ribbon: #e7a57e;
+  --paper: #1a1915;
+  --leaf: #23211c;
+  --vellum: #2f2c25;
+  --side: #151410;
+  --ribbon-tint: #3d2a1f;
+  --spine-tint: #243329;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px -8px rgba(0, 0, 0, 0.6);
+
+  /* Founderhall's literal colours, dark (design-system.md §1.1 "other literal colours"). */
+  --fh-placeholder: #8f897c;
+  --fh-chip-hover: #3a362e;
+  --fh-switch-off: #8a8477;
+  --fh-dash: #7a7466;
+  --fh-declined: #7d827e;
+  --fh-scrollbar: #4a463d;
+  --fh-mail-head: #2a2822;
+  --fh-logo-tile: #f4f0e6;
 
   --elevation-panel: 0 0 0 1px var(--rule);
   --elevation-sheet: 0 -1px 0 var(--rule);
@@ -525,11 +539,67 @@
   margin: 3px 3px 0 5px;
 }
 
-/* Founderhall's see-through bars are Paper; in dark mode they take the dark page so their words stay readable. */
+/* Founderhall's parts with a literal colour (parts.css is generated, so the dark values are set here). Each is the
+   same part in dark, not a page override; NOTES.md lists them. */
+.dark {
+  scrollbar-color: var(--fh-scrollbar) transparent;
+}
+
 .dark :is(.fh-topbar, .fh-report-actions) {
-  background: rgb(21 20 15 / 0.94);
+  background: rgb(26 25 21 / 0.94);
 }
 
 .dark .fh-mail-h {
+  background: var(--fh-mail-head);
+}
+
+.dark :is(.fh-input, .fh-textarea, input, textarea)::placeholder {
+  color: var(--fh-placeholder);
+}
+
+.dark .fh-chip:hover {
+  background: var(--fh-chip-hover);
+}
+
+.dark :is(.fh-toggle, input.fh-switch, [data-slot="switch"]):not([aria-checked="true"]):not(:checked) {
+  background: var(--fh-switch-off);
+}
+
+.dark [data-slot="switch"] > span {
+  background: var(--leaf);
+}
+
+.dark :is(.fh-examples button, .fh-empty) {
+  border-color: var(--fh-dash);
+}
+
+.dark .fh-stepper .fh-node {
+  box-shadow: inset 0 0 0 1.5px var(--fh-dash);
+}
+
+.dark :is(.fh-lrow.fh-declined .fh-bar i, .fh-sbar .fh-d) {
+  background: var(--fh-declined);
+}
+
+.dark :is(a.fh-r, .fh-r.fh-click):hover {
+  background: linear-gradient(90deg, transparent, rgb(47 44 37 / 0.8) 8%, rgb(47 44 37 / 0.8) 92%, transparent);
+}
+
+.dark .fh-btn-ink:hover {
+  background: #fffdf8;
+  color: var(--paper);
+}
+
+.dark :is(.fh-seg button[aria-pressed="true"], .fh-seg a.fh-segbtn[aria-current="true"], .fh-composer .fh-seg.fh-kind input:checked + span) {
   background: var(--vellum);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+
+.dark .fh-seg {
+  background: var(--leaf);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.dark :is(.fh-colog, [data-slot="company-logo"]) {
+  background: var(--fh-logo-tile);
 }
