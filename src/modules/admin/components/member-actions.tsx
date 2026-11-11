@@ -41,10 +41,10 @@ type ActionGroupProps = { title: string; note?: string; children?: ReactNode };
 
 function ActionGroup({ title, note, children }: ActionGroupProps) {
   return (
-    <section className="grid gap-2 rounded-field bg-muted p-4">
-      <h3 className="type-label">{title}</h3>
-      {note ? <p className="type-small wrap-anywhere text-foreground-soft">{note}</p> : null}
-      {children ? <div className="mt-1 flex flex-wrap gap-2">{children}</div> : null}
+    <section className="fh-sheet">
+      <h2 className="fh-h3">{title}</h2>
+      {note ? <p className="fh-small fh-muted mt-1 wrap-anywhere">{note}</p> : null}
+      {children ? <div className="fh-btn-row mt-3">{children}</div> : null}
     </section>
   );
 }
@@ -61,7 +61,7 @@ type ActionButtonProps = { label: string; icon: ReactNode; variant?: "outline" |
 
 function ActionButton({ label, icon, variant = "outline", ...triggerProps }: ActionButtonProps) {
   return (
-    <Button type="button" size="default" variant={variant} className="max-sm:w-full" {...triggerProps}>
+    <Button type="button" size="sm" variant={variant} {...triggerProps}>
       {icon}
       {label}
     </Button>
@@ -151,9 +151,10 @@ function VillageActions({ member, manageButtonRef, fallbackFocusId, onDone }: Me
   const firstName = readFirstName(name);
   const statusNote = member.isRemoved ? REMOVED_VILLAGE_NOTE : VILLAGE_STATUS_DETAILS[villageStatus].meaning;
   const isNetworkOn = useIsModuleEnabled(networkManifest.id);
-  if (!hasVillageLink || !isNetworkOn) return <ActionGroup title="Village" note={hasStaleVillageMembership ? `${statusNote} ${STALE_MEMBERSHIP_NOTE}` : statusNote} />;
+  const title = member.isErased ? "Village" : `Village: ${VILLAGE_STATUS_DETAILS[villageStatus].label}`;
+  if (!hasVillageLink || !isNetworkOn) return <ActionGroup title={title} note={hasStaleVillageMembership ? `${statusNote} ${STALE_MEMBERSHIP_NOTE}` : statusNote} />;
   return (
-    <ActionGroup title="Village" note={hasStaleVillageMembership ? `${statusNote} ${STALE_MEMBERSHIP_NOTE}` : statusNote}>
+    <ActionGroup title={title} note={hasStaleVillageMembership ? `${statusNote} ${STALE_MEMBERSHIP_NOTE}` : statusNote}>
       {pendingVillageEmail ? (
         <ConfirmDialog
           trigger={<ActionButton label="Approve this Village account" icon={<Check aria-hidden="true" />} variant="soft" />}
@@ -333,7 +334,7 @@ export function MemberActions(context: MemberActionContext) {
   const { member } = context;
   const isNetworkOn = useIsModuleEnabled(networkManifest.id);
   return (
-    <div className="grid gap-2.5 pt-1">
+    <div className="grid gap-4">
       {member.isRemoved ? null : <RoleActions {...context} />}
       {member.isRemoved ? null : <EmailActions {...context} />}
       {!member.isErased && (isNetworkOn || member.isInVillageGroup || member.hasStaleVillageMembership) ? <VillageActions {...context} /> : null}

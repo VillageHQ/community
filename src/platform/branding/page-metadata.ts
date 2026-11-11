@@ -40,7 +40,7 @@ export const PAGE_TITLES = {
   adminPerks: "Perks",
   adminAsks: "Asks admin",
   perks: "Perks",
-  admin: "Admin",
+  admin: "Console",
   setup: "Set up",
   signIn: "Sign in",
   forgotPassword: "Forgot your password",

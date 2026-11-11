@@ -34,6 +34,7 @@ export const AUDIT_ACTIONS = {
   askRemoved: "ask_removed",
   askAnswerRemoved: "ask_answer_removed",
   askAllowanceChanged: "ask_allowance_changed",
+  introOutcomeDaysChanged: "intro_outcome_days_changed",
   askPinned: "ask_pinned",
   askUnpinned: "ask_unpinned",
   askReopened: "ask_reopened",

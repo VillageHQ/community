@@ -1,14 +1,16 @@
 import "server-only";
 
-import { and, asc, count, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, ilike, isNotNull, isNull, or, sql } from "drizzle-orm";
 
-import { memberRemoval, invite, memberAvatar, memberNetwork } from "../members/schema.ts";
+import { memberRemoval, invite, memberAvatar, memberNetwork, memberProfile } from "../members/schema.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
 import { isReclaimedEmail } from "../../platform/auth/reclaimed-email.ts";
 import { isActiveMember, isBanActive, isBanInEffect } from "../../platform/auth/member-status.ts";
 import { toContainsPattern } from "../members/reads-directory.ts";
-import { filledFaceColumn, toShownFaceUrl } from "../members/reads-pictures.ts";
+import { companyLogoColumn, filledFaceColumn, toShownFaceUrl } from "../members/reads-pictures.ts";
+import { FILL_IN_FIELDS, shownFillInColumn } from "../members/service-fill-in.ts";
+import { CONSOLE_MEMBER_STATES, type ConsoleMember } from "./console-members.ts";
 import { linkedinUrl } from "@villagehq/sdk";
 import { readVillageStatus } from "../network/contract-village-status.ts";
 import {
@@ -138,4 +140,113 @@ export async function readAdminMembers(database: Database, { search, filter, pag
     .limit(ADMIN_PAGE_SIZES.members)
     .offset((page - 1) * ADMIN_PAGE_SIZES.members);
   return memberPageSchema.parse({ members: rows.map(toAdminMember), page, pageCount, matchCount, counts });
+}
+
+const filledTitle = shownFillInColumn(FILL_IN_FIELDS.title);
+const filledCompany = shownFillInColumn(FILL_IN_FIELDS.company);
+const shownTitle = sql<string | null>`coalesce(nullif(${memberProfile.title}, ''), ${filledTitle.line.value})`;
+const shownCompany = sql<string | null>`coalesce(nullif(${memberProfile.company}, ''), ${filledCompany.line.value})`;
+
+// The console's Members table: every member (removed ones included, for their own filter) and every open invite
+// nobody has accepted yet. Admins see email addresses here; nobody else does.
+export async function readConsoleMembers(database: Database, now = new Date()): Promise<ConsoleMember[]> {
+  const [members, invites] = await Promise.all([
+    database
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        emailVerified: user.emailVerified,
+        banned: user.banned,
+        banExpires: user.banExpires,
+        avatarUpdatedAt: memberAvatar.updatedAt,
+        filledFace: filledFaceColumn(user.id),
+        title: shownTitle,
+        company: shownCompany,
+        location: memberProfile.location,
+        companyLogoUrl: companyLogoColumn(user.id),
+        groupJoinedAt: memberNetwork.groupJoinedAt,
+        pendingVillageEmail: memberNetwork.pendingVillageEmail,
+        erasedAt: memberRemoval.erasedAt,
+      })
+      .from(user)
+      .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
+      .leftJoin(memberNetwork, eq(memberNetwork.userId, user.id))
+      .leftJoin(memberAvatar, eq(memberAvatar.userId, user.id))
+      .leftJoin(memberRemoval, eq(memberRemoval.userId, user.id))
+      .leftJoin(filledTitle.line, filledTitle.joinCondition)
+      .leftJoin(filledCompany.line, filledCompany.joinCondition),
+    database
+      .select({ id: invite.id, email: invite.email, name: invite.inviteeName, company: invite.company, createdAt: invite.createdAt })
+      .from(invite)
+      .where(and(isNull(invite.acceptedAt), isNull(invite.revokedAt), gt(invite.expiresAt, now)))
+      .orderBy(desc(invite.createdAt)),
+  ]);
+  const memberRows: ConsoleMember[] = members.map((row) => {
+    const isRemoved = isBanActive(row, now) || row.erasedAt !== null || isReclaimedEmail(row.email);
+    return {
+      id: row.id,
+      kind: "member",
+      name: row.name,
+      email: isReclaimedEmail(row.email) ? null : row.email,
+      avatarUrl: toShownFaceUrl(row.id, row.avatarUpdatedAt, row.filledFace),
+      isAdmin: row.role === MEMBER_ROLES.admin,
+      title: row.title,
+      company: row.company,
+      companyLogoUrl: row.companyLogoUrl,
+      location: row.location,
+      state: isRemoved ? CONSOLE_MEMBER_STATES.removed : row.groupJoinedAt ? CONSOLE_MEMBER_STATES.connected : CONSOLE_MEMBER_STATES.joined,
+      since: row.createdAt.toISOString(),
+      isNeedsLook: !isRemoved && (!row.emailVerified || row.pendingVillageEmail !== null),
+      deleteRequestedAt: null,
+    };
+  });
+  const inviteRows: ConsoleMember[] = invites.map((row) => ({
+    id: row.id,
+    kind: "invite",
+    name: row.name,
+    email: row.email,
+    avatarUrl: null,
+    isAdmin: false,
+    title: null,
+    // Founderhall shows "No profile yet" until they sign in; the company still matches a search.
+    company: null,
+    searchExtra: row.company,
+    companyLogoUrl: null,
+    location: null,
+    state: CONSOLE_MEMBER_STATES.invited,
+    since: row.createdAt.toISOString(),
+    isNeedsLook: false,
+    deleteRequestedAt: null,
+  }));
+  return [...memberRows, ...inviteRows];
+}
+
+// One member, for their Manage page.
+export async function readAdminMember(database: Database, memberId: string) {
+  const [row] = await selectMembers(database).where(eq(user.id, memberId));
+  return row ? memberPageSchema.shape.members.element.parse(toAdminMember(row)) : null;
+}
+
+// Admin › Invites: everyone invited who hasn't signed in, while their link still works, newest first.
+export async function readOpenInvites(database: Database, now = new Date()) {
+  return database
+    .select({ id: invite.id, email: invite.email, name: invite.inviteeName, createdAt: invite.createdAt, expiresAt: invite.expiresAt })
+    .from(invite)
+    .where(and(isNull(invite.acceptedAt), isNull(invite.revokedAt), gt(invite.expiresAt, now)))
+    .orderBy(desc(invite.createdAt), asc(invite.email));
+}
+
+export type OpenInvite = Awaited<ReturnType<typeof readOpenInvites>>[number];
+
+// How the admin signs an invite: their name and the role on their card.
+export async function readInviterSignature(database: Database, memberId: string) {
+  const [row] = await database
+    .select({ name: user.name, title: memberProfile.title })
+    .from(user)
+    .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
+    .where(eq(user.id, memberId));
+  return { name: row?.name ?? "", role: row?.title?.trim() || null };
 }

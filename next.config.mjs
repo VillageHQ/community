@@ -66,6 +66,8 @@ export const nextConfig = {
   ],
   redirects: async () => [
     { source: "/feed", destination: "/", permanent: false },
+    // The weekly email moved into Asks & digest; its preview is the digest preview. A real 308, before the page streams.
+    { source: "/admin/weekly-email", destination: "/admin/digest", permanent: true },
     // Set up's pages took Founderhall's addresses; old links and bookmarks land on the new ones.
     { source: "/admin/email", destination: "/admin/mail", permanent: true },
     { source: "/admin/audit-log", destination: "/admin/audit", permanent: true },

@@ -204,6 +204,13 @@ describe("Founderhall's asks and Today", () => {
       expect((await readAsksPage(database, { viewerId: sam.userId, tab: "answered", search: null })).posts.map(({ id }) => id)).toEqual([askId]);
 
       expect((await call(postStatus, amara, { askId, action: "reopen" })).status).toBe(OK_STATUS);
+      // Asks & digest › Close: an admin ends someone else's ask as no longer needed, once.
+      expect((await call(postStatus, sam, { askId, action: "close" })).status).toBe(FORBIDDEN_STATUS);
+      expect((await call(postStatus, admin, { askId, action: "close" })).status).toBe(OK_STATUS);
+      const [closedByAdmin] = await database.select({ outcome: ask.outcome, closedAt: ask.closedAt }).from(ask).where(eq(ask.id, askId));
+      expect(closedByAdmin?.outcome).toBe(ASK_OUTCOMES.noLongerNeeded);
+      expect(closedByAdmin?.closedAt).not.toBeNull();
+      expect((await call(postStatus, admin, { askId, action: "close" })).status).toBe(409);
       expect((await call(postStatus, admin, { askId, action: "remove" })).status).toBe(OK_STATUS);
       expect(await database.select().from(ask).where(eq(ask.id, askId))).toEqual([]);
     });

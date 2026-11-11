@@ -8,11 +8,11 @@ import { readResponseFailure } from "@/platform/http/read-response-message";
 const FILE_NAME_PATTERN = /filename="([^"]+)"/;
 const DOWNLOAD_FAILED = "We couldn't make the CSV. Try again.";
 
-export function previewPartnerReportRequest(note: string) {
-  return postRequest(API_ROUTES.partnerReportPreview, { note }, partnerReportPreviewSchema);
+export function previewPartnerReportRequest(note: string, period: string) {
+  return postRequest(API_ROUTES.partnerReportPreview, { note, period }, partnerReportPreviewSchema);
 }
 
-export function sendPartnerReportRequest(body: { recipients: string; note: string }) {
+export function sendPartnerReportRequest(body: { recipients: string; note: string; period: string }) {
   return postRequest(API_ROUTES.partnerReportSend, body, partnerReportSentSchema);
 }
 
@@ -20,8 +20,8 @@ export function markPartnerReportSharedRequest() {
   return postRequest(API_ROUTES.partnerReportShared, {}, z.object({ isShared: z.boolean() }));
 }
 
-export async function downloadPartnerReportCsv() {
-  const response = await fetch(API_ROUTES.partnerReportCsv, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).catch(() => null);
+export async function downloadPartnerReportCsv(period: string) {
+  const response = await fetch(API_ROUTES.partnerReportCsv, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ period }) }).catch(() => null);
   if (!response) throw new Error(DOWNLOAD_FAILED);
   if (!response.ok) throw new Error((await readResponseFailure(response, DOWNLOAD_FAILED)).message);
   const fileName = response.headers.get("content-disposition")?.match(FILE_NAME_PATTERN)?.[1] ?? "partner-report.csv";

@@ -32,7 +32,8 @@ import { seedMember } from "@/test/members";
 
 import { readEnabledIds } from "./enabled-modules";
 import { isTodayEmpty, readTodayItems } from "./today";
-import { previewWeeklyEmail, runWeeklyEmails, WEEKLY_PREVIEW_SOURCES } from "./weekly-email";
+import { previewMemberDigest, previewWeeklyEmail, runWeeklyEmails, WEEKLY_PREVIEW_SOURCES } from "./weekly-email";
+import { saveWeeklyEmailEnabled } from "./weekly-email-settings";
 
 const APP_URL = "http://localhost:3000";
 const REPLY_DOMAIN = "reply.example.com";
@@ -42,7 +43,7 @@ const DAY_MS = 24 * HOUR_MS;
 const ASK_TITLE = "Looking for a fintech investor for our seed round";
 const HELP_NOTE = "Happy to introduce you to two fintech investors.";
 
-type RecordedBody = { to: string[]; subject: string; text: string; reply_to?: string; headers?: Record<string, string> };
+type RecordedBody = { to: string[]; subject: string; text: string; html: string; reply_to?: string; headers?: Record<string, string> };
 
 describe("the Today home and the weekly email", () => {
   const database = createTestDatabase();
@@ -235,8 +236,11 @@ describe("the Today home and the weekly email", () => {
       expect(bodies[0]?.text).toContain("   Or reply HELP 1 with a line for Alex · SKIP 1");
       expect(bodies[0]?.text).toContain("2. Rae Requester asks you to introduce them to Jo Rivera.");
       expect(bodies[0]?.text).toContain("That’s everything this week. Open the portal:");
-      expect(bodies[0]?.text).toMatch(/Stop the weekly digest: http\S+unsubscribe\?token=/u);
-      expect(bodies[0]?.text).toMatch(/Sent by Your community via its member portal\.$/u);
+      // One ending: the member's own unsubscribe link on the stop line, then the foot, and no generic footer.
+      expect(bodies[0]?.text).toMatch(/Nobody is introduced without saying yes\.\n\nStop the weekly digest: http\S+\/unsubscribe\?token=\S+\n\nSent by Your community via its member portal\.$/u);
+      expect(bodies[0]?.text).not.toContain("[[");
+      expect(bodies[0]?.text).not.toContain("Turn them off");
+      expect(bodies[0]?.html).toMatch(/Stop the weekly digest: http[^<\s]+\/unsubscribe\?token=/u);
       expect(bodies[0]?.reply_to).toMatch(new RegExp(`^reply\\+[0-9a-f]{32}-[0-9a-f]{20}@${REPLY_DOMAIN.replaceAll(".", "\\.")}$`));
       expect(bodies[0]?.headers?.["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
     });
@@ -409,6 +413,27 @@ ${HELP_NOTE}`;
       expect(mine.isEmpty).toBe(true);
       expect(sample.text).toContain("Priya Shah");
       expect(sample.text).not.toContain("token=");
+    });
+
+    it("previews another member's digest with who asked whom, and never the note", async () => {
+      const { hana } = await seedCommunity();
+      const admin = await seedMember(database, { name: "Ada Admin" });
+      await database.update(user).set({ role: "admin" }).where(eq(user.id, admin));
+      const session = { id: admin, email: await readEmail(admin), role: "admin" };
+
+      const preview = await previewMemberDigest(database, environment(), session, hana);
+
+      expect(preview?.text).toContain(`1. Alex Asker asks: ${ASK_TITLE}`);
+      expect(preview?.text).toContain("2. Rae Requester asks you to introduce them to Jo Rivera.");
+      expect(preview?.text).not.toContain("Jo built the design team I want to build.");
+      expect(preview?.text).not.toContain("token=");
+    });
+
+    it("stays quiet while an admin has switched the weekly digest off", async () => {
+      await seedCommunity();
+      await saveWeeklyEmailEnabled(database, false);
+
+      expect((await runWeeklyEmails(database, environment(), { now })).queued).toBe(0);
     });
   });
 

@@ -1,45 +1,29 @@
 import type { Metadata } from "next";
 
 import { getDatabase } from "@/platform/database/client";
+import { readBranding } from "@/platform/branding/branding";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
-import { readResendConfig } from "@/platform/email/resend";
 import { requireAdmin } from "@/platform/auth/session";
 import { modulePage } from "@/platform/modules/module-page";
 
-import { AdminSection } from "@/shell/admin-section";
 import { adminManifest } from "@/modules/admin/manifest";
-import { readCommunitySection, readPeriodSections, readReportSummary } from "@/modules/admin/partner-report-rows";
-import { readPartnerReport, readPartnerReportSettings } from "@/modules/admin/reads-partner-report";
-import { PartnerSendCard } from "@/modules/admin/components/partner-send-card";
+import { parseConsolePeriod } from "@/modules/admin/console-periods";
+import { readReportStats } from "@/modules/admin/reads-report-stats";
 import { ReportActions } from "@/modules/admin/components/report-actions";
-import { ReportSummary, ReportTable } from "@/modules/admin/components/report-table";
+import { ReportDocument } from "@/modules/admin/components/report-document";
 
 export const metadata: Metadata = { title: PAGE_TITLES.adminReport };
 
-const GENERATED_AT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
-
-export default modulePage(adminManifest, async function AdminReportPage() {
-  await requireAdmin();
+// Founderhall's partner report: the toolbar, then the printable document for one period (?period=quarter|last|all).
+export default modulePage(adminManifest, async function AdminReportPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
+  const admin = await requireAdmin();
+  const period = parseConsolePeriod((await searchParams).period);
   const database = getDatabase();
-  const [report, settings] = await Promise.all([readPartnerReport(database), readPartnerReportSettings(database)]);
-  const headings = report.periods.map(({ label, range }) => ({ label, range }));
-  const community = readCommunitySection(report);
-  const summary = readReportSummary(report);
-
+  const [report, branding] = await Promise.all([readReportStats(database, period), readBranding(database)]);
   return (
-    <AdminSection
-      title="Partner report"
-      description={`${report.communityName}, as of ${GENERATED_AT.format(new Date(report.generatedAt))}. Counts only: who asked whom never appears here.`}
-      action={<ReportActions />}
-    >
-      <div className="grid gap-5">
-        {summary ? <ReportSummary summary={summary} /> : null}
-        {readPeriodSections(report).map((section) => (
-          <ReportTable key={section.id} section={section} headings={headings} />
-        ))}
-        <ReportTable section={community} headings={[{ label: "Today", range: "" }]} />
-        <PartnerSendCard savedRecipients={settings.recipients} isEmailConfigured={readResendConfig(process.env) !== null} />
-      </div>
-    </AdminSection>
+    <>
+      <ReportActions period={period} />
+      <ReportDocument report={report} preparedBy={admin.name || admin.email} logo={branding.logo} />
+    </>
   );
 });

@@ -43,8 +43,8 @@ Founderhall's intro screens, steps and emails on Community's intro engine. Found
 - `REQUESTER_SEES_WHO_ANSWERED = false`: the asker never learns whose no it was. Founderhall says "Marcus can't make this
   one"; Community says "They can't make this one" (pill, tracker, email), and the asker's tracker shows the
   connector's step until the person said yes. `true` gives Founderhall's words exactly.
-- `ADMINS_SEE_INTRO_NAMES = false`: the note sheet says admins see counts, never names (Founderhall: "names, states and
-  dates"). Area 6 decides it for the Intro log.
+- Admins: the owner decided (2026-11-11) that admins see who asked whom, states and dates (never the note), so the
+  note sheet uses Founderhall's words "names, states and dates" and the switch is gone.
 
 ## Known gaps
 - Founderhall sends from "Marcus Webb via Northwind Founders"; the outbox has one sender name for the community.

@@ -8,9 +8,10 @@ import type { Database } from "../../platform/database/client.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
-import { INTRO_STATES, OUTCOME_PROMPT_AFTER_DAYS, OUTCOME_PROMPT_WINDOW_DAYS, OUTCOME_REMINDER_AFTER_DAYS } from "./contract.ts";
+import { INTRO_STATES, OUTCOME_REMINDER_AFTER_DAYS } from "./contract.ts";
 import { deliverIntroEmail, INTRO_EMAIL_EVENTS } from "./email.ts";
 import { introRequest } from "./schema.ts";
+import { outcomePromptedFromSql, outcomeWindowFromSql } from "./reads-outcome-days.ts";
 
 const MILLISECONDS_PER_DAY = 86_400_000;
 const BATCH_SIZE = 20;
@@ -35,7 +36,7 @@ function isAwaitingOutcome(database: Database, now: Date) {
     eq(introRequest.state, INTRO_STATES.completed),
     isNull(introRequest.outcome),
     eq(introRequest.isWithheld, false),
-    gt(introRequest.closedAt, daysBefore(now, OUTCOME_PROMPT_WINDOW_DAYS)),
+    gt(introRequest.closedAt, outcomeWindowFromSql(now)),
     inArray(introRequest.requesterId, selectActiveMemberIds(database, now)),
   );
 }
@@ -48,7 +49,7 @@ const OUTCOME_EMAIL_KINDS = {
 type OutcomeEmailKind = (typeof OUTCOME_EMAIL_KINDS)[keyof typeof OUTCOME_EMAIL_KINDS];
 
 function isDue(kind: OutcomeEmailKind, now: Date) {
-  if (kind === OUTCOME_EMAIL_KINDS.first) return lte(introRequest.closedAt, daysBefore(now, OUTCOME_PROMPT_AFTER_DAYS));
+  if (kind === OUTCOME_EMAIL_KINDS.first) return lte(introRequest.closedAt, outcomePromptedFromSql(now));
   return lte(introRequest.outcomeEmailAt, daysBefore(now, OUTCOME_REMINDER_AFTER_DAYS));
 }
 

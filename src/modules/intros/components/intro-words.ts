@@ -3,7 +3,7 @@ import type { StepperState } from "@/components/ui/stepper";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { formatDayMonth } from "@/platform/text/format-date";
 
-import { ADMINS_SEE_INTRO_NAMES, REQUESTER_SEES_WHO_ANSWERED, INTRO_OUTCOMES, INTRO_ROLES, INTRO_STATES, OUTCOME_CHOICES, type Intro, type IntroOutcome, type OutcomeChoice } from "../contract";
+import { REQUESTER_SEES_WHO_ANSWERED, INTRO_OUTCOMES, INTRO_ROLES, INTRO_STATES, OUTCOME_CHOICES, type Intro, type IntroOutcome, type OutcomeChoice } from "../contract";
 import { possessive, toRoleAndCompany } from "../email-copy";
 
 // Founderhall's words for an intro's screens (intros/views.mjs), on Community's states.
@@ -132,10 +132,9 @@ export function readTargetCompany(intro: Pick<Intro, "target">) {
   return commaIndex >= 0 ? headline.slice(commaIndex + 2) : headline;
 }
 
+// The owner decided (2026-11-11): admins see who asked whom, like Founderhall, and members are told so here.
 export function readPrivacyLine(community: string) {
-  return ADMINS_SEE_INTRO_NAMES
-    ? `Only the people in this intro see the note. ${poss(community)} admins see names, states and dates.`
-    : `Only the people in this intro see the note. ${poss(community)} admins see counts, never names.`;
+  return `Only the people in this intro see the note. ${poss(community)} admins see names, states and dates.`;
 }
 
 export function readNoteLabel(intro: Pick<Intro, "viewerRole" | "requester">) {

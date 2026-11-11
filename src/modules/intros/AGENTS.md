@@ -5,8 +5,8 @@ Only then does one email join them. Later the asker is asked if it helped. Toggl
 Screens, words and emails are Founderhall's: read `.ai/features/fh-intros/NOTES.md` and
 `.ai/features/intros-no-village/NOTES.md` first. Intros never imports network; the shell joins them (`src/shell/intro-*`).
 
-- `contract.ts`: states, moves (`INTRO_TRANSITIONS`), limits, what an asker sees (`REQUESTER_STATES`), the two
-  Community-only switches (`REQUESTER_SEES_WHO_ANSWERED` off; `ADMINS_SEE_INTRO_NAMES` on, as the owner decided).
+- `contract.ts`: states, moves (`INTRO_TRANSITIONS`), limits, what an asker sees (`REQUESTER_STATES`), the
+  Community-only switch `REQUESTER_SEES_WHO_ANSWERED` (off).
 - `service.ts`: create, move, consent links, email the person, record an outcome. `service-answers.ts`: the connector's
   one-step answer and answers through email links. `service-consent.ts`: the person's answer and "stop intro asks".
 - `reads*.ts`: boards, counts, details; `reads-links.ts` and `reads-consent.ts`: what `/i/<token>` shows.
@@ -27,7 +27,7 @@ Rules:
 - Consent links, live tokens and stop-all: `.ai/features/two-sided-intros/NOTES.md`.
 - The person's email is typed by the connector (prefilled from the asker's), used only with email on, cleared when the
   ask closes (intro threads keep a copy). Nothing here spends Village credits.
-- Admins see totals only (`reads-report.ts`). Members never see each other's addresses (the connector's copy of the
+- Admins see who asked whom, states and dates (the owner's decision), never the note or reason. Members never see each other's addresses (the connector's copy of the
   introduction shows none).
 - Each step has 7 days. An intro ask uses the shared weekly allowance (passed in by the route); a connector gets at most
   10 a week. A helper-offered intro (`is_connector_offer`) starts at `asking_target` and counts toward neither.

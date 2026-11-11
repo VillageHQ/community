@@ -18,8 +18,8 @@ has Founderhall's words; the introduction goes to the asker, the person and the 
 Each step has 7 days.
 
 ## Rules kept from Community until the owner decides
-The asker never learns whose no it was (`REQUESTER_SEES_WHO_ANSWERED`); admins see counts, never names
-(`ADMINS_SEE_INTRO_NAMES`). Members never see each other's email addresses.
+The asker never learns whose no it was (`REQUESTER_SEES_WHO_ANSWERED`); admins see who asked whom,
+states and dates, never the note (the owner decided, 2026-11-11). Members never see each other's email addresses.
 
 ## Out
 The intro ask pages (area 2), the Intro log and partner report (area 6).

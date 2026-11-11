@@ -26,9 +26,6 @@ export const CONSENT_TOKEN_MAXIMUM_LENGTH = 128;
 // Community's rule: the asker sees the connector's step until the end, and every no reads as the connector's.
 export const REQUESTER_SEES_WHO_ANSWERED = false;
 
-// The owner decided (2026-11-11): admins see who asked whom, like Founderhall, and members are told so here.
-export const ADMINS_SEE_INTRO_NAMES = true;
-
 // The connector's three answers, as Founderhall words them and as its email links carry them (`?a=yes`).
 export const CONNECTOR_CHOICES = { yes: "yes", notNow: "not_now", dontKnow: "dont_know" } as const;
 
@@ -149,7 +146,7 @@ export const OUTCOME_BY_CHOICE: Record<OutcomeChoice, IntroOutcome> = {
   [OUTCOME_CHOICES.tooEarly]: INTRO_OUTCOMES.notYet,
 };
 
-// What came of an intro that helped, ticked by the requester with their answer. Admins only ever see totals.
+// What came of an intro that helped, ticked by the requester with their answer. The partner report shows only totals.
 export const INTRO_RESULTS = { customer: "customer", hire: "hire", investor: "investor" } as const;
 
 export type IntroResult = (typeof INTRO_RESULTS)[keyof typeof INTRO_RESULTS];

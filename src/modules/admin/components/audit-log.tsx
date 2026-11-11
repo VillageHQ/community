@@ -77,6 +77,7 @@ const ACTION_LINES: Partial<Record<AuditAction, (facts: ActionFacts) => ActionLi
   [AUDIT_ACTIONS.askRemoved]: ({ target, detail }) => ({ words: `Removed an ask by ${target ?? "a member"}`, target: quoted(detail) }),
   [AUDIT_ACTIONS.askAnswerRemoved]: ({ target, detail }) => ({ words: `Removed an answer by ${target ?? "a member"}`, target: quoted(detail) }),
   [AUDIT_ACTIONS.askAllowanceChanged]: ({ detail }) => ({ words: `Changed settings: ${detail} asks a member a week` }),
+  [AUDIT_ACTIONS.introOutcomeDaysChanged]: ({ detail }) => ({ words: `Changed settings: the outcome question ${detail} days after each intro` }),
   [AUDIT_ACTIONS.askPinned]: ({ target, detail }) => ({ words: `Pinned an ask by ${target ?? "a member"}`, target: quoted(detail) }),
   [AUDIT_ACTIONS.askUnpinned]: ({ target, detail }) => ({ words: `Unpinned an ask by ${target ?? "a member"}`, target: quoted(detail) }),
   [AUDIT_ACTIONS.askReopened]: ({ target, detail }) => ({ words: `Reopened an ask by ${target ?? "a member"}`, target: quoted(detail) }),

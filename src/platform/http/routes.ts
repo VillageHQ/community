@@ -57,10 +57,12 @@ export const ROUTES = {
   adminMail: "/admin/mail",
   adminImport: "/admin/import",
   adminLinks: "/admin/links",
-  // The console's Intro log and Invites (Founderhall's menu). Until their pages are built they forward to where
-  // that work lives today: the partner report and Members.
+  // The console (Founderhall's menu): the Intro log, Invites, sending the partner report, and the weekly digest's
+  // preview (Asks & digest; the old /admin/weekly-email forwards here).
   adminIntroLog: "/admin/intros",
   adminInvites: "/admin/invites",
+  adminReportSend: "/admin/report/send",
+  adminDigest: "/admin/digest",
   // The parts review page: off unless SHOW_PARTS_PAGE=true (development and review copies only).
   parts: "/parts",
   // A switched-off module's page, for a signed-in member: a 404 inside the app (src/proxy.ts).

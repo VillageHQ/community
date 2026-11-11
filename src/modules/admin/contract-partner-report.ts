@@ -35,9 +35,14 @@ const partnerNoteSchema = z
   .nullable()
   .default(null);
 
-export const partnerReportPreviewBodySchema = z.object({ note: partnerNoteSchema });
+// The console's period (Founderhall's ?period=quarter|last|all); anything else reads as this quarter.
+const reportPeriodSchema = z.enum(["quarter", "last", "all"]).catch("quarter").default("quarter");
 
-export const partnerReportSendBodySchema = z.object({ recipients: partnerRecipientsSchema, note: partnerNoteSchema });
+export const partnerReportCsvBodySchema = z.object({ period: reportPeriodSchema });
+
+export const partnerReportPreviewBodySchema = z.object({ note: partnerNoteSchema, period: reportPeriodSchema });
+
+export const partnerReportSendBodySchema = z.object({ recipients: partnerRecipientsSchema, note: partnerNoteSchema, period: reportPeriodSchema });
 
 export const partnerReportPreviewSchema = z.object({ subject: z.string(), html: z.string(), text: z.string() });
 

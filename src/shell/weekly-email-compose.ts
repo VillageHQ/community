@@ -1,12 +1,14 @@
 import { describeAnswerCount, describeCanHelp, toAskPage } from "@/modules/asks/contract";
 import { INTRO_STATES } from "@/modules/intros/contract";
 import { clipLine, describeEmailFoot, renderPlainTextHtml, toSingleLine } from "@/platform/email/email-text";
-import { UNSUBSCRIBE_URL_MARK } from "@/platform/email/unsubscribe";
 import { ROUTES } from "@/platform/http/routes";
 import type { WeeklyEmailItem } from "@/platform/weekly-email/schema";
 import { REPLY_CODES } from "@/platform/weekly-email/reply-codes";
 
 import type { TodayItems } from "./today";
+
+// The weekly digest, in Founderhall's words (copy/admin-digest-preview-sam.md, emails/email-digest-test.md). The
+// plain text is the email; the HTML part shows the same lines, each "Label: link" line as a button.
 
 export const ITEM_ACTIONS = {
   ask: [REPLY_CODES.help, REPLY_CODES.skip],
@@ -25,6 +27,9 @@ export type WeeklyEmailFacts = {
   links: ItemLinks;
   canReply: boolean;
   isTest: boolean;
+  // Where "Stop the weekly digest" goes: UNSUBSCRIBE_URL_MARK in a sent email (the outbox puts the member's own
+  // unsubscribe page there), the app in a preview.
+  stopUrl: string;
 };
 
 const CONSENT = "Nobody is introduced without saying yes.";
@@ -131,7 +136,7 @@ export function renderWeeklyEmail(facts: WeeklyEmailFacts) {
     parts.push("", "YOUR ASKS IN MOTION");
     for (const line of mine) parts.push(`- ${line}`);
   }
-  parts.push("", `That’s everything this week. Open the portal: ${appUrl}${ROUTES.today}`, "", CONSENT, "", `Stop the weekly digest: ${UNSUBSCRIBE_URL_MARK}`, "", describeEmailFoot(community));
+  parts.push("", `That’s everything this week. Open the portal: ${appUrl}${ROUTES.today}`, "", CONSENT, "", `Stop the weekly digest: ${facts.stopUrl}`, "", describeEmailFoot(community));
 
   const subject = readSubject(first, help.length, intros.length, lines.length);
   const text = parts.join("\n");

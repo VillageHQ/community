@@ -78,18 +78,32 @@ export function toInviteLink(environment: RequestContext["environment"], token: 
   return `${resolveAppUrl(environment)}${toInvitePath(token)}`;
 }
 
+// The inviter's role on their card: it signs the invite ("Maya Ortiz, Head of Platform, Northwind Founders").
+async function readInviterRole(connection: DatabaseOrTransaction, inviterId: string) {
+  const [profile] = await connection.select({ title: memberProfile.title }).from(memberProfile).where(eq(memberProfile.userId, inviterId));
+  return profile?.title?.trim() || null;
+}
+
 // Call inside the transaction that creates or renews the invite, so the email can't be lost.
 // Takes the branding read before the transaction (readEmailBranding); null means email is off.
 // A renewed invite's older email still waiting in the queue carries a dead link, so it is stopped.
 export async function queueInviteEmail(transaction: Transaction, { environment }: RequestContext, branding: EmailBranding | null, row: InviteRow, token: string) {
   await cancelQueuedEmail(transaction, row.emailOutboxId);
   const link = toInviteLink(environment, token);
+  const inviterRole = branding && row.invitedByUserId ? await readInviterRole(transaction, row.invitedByUserId) : null;
   const queuedId = branding
     ? await queueEmail(transaction, environment, {
         kind: EMAIL_KINDS.invite,
         to: row.email,
         memberId: null,
-        ...renderInviteEmail({ link, inviterName: row.invitedByName, communityName: branding.name, accentColor: branding.accentColor }),
+        ...renderInviteEmail({
+          link,
+          inviterName: row.invitedByName,
+          inviterRole,
+          inviteeName: row.inviteeName,
+          communityName: branding.name,
+          accentColor: branding.accentColor,
+        }),
       })
     : null;
   await transaction.update(invite).set({ emailOutboxId: queuedId }).where(eq(invite.id, row.id));
