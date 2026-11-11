@@ -30,6 +30,7 @@ import { introsManifest } from "@/modules/intros/manifest";
 import { messagesManifest } from "@/modules/messages/manifest";
 import { networkManifest } from "@/modules/network/manifest";
 import { VillageDisclosure } from "@/modules/network/components/village-disclosure";
+import { DarkModeRow } from "@/shell/user-menu";
 import { readDataHome } from "@/platform/settings/data-home";
 import { isDataHomeSet, type DataHome } from "@/platform/settings/data-home-api";
 
@@ -207,6 +208,9 @@ export default modulePage(membersManifest, async function YourDataPage() {
         lookup={lookup.basis ? { isAllowed: lookup.isAllowed } : null}
         sharing={isNetworkOn ? { isSharing: Boolean(sharing?.groupJoinedAt), since: sharing?.groupJoinedAt ? formatLongDate(sharing.groupJoinedAt) : null } : null}
       />
+      <Panel titleId="display-title" title="On this device">
+        <DarkModeRow />
+      </Panel>
       <ExportCard />
       <DeleteAccountCard communityName={branding.name} isAdmin={isAdminMember(member)} />
     </div>

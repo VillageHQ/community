@@ -13,7 +13,7 @@ The app's code. Map, import rules and module file roles: `docs/architecture.md`;
   `messages`, `network`, `intros`, `asks`, `chat`, `job-board`, `perks`. `registry.ts` lists them.
 - `platform/`: infrastructure with no product opinion (auth, audit, branding, database, email, jobs, rate limits,
   secrets, settings, Village, the weekly email schedule).
-- `components/`: UI with no module knowledge; `components/ui/` is shadcn.
+- `components/`: UI with no module knowledge; `components/ui/` holds Founderhall's parts (styles in `app/parts.css`, map in `.ai/features/fh-foundation/NOTES.md`).
 - `test/`: fake Village, Resend and chat servers, fixtures, and the architecture tests (`test/architecture/`):
   they fail on a wrong import, a route outside its module, a schema `drizzle.config.ts` misses, or a module page
   not 404 when off.

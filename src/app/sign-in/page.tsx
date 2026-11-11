@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CommunityNote, SplitLayout } from "@/components/split-layout";
 import { getDatabase } from "@/platform/database/client";
 import { readBrandingForPage } from "@/platform/branding/branding";
+import { readDataHome } from "@/platform/settings/data-home";
 import { isFirstAdminClaimed } from "@/platform/auth/first-admin";
 import { parseReturnPath, RETURN_PATH_PARAM } from "@/platform/http/return-path";
 import { ACCOUNT_DELETED_PARAM, ADMIN_CREATED_PARAM, ROUTES } from "@/platform/http/routes";
@@ -32,7 +33,7 @@ type SignInPageProps = {
 export default modulePage(PLATFORM_MANIFEST, async function SignInPage({ searchParams }: SignInPageProps) {
   if (!(await isFirstAdminClaimed(getDatabase()))) redirect(ROUTES.setup);
 
-  const community = await readBrandingForPage();
+  const [community, dataHome] = await Promise.all([readBrandingForPage(), readDataHome(getDatabase())]);
   const params = await searchParams;
   const returnPath = parseReturnPath(params[RETURN_PATH_PARAM]);
   const isAdminJustCreated = params[ADMIN_CREATED_PARAM] !== undefined;
@@ -40,6 +41,8 @@ export default modulePage(PLATFORM_MANIFEST, async function SignInPage({ searchP
 
   return (
     <SplitLayout
+      withCredit
+      hosting={dataHome.location ? `${community.name}, ${dataHome.location}` : undefined}
       community={community}
       note={<CommunityNote community={community}>Good to see you. Everyone&apos;s right inside.</CommunityNote>}
     >

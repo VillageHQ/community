@@ -137,14 +137,71 @@ export function deriveAccentTokens(brandHex: string, mode: ThemeMode) {
   return { accent, onAccent: pickOnAccent(accent), accentText, accentSoft, accentEdge, focusRing: accentText };
 }
 
+// Founderhall's fund colour (its lib/color.mjs): the admin's colour, darkened in steps of ×0.92 (same hue) until it
+// reads at 4.5:1 on Leaf; "deep" is the fund ×0.75 (hover, text on the tint); "tint" is the fund mixed 84 % toward white.
+export const LEAF = "#fffdf8";
+const FUND_DARKEN_STEP = 0.92;
+const FUND_MAX_STEPS = 40;
+const FUND_DEEP_FACTOR = 0.75;
+const FUND_TINT_MIX = 0.84;
+const CHANNEL_MAX = 255;
+
+function hexToChannels(hex: string) {
+  return [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), HEX_RADIX));
+}
+
+function channelsToHex(channels: number[]) {
+  const pairs = channels.map((channel) => Math.max(0, Math.min(CHANNEL_MAX, Math.round(channel))).toString(HEX_RADIX).padStart(2, "0"));
+  return `#${pairs.join("")}`;
+}
+
+export function deriveFundColors(brandHex: string) {
+  let channels = hexToChannels(brandHex);
+  let fund = brandHex.toLowerCase();
+  for (let step = 0; step < FUND_MAX_STEPS && contrastRatio(fund, LEAF) < AA_TEXT; step += 1) {
+    channels = channels.map((channel) => channel * FUND_DARKEN_STEP);
+    fund = channelsToHex(channels);
+  }
+  const fundChannels = hexToChannels(fund);
+  return {
+    fund,
+    deep: channelsToHex(fundChannels.map((channel) => channel * FUND_DEEP_FACTOR)),
+    tint: channelsToHex(fundChannels.map((channel) => channel + (CHANNEL_MAX - channel) * FUND_TINT_MIX)),
+    isAdjusted: fund !== brandHex.toLowerCase(),
+  };
+}
+
 export function parseAccentColor(value: unknown) {
   if (typeof value !== "string" || !ACCENT_COLOR_PATTERN.test(value)) return null;
   return value.toLowerCase();
 }
 
+function toLightAccentVariables(brandHex: string) {
+  const { fund, deep, tint } = deriveFundColors(brandHex);
+  return {
+    "--fund": fund,
+    "--fund-deep": deep,
+    "--fund-tint": tint,
+    "--primary": fund,
+    "--primary-foreground": LEAF,
+    "--secondary": tint,
+    "--secondary-foreground": deep,
+    "--accent": tint,
+    "--accent-foreground": deep,
+    "--brand-emphasis": fund,
+    "--brand-edge": fund,
+    "--ring": fund,
+  };
+}
+
 export function toAccentVariables(brandHex: string, mode: ThemeMode) {
+  if (mode === "light") return toLightAccentVariables(brandHex);
+  // Dark mode waits on the owner: the fund takes its readable text tone on the dark sheets and its tint stays dark.
   const { accent, onAccent, accentText, accentSoft, accentEdge, focusRing } = deriveAccentTokens(brandHex, mode);
   return {
+    "--fund": accentText,
+    "--fund-deep": accentText,
+    "--fund-tint": accentSoft,
     "--primary": accent,
     "--primary-foreground": onAccent,
     "--secondary": accentSoft,
@@ -171,9 +228,6 @@ export function renderAccentCss(storedColor: unknown) {
 }
 
 export function describeButtonContrast(brandHex: string) {
-  const { accent, onAccent } = deriveAccentTokens(brandHex, "light");
-  return {
-    textColorName: onAccent === WHITE ? "White" : "Black",
-    ratio: contrastRatio(accent, onAccent).toFixed(CONTRAST_DECIMALS),
-  };
+  const { fund } = deriveFundColors(brandHex);
+  return { textColorName: "White", ratio: contrastRatio(fund, LEAF).toFixed(CONTRAST_DECIMALS) };
 }

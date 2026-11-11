@@ -1,38 +1,28 @@
 import { cn } from "cn";
-import { Check } from "lucide-react";
 
 type StepPillsProps = { label: string; steps: { id: string; label: string }[]; current: string };
 
+// Founderhall's onboarding steps: "Step 1 of 2" over a row of step dots (4 px bars, the fund colour up to the
+// current step). Each step keeps its name for screen readers.
 export function StepPills({ label: stepsLabel, steps, current }: StepPillsProps) {
-  const currentPosition = steps.findIndex(({ id }) => id === current);
+  const currentPosition = Math.max(0, steps.findIndex(({ id }) => id === current));
   return (
-    <ol aria-label={stepsLabel} className="mb-7 flex flex-wrap items-center gap-2">
-      {steps.map(({ id, label }, position) => {
-        const isCurrent = id === current;
-        const isDone = position < currentPosition;
-        return (
-          <li
-            key={id}
-            aria-current={isCurrent ? "step" : undefined}
-            className={cn(
-              "type-small inline-flex min-h-8 items-center gap-2 rounded-full bg-muted py-1 pr-3.5 pl-1.5 font-semibold text-foreground-soft",
-              isCurrent && "bg-accent font-bold text-accent-foreground",
-            )}
-          >
-            <span
-              aria-hidden="true"
-              className={cn(
-                "flex size-icon items-center justify-center rounded-full bg-card text-[13px] font-bold",
-                isCurrent && "bg-primary text-primary-foreground shadow-[inset_0_0_0_1px_var(--brand-edge)]",
-              )}
-            >
-              {isDone ? <Check className="size-3.5" strokeWidth={3} /> : position + 1}
-            </span>
-            {label}
-            {isDone ? <span className="sr-only"> (done)</span> : null}
+    <div data-slot="step-dots" className="mb-2">
+      <p className="fh-small fh-muted">
+        Step {currentPosition + 1} of {steps.length}
+      </p>
+      <ol aria-label={stepsLabel} className="fh-steps-dots list-none p-0">
+        {steps.map(({ id, label }, position) => (
+          <li key={id} aria-current={position === currentPosition ? "step" : undefined} className="contents">
+            <i className={cn(position <= currentPosition && "fh-on")}>
+              <span className="sr-only">
+                {label}
+                {position < currentPosition ? " (done)" : ""}
+              </span>
+            </i>
           </li>
-        );
-      })}
-    </ol>
+        ))}
+      </ol>
+    </div>
   );
 }

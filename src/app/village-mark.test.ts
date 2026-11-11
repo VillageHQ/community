@@ -11,7 +11,7 @@ import { clearDatabase, createTestDatabase } from "@/test/database";
 const VILLAGE_MARK = "Network by Village";
 
 vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => undefined }) }));
-vi.mock("./fonts", () => ({ figtree: { variable: "" }, figtreeExtended: { variable: "" }, sourceSerif: { variable: "" } }));
+vi.mock("./fonts", () => ({ FONT_VARIABLES: "" }));
 
 const COMMUNITY = { name: "Northwind", descriptor: "", logo: null };
 

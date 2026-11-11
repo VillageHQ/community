@@ -3,12 +3,14 @@ import { cn } from "cn";
 import { CircleAlert, CircleCheck, Info } from "lucide-react";
 import type { ComponentProps } from "react";
 
-const alertVariants = cva("type-small flex items-start gap-3 rounded-field px-4 py-3.5 text-left", {
+// Founderhall's note (design-system.md §3.5): padding 12/14, radius 6, 14/20; Vellum, or Spine tint when it went
+// well, or Ribbon tint when something needs the reader (its bold words in Ribbon).
+const alertVariants = cva("fh-note text-left text-ink [&_b]:font-semibold [&_strong]:font-semibold", {
   variants: {
     variant: {
-      info: "bg-muted text-foreground-soft",
-      success: "bg-sage-soft text-sage-text",
-      destructive: "bg-destructive-soft text-destructive-text",
+      info: "",
+      success: "fh-ok",
+      destructive: "fh-needs [&_strong]:text-ribbon",
     },
   },
   defaultVariants: { variant: "info" },
@@ -27,7 +29,7 @@ export function Alert({ className, variant, children, ...props }: AlertProps) {
       className={cn(alertVariants({ variant }), className)}
       {...props}
     >
-      <Icon aria-hidden="true" className="mt-px size-icon-small shrink-0" />
+      <Icon aria-hidden="true" strokeWidth={1.5} className="mt-px size-icon-small shrink-0" />
       <div className="min-w-0">{children}</div>
     </div>
   );

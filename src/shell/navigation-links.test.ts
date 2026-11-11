@@ -1,18 +1,19 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import { createElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ASK_API_ROUTES, ASKS_PAGE } from "@/modules/asks/contract";
-import { asksManifest } from "@/modules/asks/manifest";
+import { ASK_API_ROUTES } from "@/modules/asks/contract";
 import { introsManifest } from "@/modules/intros/manifest";
 import { messagesManifest } from "@/modules/messages/manifest";
-import { networkManifest } from "@/modules/network/manifest";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 
+import { readAdminTabs } from "./admin-tabs";
+import type { AdminTabFacts } from "./admin-badges";
 import { buildShellNavigation } from "./navigation";
-import { SidebarNavigation, TabBar } from "./navigation-links";
+import { FounderViewStrip, ModeSwitch, SidebarNavigation, TabBar } from "./navigation-links";
+import { CONSOLE_KEYS } from "./navigation-rules";
 
 const location = vi.hoisted(() => ({ pathname: "/" }));
 
@@ -23,7 +24,7 @@ vi.mock("next/link", async () => {
   return { default: (props: Record<string, unknown>) => create("a", { ...props, "data-app-link": "" }) };
 });
 
-function stubUnreadCount(unreadCount: number) {
+function stubCounts(unreadCount: number) {
   vi.stubGlobal(
     "fetch",
     vi.fn(async (path: string) => {
@@ -45,38 +46,117 @@ function renderWithClient(element: ReturnType<typeof createElement>, staleTime?:
   return queryClient;
 }
 
+type ShellPartOptions = { isAdmin?: boolean; enabledIds?: readonly string[]; badges?: Record<string, number> };
+
+function renderShellPart(part: typeof TabBar | typeof SidebarNavigation, { isAdmin = false, enabledIds, badges = {} }: ShellPartOptions = {}) {
+  stubCounts(0);
+  const navigation = enabledIds ? buildShellNavigation(new Set(enabledIds), isAdmin) : buildShellNavigation(undefined, isAdmin);
+  renderWithClient(createElement(part, { navigation, isAdmin, badges }), Number.POSITIVE_INFINITY);
+}
+
+function readNames(label: string) {
+  return Array.from(screen.getByRole("navigation", { name: label }).querySelectorAll("a"), (link) => link.textContent);
+}
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  location.pathname = ROUTES.feed;
+});
+
+describe("the phone tab bar", () => {
+  it("shows a member Founderhall's six tabs", () => {
+    renderShellPart(TabBar);
+
+    expect(readNames("Sections")).toEqual(["Today", "Asks", "Search", "Directory", "Intros", "Inbox"]);
+  });
+
+  it("leaves out the tab of a module that is off", () => {
+    renderShellPart(TabBar, { enabledIds: ["feed", messagesManifest.id, "members", introsManifest.id, "admin"] });
+
+    expect(readNames("Sections")).toEqual(["Today", "Directory", "Intros", "Inbox"]);
+  });
+
+  it("adds a Console tab for an admin on member pages", () => {
+    renderShellPart(TabBar, { isAdmin: true });
+
+    expect(readNames("Sections").at(-1)).toBe("Console");
+  });
+
+  it("shows the console's five tabs and a Founder tab in the console", () => {
+    location.pathname = ROUTES.adminMembers;
+    renderShellPart(TabBar, { isAdmin: true });
+
+    expect(readNames("Sections")).toEqual(["Home", "Intros", "Asks", "Members", "Set up", "Founder"]);
+    expect(screen.getByRole("link", { name: "Members" }).getAttribute("aria-current")).toBe("page");
+  });
+
+  it("lights Directory on the job board", () => {
+    location.pathname = "/jobs";
+    renderShellPart(TabBar);
+
+    expect(screen.getByRole("link", { name: "Directory" }).getAttribute("aria-current")).toBe("page");
+  });
+
+  it("lights nothing on My profile", () => {
+    location.pathname = ROUTES.editCard;
+    renderShellPart(TabBar);
+
+    expect(screen.getByRole("navigation", { name: "Sections" }).querySelector("[aria-current]")).toBeNull();
+  });
+
+  it("shows the intros count on the Intros tab", () => {
+    renderShellPart(TabBar, { badges: { intros: 2 } });
+
+    const introsTab = screen.getByRole("link", { name: /Intros/ });
+    expect(within(introsTab).getByRole("img", { name: "2 intros need a look" }).textContent).toBe("2");
+  });
+});
+
+describe("the sidebar", () => {
+  it("lists the member menu under Members", () => {
+    renderShellPart(SidebarNavigation);
+
+    expect(screen.getByText("Members")).toBeTruthy();
+    expect(readNames("Main")).toEqual(["Today", "Asks & updates", "Search", "Directory", "Jobs", "Intros", "Inbox", "Perks", "My profile"]);
+  });
+
+  it("lists the console menu under Console on console pages", () => {
+    location.pathname = ROUTES.adminCredits;
+    renderShellPart(SidebarNavigation, { isAdmin: true });
+
+    expect(screen.getByText("Console")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Set up" }).getAttribute("aria-current")).toBe("page");
+  });
+
+  it("lights My profile, not Directory, on the profile editor", () => {
+    location.pathname = ROUTES.editCard;
+    renderShellPart(SidebarNavigation);
+
+    expect(screen.getByRole("link", { name: "My profile" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Directory" }).getAttribute("aria-current")).toBeNull();
+  });
+
+  // Its page frames the marketplace under its own security policy, which only a full page load applies.
+  it("loads the whole Perks page, while other entries navigate inside the app", () => {
+    renderShellPart(SidebarNavigation);
+
+    expect(screen.getByRole("link", { name: /Perks/ }).hasAttribute("data-app-link")).toBe(false);
+    expect(screen.getByRole("link", { name: /Inbox/ }).hasAttribute("data-app-link")).toBe(true);
+  });
+});
+
 describe("the messages badge", () => {
-  afterEach(() => {
-    cleanup();
-    vi.unstubAllGlobals();
-  });
-
-  it("shows the unread count on the phone tab bar", () => {
-    stubUnreadCount(3);
-    renderWithClient(createElement(TabBar, { items: buildShellNavigation(), badges: { messages: 3 } }));
-
-    const messagesTab = screen.getByRole("link", { name: /Messages/ });
-
-    expect(within(messagesTab).getByRole("img", { name: "3 unread messages" }).textContent).toBe("3");
-  });
-
   it("shows the unread count in the sidebar", () => {
-    stubUnreadCount(1);
-    renderWithClient(createElement(SidebarNavigation, { items: buildShellNavigation(), isAdmin: false, badges: { messages: 1 } }));
+    stubCounts(1);
+    renderWithClient(createElement(SidebarNavigation, { navigation: buildShellNavigation(), isAdmin: false, badges: { messages: 1 } }));
 
     expect(screen.getByRole("img", { name: "1 unread message" })).toBeTruthy();
   });
 
-  it("shows nothing with no unread messages", () => {
-    stubUnreadCount(0);
-    renderWithClient(createElement(TabBar, { items: buildShellNavigation(), badges: { messages: 0 } }));
-
-    expect(screen.queryByRole("img")).toBeNull();
-  });
-
   it("follows the count the server reports", async () => {
-    stubUnreadCount(4);
-    const queryClient = renderWithClient(createElement(TabBar, { items: buildShellNavigation(), badges: { messages: 1 } }));
+    stubCounts(4);
+    const queryClient = renderWithClient(createElement(TabBar, { navigation: buildShellNavigation(), isAdmin: false, badges: { messages: 1 } }));
 
     await queryClient.invalidateQueries();
 
@@ -84,120 +164,49 @@ describe("the messages badge", () => {
   });
 });
 
-describe("the phone tab bar", () => {
-  const OVERFLOW_BADGES = { asks: 3 };
+describe("the admin's two modes", () => {
+  it("marks Console in the switch on console pages", () => {
+    location.pathname = ROUTES.admin;
+    render(createElement(ModeSwitch));
 
-  afterEach(() => {
+    expect(screen.getByRole("link", { name: "Console" }).getAttribute("aria-current")).toBe("true");
+    expect(screen.getByRole("link", { name: "View as a founder" }).getAttribute("aria-current")).toBeNull();
+  });
+
+  it("shows the founder-view strip on member pages only", () => {
+    render(createElement(FounderViewStrip, { name: "Maya Ortiz" }));
+    expect(screen.getByText(/This is what members see. You are signed in as Maya Ortiz, an admin./)).toBeTruthy();
     cleanup();
-    vi.unstubAllGlobals();
-    location.pathname = ROUTES.feed;
-  });
 
-  function renderTabBar(enabledIds: readonly string[] | null, badges = {}) {
-    stubUnreadCount(0);
-    const items = enabledIds ? buildShellNavigation(new Set(enabledIds)) : buildShellNavigation();
-    renderWithClient(createElement(TabBar, { items, badges }), Number.POSITIVE_INFINITY);
-  }
-
-  function readTabNames() {
-    return Array.from(screen.getByRole("navigation", { name: "Main" }).children, (tab) => tab.textContent);
-  }
-
-  describe("with five items or fewer", () => {
-    it("shows every item and no More entry", () => {
-      renderTabBar(["feed", messagesManifest.id, "members", networkManifest.id, introsManifest.id, "admin"]);
-
-      expect(readTabNames()).toEqual(["Feed", "Meet", "Intros", "Messages", "Members"]);
-    });
-
-    it("keeps a community with only a few modules on as it was", () => {
-      renderTabBar(["feed", "members", "admin"]);
-
-      expect(readTabNames()).toEqual(["Feed", "Members"]);
-      expect(screen.queryByRole("button", { name: "More" })).toBeNull();
-    });
-  });
-
-  describe("with more than five items", () => {
-    it("keeps four tabs and a More entry, five in all", () => {
-      renderTabBar(null);
-
-      expect(readTabNames()).toEqual(["Feed", "Meet", "Intros", "Messages", "More"]);
-    });
-
-    it("shows the intros count on the Intros tab", () => {
-      renderTabBar(null, { intros: 2 });
-
-      const introsTab = screen.getByRole("link", { name: /Intros/ });
-
-      expect(within(introsTab).getByRole("img", { name: "2 intros need a look" }).textContent).toBe("2");
-    });
-
-    it("moves the next entry up when Intros is off, leaving no gap", () => {
-      renderTabBar([messagesManifest.id, "members", networkManifest.id, asksManifest.id, "admin"]);
-
-      expect(readTabNames()).toEqual(["Home", "Meet", "Messages", "Members", "Asks"]);
-    });
-
-    it("lists the rest in a sheet when opened", () => {
-      renderTabBar(null);
-
-      fireEvent.click(screen.getByRole("button", { name: "More" }));
-
-      const sheet = within(screen.getByRole("dialog", { name: "More" }));
-      expect(sheet.getByRole("link", { name: "Members" }).getAttribute("href")).toBe(ROUTES.members);
-      expect(sheet.getByRole("link", { name: "Asks" }).getAttribute("href")).toBe(ASKS_PAGE);
-    });
-
-    it("adds up the badges of what it hides", () => {
-      renderTabBar(null, { intros: 2, ...OVERFLOW_BADGES });
-
-      const more = screen.getByRole("button", { name: /More/ });
-
-      expect(within(more).getByRole("img", { name: "3 need your attention" }).textContent).toBe("3");
-    });
-
-    it("describes each badge in the sheet", () => {
-      renderTabBar(null, OVERFLOW_BADGES);
-
-      fireEvent.click(screen.getByRole("button", { name: /More/ }));
-
-      expect(screen.getByRole("img", { name: "3 new offers of help" })).toBeTruthy();
-    });
-
-    it("marks More as current on a page it holds", () => {
-      location.pathname = ASKS_PAGE;
-      renderTabBar(null);
-
-      expect(screen.getByRole("button", { name: "More" }).getAttribute("aria-current")).toBe("page");
-    });
-
-    it("doesn't mark More as current on a page with its own tab", () => {
-      renderTabBar(null);
-
-      expect(screen.getByRole("button", { name: "More" }).getAttribute("aria-current")).toBeNull();
-    });
-  });
-
-  it("shows Home, Meet, Intros, Messages and More with the default modules", () => {
-    renderTabBar([messagesManifest.id, "members", networkManifest.id, introsManifest.id, asksManifest.id, "admin"]);
-
-    expect(readTabNames()).toEqual(["Home", "Meet", "Intros", "Messages", "More"]);
+    location.pathname = ROUTES.adminReport;
+    render(createElement(FounderViewStrip, { name: "Maya Ortiz" }));
+    expect(screen.queryByText(/Founder view/)).toBeNull();
   });
 });
 
-describe("the Perks entry", () => {
-  afterEach(() => {
-    cleanup();
-    vi.unstubAllGlobals();
+describe("the console's Community-only pages", () => {
+  const FACTS = {
+    setupStepsLeft: 1,
+    membersBadge: 0,
+    reportsBadge: 2,
+    creditsBadge: 0,
+    chatBadge: 0,
+    isSetupComplete: false,
+    hiddenTabHrefs: ["/admin/chat"],
+    villageTrouble: null,
+  } as unknown as AdminTabFacts;
+
+  it("keeps every plumbing page one tap from Set up", () => {
+    const labels = readAdminTabs(CONSOLE_KEYS.setup, FACTS).map(({ label }) => label);
+
+    expect(labels).toEqual(["Setup checklist", "Settings", "Email", "Village check", "Credits", "Perks", "Features", "Reports", "Audit log"]);
   });
 
-  // Its page frames the marketplace under its own security policy, which only a full page load applies.
-  it("loads the whole page, while other entries navigate inside the app", () => {
-    stubUnreadCount(0);
-    renderWithClient(createElement(SidebarNavigation, { items: buildShellNavigation(), isAdmin: false, badges: {} }));
+  it("keeps the weekly email beside Asks & digest", () => {
+    expect(readAdminTabs(CONSOLE_KEYS.asks, FACTS).map(({ label }) => label)).toEqual(["Asks", "Weekly email"]);
+  });
 
-    expect(screen.getByRole("link", { name: /Perks/ }).hasAttribute("data-app-link")).toBe(false);
-    expect(screen.getByRole("link", { name: /Messages/ }).hasAttribute("data-app-link")).toBe(true);
+  it("adds nothing to pages with their own menu item", () => {
+    expect(readAdminTabs(CONSOLE_KEYS.home, FACTS)).toEqual([]);
   });
 });

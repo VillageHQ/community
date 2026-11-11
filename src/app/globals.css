@@ -1,14 +1,18 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./parts.css";
 
 @source not "../../site";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: var(--font-figtree), var(--font-figtree-extended), "Avenir Next", Avenir, "Segoe UI Variable Text",
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-serif: var(--font-source-serif), "Iowan Old Style", Charter, Georgia, "Times New Roman", serif;
+  /* Founderhall's one breakpoint: phones get the top bar and tabs below it, the sidebar from it up. */
+  --breakpoint-lg: 1000px;
+
+  --font-sans: var(--sans);
+  --font-serif: var(--serif);
+  --font-mono: var(--mono);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -40,72 +44,109 @@
   --color-sage-soft: var(--sage-soft);
   --color-sage-text: var(--sage-text);
 
-  --spacing-card-phone: 18px;
+  /* Founderhall's palette by name, for the parts: bg-leaf, text-graphite, border-rule… */
+  --color-ink: var(--ink);
+  --color-spine: var(--spine);
+  --color-graphite: var(--graphite);
+  --color-ribbon: var(--ribbon);
+  --color-paper: var(--paper);
+  --color-leaf: var(--leaf);
+  --color-vellum: var(--vellum);
+  --color-side: var(--side);
+  --color-ribbon-tint: var(--ribbon-tint);
+  --color-spine-tint: var(--spine-tint);
+  --color-fund: var(--fund);
+  --color-fund-deep: var(--fund-deep);
+  --color-fund-tint: var(--fund-tint);
+
+  --spacing-card-phone: 16px;
   --spacing-icon: 22px;
   --spacing-icon-small: 18px;
 
-  /* Flat sheets: small, even corners instead of soft, floating cards. */
-  --radius-card-phone: 14px;
-  --radius-small: 10px;
-  --radius-field: 12px;
-  --radius-input: 12px;
-  --radius-card: 14px;
-  --radius-panel: 16px;
+  /* Founderhall's two radii: 8 px for cards, 6 px for buttons, fields, chips and notes. */
+  --radius-card-phone: 8px;
+  --radius-small: 5px;
+  --radius-field: 6px;
+  --radius-input: 6px;
+  --radius-card: 8px;
+  --radius-panel: 8px;
 
   --shadow-panel: var(--elevation-panel);
   --shadow-cta: var(--elevation-cta);
   --shadow-cta-hover: var(--elevation-cta-hover);
   --shadow-sheet: var(--elevation-sheet);
+  --shadow-lift: var(--shadow);
 }
 
+/* The semantic names Community's screens use, set to Founderhall's values (fh-reference design-system.md §1). */
 :root {
   color-scheme: light;
 
-  --background: #f8f6f0;
-  --foreground: #0c2427;
-  --foreground-soft: #3e4f50;
-  --card: #ffffff;
-  --popover: #ffffff;
-  --muted: #f2efe7;
-  --muted-foreground: #566463;
-  --border: #e7e2d6;
-  --rule: #e2dccd;
-  --input: #878b84;
-  --logo-backdrop-dark: #0c2427;
-  --destructive: #b42318;
-  --destructive-foreground: #ffffff;
-  --destructive-soft: #fdeae6;
-  --destructive-text: #a31f15;
-  --gold-soft: #f1ecd4;
-  --gold-text: #74492c;
-  --sage-soft: #deeeda;
-  --sage-text: #2c5a2e;
+  --background: #f6f2e9;
+  --foreground: #1b2420;
+  --foreground-soft: #59625d;
+  --card: #fffdf8;
+  --popover: #fffdf8;
+  --muted: #ece6d8;
+  --muted-foreground: #59625d;
+  --border: #dad2c1;
+  --rule: #dad2c1;
+  --input: #59625d;
+  --logo-backdrop-dark: #1b2420;
+  --destructive: #9c4e22;
+  --destructive-foreground: #fffdf8;
+  --destructive-soft: #f2e2d6;
+  --destructive-text: #9c4e22;
+  --gold-soft: #f2e2d6;
+  --gold-text: #9c4e22;
+  --sage-soft: #dce7e0;
+  --sage-text: #2c4a3e;
 
-  --tint-a-bg: #d5f2f0;
-  --tint-a-fg: #204b4f;
-  --tint-b-bg: #f1ecd4;
-  --tint-b-fg: #74492c;
-  --tint-c-bg: #f9ddd3;
-  --tint-c-fg: #7a3420;
-  --tint-d-bg: #dce8f8;
-  --tint-d-fg: #24466f;
-  --tint-e-bg: #deeeda;
-  --tint-e-fg: #2c5a2e;
-  --tint-f-bg: #f3dde8;
-  --tint-f-fg: #6e2c4e;
+  --tint-a-bg: #d3e3e2;
+  --tint-a-fg: #1b2420;
+  --tint-b-bg: #d3e2d8;
+  --tint-b-fg: #1b2420;
+  --tint-c-bg: #e6d8c2;
+  --tint-c-fg: #1b2420;
+  --tint-d-bg: #dcdccf;
+  --tint-d-fg: #1b2420;
+  --tint-e-bg: #d3e2d8;
+  --tint-e-fg: #1b2420;
+  --tint-f-bg: #e6d8c2;
+  --tint-f-fg: #1b2420;
 
-  /* A sheet sits flat on the page with a hairline edge; nothing floats. */
+  /* Founderhall's own tokens (portal/public/app.css :root). --fund and its two neighbours come from the branding. */
+  --ink: #1b2420;
+  --spine: #2c4a3e;
+  --graphite: #59625d;
+  --ribbon: #9c4e22;
+  --paper: #f6f2e9;
+  --leaf: #fffdf8;
+  --vellum: #ece6d8;
+  --side: #efe9dd;
+  --ribbon-tint: #f2e2d6;
+  --spine-tint: #dce7e0;
+  --sans: var(--font-plex-sans), "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif: var(--font-source-serif), "Source Serif 4", "Source Serif Pro", Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --mono: var(--font-plex-mono), "IBM Plex Mono", "Cascadia Mono", Consolas, "SF Mono", ui-monospace, monospace;
+  --r: 8px;
+  --r-sm: 6px;
+  --shadow: 0 1px 2px rgba(27, 36, 32, 0.06), 0 6px 18px -8px rgba(27, 36, 32, 0.18);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --tab-h: 64px;
+
+  /* Cards are flat Leaf with a rule line; nothing floats. */
   --elevation-panel: 0 0 0 1px var(--rule);
   --elevation-sheet: 0 -1px 0 var(--rule);
 }
 
 :root,
 [data-accent-scope] {
-  /* The brand edge stays (it keeps a pale accent visible); the glow and the lift are gone. */
-  --elevation-cta: inset 0 0 0 1.5px var(--brand-edge);
-  --elevation-cta-hover: inset 0 0 0 1.5px var(--brand-edge), inset 0 0 0 999px rgb(0 0 0 / 0.08);
+  --elevation-cta: 0 0 #0000;
+  --elevation-cta-hover: inset 0 0 0 999px var(--fund-deep);
 }
 
+/* Dark mode waits on the owner (Founderhall has none): the same tokens, dark, only so nothing becomes unreadable. */
 .dark {
   color-scheme: dark;
 
@@ -119,111 +160,142 @@
   --border: #37342b;
   --rule: #3b382f;
   --input: #8f8c80;
-  --destructive: #f97066;
-  --destructive-foreground: #000000;
-  --destructive-soft: #45201b;
-  --destructive-text: #ffb4a8;
-  --gold-soft: #3a2c17;
-  --gold-text: #e3d8a4;
+  --destructive: #f0a07a;
+  --destructive-foreground: #15140f;
+  --destructive-soft: #45281b;
+  --destructive-text: #f6c2a6;
+  --gold-soft: #45281b;
+  --gold-text: #f6c2a6;
   --sage-soft: #223621;
   --sage-text: #b4dcae;
 
-  --tint-a-bg: #204b4f;
-  --tint-a-fg: #d5f2f0;
-  --tint-b-bg: #4a3a1d;
-  --tint-b-fg: #f1ecd4;
-  --tint-c-bg: #5a2d20;
-  --tint-c-fg: #f9ddd3;
-  --tint-d-bg: #24466f;
-  --tint-d-fg: #dce8f8;
-  --tint-e-bg: #2c4a2d;
-  --tint-e-fg: #deeeda;
-  --tint-f-bg: #5a2a43;
-  --tint-f-fg: #f3dde8;
+  --tint-a-bg: #2b3f3e;
+  --tint-a-fg: #f7f4ea;
+  --tint-b-bg: #2b3d31;
+  --tint-b-fg: #f7f4ea;
+  --tint-c-bg: #463a28;
+  --tint-c-fg: #f7f4ea;
+  --tint-d-bg: #3a3a30;
+  --tint-d-fg: #f7f4ea;
+  --tint-e-bg: #2b3d31;
+  --tint-e-fg: #f7f4ea;
+  --tint-f-bg: #463a28;
+  --tint-f-fg: #f7f4ea;
+
+  --ink: #f7f4ea;
+  --spine: #b4dcae;
+  --graphite: #aaa698;
+  --ribbon: #f6c2a6;
+  --paper: #15140f;
+  --leaf: #201e18;
+  --vellum: #2a2820;
+  --side: #1b1a15;
+  --ribbon-tint: #45281b;
+  --spine-tint: #223621;
 
   --elevation-panel: 0 0 0 1px var(--rule);
   --elevation-sheet: 0 -1px 0 var(--rule);
 }
 
-/* Headings are set in the serif: the fund's voice. Body text stays in Figtree at regular weight. */
+/* Founderhall's type (design-system.md §1.2): serif for titles and people, sans for what you read or click. */
 @utility type-display {
-  font-family: var(--font-serif);
-  font-size: 40px;
-  line-height: 46px;
+  font-family: var(--serif);
+  font-size: 34px;
+  line-height: 42px;
   font-weight: 600;
-  letter-spacing: -0.008em;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 @utility type-h1 {
-  font-family: var(--font-serif);
-  font-size: 30px;
-  line-height: 36px;
+  font-family: var(--serif);
+  font-size: 28px;
+  line-height: 34px;
   font-weight: 600;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  @media (min-width: 1000px) {
+    font-size: 34px;
+    line-height: 42px;
+  }
 }
 
 @utility type-h2 {
-  font-family: var(--font-serif);
-  font-size: 23px;
-  line-height: 29px;
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 28px;
   font-weight: 600;
   letter-spacing: -0.005em;
+  text-wrap: balance;
 }
 
 @utility type-h3 {
-  font-family: var(--font-serif);
-  font-size: 19px;
-  line-height: 26px;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 22px;
   font-weight: 600;
   letter-spacing: 0;
 }
 
+@utility type-name {
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+}
+
 @utility type-serif {
-  font-family: var(--font-serif);
+  font-family: var(--serif);
   font-weight: 600;
   letter-spacing: 0;
 }
 
 @utility type-lead {
-  font-size: 16px;
-  line-height: 25px;
+  font-size: 15px;
+  line-height: 22px;
   font-weight: 400;
 }
 
 @utility type-body {
-  font-size: 16px;
-  line-height: 24px;
+  font-size: 15px;
+  line-height: 22px;
   font-weight: 400;
 }
 
 @utility type-small {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 20px;
   font-weight: 400;
 }
 
 @utility type-label {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 20px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 @utility type-note {
-  font-size: 15px;
-  line-height: 23px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+@utility type-hint {
+  font-size: 13px;
+  line-height: 18px;
   font-weight: 400;
 }
 
 @utility type-micro {
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 12px;
+  line-height: 16px;
   font-weight: 600;
 }
 
 @utility type-tab {
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
 }
 
 @layer base {
@@ -235,6 +307,8 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    scrollbar-color: #c9c0ad transparent;
+    scrollbar-width: thin;
     scroll-padding-top: 88px;
     scroll-padding-bottom: 112px;
   }
@@ -244,8 +318,8 @@
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
-    font-size: 16px;
-    line-height: 24px;
+    font-size: 15px;
+    line-height: 22px;
     font-weight: 400;
     font-synthesis: none;
     font-variant-numeric: lining-nums;
@@ -255,8 +329,19 @@
   }
 
   :focus-visible {
-    outline: 3px solid var(--ring);
-    outline-offset: 3px;
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--ribbon-tint);
+    color: var(--ink);
+  }
+
+  input,
+  textarea,
+  select {
+    caret-color: var(--fund);
   }
 
   main:focus-visible {
@@ -265,7 +350,7 @@
 
   input::placeholder,
   textarea::placeholder {
-    color: var(--muted-foreground);
+    color: #6e766f;
     opacity: 1;
   }
 
@@ -318,64 +403,56 @@
   animation: walk 2.4s ease-in-out infinite;
 }
 
-/* A focused flow takes over the page: the sidebar and tabs leave both the screen and the tab order. */
+/* A focused flow takes over the page: the menus leave both the screen and the tab order. */
 [data-slot="app-shell"]:has([data-takeover]) {
   display: block;
+  background: none;
 }
 
-[data-slot="app-shell"]:has([data-takeover]) > :is([data-slot="sidebar"], [data-slot="phone-top-bar"], [data-slot="tab-bar"]) {
+[data-slot="app-shell"]:has([data-takeover]) :is([data-slot="sidebar"], [data-slot="phone-top-bar"], [data-slot="tab-bar"], [data-slot="founder-view-strip"], [data-slot="phone-foot"]) {
   display: none;
 }
 
-[data-slot="app-shell"]:has([data-takeover]) > main {
+[data-slot="app-shell"]:has([data-takeover]) [data-slot="main"] {
   padding: 0;
-}
-
-[data-slot="app-shell"]:has([data-takeover]) [data-slot="page-width"] {
   max-width: none;
 }
 
-/* A centered page shown inside the app (a page that isn't there) leaves the footer to the app. */
-[data-slot="app-shell"] [data-slot="centered-page"] [data-slot="site-footer"] {
+/* A public page shown inside the app (a page that isn't there) leaves the footer to the app. */
+[data-slot="app-shell"] :is([data-slot="centered-page"], [data-slot="split-layout"]) [data-slot="site-footer"] {
   display: none;
 }
 
-/* The source link sits in the sidebar only while messages fill the page, where a page footer can't. */
-[data-slot="sidebar-source"] {
-  display: none;
+[data-slot="app-shell"] :is([data-slot="centered-page"], [data-slot="split-layout"]) .fh-pub {
+  padding-top: 0;
+  margin: 0;
+}
+
+/* A signed-out page's first block may still ask for most of the screen; inside Founderhall's card it sits flush. */
+:is([data-slot="public-page"], [data-slot="split-layout"], [data-slot="centered-page"]) .fh-pub-card > :first-child {
+  min-height: 0;
 }
 
 /* Messages fill the page beside the sidebar on desktop. */
-@media (min-width: 1024px) {
-  [data-slot="app-shell"]:has([data-slot="messages"]) > main {
+@media (min-width: 1000px) {
+  [data-slot="app-shell"]:has([data-slot="messages"]) [data-slot="main"] {
     padding: 0;
-  }
-
-  [data-slot="app-shell"]:has([data-slot="messages"]) [data-slot="site-footer"] {
-    display: none;
-  }
-
-  [data-slot="app-shell"]:has([data-slot="messages"]) [data-slot="sidebar-source"] {
-    display: block;
-  }
-
-  [data-slot="app-shell"]:has([data-slot="messages"]) [data-slot="page-width"] {
     max-width: none;
+  }
+
+  [data-slot="app-shell"]:has([data-slot="messages"]) [data-slot="phone-foot"] {
+    display: none;
   }
 }
 
 /* An open thread takes over the phone screen, so nothing can cover its composer. */
-@media (max-width: 1023.98px) {
-  [data-slot="app-shell"]:has([data-phone-takeover]) > :is([data-slot="phone-top-bar"], [data-slot="tab-bar"]) {
+@media (max-width: 999.98px) {
+  [data-slot="app-shell"]:has([data-phone-takeover]) :is([data-slot="phone-top-bar"], [data-slot="tab-bar"], [data-slot="founder-view-strip"], [data-slot="phone-foot"]) {
     display: none;
   }
 
-  [data-slot="app-shell"]:has([data-phone-takeover]) > main {
+  [data-slot="app-shell"]:has([data-phone-takeover]) [data-slot="main"] {
     padding: 0;
-  }
-
-  [data-slot="app-shell"]:has([data-phone-takeover]) [data-slot="site-footer"] {
-    display: none;
   }
 }
 
@@ -401,6 +478,8 @@
   [data-slot="sidebar"],
   [data-slot="phone-top-bar"],
   [data-slot="tab-bar"],
+  [data-slot="founder-view-strip"],
+  [data-slot="phone-foot"],
   [data-print="hide"] {
     display: none !important;
   }
@@ -416,4 +495,27 @@
     border: 1px solid #c9d3d1;
     break-inside: avoid;
   }
+}
+
+/* Founderhall's plain links: the fund colour, underlined (its pages rely on the browser's default, which Tailwind
+   resets). Only inside Founderhall's parts, so screens not yet transplanted keep their own links. */
+:where(.fh-credit, .fh-pub-foot, .fh-section-head, .fh-sheet-head, .fh-preview-strip, .fh-pub-card, .fh-note, .fh-hint, .fh-lede, .fh-small, .fh-strip, .fh-empty, .fh-sheet, .fh-mail, .fh-report) a:not([class]) {
+  color: var(--fund);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+:where(.fh-credit, .fh-pub-foot, .fh-section-head, .fh-sheet-head, .fh-preview-strip, .fh-pub-card, .fh-note, .fh-hint, .fh-lede, .fh-small, .fh-strip, .fh-empty, .fh-sheet, .fh-mail, .fh-report) a:not([class]):hover {
+  color: var(--fund-deep);
+}
+
+:where(.fh-credit, .fh-pub-foot) a:not([class]) {
+  color: var(--graphite);
+}
+
+/* The demo band keeps its Ribbon in dark mode, where --ribbon turns light. */
+.dark .fh-demo-bar {
+  background: #9c4e22;
+  color: #ffffff;
 }

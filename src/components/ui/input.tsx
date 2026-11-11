@@ -1,15 +1,11 @@
 import { cn } from "cn";
 import type { ComponentProps } from "react";
 
+// Founderhall's field (crop form-intro-ask.png): min 44 px, 1 px Graphite border, radius 6, Leaf, 15/22; focus = 2 px
+// fund outline. The same look serves Input, Textarea and Select.
+export const FIELD_CLASSES =
+  "block w-full min-w-0 min-h-11 rounded-input border border-input bg-leaf px-3 py-2.5 text-[15px] leading-[22px] text-foreground placeholder:text-[#6e766f] focus:border-fund focus:outline-2 focus:outline-offset-0 focus:outline-fund disabled:cursor-not-allowed disabled:opacity-45 aria-invalid:border-ribbon";
+
 export function Input({ className, ...props }: ComponentProps<"input">) {
-  return (
-    <input
-      data-slot="input"
-      className={cn(
-        "type-body block min-h-14 w-full min-w-0 rounded-input border-0 bg-card px-5 text-foreground shadow-[inset_0_0_0_1.5px_var(--input)] outline-offset-2 transition-shadow duration-150 focus:shadow-[inset_0_0_0_2px_var(--ring)] disabled:cursor-not-allowed disabled:opacity-55 aria-invalid:shadow-[inset_0_0_0_2px_var(--destructive-text)]",
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <input data-slot="input" className={cn(FIELD_CLASSES, className)} {...props} />;
 }

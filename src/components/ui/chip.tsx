@@ -1,11 +1,28 @@
 import { cn } from "cn";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
+// Founderhall's chip (crops chips-tabs-asks.png, chips-filter-members.png): 34 px, radius 6, Vellum, 500 14;
+// selected = Ink with Paper text. Used as page tabs and filters; a link chip marks the current page the same way.
 const CHIP_CLASSES =
-  "type-note inline-flex min-h-11 items-center gap-2 rounded-full bg-card px-[18px] font-semibold whitespace-nowrap text-foreground-soft shadow-[inset_0_0_0_1.5px_var(--border)] hover:text-foreground hover:shadow-[inset_0_0_0_1.5px_var(--input)] aria-pressed:bg-foreground aria-pressed:text-background aria-pressed:shadow-none aria-[current=page]:bg-foreground aria-[current=page]:text-background aria-[current=page]:shadow-none";
+  "fh-chip no-underline aria-[current=page]:bg-ink aria-[current=page]:text-paper";
 
 export function Chip({ className, isPressed, ...props }: ComponentProps<"button"> & { isPressed: boolean }) {
   return <button type="button" aria-pressed={isPressed} className={cn(CHIP_CLASSES, className)} {...props} />;
+}
+
+// The count inside a chip, at 72 % opacity ("Open 12").
+export function ChipCount({ children }: { children: ReactNode }) {
+  return <span className="fh-n">{children}</span>;
+}
+
+// A row of chips: wraps on desktop, scrolls sideways on a phone.
+export function ChipRow({ className, ...props }: ComponentProps<"div">) {
+  return <div data-slot="chip-row" className={cn("fh-chips", className)} {...props} />;
+}
+
+// Founderhall's example chips (crop example-chips.png): dashed, transparent; they fill a field when pressed.
+export function ExampleChips({ className, ...props }: ComponentProps<"div">) {
+  return <div data-slot="example-chips" className={cn("fh-examples", className)} {...props} />;
 }
 
 export { CHIP_CLASSES };

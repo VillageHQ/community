@@ -96,7 +96,7 @@ describe("the shell with modules off", () => {
       const enabledIds = await readEnabledIds(database);
       const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false, enabledIds).map(({ label }) => label);
 
-      expect(labels).toEqual(["Home", "Intros", "Messages", "Members", "Asks"]);
+      expect(labels).toEqual(["Today", "Asks & updates", "Directory", "Intros", "Inbox", "My profile"]);
     });
 
     it("hides the credits tab", async () => {
@@ -181,7 +181,7 @@ describe("the shell with modules off", () => {
       const enabledIds = await readEnabledIds(database);
       const [first] = selectNavigationItems(NAVIGATION_SECTIONS.primary, false, enabledIds);
 
-      expect(first?.label).toBe("Home");
+      expect(first?.label).toBe("Today");
     });
 
     describe("a report on a post", () => {

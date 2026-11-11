@@ -17,7 +17,7 @@ export function CompanyLogo({ url, sizePx = DEFAULT_LOGO_SIZE_PX, className }: C
       height={sizePx}
       referrerPolicy="no-referrer"
       style={{ width: sizePx, height: sizePx }}
-      className={cn("inline-block shrink-0 rounded-[4px] bg-white object-contain mt-[0.15em] shadow-[inset_0_0_0_1px_rgb(0_0_0/0.08)]", className)}
+      className={cn(sizePx >= 20 ? "inline-block shrink-0 rounded-[5px] bg-white object-contain mt-[0.1em]" : "inline-block shrink-0 rounded-[4px] bg-white object-contain mt-[0.15em]", className)}
     />
   );
 }

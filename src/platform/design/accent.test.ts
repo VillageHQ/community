@@ -4,6 +4,8 @@ import {
   contrastRatio,
   DEFAULT_ACCENT_COLOR,
   deriveAccentTokens,
+  deriveFundColors,
+  LEAF,
   NEUTRALS,
   parseAccentColor,
   renderAccentCss,
@@ -85,6 +87,7 @@ describe("accent validation", () => {
 describe("the accent style sheet", () => {
   it("writes the stored accent as the light fill", () => {
     expect(renderAccentCss("#2556E8")).toContain("--primary:#2556e8");
+    expect(renderAccentCss("#ffc93c")).toContain("--primary:#8e7021");
   });
 
   it("writes both themes", () => {
@@ -104,5 +107,26 @@ describe("the accent style sheet", () => {
 
   it("contains only variables and hex colors", () => {
     expect(renderAccentCss("#e8604c")).toMatch(/^(:root(\.dark)?\{(--[a-z-]+:#[0-9a-f]{6};?)+\})+$/);
+  });
+});
+
+describe("the fund colour (Founderhall's rule)", () => {
+  it.each([
+    ["#24525A", { fund: "#24525a", deep: "#1b3e44", tint: "#dce3e5", isAdjusted: false }],
+    ["#ffc93c", { fund: "#8e7021", deep: "#6b5419", tint: "#ede8db", isAdjusted: true }],
+    ["#0f7f86", { fund: "#0f7f86", deep: "#0b5f65", tint: "#d9ebec", isAdjusted: false }],
+    ["#e8604c", { fund: "#b54b3b", deep: "#88382c", tint: "#f3e2e0", isAdjusted: true }],
+  ] as const)("gives Founderhall's values for %s", (color, expected) => {
+    expect(deriveFundColors(color)).toEqual(expected);
+  });
+
+  it("reads at 4.5:1 on Leaf for every colour", () => {
+    const failures = sampleColors().filter((color) => contrastRatio(deriveFundColors(color).fund, LEAF) < AA_TEXT);
+
+    expect(failures).toEqual([]);
+  });
+
+  it("is written as --fund, --fund-deep and --fund-tint", () => {
+    expect(renderAccentCss("#24525a")).toContain("--fund:#24525a;--fund-deep:#1b3e44;--fund-tint:#dce3e5");
   });
 });

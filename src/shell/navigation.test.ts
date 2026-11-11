@@ -4,10 +4,22 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { NAVIGATION_SECTIONS } from "@/platform/modules/manifest";
+import { ROUTES } from "@/platform/http/routes";
 
 import { NAVIGATION, selectNavigationItems } from "./navigation";
-import { describeBadge, describeNavigationBadge, isNavigationItemActive, NAVIGATION_BADGES } from "./navigation-rules";
-import { ROUTES } from "@/platform/http/routes";
+import {
+  CONSOLE_KEYS,
+  describeBadge,
+  describeNavigationBadge,
+  isNavigationItemActive,
+  MEMBER_KEYS,
+  NAVIGATION_BADGES,
+  readConsoleKey,
+  readConsoleTabKey,
+  readMemberKey,
+  readMemberTabKey,
+  readShellMode,
+} from "./navigation-rules";
 
 const APP_GROUP = resolve(import.meta.dirname, "../app/(app)");
 
@@ -16,6 +28,8 @@ function hasPage(href: string) {
   return readdirSync(directory).includes("page.tsx") && statSync(directory).isDirectory();
 }
 
+const MEMBER_ITEMS = selectNavigationItems(NAVIGATION_SECTIONS.primary, false);
+
 describe("the navigation", () => {
   it("lists only routes with a page", () => {
     for (const { href } of NAVIGATION) {
@@ -23,34 +37,85 @@ describe("the navigation", () => {
     }
   });
 
-  it("lists every primary module in the owner's order", () => {
-    const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false).map(({ label }) => label);
-
-    expect(labels).toEqual(["Feed", "Meet", "Intros", "Messages", "Members", "Asks", "Jobs", "Perks"]);
+  it("lists Founderhall's member menu in its order", () => {
+    expect(MEMBER_ITEMS.map(({ label }) => label)).toEqual([
+      "Today",
+      "Asks & updates",
+      "Search",
+      "Directory",
+      "Jobs",
+      "Intros",
+      "Inbox",
+      "Perks",
+      "My profile",
+    ]);
   });
 
-  it("hides Admin from members", () => {
+  it("gives six of them a phone tab", () => {
+    expect(MEMBER_ITEMS.flatMap(({ tabLabel }) => (tabLabel ? [tabLabel] : []))).toEqual(["Today", "Asks", "Search", "Directory", "Intros", "Inbox"]);
+  });
+
+  it("hides the console from members", () => {
     expect(selectNavigationItems(NAVIGATION_SECTIONS.admin, false)).toEqual([]);
   });
 
-  it("shows Admin to admins", () => {
+  it("lists Founderhall's console menu for admins", () => {
     const labels = selectNavigationItems(NAVIGATION_SECTIONS.admin, true).map(({ label }) => label);
 
-    expect(labels).toEqual(["Admin"]);
+    expect(labels).toEqual(["Home", "Partner report", "Intro log", "Members", "Invites", "Asks & digest", "Job board", "Set up"]);
   });
 
-  describe("active state", () => {
-    it("matches Feed only on the root path", () => {
+  it("hides a console item whose module is off", () => {
+    const labels = selectNavigationItems(NAVIGATION_SECTIONS.admin, true, new Set(["members", "admin", "intros"])).map(({ label }) => label);
+
+    expect(labels).toEqual(["Home", "Partner report", "Intro log", "Members", "Invites", "Set up"]);
+  });
+
+  describe("which item a page lights", () => {
+    it("lights Today only on the root path", () => {
       expect(isNavigationItemActive(ROUTES.feed, ROUTES.feed)).toBe(true);
       expect(isNavigationItemActive(ROUTES.feed, ROUTES.network)).toBe(false);
     });
 
-    it("matches a section on its nested paths", () => {
-      expect(isNavigationItemActive(ROUTES.admin, `${ROUTES.admin}/anything`)).toBe(true);
-    });
-
     it("doesn't match a path that only shares a prefix", () => {
       expect(isNavigationItemActive(ROUTES.admin, `${ROUTES.admin}-other`)).toBe(false);
+    });
+
+    it.each([
+      [ROUTES.feed, MEMBER_KEYS.today, MEMBER_KEYS.today],
+      ["/members/abc", MEMBER_KEYS.directory, MEMBER_KEYS.directory],
+      [ROUTES.editCard, MEMBER_KEYS.me, null],
+      [ROUTES.yourData, MEMBER_KEYS.me, null],
+      ["/jobs/yours", MEMBER_KEYS.jobs, MEMBER_KEYS.directory],
+      ["/messages/123", MEMBER_KEYS.inbox, MEMBER_KEYS.inbox],
+      [ROUTES.network, MEMBER_KEYS.search, MEMBER_KEYS.search],
+      [ROUTES.welcome, null, null],
+    ])("%s lights %s in the sidebar and %s on the phone", (pathname, sidebarKey, tabKey) => {
+      expect(readMemberKey(pathname, MEMBER_ITEMS)).toBe(sidebarKey);
+      expect(readMemberTabKey(pathname, MEMBER_ITEMS)).toBe(tabKey);
+    });
+
+    it.each([
+      [ROUTES.admin, CONSOLE_KEYS.home, CONSOLE_KEYS.home],
+      [ROUTES.adminReport, CONSOLE_KEYS.report, CONSOLE_KEYS.introLog],
+      [ROUTES.adminIntroLog, CONSOLE_KEYS.introLog, CONSOLE_KEYS.introLog],
+      [ROUTES.adminInvites, CONSOLE_KEYS.invites, CONSOLE_KEYS.members],
+      ["/admin/jobs", CONSOLE_KEYS.jobs, CONSOLE_KEYS.members],
+      [ROUTES.adminWeeklyEmail, CONSOLE_KEYS.asks, CONSOLE_KEYS.asks],
+      [ROUTES.adminCredits, CONSOLE_KEYS.setup, CONSOLE_KEYS.setup],
+      [ROUTES.adminReports, CONSOLE_KEYS.setup, CONSOLE_KEYS.setup],
+      [ROUTES.adminFeatures, CONSOLE_KEYS.setup, CONSOLE_KEYS.setup],
+      [ROUTES.adminAuditLog, CONSOLE_KEYS.setup, CONSOLE_KEYS.setup],
+      [ROUTES.adminSetup, CONSOLE_KEYS.setup, CONSOLE_KEYS.setup],
+    ])("%s lights %s in the console and %s on the phone", (pathname, sidebarKey, tabKey) => {
+      expect(readConsoleKey(pathname)).toBe(sidebarKey);
+      expect(readConsoleTabKey(pathname)).toBe(tabKey);
+    });
+
+    it("shows the console only to an admin under /admin", () => {
+      expect(readShellMode(ROUTES.adminMembers, true)).toBe("console");
+      expect(readShellMode(ROUTES.feed, true)).toBe("member");
+      expect(readShellMode(ROUTES.adminMembers, false)).toBe("member");
     });
   });
 

@@ -33,7 +33,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     <AppShell
       community={{ name: communityName, descriptor, logo }}
       member={{ id, name, email, image: avatarUrl, isAdmin }}
-      navigation={buildShellNavigation(enabledIds)}
+      navigation={buildShellNavigation(enabledIds, isAdmin)}
       badges={{ ...adminBadges, ...moduleBadges }}
       isNetworkOn={enabledIds.has(networkManifest.id)}
     >

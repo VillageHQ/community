@@ -3,44 +3,61 @@ import { cn } from "cn";
 import { Slot } from "radix-ui";
 import type { ComponentProps } from "react";
 
+// Founderhall's buttons (design-system.md §3.2, crops buttons-*.png): 40 px, radius 6, sans 600 15/20, press 1 px.
+// A label too long for a phone wraps instead of running off the screen; one line keeps the 40 px exactly.
 export const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center rounded-field border-0 text-center font-bold tracking-[-0.003em] transition-[transform,box-shadow,background-color,color] duration-150 ease-out select-none active:translate-y-px disabled:pointer-events-none disabled:opacity-55 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "fh-btn h-auto text-center whitespace-normal disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-icon-small",
   {
     variants: {
       variant: {
-        primary:
-          "bg-primary text-primary-foreground shadow-cta hover:shadow-cta-hover",
-        soft: "bg-secondary text-secondary-foreground hover:shadow-[inset_0_0_0_1.5px_var(--brand-emphasis)]",
-        outline: "bg-card text-foreground shadow-[inset_0_0_0_1.5px_var(--input)] hover:bg-muted",
-        quiet: "bg-transparent text-foreground-soft hover:bg-muted hover:text-foreground",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:shadow-[inset_0_0_0_999px_rgb(0_0_0/0.08)]",
-        link: "min-h-0 bg-transparent p-0 font-bold text-brand-emphasis underline hover:no-underline",
+        // The one main action of a card: the fund colour.
+        primary: "fh-btn-primary",
+        // The page's top action ("Ask for an intro", "Partner report").
+        ink: "fh-btn-ink",
+        secondary: "fh-btn-secondary",
+        // Older names for the secondary button, kept so every screen takes the new look.
+        outline: "fh-btn-secondary",
+        soft: "fh-btn-secondary",
+        quiet: "fh-btn-quiet",
+        destructive: "border-destructive bg-destructive text-destructive-foreground hover:bg-ribbon hover:text-leaf",
+        link: "fh-linkbtn h-auto min-h-0 p-0 font-semibold text-fund underline hover:text-fund-deep hover:no-underline",
       },
       size: {
-        sm: "min-h-11 gap-2 px-card-phone py-2 text-[15px] leading-5 [&_svg:not([class*='size-'])]:size-icon-small",
-        default: "min-h-12 gap-2.5 px-6 py-2.5 text-base leading-5 [&_svg:not([class*='size-'])]:size-5",
-        lg: "min-h-14 gap-2.5 px-8 py-3 text-[17px] leading-[22px] [&_svg:not([class*='size-'])]:size-5",
-        hero: "min-h-16 gap-3 px-10 py-3 text-lg leading-6 [&_svg:not([class*='size-'])]:size-icon",
-        icon: "size-11 rounded-full p-0 [&_svg:not([class*='size-'])]:size-icon",
-        "icon-lg": "size-12 rounded-full p-0 [&_svg:not([class*='size-'])]:size-icon",
+        default: "min-h-10 py-[9px]",
+        sm: "fh-btn-sm min-h-8 py-[5px]",
+        // Founderhall has one size of large button: the default.
+        lg: "min-h-10 py-[9px]",
+        hero: "min-h-10 py-[9px]",
+        icon: "size-10 rounded-[8px] p-0 [&_svg:not([class*='size-'])]:size-icon",
+        "icon-lg": "size-10 rounded-[8px] p-0 [&_svg:not([class*='size-'])]:size-icon",
+      },
+      width: {
+        auto: "",
+        // Full width: public pages and phone forms.
+        block: "fh-btn-block",
       },
     },
-    defaultVariants: { variant: "primary", size: "default" },
+    compoundVariants: [{ variant: "link", className: "min-h-0 py-0" }],
+    defaultVariants: { variant: "primary", size: "default", width: "auto" },
   },
 );
 
 type ButtonProps = ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: boolean };
 
-export function Button({ className, variant, size, asChild = false, ...props }: ButtonProps) {
+export function Button({ className, variant, size, width, asChild = false, ...props }: ButtonProps) {
   const Component = asChild ? Slot.Root : "button";
   return (
     <Component
       data-slot="button"
       data-variant={variant ?? "primary"}
       data-size={size ?? "default"}
-      className={cn(buttonVariants({ variant, size }), className)}
+      className={cn(buttonVariants({ variant, size, width }), className)}
       {...props}
     />
   );
+}
+
+// A row of buttons: wraps, 8 px apart.
+export function ButtonRow({ className, ...props }: ComponentProps<"div">) {
+  return <div data-slot="button-row" className={cn("fh-btn-row", className)} {...props} />;
 }

@@ -5,7 +5,6 @@ import { ROUTES } from "@/platform/http/routes";
 import type { AdminHomeItem } from "@/shell/admin-home";
 import type { AdminTabFacts } from "@/shell/admin-badges";
 
-import { AdminTabs } from "./admin-tabs";
 
 type QuarterLine = { periodLabel: string; asked: number; introduced: number; helped: number } | null;
 
@@ -71,7 +70,7 @@ function NeedsYou({ items }: { items: readonly AdminHomeItem[] }) {
 
 type AdminHomeViewProps = { quarter: QuarterLine; items: readonly AdminHomeItem[]; facts: AdminTabFacts };
 
-export function AdminHomeView({ quarter, items, facts }: AdminHomeViewProps) {
+export function AdminHomeView({ quarter, items }: AdminHomeViewProps) {
   return (
     <>
       <QuarterIntros quarter={quarter} />
@@ -81,8 +80,6 @@ export function AdminHomeView({ quarter, items, facts }: AdminHomeViewProps) {
           Open the full partner report
         </Link>
       </p>
-      <h2 className="type-micro mb-2.5 font-bold text-muted-foreground uppercase">Everything else</h2>
-      <AdminTabs facts={facts} />
     </>
   );
 }
