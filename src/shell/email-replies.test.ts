@@ -57,8 +57,8 @@ describe("answering by replying to the email", () => {
   }
 
   // A fake Resend inbound post. Attachments come along, as Resend sends their names; nothing reads them.
-  async function reply(from: string, to: string, text: string, emailId = `received-${(emailCount += 1)}`) {
-    const data = { email_id: emailId, from, to: [to], text, attachments: [{ filename: "deck.pdf", content_type: "application/pdf" }] };
+  async function reply(from: string, to: string | string[], text: string | null, emailId = `received-${(emailCount += 1)}`, extra: Record<string, unknown> = {}) {
+    const data = { email_id: emailId, from, to: [to].flat(), text, attachments: [{ filename: "deck.pdf", content_type: "application/pdf" }], ...extra };
     const response = await postResendWebhook(webhookRequest({ type: "email.received", data }));
     return (await response.json()) as ReplyAnswer;
   }
@@ -189,6 +189,25 @@ describe("answering by replying to the email", () => {
       expect(bounces[0]?.text).not.toContain("Let me in");
     });
 
+    it("ignores an out-of-office reply, and decodes an HTML-only reply", async () => {
+      const { hana, hanaEmail, replyTo } = await seedMessageEmail();
+
+      expect(await reply(hanaEmail, replyTo, "I'm away until Monday.", undefined, { subject: "Automatic reply: Alex Asker sent you a message" })).toMatchObject({ reason: "automatic" });
+      expect(await reply(hanaEmail, replyTo, "I'm away.", undefined, { headers: [{ name: "Auto-Submitted", value: "auto-replied" }] })).toMatchObject({ reason: "automatic" });
+      expect(await reply(hanaEmail, replyTo, null, undefined, { html: "<p>It&#8217;s fine &amp; good&nbsp;&mdash; ok</p><blockquote>old email</blockquote>" })).toMatchObject({ outcome: "posted" });
+
+      const bodies = (await database.select().from(directMessage).where(eq(directMessage.senderId, hana))).map(({ body }) => body);
+      expect(bodies).toEqual(["It’s fine & good — ok"]);
+      expect(await readQueued(EMAIL_KINDS.replyNotice)).toHaveLength(0);
+    });
+
+    it("uses the real address when a made-up one is listed before it", async () => {
+      const { hanaEmail, conversationId, replyTo } = await seedMessageEmail();
+      const madeUp = `reply+m${"0".repeat(32)}-${"0".repeat(20)}@${REPLY_DOMAIN}`;
+      expect(await reply(hanaEmail, [madeUp, replyTo], "Thursday works.")).toMatchObject({ outcome: "posted" });
+      expect(await database.select().from(directMessage).where(eq(directMessage.conversationId, conversationId))).toHaveLength(2);
+    });
+
     it("refuses a forged address and mails nobody", async () => {
       const { hanaEmail, conversationId, replyTo } = await seedMessageEmail();
 
@@ -245,6 +264,18 @@ describe("answering by replying to the email", () => {
 
       expect(await reply(hanaEmail, replyTo, `no thanks${QUOTED}`)).toMatchObject({ outcome: "posted" });
       expect(await readState(intro.id)).toBe(INTRO_STATES.declined);
+    });
+
+    it("never sends the note to an address in the signature", async () => {
+      const { hanaEmail, intro, replyTo } = await seedAskedEmail();
+
+      expect(await reply(hanaEmail, replyTo, "Yes\n\nBest,\nHana Helper | hana.work@helperco.example | +1 555 0100")).toMatchObject({ outcome: "posted" });
+
+      expect(await readState(intro.id)).toBe(INTRO_STATES.askingTarget);
+      const sent = resend.state.emails.map(({ body }) => body as RecordedBody);
+      expect(sent.some(({ to }) => to.includes("hana.work@helperco.example"))).toBe(false);
+      const [notice] = await readQueued(EMAIL_KINDS.replyNotice, hanaEmail);
+      expect(notice?.text).toContain("Send them this link");
     });
 
     it("refuses the asker answering their own ask from the connector's email", async () => {
@@ -311,8 +342,12 @@ describe("answering by replying to the email", () => {
       expect(await reply(samEmail, email?.replyTo ?? "", "Not me.")).toMatchObject({ reason: "wrong_sender" });
       expect(await reply(hanaEmail, email?.replyTo ?? "", `I raised from two fintech funds last year.${QUOTED}`)).toMatchObject({ kind: "h", outcome: "posted" });
 
+      // Resend sends the same reply again: still one answer, and no "already answered" email.
+      expect(await reply(hanaEmail, email?.replyTo ?? "", `I raised from two fintech funds last year.${QUOTED}`)).toMatchObject({ outcome: "posted" });
+
       const answers = await database.select().from(askAnswer).where(eq(askAnswer.askId, askId));
       expect(answers.map(({ authorId, body }) => [authorId, body])).toEqual([[hana, "I raised from two fintech funds last year."]]);
+      expect(await readQueued(EMAIL_KINDS.replyNotice, hanaEmail)).toHaveLength(0);
     });
   });
 

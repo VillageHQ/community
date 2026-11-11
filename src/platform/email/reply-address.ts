@@ -62,8 +62,9 @@ function toUuid(compactId: string) {
 // An address of ours, before we know whom it was signed for. `isSignedFor` checks a candidate person.
 export type ReplyTarget = { kind: ReplyKind; id: string; isSignedFor: (person: ReplyPerson) => boolean };
 
-// Finds the first address on our reply domain in this form, among everything the reply was sent to.
-export function readReplyTarget({ secret, domain }: ReplySigner, addresses: readonly string[]): ReplyTarget | null {
+// Every address on our reply domain in this form, among everything the reply was sent to, in order.
+export function readReplyTargets({ secret, domain }: ReplySigner, addresses: readonly string[]): ReplyTarget[] {
+  const targets: ReplyTarget[] = [];
   for (const address of addresses) {
     const [local, addressDomain, ...rest] = address.trim().toLowerCase().split("@");
     if (!local || addressDomain !== domain || rest.length > 0) continue;
@@ -72,7 +73,7 @@ export function readReplyTarget({ secret, domain }: ReplySigner, addresses: read
     if (!kind || !compactId || !signature || !isReplyKind(kind)) continue;
     const id = toUuid(compactId);
     if (!UUID_PATTERN.test(id)) continue;
-    return { kind, id, isSignedFor: (person) => secretsMatch(signature, sign(secret, kind, compactId, person)) };
+    targets.push({ kind, id, isSignedFor: (person) => secretsMatch(signature, sign(secret, kind, compactId, person)) });
   }
-  return null;
+  return targets;
 }

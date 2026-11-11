@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { answerAskBodySchema, ASK_LIMITS, ASKS_PAGE } from "@/modules/asks/contract";
 import { asksManifest } from "@/modules/asks/manifest";
-import { askHelper } from "@/modules/asks/schema";
+import { askAnswer, askHelper } from "@/modules/asks/schema";
 import { answerAsk } from "@/modules/asks/service";
 import { consentEmailBodySchema, INTRO_ACTIONS, INTRO_DECLINE_KINDS, INTRO_LIMITS } from "@/modules/intros/contract";
 import { introsManifest } from "@/modules/intros/manifest";
@@ -25,7 +25,7 @@ import type { ReceivedEmail } from "@/platform/email/inbound";
 import { EMAIL_KINDS } from "@/platform/email/kinds";
 import { queueEmail, readEmailBranding } from "@/platform/email/outbox";
 import { sendQueuedEmailsSoon } from "@/platform/email/outbox-sender";
-import { readReplyTarget, REPLY_KINDS, resolveReplySigner, type ReplyKind, type ReplyPerson, type ReplySigner, type ReplyTarget } from "@/platform/email/reply-address";
+import { readReplyTargets, REPLY_KINDS, resolveReplySigner, type ReplyKind, type ReplyPerson, type ReplySigner, type ReplyTarget } from "@/platform/email/reply-address";
 import { escapeHtml } from "@/platform/email/email-text";
 import type { Environment } from "@/platform/environment";
 import { resolveAppUrl } from "@/platform/http/app-url";
@@ -64,6 +64,14 @@ const EMAIL_IN_TEXT = /[^\s<>"'(),;:]+@[^\s<>"'(),;:]+\.[a-z]{2,}/gi;
 const YES_LINES = new Set(["yes", "y", "yes please", "ok", "okay", "sure", "happy to", "yes, happy to"]);
 const NO_LINES = new Set(["no", "n", "no thanks", "no thank you", "not this time", "sorry, no"]);
 const BOUNCE_SUBJECT = "Your reply didn't go through";
+// Out-of-office and other mail robots: posting them would put "I'm away until Monday" under an ask.
+const AUTOMATIC_SUBJECT =
+  /^\s*(automatic reply|auto[- ]?reply|autoreply|out of (the )?office|ooo\b|away from (the )?office|vacation reply|abwesenheitsnotiz|r[ée]ponse automatique|respuesta autom[áa]tica)/i;
+
+function isAutomaticReply({ subject, autoSubmitted }: ReceivedEmail) {
+  if (autoSubmitted && autoSubmitted.trim().toLowerCase() !== "no") return true;
+  return subject !== null && AUTOMATIC_SUBJECT.test(subject);
+}
 
 type Member = { id: string; email: string; role: string | null };
 
@@ -137,8 +145,10 @@ export function readFirstLineAnswer(text: string) {
   return null;
 }
 
+// Only the YES line counts, as the email asks: a signature or a colleague's address further down never gets the note.
 function readOutsideAddress(text: string, exclude: readonly string[], replyDomain: string) {
-  return (text.match(EMAIL_IN_TEXT) ?? [])
+  const first = text.split("\n").find((line) => line.trim()) ?? "";
+  return (first.match(EMAIL_IN_TEXT) ?? [])
     .map((address) => address.toLowerCase())
     .find((address) => !exclude.includes(address) && !address.endsWith(`@${replyDomain}`));
 }
@@ -246,6 +256,11 @@ async function answerIntroAsk(landing: Landing, member: Member): Promise<EmailRe
   return posted(target.kind);
 }
 
+async function readAnswerBody(database: Database, answerId: string) {
+  const [row] = await database.select({ body: askAnswer.body }).from(askAnswer).where(eq(askAnswer.id, answerId));
+  return row?.body ?? null;
+}
+
 async function land(landing: Landing): Promise<EmailReplyResult> {
   const { database, environment, signer, target, recipient, text, emailId } = landing;
   const { member } = recipient;
@@ -262,7 +277,9 @@ async function land(landing: Landing): Promise<EmailReplyResult> {
     return posted(target.kind);
   }
   const body = answerAskBodySchema.parse({ askId: target.id, body: text });
-  const { wasAlreadyAnswered } = await answerAsk(contextFor(landing, member), body);
+  const { id, wasAlreadyAnswered } = await answerAsk(contextFor(landing, member), body);
+  // The same reply sent again (Resend retries a webhook) finds its own answer: nothing to tell anyone.
+  if (wasAlreadyAnswered && (await readAnswerBody(database, id)) === body.body) return posted(target.kind);
   if (wasAlreadyAnswered) {
     await bounce(database, environment, recipient.email, "You've already answered this ask. You can see your answer under it.", placeLink(environment, target.kind, target.id));
     return refused(target.kind, REPLY_REFUSALS.closed);
@@ -274,14 +291,24 @@ async function land(landing: Landing): Promise<EmailReplyResult> {
 export async function answerEmailReply(database: Database, environment: Environment, received: ReceivedEmail): Promise<EmailReplyResult> {
   const signer = await resolveReplySigner(database, environment);
   if (!signer) return NOT_ROUTED;
-  const target = readReplyTarget(signer, received.to);
-  if (!target) return NOT_ROUTED;
+  const targets = readReplyTargets(signer, received.to);
+  const [first] = targets;
+  if (!first) return NOT_ROUTED;
 
   const sender = readEmailAddress(received.from);
-  if (!sender || AUTOMATIC_SENDER.test(sender) || sender.endsWith(`@${signer.domain}`)) return refused(target.kind, REPLY_REFUSALS.automatic);
-  const resolved = await resolveRecipient(database, target);
-  if (resolved.status === "forged") return refused(target.kind, REPLY_REFUSALS.forged);
-  const { recipient } = resolved;
+  const isAutomatic = !sender || AUTOMATIC_SENDER.test(sender) || sender.endsWith(`@${signer.domain}`) || isAutomaticReply(received);
+  if (isAutomatic) return refused(first.kind, REPLY_REFUSALS.automatic);
+  // The first address of ours whose signature checks out. A made-up one beside it changes nothing.
+  let found: { target: ReplyTarget; recipient: Recipient } | null = null;
+  for (const candidate of targets) {
+    const resolved = await resolveRecipient(database, candidate);
+    if (resolved.status === "ok") {
+      found = { target: candidate, recipient: resolved.recipient };
+      break;
+    }
+  }
+  if (!found) return refused(first.kind, REPLY_REFUSALS.forged);
+  const { target, recipient } = found;
   const link = placeLink(environment, target.kind, target.id);
   // The address is real, but someone else sent the reply (a forward, a shared inbox). Nothing of theirs is kept.
   if (sender !== recipient.email.trim().toLowerCase()) {
