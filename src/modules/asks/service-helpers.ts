@@ -96,7 +96,7 @@ function renderHelperEmail(environment: Environment, branding: EmailBranding, ro
     `<a href="${escapeHtml(link)}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${branding.accentColor};color:${pickOnAccent(branding.accentColor)};font-weight:700;text-decoration:none">${escapeHtml(action)}</a>`,
     `</div>`,
   ].join("");
-  return { subject, html, text: `${body}\n\n${closing}\n\n${action}: ${link}` };
+  return { subject, html, text: `${body}\n\n${closing}\n\n${replyLine}\n\n${action}: ${link}` };
 }
 
 // Saves the helpers and queues each one's email in one transaction. A helper already on the ask is skipped, and

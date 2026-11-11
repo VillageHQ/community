@@ -34,7 +34,7 @@ export function renderMessageEmail({ senderName, communityName, link, accentColo
     `<a href="${escapeHtml(link)}" style="display:inline-block;padding:14px 28px;border-radius:999px;background:${accentColor};color:${pickOnAccent(accentColor)};font-weight:700;text-decoration:none">${escapeHtml(action)}</a>`,
     `</div>`,
   ].join("");
-  return { subject, html, text: `${body}\n\n${action}: ${link}` };
+  return { subject, html, text: `${body}\n\n${replyLine}\n\n${action}: ${link}` };
 }
 
 // Claims the window for this recipient and conversation. Two messages sent at once can't both
