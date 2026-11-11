@@ -70,6 +70,7 @@ type FakeVillageState = {
   leftMembers: Set<string>;
   cancelledMembers: Set<string>;
   groupCreatorIds: Set<string>;
+  groupOwnerIds: Set<string>;
   isLeaveStrict: boolean;
   delayMsByPath: Map<string, number>;
   isUnlinkedOnPathsRequest: boolean;
@@ -104,6 +105,7 @@ export function createFakeVillageState(): FakeVillageState {
     leftMembers: new Set(),
     cancelledMembers: new Set(),
     groupCreatorIds: new Set(),
+    groupOwnerIds: new Set(),
     isLeaveStrict: false,
     delayMsByPath: new Map(),
     isUnlinkedOnPathsRequest: false,
@@ -321,13 +323,16 @@ function respondToAuthenticated(
   }
   if (!linked && !isUnsyncedSearch) return respondWithError(response, 404, "not_found");
 
+  // Only the groups the caller is in, like Village: one who created it, or joined and hasn't left.
   if (path === "/v2/groups" && method === "GET") {
+    const isInGroup = state.groupOwnerIds.has(externalId) || state.groupCreatorIds.has(externalId) || (state.joinedMembers.has(externalId) && !state.leftMembers.has(externalId));
     return respondWithData(response, 200, {
-      groups: [{ id: "group-1", name: "Group", logo: null, invite_link: state.inviteLink, is_admin: true }],
+      groups: isInGroup ? [{ id: "group-1", name: "Group", logo: null, invite_link: state.inviteLink, is_admin: state.groupOwnerIds.has(externalId) }] : [],
     });
   }
   if (path === "/v2/groups") {
     state.createdGroups.push(readObjectField(body, "name"));
+    state.groupOwnerIds.add(externalId);
     return respondWithData(response, 201, { id: "group-1", name: "Group", logo: null, invite_link: state.inviteLink });
   }
   if (path === "/v2/groups/join") {

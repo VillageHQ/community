@@ -20,12 +20,15 @@ import { POST as postManual } from "@/app/api/job-board/sources/manual/route";
 import { POST as postPull } from "@/app/api/job-board/sources/pull/route";
 import { POST as postRemove } from "@/app/api/job-board/sources/remove/route";
 import { GET as getWidgetScript } from "@/app/api/job-board/widget.js/route";
+import { POST as postDirectory } from "@/app/api/members/directory/route";
 import PublicJobsPage from "@/app/public/jobs/page";
 import { FEED_TOOLS, JOB_BOARD_LIMITS, type FeedTool } from "@/modules/job-board/contract";
 import { jobBoardManifest } from "@/modules/job-board/manifest";
 import { readAllSources, readBoardCompanies, readBoardJobs, readMemberSources } from "@/modules/job-board/reads";
+import { readCompanyJobs, readNewJobs } from "@/modules/job-board/reads-hiring";
+import type { Directory } from "@/modules/members/contract-profile";
 import { detectBoard, parseFeed, TOOL_READERS } from "@/modules/job-board/rules-feeds";
-import { jobSource } from "@/modules/job-board/schema";
+import { jobPosting, jobSource } from "@/modules/job-board/schema";
 import { memberProfile } from "@/modules/members/schema";
 import { fetchBoard, pullDueSources } from "@/modules/job-board/service-pull";
 import { user } from "@/platform/database/auth-schema";
@@ -39,6 +42,7 @@ const FIXTURES = resolve(import.meta.dirname, "../../test/fixtures/jobs");
 const NOT_FOUND_DIGEST = "NEXT_HTTP_ERROR_FALLBACK;404";
 const FOUNDER_NAME = "Priya Example";
 const HOUR_MS = 60 * 60_000;
+const DAY_MS = 24 * HOUR_MS;
 
 const LINKS: Record<FeedTool, [string, string][]> = {
   greenhouse: [
@@ -466,5 +470,43 @@ describe("the job board", () => {
     expect((await visit(getEmbed, "/api/job-board/embed")).status).toBe(404);
     expect((await visit(getWidgetScript, "/api/job-board/widget.js")).status).toBe(404);
     expect(await readDigest(PublicJobsPage({ searchParams: Promise.resolve({}) }))).toBe(NOT_FOUND_DIGEST);
+  });
+
+  it("shows a company's jobs on its members' profiles, as a Hiring chip and filter in the directory, and nothing when off", async () => {
+    await linkGreenhouse();
+    const colleague = await createSignedInMember(database);
+    await database.insert(memberProfile).values({ userId: colleague.userId, company: " STRIPE example " });
+
+    const profileJobs = await readCompanyJobs(database, "stripe example");
+    expect(profileJobs).toMatchObject({ total: 3, companySlug: "stripe-example" });
+    expect(profileJobs.jobs[0]?.url).toMatch(/^https:\/\//);
+    expect(await readCompanyJobs(database, "Ledgerline")).toEqual({ jobs: [], total: 0, companySlug: null });
+
+    const hiring = (await (await call(postDirectory, other, { hiring: true })).json()) as Directory;
+    expect(hiring.isHiringShown).toBe(true);
+    expect(hiring.members.map(({ id, hiringJobCount }) => [id, hiringJobCount]).sort()).toEqual([[colleague.userId, 3], [founder.userId, 3]].sort());
+
+    await saveModuleState(database, jobBoardManifest, false);
+    const off = (await (await call(postDirectory, other, { hiring: true })).json()) as Directory;
+    expect(off.isHiringShown).toBe(false);
+    expect(off.matchCount).toBe(4);
+    expect(off.members.every(({ hiringJobCount }) => hiringJobCount === 0)).toBe(true);
+  });
+
+  it("counts a job as new this week when it was posted, or first seen without a date, in the last 7 days", async () => {
+    const { source } = await linkGreenhouse();
+    const [first] = await database.select({ id: jobPosting.id }).from(jobPosting).where(eq(jobPosting.sourceId, source.id)).limit(1);
+    await database.update(jobPosting).set({ postedAt: new Date(Date.now() - 30 * DAY_MS), firstSeenAt: new Date(Date.now() - 30 * DAY_MS) }).where(eq(jobPosting.sourceId, source.id));
+    await database.update(jobPosting).set({ postedAt: null, firstSeenAt: new Date(Date.now() - 2 * DAY_MS) }).where(eq(jobPosting.id, first?.id ?? ""));
+    const manual = await call(postManual, other, { company: "Ledgerline" });
+    const { id } = (await manual.json()) as { id: string };
+    await call(postAddJob, other, { sourceId: id, title: "Founding designer", location: "London", url: "https://ledgerline.example/jobs/1" });
+
+    const newJobs = await readNewJobs(database);
+    expect(newJobs.total).toBe(2);
+    expect(newJobs.jobs.map(({ company }) => company).sort()).toEqual(["Ledgerline", "Stripe Example"]);
+
+    await database.update(user).set({ banned: true }).where(eq(user.id, other.userId));
+    expect((await readNewJobs(database)).total).toBe(1);
   });
 });

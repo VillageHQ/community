@@ -22,6 +22,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - order: waiting on an unfinished item = hidden · each open item waiting on it = +1, at most +2 · touching the files of an open pull request = ranked after it
 
 ## Now (in flight)
+- [ ] A Village check through Village's own API (keys, group, each member), the member's own status on Meet, a sent-email list with the do-not-send list, and no Vercel button on the website for now — village-check — open pull request — [spec](features/village-check/SPEC.md)
 - [ ] The small known bugs: sign-in keeps the typed email, switched-off pages answer 404, Today's "Check your card", Perks from the menu, Slack /ask follow-up, hyphenated words in matching, cohort on a single invite, long fund names on phones — fix-small — open pull request — [charter](features/fix-small/CHARTER.md)
 - [x] Intro fixes from the final check: empty "no" note, the yes on a forwarded link, reminders for quiet intros, a connector who said no, the "no thanks" page — fix-intros — merged, [PR #27](https://github.com/VillageHQ/community/pull/27)
 - [x] Running-the-app fixes from the final check: timed jobs on every host, a Village-down notice, one job source per careers link — fix-ops — merged, [PR #29](https://github.com/VillageHQ/community/pull/29) · [spec](features/fix-ops/SPEC.md)
@@ -31,7 +32,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 ## Next (queued)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
 - [ ] Intros from a profile without Village, and the finer intro rules — parity — [spec](features/intros-from-profile/SPEC.md)
-- [ ] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
+- [x] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
 
 ### From the final check of the merged app (2026-11-10), not covered by another part
 - [ ] On a phone, Intros moves onto the bottom bar (Home · Meet · Intros · Messages · More; Members and Asks under More) — the owner's pick, 5 of the simulated buyers named it — phone-bar — open pull request — [charter](features/phone-bar/CHARTER.md)
@@ -58,6 +59,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - Gaps neither product had (merge plan): Google/Microsoft sign-in and SSO, groups inside one community, CRM export, events, other languages.
 
 ## Done
+- [x] 2026-11-11 — Jobs on member cards, profiles, the directory (Hiring chip and filter) and Today — [spec](features/jobs-on-cards/SPEC.md)
 - [x] 2026-11-10 — The demo shows the job board and perks, with made-up jobs and deals — [spec](features/demo-jobs-perks/SPEC.md)
 - [x] 2026-11-10 — The merged look: serif headings, flat sheets, fund name only, one way to ask — [PR #26](https://github.com/VillageHQ/community/pull/26) · [spec](features/look-theme/SPEC.md)
 - [x] 2026-11-10 — Demo mode for sales: a made-up community, one-click demo sign-in, nightly reset — [PR #25](https://github.com/VillageHQ/community/pull/25) · [spec](features/demo-mode/SPEC.md)
@@ -211,6 +213,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Public board — `/public/jobs`, off until an admin turns it on (PR #21)
 - **done** · Website widget — `/api/job-board/widget.js` (PR #21)
 - **done** · Admin › Job board — `/admin/jobs` (PR #21)
+- **done** · Jobs on the card, profiles, the directory and Today — [jobs-on-cards](features/jobs-on-cards/SPEC.md)
 
 ### Perks
 - **done** · Admin › Perks — `/admin/perks`, `src/modules/perks/service.ts` (PR #18)

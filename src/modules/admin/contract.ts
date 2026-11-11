@@ -38,6 +38,7 @@ export const ADMIN_ERROR_CODES = {
   reportHandled: "admin_report_handled",
   contentGone: "admin_content_gone",
   notDeletable: "admin_content_not_deletable",
+  notOnDoNotSend: "admin_not_on_do_not_send",
 } as const;
 
 export const ADMIN_PAGE_SIZES = { members: 12, reports: 10, auditEntries: 20 } as const;

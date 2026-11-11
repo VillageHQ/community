@@ -6,6 +6,7 @@ import type { Database } from "../../platform/database/client.ts";
 import { pickOnAccent } from "../../platform/design/accent.ts";
 import { readFirstName } from "../../platform/design/avatar-identity.ts";
 import { escapeHtml, toSingleLine } from "../../platform/email/email-text.ts";
+import { resolveReplySigner } from "../../platform/email/reply-address.ts";
 import { readResendConfig, sendResendEmail } from "../../platform/email/resend.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
@@ -13,6 +14,7 @@ import { ROUTES } from "../../platform/http/routes.ts";
 import type { Intro } from "./contract.ts";
 import { readWhyTheyWrote } from "./copy.ts";
 import type { introRequest } from "./schema.ts";
+import { introThreadReplyTo, introThreadSubject, openIntroThread } from "./service-thread.ts";
 
 const IDEMPOTENCY_TOKEN_PREFIX_LENGTH = 16;
 const EMAIL_FRAME = "font-family:Arial,sans-serif;font-size:16px;line-height:24px;color:#0c2427;max-width:520px;margin:0 auto;padding:24px";
@@ -75,13 +77,23 @@ export async function sendConsentAskEmail(database: Database, environment: Envir
 
 type JoiningFacts = { requesterName: string; introducerName: string; targetName: string; communityName: string; note: string };
 
-export function renderJoiningEmail({ requesterName, introducerName, targetName, communityName, note }: JoiningFacts) {
+// Who one copy of the joint introduction goes to, when replies run through the app's intro thread. Without
+// replies, one email goes to both and they reply all.
+type JoiningReader = "both" | "requester" | "target";
+
+function joiningClosing(reader: JoiningReader, requesterFirst: string, targetFirst: string) {
+  if (reader === "both") return "You're both on this email, so reply all to say hello. This is the only email we'll send about this intro.";
+  const other = reader === "requester" ? targetFirst : requesterFirst;
+  return `Reply to this email to say hello to ${other}. We pass your reply on, and ${other}'s replies come back the same way.`;
+}
+
+export function renderJoiningEmail({ requesterName, introducerName, targetName, communityName, note }: JoiningFacts, reader: JoiningReader = "both") {
   const targetFirst = toSingleLine(readFirstName(targetName));
   const requesterFirst = toSingleLine(readFirstName(requesterName));
-  const subject = `${targetFirst}, meet ${requesterFirst}`;
+  const subject = introThreadSubject(requesterName, targetName);
   const opening = `${targetFirst}, meet ${requesterFirst}. ${requesterFirst}, meet ${targetFirst}.`;
   const context = `${toSingleLine(introducerName)} connected you through ${toSingleLine(communityName)}, and ${targetFirst} said yes. Here's what ${requesterFirst} wrote:`;
-  const closing = "You're both on this email, so reply all to say hello. This is the only email we'll send about this intro.";
+  const closing = joiningClosing(reader, requesterFirst, targetFirst);
   const html = [
     `<div style="${EMAIL_FRAME}">`,
     `<p style="margin:0 0 12px;font-weight:700">${escapeHtml(opening)}</p>`,
@@ -99,16 +111,36 @@ export async function sendJoiningEmail(database: Database, environment: Environm
   const [requester] = await database.select({ email: user.email }).from(user).where(eq(user.id, intro.requesterId));
   if (!requester) throw new Error("The requester is gone.");
   const { name: communityName } = await readBranding(database);
+  const facts = {
+    requesterName,
+    introducerName: intro.introducerName,
+    targetName: intro.targetName,
+    communityName,
+    note: readWhyTheyWrote(intro.note, intro.introducerName, intro.targetName),
+  };
+  const signer = await resolveReplySigner(database, environment);
+  if (!signer) {
+    await sendResendEmail(config, {
+      to: [intro.targetEmail, requester.email],
+      // Not "intro-joined-…": that key belongs to the connector's notice for the same event, and Resend refuses a reused key.
+      idempotencyKey: `intro-joining-${intro.id}`,
+      ...renderJoiningEmail(facts),
+    });
+    return;
+  }
+  // With replies on, each gets their own copy whose reply address is theirs, and the app keeps the thread. Neither
+  // sees the other's address.
+  await openIntroThread(database, intro.id, intro.targetEmail);
   await sendResendEmail(config, {
-    to: [intro.targetEmail, requester.email],
-    // Not "intro-joined-…": that key belongs to the connector's notice for the same event, and Resend refuses a reused key.
-    idempotencyKey: `intro-joining-${intro.id}`,
-    ...renderJoiningEmail({
-      requesterName,
-      introducerName: intro.introducerName,
-      targetName: intro.targetName,
-      communityName,
-      note: readWhyTheyWrote(intro.note, intro.introducerName, intro.targetName),
-    }),
+    to: intro.targetEmail,
+    idempotencyKey: `intro-joining-${intro.id}-target`,
+    replyTo: introThreadReplyTo(signer, intro.id, { email: intro.targetEmail }),
+    ...renderJoiningEmail(facts, "target"),
+  });
+  await sendResendEmail(config, {
+    to: requester.email,
+    idempotencyKey: `intro-joining-${intro.id}-requester`,
+    replyTo: introThreadReplyTo(signer, intro.id, { memberId: intro.requesterId }),
+    ...renderJoiningEmail(facts, "requester"),
   });
 }

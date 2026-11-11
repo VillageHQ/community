@@ -2,13 +2,13 @@ import { randomBytes } from "node:crypto";
 
 import { eq } from "drizzle-orm";
 
-import type { Database } from "../database/client.ts";
+import type { DatabaseOrTransaction } from "../database/client.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../settings/schema.ts";
 import type { Environment } from "../environment.ts";
 
 const GENERATED_SECRET_BYTES = 32;
 
-export async function resolveAuthSecret(database: Database, environment: Environment) {
+export async function resolveAuthSecret(database: DatabaseOrTransaction, environment: Environment) {
   if (environment.BETTER_AUTH_SECRET) return environment.BETTER_AUTH_SECRET;
 
   await database
