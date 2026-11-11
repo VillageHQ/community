@@ -16,27 +16,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { postRequest } from "@/platform/http/post-request";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
+import { OWN_FIELD_KEYS, type OwnFieldKey } from "@/modules/members/contract-own-words";
+
 
 // Founderhall's "In your own words" (member-me-profile, member-me-edit-field): one ruled block per field with its
 // source ("you" or "from public profiles") and an Edit link; Edit opens that one field in place, Save or Cancel.
-
-export const OWN_FIELD_KEYS = {
-  name: "name",
-  role: "role",
-  company: "company",
-  city: "city",
-  stage: "stage",
-  sector: "sector",
-  cohort: "cohort",
-  workingOn: "working_on",
-  canHelpWith: "can_help_with",
-  lookingFor: "looking_for",
-  tags: "tags",
-  linkedin: "linkedin",
-  website: "website",
-} as const;
-
-export type OwnFieldKey = (typeof OWN_FIELD_KEYS)[keyof typeof OWN_FIELD_KEYS];
 
 export type OwnField = {
   key: OwnFieldKey;

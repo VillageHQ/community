@@ -25,7 +25,7 @@ export default modulePage(membersManifest, async function EmailSettingsPage() {
         <h1 className="fh-h1">Email</h1>
         <p className="fh-lede">What {community.name} emails you. Intro asks and introductions always come by email: they are how intros work.</p>
       </header>
-      <div className="fh-section max-w-[640px]">
+      <div className="max-w-[720px]">
         {rows ? <EmailSettingsForm rows={rows} /> : <p className="fh-small fh-muted">{community.name} hasn’t set up email yet, so nothing is sent.</p>}
       </div>
     </>

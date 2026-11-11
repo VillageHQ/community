@@ -219,11 +219,11 @@ export default modulePage(membersManifest, async function YourDataPage() {
               </li>
               {fillInRecord.hasConsent ? <RecordRow term="Last filled in" detail={readLastFilledIn(lookup)} /> : null}
               {hasPicture ? (
-                <li>
+                <li className="fh-wide">
                   <span>
                     <b>Your picture</b>
                   </span>
-                  <span>From your public profile, shown to members only. “Don’t look me up” removes it.</span>
+                  <span className="fh-rec fh-muted">From your public profile, shown to members only. “Don’t look me up” removes it.</span>
                 </li>
               ) : null}
               {isNetworkOn ? (

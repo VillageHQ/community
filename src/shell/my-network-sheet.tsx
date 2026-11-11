@@ -100,11 +100,11 @@ export function MyNetworkSheet({ state, communityName }: { state: MyNetworkState
           hint={isSharing ? "On: members see that you can introduce them, and ask." : hasAgreed ? "Joining the community group…" : "Off: your network powers only your own searches."}
           control={
             isSharing ? (
-              <Button type="button" variant="secondary" size="sm" disabled={leave.isPending} onClick={() => leave.mutate()}>
+              <Button type="button" variant="secondary" size="sm" className="whitespace-nowrap" disabled={leave.isPending} onClick={() => leave.mutate()}>
                 Stop sharing
               </Button>
             ) : (
-              <Button asChild variant="secondary" size="sm">
+              <Button asChild variant="secondary" size="sm" className="whitespace-nowrap">
                 <Link href={ROUTES.network}>Share</Link>
               </Button>
             )

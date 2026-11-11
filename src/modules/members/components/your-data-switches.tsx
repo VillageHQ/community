@@ -146,15 +146,15 @@ export function ShareNetworkSheet({ state }: { state: ShareState }) {
         hint={hint}
         control={
           state.kind === "sharing" ? (
-            <Button type="button" variant="secondary" size="sm" disabled={leave.isPending} onClick={() => leave.mutate()}>
+            <Button type="button" variant="secondary" size="sm" className="whitespace-nowrap" disabled={leave.isPending} onClick={() => leave.mutate()}>
               Stop sharing
             </Button>
           ) : state.kind === "connected" ? (
-            <Button asChild variant="secondary" size="sm">
+            <Button asChild variant="secondary" size="sm" className="whitespace-nowrap">
               <Link href={ROUTES.network}>Share</Link>
             </Button>
           ) : (
-            <Button asChild variant="secondary" size="sm">
+            <Button asChild variant="secondary" size="sm" className="whitespace-nowrap">
               <Link href={`${ROUTES.editCard}#network`}>My network</Link>
             </Button>
           )

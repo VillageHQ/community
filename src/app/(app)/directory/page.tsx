@@ -47,7 +47,7 @@ export default modulePage(membersManifest, async function DirectoryPage({ search
         <p className="fh-lede">{readMemberSentence(directory.memberCount, community.name, community.isSaved)}</p>
         {jobCount === null ? null : (
           <p className="fh-small mt-2">
-            <Building2 aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />{" "}
+            <Building2 aria-hidden="true" className="fh-i fh-xs inline align-[-2px]" strokeWidth={1.5} />{" "}
             <Link href={JOB_BOARD_PAGES.board}>Jobs at member companies{jobCount ? ` (${jobCount})` : ""}</Link>
           </p>
         )}
