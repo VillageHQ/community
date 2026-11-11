@@ -1,5 +1,5 @@
 {
-  "id": "1f45ae45-e5b0-45d2-b462-2063e4ea02dd",
+  "id": "fc337ebe-6018-45fa-b084-69bb49aee058",
   "prevId": "d3206edc-837e-41d6-aebc-209777187c4d",
   "version": "7",
   "dialect": "postgresql",
@@ -1040,6 +1040,81 @@
           ]
         }
       },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.village_credit_call": {
+      "name": "village_credit_call",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credits": {
+          "name": "credits",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "called_at": {
+          "name": "called_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "village_credit_call_called_at": {
+          "name": "village_credit_call_called_at",
+          "columns": [
+            {
+              "expression": "called_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "village_credit_call_user_id_user_id_fk": {
+          "name": "village_credit_call_user_id_user_id_fk",
+          "tableFrom": "village_credit_call",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -4174,7 +4249,7 @@
       "checkConstraints": {
         "member_fill_in_field": {
           "name": "member_fill_in_field",
-          "value": "\"member_fill_in\".\"field\" in ('title', 'company', 'location', 'headline', 'face', 'company_logo', 'company_domain', 'past_roles')"
+          "value": "\"member_fill_in\".\"field\" in ('title', 'company', 'location', 'headline', 'face', 'company_logo', 'company_domain')"
         }
       },
       "isRLSEnabled": false
@@ -4394,7 +4469,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'default'"
+          "default": "'anyone'"
         },
         "accepts_intro_asks": {
           "name": "accepts_intro_asks",
@@ -4449,7 +4524,7 @@
       "checkConstraints": {
         "member_privacy_message_policy": {
           "name": "member_privacy_message_policy",
-          "value": "\"member_privacy\".\"message_policy\" in ('default', 'anyone', 'introduced')"
+          "value": "\"member_privacy\".\"message_policy\" in ('anyone', 'introduced')"
         },
         "member_privacy_intro_asks_place": {
           "name": "member_privacy_intro_asks_place",

@@ -60,11 +60,11 @@ describe("the perks admin", () => {
   it("saves only the address, refuses other code and removes it", async () => {
     const { cookie } = await createSignedInMember(database, "admin");
 
-    const refused = await call(postSave, cookie, { code: '<iframe src="https://evil.example/"></iframe>' });
+    const refused = await call(postSave, cookie, { code: '<iframe src="https://evil.example/"></iframe>', isShown: true });
     expect(refused.status).toBe(422);
     expect(await readPerksUrl(database)).toBeNull();
 
-    expect((await call(postSave, cookie, { code: `<iframe src="${MARKETPLACE}"></iframe>` })).status).toBe(200);
+    expect((await call(postSave, cookie, { code: `<iframe src="${MARKETPLACE}"></iframe>`, isShown: true })).status).toBe(200);
     expect(await readPerksUrl(database)).toBe(MARKETPLACE);
 
     expect((await call(postRemove, cookie, {})).status).toBe(200);
@@ -74,6 +74,6 @@ describe("the perks admin", () => {
   it("is for admins only", async () => {
     const { cookie } = await createSignedInMember(database);
 
-    expect((await call(postSave, cookie, { code: MARKETPLACE })).status).toBe(403);
+    expect((await call(postSave, cookie, { code: MARKETPLACE, isShown: true })).status).toBe(403);
   });
 });

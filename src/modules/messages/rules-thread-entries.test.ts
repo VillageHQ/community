@@ -27,6 +27,7 @@ function makeMessage(sequence: number, overrides: Partial<DirectMessage> = {}): 
     body: `Message ${sequence}`,
     isDeleted: false,
     isReported: false,
+    isViaEmail: false,
     sequence,
     clientKey: null,
     createdAt: TODAY,

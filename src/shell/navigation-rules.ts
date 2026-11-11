@@ -104,8 +104,10 @@ export function readConsoleTabKey(pathname: string) {
 // Which member item a page lights: the longest menu address the page sits under. My profile and Your data light
 // My profile, never Directory; a member's profile lights Directory.
 export function readMemberKey(pathname: string, items: readonly MenuPlace[]) {
-  if (isUnder(pathname, ROUTES.editCard)) return MEMBER_KEYS.me;
+  if (isUnder(pathname, ROUTES.editCard) || isUnder(pathname, ROUTES.yourData)) return MEMBER_KEYS.me;
   if (isUnder(pathname, ROUTES.people)) return MEMBER_KEYS.directory;
+  // A first message (/messages/new) belongs to the Inbox, as in Founderhall.
+  if (isUnder(pathname, ROUTES.newMessage)) return MEMBER_KEYS.inbox;
   const matches = items.filter(({ href }) => isUnder(pathname, href));
   return matches.sort((first, second) => second.href.length - first.href.length)[0]?.key ?? null;
 }

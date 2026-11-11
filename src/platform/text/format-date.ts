@@ -20,11 +20,18 @@ export function formatDateAndTimeUtc(date: string | Date) {
   return `${DATE_AND_TIME.format(new Date(date))} UTC`;
 }
 
-const DAY_MONTH_PARTS = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+// Founderhall's dates on admin pages: "11 Nov" and "11 Nov 15:13 UTC" (24-hour, no year).
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Founderhall's date: "5 Nov", never a year ("fresh as of 5 Nov", "Connected 22 Oct").
 export function formatDayMonth(date: string | Date) {
-  return DAY_MONTH_PARTS.format(new Date(date)).replace("Sept", "Sep");
+  const day = new Date(date);
+  return `${day.getUTCDate()} ${MONTHS[day.getUTCMonth()]}`;
+}
+
+export function formatDayMonthTimeUtc(date: string | Date) {
+  const moment = new Date(date);
+  const time = `${String(moment.getUTCHours()).padStart(2, "0")}:${String(moment.getUTCMinutes()).padStart(2, "0")}`;
+  return `${formatDayMonth(moment)} ${time} UTC`;
 }
 
 // Founderhall's day: "1 Sep", with the year when it is not this year ("1 Sep 2025").

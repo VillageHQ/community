@@ -62,7 +62,7 @@ export async function warnAdminsAboutCredits(database: Database, environment: En
       .select({ id: user.id, email: user.email })
       .from(user)
       .where(and(eq(user.role, MEMBER_ROLES.admin), isActiveMember()));
-    const link = `${resolveAppUrl(environment)}${ROUTES.adminCredits}`;
+    const link = `${resolveAppUrl(environment)}${ROUTES.adminVillage}`;
     const email = renderCreditWarning(warning, branding.name, link, branding.accentColor);
     for (const admin of admins) {
       await queueEmail(transaction, environment, {

@@ -71,3 +71,15 @@ export function VillageSecretCard({ status, isNetworkOn }: { status: VillageKeyS
     </SettingCard>
   );
 }
+
+// Settings' Village sheet: the same words as a line under the status, shown only when the key needs a look (it is
+// not sealed, or can't be read). With Network off this is the one place an admin still learns about it.
+export function VillageSecretLine({ status, isNetworkOn }: { status: VillageKeyStatus; isNetworkOn: boolean }) {
+  const copy = SECRET_COPY[status];
+  if (!copy || status === VILLAGE_KEY_STATUSES.sealed) return null;
+  return (
+    <p className="fh-small fh-muted" style={{ marginTop: 8 }}>
+      <b>Village secret key:</b> {copy.description(isNetworkOn)}
+    </p>
+  );
+}

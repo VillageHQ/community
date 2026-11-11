@@ -1,17 +1,18 @@
 "use client";
 
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { Flag, Lock, ShieldCheck, Trash2, UserRoundX, X } from "lucide-react";
+import { Flag, Lock, Trash2, UserRoundX, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDeferredValue, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
+import { FLASH_KINDS, FlashNote } from "@/components/flash";
 import { Pagination } from "@/components/pagination";
 import { QueryBoundary } from "@/components/query-boundary";
-import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
-import { Tag } from "@/components/ui/tag";
+import { Card } from "@/components/ui/card";
+import { Pill } from "@/components/ui/pill";
+import { SegmentedControl } from "@/components/ui/segmented";
 import {
   REPORT_FILTERS,
   REPORT_RESOLUTIONS,
@@ -33,6 +34,9 @@ import { ConfirmDialog } from "@/modules/admin/components/confirm-dialog";
 import { RemoveMemberDialog } from "@/modules/admin/components/remove-member-dialog";
 import { deleteReportedContentRequest, dismissReportRequest, REPORT_QUERY_KEYS, reportPageQuery } from "@/modules/admin/queries-reports";
 
+// Set up › Reports, in Founderhall's parts: one sheet, the Open | Handled segmented control in its head, and one
+// moderation row per report (as Asks & digest's "Every ask and update"), its state as pills and its actions as small
+// quiet buttons at the row's end.
 const QUEUE_TITLE_ID = "report-queue-title";
 const UNKNOWN_PERSON = "Someone who's no longer here";
 
@@ -83,10 +87,12 @@ const RESOLUTION_LABELS: Record<ReportResolution, string> = {
   [REPORT_RESOLUTIONS.memberRemoved]: "Member removed",
 };
 
-const FILTER_CHIPS: { filter: ReportFilter; label: string }[] = [
+const FILTERS: { filter: ReportFilter; label: string }[] = [
   { filter: REPORT_FILTERS.open, label: "Open" },
   { filter: REPORT_FILTERS.resolved, label: "Handled" },
 ];
+
+const FILTER_TITLES: Record<ReportFilter, string> = { [REPORT_FILTERS.open]: "Waiting for you", [REPORT_FILTERS.resolved]: "Handled" };
 
 const EMPTY_STATES: Record<ReportFilter, { title: string; description: string }> = {
   [REPORT_FILTERS.open]: { title: "Nothing to review", description: "When a member reports a post, a reply, a message or an intro note, it shows up here." },
@@ -108,11 +114,11 @@ function ReportActions({ report, viewerId, onDone }: ReportActionsProps) {
   const canRemove = reportedMember && !reportedMember.isRemoved && reportedMember.id !== viewerId;
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <span className="fh-modacts flex flex-wrap justify-end gap-1">
       <ConfirmDialog
         trigger={
-          <Button type="button" variant="outline" className="max-sm:w-full">
-            <X aria-hidden="true" />
+          <Button type="button" variant="quiet" size="sm">
+            <X aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />
             Dismiss
           </Button>
         }
@@ -128,8 +134,8 @@ function ReportActions({ report, viewerId, onDone }: ReportActionsProps) {
       {deleteLabel && !isContentGone ? (
         <ConfirmDialog
           trigger={
-            <Button type="button" variant="outline" className="max-sm:w-full">
-              <Trash2 aria-hidden="true" />
+            <Button type="button" variant="quiet" size="sm">
+              <Trash2 aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />
               {deleteLabel}
             </Button>
           }
@@ -148,8 +154,8 @@ function ReportActions({ report, viewerId, onDone }: ReportActionsProps) {
         <RemoveMemberDialog
           member={reportedMember}
           trigger={
-            <Button type="button" variant="destructive" className="max-sm:w-full">
-              <UserRoundX aria-hidden="true" />
+            <Button type="button" variant="quiet" size="sm" className="text-ribbon">
+              <UserRoundX aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />
               Remove {readFirstName(reportedMember.name)}
             </Button>
           }
@@ -157,7 +163,7 @@ function ReportActions({ report, viewerId, onDone }: ReportActionsProps) {
           onDone={onDone}
         />
       ) : null}
-    </div>
+    </span>
   );
 }
 
@@ -165,47 +171,47 @@ function ResolvedLine({ report }: { report: Report }) {
   const { resolution, resolvedAt, resolvedByName } = report;
   if (!resolution || !resolvedAt) return null;
   return (
-    <p className="type-small flex flex-wrap items-center gap-2 text-foreground-soft">
-      <ShieldCheck aria-hidden="true" className="size-icon-small shrink-0" />
+    <span className="whitespace-normal">
       {RESOLUTION_LABELS[resolution]} by {resolvedByName} on {formatDateAndTimeUtc(resolvedAt)}.
-    </p>
+    </span>
   );
 }
 
-function ReportCard({ report, viewerId, onDone }: ReportActionsProps) {
+// What was written (the copy kept when it was reported), who wrote it and who reported it, and what an admin can see.
+function ReportRow({ report, viewerId, onDone }: ReportActionsProps) {
   const { targetType, body, contentCreatedAt, createdAt, reporterName, reportedMemberName, isContentGone, resolution } = report;
   const { label, scope } = TARGET_DISPLAY[targetType];
   const feature = TARGET_FEATURES[targetType];
   const isFeatureOn = useIsModuleEnabled(feature.id);
   return (
-    <li className="grid gap-3.5 rounded-card-phone bg-card p-card-phone shadow-panel sm:rounded-card sm:p-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <Tag tone="accent">
-          <Flag aria-hidden="true" />
-          {label}
-        </Tag>
-        {isContentGone ? <Tag tone="gold">Already deleted</Tag> : null}
-        {isFeatureOn ? null : <Tag>{feature.label} is off</Tag>}
-        <span className="type-small text-muted-foreground">Reported {formatLongDate(createdAt)}</span>
+    <li className="fh-r">
+      <span>
+        <Flag aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} />
+      </span>
+      <div className="fh-who">
+        <b className="fh-plain wrap-anywhere whitespace-pre-wrap">{body}</b>
+        <span className="whitespace-normal">
+          {label} by <span className="inline">{reportedMemberName ?? UNKNOWN_PERSON}</span>, {formatLongDate(contentCreatedAt)} · Reported by{" "}
+          <span className="inline">{reporterName ?? UNKNOWN_PERSON}</span>, {formatLongDate(createdAt)}
+        </span>
+        <span className="whitespace-normal">
+          <Lock aria-hidden="true" className="fh-i fh-xs mr-1 inline align-[-2px]" strokeWidth={1.5} />
+          {scope}
+        </span>
+        {resolution ? <ResolvedLine report={report} /> : null}
       </div>
-      <dl className="type-small grid gap-1 sm:grid-cols-2">
-        <div>
-          <dt className="inline font-bold">Written by: </dt>
-          <dd className="inline wrap-anywhere text-foreground-soft">
-            {reportedMemberName ?? UNKNOWN_PERSON}, {formatLongDate(contentCreatedAt)}
-          </dd>
-        </div>
-        <div>
-          <dt className="inline font-bold">Reported by: </dt>
-          <dd className="inline wrap-anywhere text-foreground-soft">{reporterName ?? UNKNOWN_PERSON}</dd>
-        </div>
-      </dl>
-      <blockquote className="type-body rounded-field bg-muted p-4 wrap-anywhere whitespace-pre-wrap text-foreground">{body}</blockquote>
-      <p className="type-small flex gap-2 text-foreground-soft">
-        <Lock aria-hidden="true" className="mt-0.5 size-icon-small shrink-0" />
-        {scope}
-      </p>
-      {resolution ? <ResolvedLine report={report} /> : <ReportActions report={report} viewerId={viewerId} onDone={onDone} />}
+      <div className="fh-end">
+        <span className="flex flex-wrap justify-end gap-1.5">
+          {resolution ? (
+            <Pill tone={resolution === REPORT_RESOLUTIONS.dismissed ? "plain" : "declined"}>{RESOLUTION_LABELS[resolution]}</Pill>
+          ) : (
+            <Pill tone="open">Open</Pill>
+          )}
+          {isContentGone ? <Pill tone="needs">Already deleted</Pill> : null}
+          {isFeatureOn ? null : <Pill tone="plain">{feature.label} is off</Pill>}
+        </span>
+        {resolution ? null : <ReportActions report={report} viewerId={viewerId} onDone={onDone} />}
+      </div>
     </li>
   );
 }
@@ -223,21 +229,23 @@ function ReportRows({ filter, page: requestedPage, viewerId, onDone, onFilterCha
   const { data } = useSuspenseQuery(reportPageQuery(filter, requestedPage));
   return (
     <>
-      <div role="group" aria-label="Filter reports" className="flex flex-wrap gap-2">
-        {FILTER_CHIPS.map(({ filter: chipFilter, label }) => (
-          <Chip key={chipFilter} isPressed={filter === chipFilter} onClick={() => onFilterChange(chipFilter)}>
-            {label} ({data.counts[chipFilter]})
-          </Chip>
-        ))}
+      <div className="fh-sheet-head mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 id={QUEUE_TITLE_ID} tabIndex={-1} className="type-h3">
+          {FILTER_TITLES[filter]}
+        </h2>
+        <SegmentedControl
+          label="Filter reports"
+          segments={FILTERS.map(({ filter: value, label }) => ({ value, label: `${label} (${data.counts[value]})` }))}
+          value={filter}
+          onChange={onFilterChange}
+        />
       </div>
       {data.reports.length === 0 ? (
-        <div className="rounded-panel bg-card shadow-panel">
-          <EmptyState icon={ShieldCheck} {...EMPTY_STATES[filter]} headingLevel="h3" />
-        </div>
+        <EmptyState {...EMPTY_STATES[filter]} headingLevel="h3" />
       ) : (
-        <ul className="grid gap-3">
+        <ul aria-labelledby={QUEUE_TITLE_ID} className="fh-rows fh-modrows">
           {data.reports.map((report) => (
-            <ReportCard key={report.id} report={report} viewerId={viewerId} onDone={onDone} />
+            <ReportRow key={report.id} report={report} viewerId={viewerId} onDone={onDone} />
           ))}
         </ul>
       )}
@@ -256,37 +264,33 @@ export function ReportQueue({ viewerId }: { viewerId: string }) {
   const deferredPage = useDeferredValue(page);
 
   return (
-    <section aria-labelledby={QUEUE_TITLE_ID} className="grid gap-3.5">
-      <h2 id={QUEUE_TITLE_ID} tabIndex={-1} className="sr-only">
-        Report queue
-      </h2>
-      <div aria-live="polite">
-        {notice ? (
-          <Alert variant={notice.isWarning ? "info" : "success"} role="none">
-            {notice.message}
-          </Alert>
-        ) : null}
-      </div>
-      <QueryBoundary loadingMessage="Finding reports…">
-        <ReportRows
-          filter={deferredFilter}
-          page={deferredPage}
-          viewerId={viewerId}
-          onDone={(message, isWarning = false) => {
-            setNotice({ message, isWarning });
-            void queryClient.invalidateQueries({ queryKey: [REPORT_QUERY_KEYS.list] });
-            router.refresh();
-          }}
-          onFilterChange={(nextFilter) => {
-            setFilter(nextFilter);
-            setPage(1);
-          }}
-          onPageChange={(nextPage) => {
-            setPage(nextPage);
-            focusQueueTitle();
-          }}
-        />
-      </QueryBoundary>
+    <section aria-label="Report queue" className="grid gap-3.5">
+      <div aria-live="polite">{notice ? <FlashNote kind={notice.isWarning ? FLASH_KINDS.needs : FLASH_KINDS.ok}>{notice.message}</FlashNote> : null}</div>
+      <Card className="fh-sheet">
+        <QueryBoundary loadingMessage="Finding reports…">
+          <ReportRows
+            filter={deferredFilter}
+            page={deferredPage}
+            viewerId={viewerId}
+            onDone={(message, isWarning = false) => {
+              setNotice({ message, isWarning });
+              void queryClient.invalidateQueries({ queryKey: [REPORT_QUERY_KEYS.list] });
+              router.refresh();
+            }}
+            onFilterChange={(nextFilter) => {
+              setFilter(nextFilter);
+              setPage(1);
+            }}
+            onPageChange={(nextPage) => {
+              setPage(nextPage);
+              focusQueueTitle();
+            }}
+          />
+        </QueryBoundary>
+        <p className="fh-small fh-muted mt-2.5">
+          Dismiss closes a report and changes nothing else. Delete removes it for everyone; a copy stays in the audit log. Nobody is told who reported.
+        </p>
+      </Card>
     </section>
   );
 }
