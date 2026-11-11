@@ -7,7 +7,7 @@ export const POST = chatRoutes.member(
   chatKindBodySchema,
   async (context, { kind }) => {
     await disconnectChat(context, kind);
-    return Response.json({ message: "Disconnected. The token is deleted from this site." });
+    return Response.json({ message: "Disconnected. The token is deleted from this server." });
   },
   { adminOnly: true },
 );

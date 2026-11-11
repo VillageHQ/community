@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-export const CHAT_ADMIN_PAGE = "/admin/chat";
-export const CHAT_PAGE_TITLE = "Slack and Discord";
+export const CHAT_ADMIN_PAGE = "/admin/integrations";
+export const CHAT_PAGE_TITLE = "Integrations";
 
 export const CHAT_API_ROUTES = {
   admin: "/api/admin/chat",
@@ -49,11 +49,11 @@ export const slackConnectBodySchema = z.object({
   token: z
     .string()
     .trim()
-    .regex(SLACK_TOKEN_PATTERN, "That isn't a bot token. It starts with xoxb- (OAuth & Permissions, Bot User OAuth Token)."),
+    .regex(SLACK_TOKEN_PATTERN, "That isn’t a bot token. It starts with xoxb- (OAuth & Permissions › Bot User OAuth Token)."),
   signingSecret: z
     .string()
     .trim()
-    .regex(SLACK_SECRET_PATTERN, "That isn't a signing secret. Copy it from Basic Information, App Credentials, Signing Secret."),
+    .regex(SLACK_SECRET_PATTERN, "That isn’t a signing secret. Copy it from Basic Information › App Credentials › Signing Secret."),
 });
 
 export const slackChannelBodySchema = z.object({
@@ -65,11 +65,11 @@ export const discordConnectBodySchema = z.object({
   token: z
     .string()
     .trim()
-    .refine((token) => token === "" || DISCORD_TOKEN_PATTERN.test(token), "That isn't a bot token. Copy it from your Discord application's Bot page (Reset Token)."),
+    .refine((token) => token === "" || DISCORD_TOKEN_PATTERN.test(token), "That isn’t a bot token. Copy it from your Discord application’s Bot page (Reset Token)."),
   channelId: z
     .string()
     .trim()
-    .regex(DISCORD_CHANNEL_PATTERN, "A channel id is a long number. Turn on Developer Mode in Discord, then right-click the channel and choose Copy Channel ID."),
+    .regex(DISCORD_CHANNEL_PATTERN, "A channel id is a long number. Turn on Developer Mode in Discord, then right-click the channel › Copy Channel ID."),
 });
 
 export const chatKindBodySchema = z.object({ kind: chatKindSchema });

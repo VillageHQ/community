@@ -90,7 +90,9 @@ describe("a module that's turned off", () => {
       );
 
       const answered = answers.flat();
-      expect(answered.length).toBeGreaterThan(0);
+      // A module that declares API routes must have them checked; one that owns none (Perks: its admin save sits in the
+      // admin module, whose switch turns it on) has nothing to answer.
+      expect(answered.length > 0).toBe(manifest.paths.api.length > 0);
       expect(answered.filter(({ status }) => status !== NOT_FOUND_STATUS)).toEqual([]);
     });
 

@@ -8,14 +8,16 @@ export { DNS_CHECK_STATUSES };
 // record is there, what was found, and the record to add when it isn't. The resolver is passed in, so tests use a stub
 // and never touch real DNS.
 
-export type TxtResolver = { resolveTxt: (name: string) => Promise<string[][]> };
+export type TxtResolver = { resolveTxt: (name: string) => Promise<string[][]>; resolveMx?: (name: string) => Promise<{ exchange: string; priority: number }[]> };
+
+// What Set up › Mail adds: the DKIM selector the mail service signs with, and the subdomain replies come back to.
+export type DnsCheckOptions = { dkimSelector?: string; replyDomain?: string | null };
 
 const LOOKUP_TIMEOUT_MS = 5_000;
 const NOT_FOUND_CODES = new Set(["ENODATA", "ENOTFOUND", "ENONAME", "NXDOMAIN"]);
 const MAXIMUM_SHOWN_LENGTH = 80;
 // Resend sends from a "send." subdomain through Amazon SES, and signs with the "resend" DKIM selector.
 const RESEND_SPF_INCLUDE = "amazonses.com";
-const RESEND_DKIM_SELECTOR = "resend";
 const SPF_START = /^v=spf1\b/i;
 const DMARC_START = /^v=DMARC1\b/i;
 const DKIM_KEY = /(^|;)\s*p=[A-Za-z0-9+/=]{20,}/;
@@ -33,7 +35,7 @@ const SECOND_LEVEL_SUFFIX = /^(?:ac|co|com|edu|gov|net|org|ltd|plc|or|ne|go)$/;
 
 // mail.example.com → example.com, mail.example.co.uk → example.co.uk: where DMARC's fallback looks. Good enough
 // without a public-suffix list, and the sending domain itself is always checked first.
-function readParentDomain(domain: string) {
+export function readParentDomain(domain: string) {
   const labels = domain.split(".");
   const isTwoPartSuffix = labels.length >= 3 && labels.at(-1)!.length === 2 && SECOND_LEVEL_SUFFIX.test(labels.at(-2)!);
   return labels.slice(isTwoPartSuffix ? -3 : -2).join(".");
@@ -85,8 +87,8 @@ async function checkSpf(resolver: TxtResolver, domain: string): Promise<DnsCheck
   return { key: "spf", label: "SPF", status: DNS_CHECK_STATUSES.ok, found: `${name}: ${shorten(record)}`, toAdd: null };
 }
 
-async function checkDkim(resolver: TxtResolver, domain: string): Promise<DnsCheckLine> {
-  const name = `${RESEND_DKIM_SELECTOR}._domainkey.${domain}`;
+async function checkDkim(resolver: TxtResolver, domain: string, selector: string): Promise<DnsCheckLine> {
+  const name = `${selector}._domainkey.${domain}`;
   const toAdd: DnsRecord = { type: "TXT", name, value: "p=… (copy the whole value Resend shows for this domain)" };
   const answer = await readTxt(resolver, name);
   if (!answer.isAnswered) return couldNotLook("dkim", "DKIM", name, answer.reason, toAdd);
@@ -111,7 +113,27 @@ async function checkDmarc(resolver: TxtResolver, domain: string): Promise<DnsChe
   return { key: "dmarc", label: "DMARC", status: DNS_CHECK_STATUSES.missing, found: `No DMARC record on ${names.join(" or ")}.`, toAdd };
 }
 
-export async function checkSendingDomain(domain: string, resolver: TxtResolver = dnsPromises, now = new Date()): Promise<DnsCheck> {
-  const lines = await Promise.all([checkSpf(resolver, domain), checkDkim(resolver, domain), checkDmarc(resolver, domain)]);
+// Resend receives replies on the reply domain: its MX record points at Resend's inbound servers.
+const RESEND_INBOUND_MX = "inbound-smtp.us-east-1.amazonaws.com";
+
+async function checkReplyMx(resolver: TxtResolver, name: string): Promise<DnsCheckLine> {
+  const toAdd: DnsRecord = { type: "MX", name, value: `10 ${RESEND_INBOUND_MX} (or the MX Resend shows for receiving)` };
+  if (!resolver.resolveMx) return couldNotLook("mx", "Reply MX", name, "no MX lookups here", toAdd);
+  try {
+    const records = await withTimeout(resolver.resolveMx(name));
+    if (records.length === 0) return { key: "mx", label: "Reply MX", status: DNS_CHECK_STATUSES.missing, found: `No MX record on ${name}.`, toAdd };
+    const found = records.toSorted((first, second) => first.priority - second.priority).map(({ exchange, priority }) => `${priority} ${exchange}`).join(", ");
+    return { key: "mx", label: "Reply MX", status: DNS_CHECK_STATUSES.ok, found: `${name}: ${shorten(found)}`, toAdd: null };
+  } catch (error) {
+    const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
+    if (NOT_FOUND_CODES.has(code)) return { key: "mx", label: "Reply MX", status: DNS_CHECK_STATUSES.missing, found: `No MX record on ${name}.`, toAdd };
+    return couldNotLook("mx", "Reply MX", name, code || "no answer", toAdd);
+  }
+}
+
+export async function checkSendingDomain(domain: string, resolver: TxtResolver = dnsPromises, now = new Date(), { dkimSelector = "resend", replyDomain = null }: DnsCheckOptions = {}): Promise<DnsCheck> {
+  const checks = [checkSpf(resolver, domain), checkDkim(resolver, domain, dkimSelector || "resend"), checkDmarc(resolver, domain)];
+  if (replyDomain) checks.push(checkReplyMx(resolver, replyDomain));
+  const lines = await Promise.all(checks);
   return { domain, checkedAt: now.toISOString(), lines };
 }
