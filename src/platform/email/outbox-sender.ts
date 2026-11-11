@@ -5,7 +5,8 @@ import type { Environment } from "../environment.ts";
 import { logError, readErrorReason } from "../observability/route-logging.ts";
 import { runAfterResponse } from "../observability/after-response.ts";
 import { DEMO_EMAIL_NOTE, isDemoMode } from "../demo/mode.ts";
-import { readEmailTopic } from "./kinds.ts";
+import { readEmailTopic, UNSUBSCRIBE_LINK } from "./kinds.ts";
+import { escapeHtml } from "./email-text.ts";
 import { isEmailWanted, OUTBOX_STATUSES } from "./outbox.ts";
 import { readResendConfig, sendResendEmail, type ResendConfig } from "./resend.ts";
 import { emailOutbox } from "./schema.ts";
@@ -96,7 +97,10 @@ async function composeEmail(database: Database, environment: Environment, email:
   const base = { to: email.toEmail, subject: email.subject, idempotencyKey: email.id, replyTo: email.replyTo };
   if (!topic || !email.memberId) return { ...base, html: email.html, text: email.text };
 
-  const { headers, htmlFooter, textFooter } = await buildUnsubscribeParts(database, environment, { memberId: email.memberId, topic });
+  const { headers, htmlFooter, textFooter, pageUrl } = await buildUnsubscribeParts(database, environment, { memberId: email.memberId, topic });
+  if (email.text.includes(UNSUBSCRIBE_LINK)) {
+    return { ...base, html: email.html.replaceAll(UNSUBSCRIBE_LINK, escapeHtml(pageUrl)), text: email.text.replaceAll(UNSUBSCRIBE_LINK, pageUrl), headers };
+  }
   return { ...base, html: `${email.html}${htmlFooter}`, text: `${email.text}${textFooter}`, headers };
 }
 

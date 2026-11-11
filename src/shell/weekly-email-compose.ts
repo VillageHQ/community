@@ -25,6 +25,8 @@ export type WeeklyEmailFacts = {
   links: ItemLinks;
   canReply: boolean;
   isTest: boolean;
+  // Where "Stop the weekly digest" goes: UNSUBSCRIBE_LINK in a sent email, the app in a preview.
+  stopUrl: string;
 };
 
 // Founderhall's two closing lines.
@@ -131,12 +133,12 @@ export function renderWeeklyEmailText(facts: WeeklyEmailFacts) {
     lines.push("", "NEW THIS WEEK", `- ${plural(items.newMemberCount, "new member")} joined. Say hi: ${appUrl}/members`);
   }
 
-  lines.push("", `That’s everything this week. Open the portal: ${appUrl}`, "", DIGEST_CONSENT, "", `Sent by ${community} via its member portal.`);
+  lines.push("", `That’s everything this week. Open the portal: ${appUrl}`, "", DIGEST_CONSENT, "", `Stop the weekly digest: ${facts.stopUrl}`, "", `Sent by ${community} via its member portal.`);
   return { subject: readSubject(facts, asks.length, intros.length), text: lines.join("\n") };
 }
 
-// "   I can help: https://…" → its label and link; "… Open the portal: https://…" → the words before and the link.
-const LABELLED_LINK = /^(\s*)(.*?):\s+(https?:\/\/\S+)\s*$/u;
+// "   I can help: https://…" (or the stop line's UNSUBSCRIBE_LINK) → its label and link; "… Open the portal: https://…" → the words before and the link.
+const LABELLED_LINK = /^(\s*)(.*?):\s+(https?:\/\/\S+|\{\{unsubscribe_link\}\})\s*$/u;
 
 function renderHtmlLine(line: string, accentColor: string) {
   const labelled = line.match(LABELLED_LINK);

@@ -43,7 +43,7 @@ const DAY_MS = 24 * HOUR_MS;
 const ASK_TITLE = "Looking for a fintech investor for our seed round";
 const HELP_NOTE = "Happy to introduce you to two fintech investors.";
 
-type RecordedBody = { to: string[]; subject: string; text: string; reply_to?: string; headers?: Record<string, string> };
+type RecordedBody = { to: string[]; subject: string; text: string; html: string; reply_to?: string; headers?: Record<string, string> };
 
 describe("the Today home and the weekly email", () => {
   const database = createTestDatabase();
@@ -230,7 +230,10 @@ describe("the Today home and the weekly email", () => {
       expect(bodies[0]?.text).toContain(`1. Alex Asker asks: ${ASK_TITLE}`);
       expect(bodies[0]?.text).toContain("2. Rae Requester asks you to introduce them to Jo Rivera.");
       expect(bodies[0]?.text).toContain("That’s everything this week. Open the portal:");
-      expect(bodies[0]?.text).toContain("Nobody is introduced without saying yes.");
+      expect(bodies[0]?.text).toMatch(/Nobody is introduced without saying yes\.\n\nStop the weekly digest: http\S+\/unsubscribe\?token=\S+\n\nSent by .+ via its member portal\.$/u);
+      expect(bodies[0]?.text).not.toContain("{{");
+      expect(bodies[0]?.text).not.toContain("Turn them off");
+      expect(bodies[0]?.html).toMatch(/href="http[^"]+\/unsubscribe\?token=[^"]+"[^>]*>Stop the weekly digest</u);
       expect(bodies[0]?.reply_to).toMatch(new RegExp(`^reply\\+[0-9a-f]{32}-[0-9a-f]{20}@${REPLY_DOMAIN.replaceAll(".", "\\.")}$`));
       expect(bodies[0]?.headers?.["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
     });

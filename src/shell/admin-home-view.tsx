@@ -252,7 +252,7 @@ function AsksSheet({ asks }: { asks: NonNullable<ConsoleHome["asks"]> }) {
         ]}
       />
       <p className="fh-small fh-muted" style={{ marginTop: 10 }}>
-        {`${formatNumber(asks.helped)} asks got an offer of help; ${formatNumber(asks.introsStarted)} ${plural(asks.introsStarted, "intro", "intros")} started from asks, ${formatNumber(asks.introsMade)} made. ${formatNumber(asks.updates)} ${plural(asks.updates, "update", "updates")}.`}
+        {`${formatNumber(asks.helped)} asks got an offer of help; ${formatNumber(asks.intros)} ${plural(asks.intros, "intro", "intros")} started from asks, ${formatNumber(asks.introsMade)} made. ${formatNumber(asks.updates)} ${plural(asks.updates, "update", "updates")}.`}
       </p>
     </section>
   );

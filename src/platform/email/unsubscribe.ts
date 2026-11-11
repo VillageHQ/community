@@ -53,6 +53,7 @@ export async function buildUnsubscribeParts(database: Database, environment: Env
     },
     htmlFooter: `<p style="font-family:Arial,sans-serif;font-size:12px;line-height:18px;color:#566463;max-width:520px;margin:0 auto;padding:0 24px 24px">Don't want these emails? <a href="${escapeHtml(pageUrl)}" style="color:#566463">Turn them off</a>.</p>`,
     textFooter: `\n\nDon't want these emails? Turn them off: ${pageUrl}`,
+    pageUrl,
   };
 }
 

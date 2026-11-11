@@ -64,6 +64,8 @@ export const nextConfig = {
   ],
   redirects: async () => [
     { source: "/feed", destination: "/", permanent: false },
+    // The weekly email moved into Asks & digest; its preview is the digest preview. A real 308, before the page streams.
+    { source: "/admin/weekly-email", destination: "/admin/digest", permanent: true },
     // Demo faces moved from drawn .svg to .webp portraits; a demo seeded before that keeps the old links until its reset.
     { source: "/demo/faces/:name([a-z0-9-]+)\.svg", destination: "/demo/faces/:name.webp", permanent: true },
   ],

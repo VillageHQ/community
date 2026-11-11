@@ -9,7 +9,7 @@ import { readBranding, type Branding } from "@/platform/branding/branding";
 import { isActiveMember } from "@/platform/auth/member-status";
 import { user } from "@/platform/database/auth-schema";
 import type { Database } from "@/platform/database/client";
-import { EMAIL_KINDS, EMAIL_TOPICS } from "@/platform/email/kinds";
+import { EMAIL_KINDS, EMAIL_TOPICS, UNSUBSCRIBE_LINK } from "@/platform/email/kinds";
 import { isEmailWanted, queueEmail } from "@/platform/email/outbox";
 import { sendQueuedEmailNow } from "@/platform/email/outbox-sender";
 import { readResendConfig } from "@/platform/email/resend";
@@ -66,10 +66,12 @@ function placeholderLinks(environment: Environment, numbered: readonly WeeklyEma
   return new Map(numbered.map((item) => [item.number, new Map(itemActions(item).map((action) => [action, appUrl]))]));
 }
 
-type ComposeInput = { recipient: Recipient; items: TodayItems; numbered: WeeklyEmailItem[]; links: ItemLinks; branding: Branding; canReply: boolean; isTest: boolean };
+type ComposeInput = { recipient: Recipient; items: TodayItems; numbered: WeeklyEmailItem[]; links: ItemLinks; branding: Branding; canReply: boolean; isTest: boolean; isSent: boolean };
 
-function compose(environment: Environment, { recipient, items, numbered, links, branding, canReply, isTest }: ComposeInput) {
+function compose(environment: Environment, { recipient, items, numbered, links, branding, canReply, isTest, isSent }: ComposeInput) {
+  // A sent email's stop line carries the member's unsubscribe link (the outbox fills it in); a preview's opens the app.
   return renderWeeklyEmail({
+    stopUrl: isSent ? UNSUBSCRIBE_LINK : resolveAppUrl(environment),
     memberName: recipient.name,
     communityName: branding.name,
     accentColor: branding.accentColor,
@@ -100,7 +102,7 @@ async function queueWeeklyEmailFor(database: Database, environment: Environment,
   const id = randomUUID();
   const numbered = numberWeeklyItems(items);
   const [links, replyTo] = await Promise.all([buildItemLinks(database, environment, id, numbered), createReplyAddress(database, environment, id)]);
-  const rendered = compose(environment, { recipient, items, numbered, links, branding, canReply: replyTo !== null, isTest: false });
+  const rendered = compose(environment, { recipient, items, numbered, links, branding, canReply: replyTo !== null, isTest: false, isSent: true });
   await database.transaction(async (transaction) => {
     const claimed = await claimWeeklyEmail(transaction, { ...base, id, status: WEEKLY_EMAIL_STATUSES.queued, items: numbered });
     if (!claimed) return;
@@ -264,7 +266,7 @@ export async function previewWeeklyEmail(database: Database, environment: Enviro
   const items = isSample ? buildSampleItems() : await readTodayItems(database, admin.id, enabledIds);
   const numbered = numberWeeklyItems(items);
   const recipient = isSample ? SAMPLE_MEMBER : await readAdminRecipient(database, admin);
-  const rendered = compose(environment, { recipient, items, numbered, links: placeholderLinks(environment, numbered), branding, canReply: readReplyDomain(environment) !== null, isTest: false });
+  const rendered = compose(environment, { recipient, items, numbered, links: placeholderLinks(environment, numbered), branding, canReply: readReplyDomain(environment) !== null, isTest: false, isSent: false });
   return { ...rendered, isEmpty: !needsMemberThisWeek(items), recipientName: recipient.name };
 }
 
@@ -289,7 +291,7 @@ export async function previewMemberDigest(database: Database, environment: Envir
   const read = await readTodayItems(database, row.id, enabledIds);
   const items = row.id === admin.id ? read : hideIntroNotes(read);
   const numbered = numberWeeklyItems(items);
-  const rendered = compose(environment, { recipient: row, items, numbered, links: placeholderLinks(environment, numbered), branding, canReply: readReplyDomain(environment) !== null, isTest: false });
+  const rendered = compose(environment, { recipient: row, items, numbered, links: placeholderLinks(environment, numbered), branding, canReply: readReplyDomain(environment) !== null, isTest: false, isSent: false });
   return { ...rendered, isEmpty: !needsMemberThisWeek(items), recipientName: row.name };
 }
 
@@ -312,7 +314,7 @@ export async function sendWeeklyTest(database: Database, environment: Environmen
   const numbered = numberWeeklyItems(items);
   const id = randomUUID();
   const [links, replyTo] = await Promise.all([buildItemLinks(database, environment, id, numbered), createReplyAddress(database, environment, id)]);
-  const rendered = compose(environment, { recipient, items, numbered, links, branding, canReply: replyTo !== null, isTest: true });
+  const rendered = compose(environment, { recipient, items, numbered, links, branding, canReply: replyTo !== null, isTest: true, isSent: true });
   const outboxId = await database.transaction(async (transaction) => {
     await claimWeeklyEmail(transaction, { id, memberId: recipient.id, weekKey: `${TEST_WEEK_PREFIX}${id}`, status: WEEKLY_EMAIL_STATUSES.test, items: numbered });
     const queued = await queueEmail(transaction, environment, { ...email, ...rendered, replyTo });

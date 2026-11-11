@@ -13,18 +13,15 @@ import { readUsageMonth, readMonthlyCreditUsage } from "../platform/village/cred
 import { CREDIT_CALL_KINDS, ESTIMATED_CREDITS } from "../platform/village/contract.ts";
 import { memberDailyUsage } from "../platform/village/schema.ts";
 import { readDailyLookupLimit, readVillageKeys } from "../platform/village/settings.ts";
-import { ask, askAnswer, askHelper, askOffer } from "../modules/asks/schema.ts";
-import { ASK_KINDS } from "../modules/asks/contract.ts";
-import { isOpenAsk } from "../modules/asks/reads.ts";
 import { asksManifest } from "../modules/asks/manifest.ts";
 import { INTRO_OUTCOMES, INTRO_STATES } from "../modules/intros/contract.ts";
-import { introRequest } from "../modules/intros/schema.ts";
 import { introsManifest } from "../modules/intros/manifest.ts";
 import { memberNetwork, memberProfile } from "../modules/members/schema.ts";
 import { INVITE_FILTERS } from "../modules/members/contract-invites.ts";
 import { readInvites } from "../modules/members/service-invites.ts";
 import { networkManifest } from "../modules/network/manifest.ts";
 import { readIntroLog, type IntroLogRow } from "../modules/admin/reads-intro-log.ts";
+import { readAsksFigures } from "./admin-asks.ts";
 import { readEnabledIds } from "./enabled-modules.ts";
 
 // The console's Home (Founderhall's /admin): every intro counted since launch, the members, the latest of the intro
@@ -34,7 +31,6 @@ import { readEnabledIds } from "./enabled-modules.ts";
 const LATEST_INTRO_ROWS = 6;
 const WAITING_INVITE_ROWS = 5;
 const RECENT_SENDS = 50;
-const HOURS_IN_MILLISECONDS = 60 * 60 * 1000;
 
 // Founderhall's ledger numbers, from the intro log. Withdrawn asks count nowhere (the asker took them back).
 export type IntroLedger = {
@@ -140,56 +136,6 @@ async function readLookups(database: Database, environment: Environment, now: Da
   };
 }
 
-function median(values: number[]) {
-  if (values.length === 0) return null;
-  const sorted = [...values].sort((first, second) => first - second);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2;
-}
-
-// Founderhall's asks block: open asks, answered, the median time to the first offer of help or answer, asks posted
-// and how many have members who can help; asks with an offer, intros started from asks and made; updates.
-async function readAskCounts(database: Database, now: Date) {
-  const firstHelp = sql<Date | null>`least(
-    (select min(${askOffer.createdAt}) from ${askOffer} where ${askOffer.askId} = ${ask.id}),
-    (select min(${askAnswer.createdAt}) from ${askAnswer} where ${askAnswer.askId} = ${ask.id}))`;
-  const [[row], helpRows, [intros]] = await Promise.all([
-    database
-      .select({
-        posted: sql<number>`count(*) filter (where ${ask.kind} = ${ASK_KINDS.ask})`.mapWith(Number),
-        updates: sql<number>`count(*) filter (where ${ask.kind} <> ${ASK_KINDS.ask})`.mapWith(Number),
-        open: sql<number>`count(*) filter (where ${ask.kind} = ${ASK_KINDS.ask} and ${isOpenAsk(now)})`.mapWith(Number),
-        answered: sql<number>`count(*) filter (where ${ask.kind} = ${ASK_KINDS.ask} and exists (select 1 from ${askAnswer} where ${askAnswer.askId} = ${ask.id}))`.mapWith(Number),
-        withHelpers: sql<number>`count(*) filter (where ${ask.kind} = ${ASK_KINDS.ask} and exists (select 1 from ${askHelper} where ${askHelper.askId} = ${ask.id}))`.mapWith(Number),
-        helped: sql<number>`count(*) filter (where ${ask.kind} = ${ASK_KINDS.ask} and exists (select 1 from ${askOffer} where ${askOffer.askId} = ${ask.id}))`.mapWith(Number),
-      })
-      .from(ask),
-    database
-      .select({ createdAt: ask.createdAt, firstHelpAt: firstHelp })
-      .from(ask)
-      .where(and(eq(ask.kind, ASK_KINDS.ask), sql`${firstHelp} is not null`)),
-    database
-      .select({
-        started: count(),
-        made: sql<number>`count(*) filter (where ${introRequest.state} = ${INTRO_STATES.completed})`.mapWith(Number),
-      })
-      .from(introRequest)
-      .where(and(isNotNull(introRequest.askId), eq(introRequest.isWithheld, false))),
-  ]);
-  const hours = helpRows.map(({ createdAt, firstHelpAt }) => (new Date(firstHelpAt!).getTime() - createdAt.getTime()) / HOURS_IN_MILLISECONDS);
-  return {
-    open: row?.open ?? 0,
-    answered: row?.answered ?? 0,
-    medianHours: median(hours),
-    posted: row?.posted ?? 0,
-    withHelpers: row?.withHelpers ?? 0,
-    helped: row?.helped ?? 0,
-    introsStarted: intros?.started ?? 0,
-    introsMade: intros?.made ?? 0,
-    updates: row?.updates ?? 0,
-  };
-}
-
 // The mail checklist: the sending service, the sending address's domain, and the last sends.
 async function readMail(database: Database, environment: Environment) {
   const config = readResendConfig(environment);
@@ -222,7 +168,8 @@ export async function readConsoleHome(database: Database, environment: Environme
     readMemberCounts(database, now),
     isNetworkOn ? readNetworkCounts(database, now) : null,
     isNetworkOn ? readLookups(database, environment, now) : null,
-    isAsksOn ? readAskCounts(database, now) : null,
+    // The same figures as Asks & digest, from the one read, so the two pages agree.
+    isAsksOn ? readAsksFigures(database, now) : null,
     readMail(database, environment),
   ]);
   return {

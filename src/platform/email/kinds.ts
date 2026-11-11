@@ -27,6 +27,10 @@ export const EMAIL_KINDS = {
 
 export type EmailKind = (typeof EMAIL_KINDS)[keyof typeof EMAIL_KINDS];
 
+// An email that words its own stop line ("Stop the weekly digest: …") puts this where the link goes. The outbox fills
+// in the member's unsubscribe page when it sends, and then adds no footer of its own.
+export const UNSUBSCRIBE_LINK = "{{unsubscribe_link}}";
+
 const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.invite]: null,
   [EMAIL_KINDS.emailConfirmation]: null,
