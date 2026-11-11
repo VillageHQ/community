@@ -33,6 +33,7 @@ export const PAGE_TITLES = {
   adminWeeklyEmail: "Weekly email",
   adminChat: "Slack and Discord",
   adminPerks: "Perks admin",
+  adminAsks: "Asks admin",
   perks: "Perks",
   admin: "Admin",
   setup: "Set up",

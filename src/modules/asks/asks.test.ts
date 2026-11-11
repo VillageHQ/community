@@ -6,6 +6,9 @@ import { POST as postDeleteReported } from "@/app/api/admin/reports/delete-conte
 import { POST as postDismissReport } from "@/app/api/admin/reports/dismiss/route";
 import { POST as postReportList } from "@/app/api/admin/reports/list/route";
 import { POST as postBoard } from "@/app/api/asks/route";
+import { POST as postAnswer } from "@/app/api/asks/answer/route";
+import { POST as postPin } from "@/app/api/asks/pin/route";
+import { POST as postReopen } from "@/app/api/asks/reopen/route";
 import { POST as postClose } from "@/app/api/asks/close/route";
 import { POST as postCounts } from "@/app/api/asks/counts/route";
 import { POST as postCreate } from "@/app/api/asks/create/route";
@@ -20,6 +23,7 @@ import { REPORT_FILTERS, REPORT_TARGETS, reportPageSchema } from "@/modules/admi
 import {
   ASK_ALLOWANCE,
   ASK_ALLOWANCE_SETTING,
+  ASK_BOARD_TABS,
   ASK_CATEGORIES,
   ASK_ERROR_CODES,
   ASK_LIMITS,
@@ -32,7 +36,8 @@ import {
   ownAsksSchema,
 } from "@/modules/asks/contract";
 import { asksManifest } from "@/modules/asks/manifest";
-import { ask, askOffer } from "@/modules/asks/schema";
+import { ask, askOffer, askTally } from "@/modules/asks/schema";
+import { readAdminAsks } from "@/shell/admin-asks";
 import { ASK_MAXIMUM_PER_MINUTE, ASK_POSTING_KINDS } from "@/modules/asks/limits";
 import { conversation, directMessage } from "@/modules/messages/schema";
 import { MESSAGING_KINDS, MESSAGING_MAXIMUM_PER_MINUTE } from "@/modules/messages/limits";
@@ -1037,6 +1042,168 @@ describe("asks", () => {
       await saveModuleState(database, asksManifest, true);
 
       expect(await readBoardTitles(bystander)).toEqual([]);
+    });
+  });
+
+  describe("the board tabs and search", () => {
+    async function answer(member: Member, askId: string, body: string) {
+      expect((await call(postAnswer, member, { askId, body })).status).toBe(OK_STATUS);
+    }
+
+    it("lists each tab's asks: open, answered, closed", async () => {
+      await createAsk(asker, { title: "Open and quiet" });
+      const answeredId = await createAsk(asker, { title: "Open with an answer" });
+      const closedId = await createAsk(asker, { title: "Closed with an answer" });
+      await answer(helper, answeredId, "Did this last spring.");
+      await answer(helper, closedId, "We used a Postgres consultant.");
+      await call(postClose, asker, { askId: closedId, outcome: ASK_OUTCOMES.solvedHere });
+
+      expect((await readBoardTitles(bystander)).toSorted()).toEqual(["Open and quiet", "Open with an answer"]);
+      expect((await readBoardTitles(bystander, { tab: ASK_BOARD_TABS.answered })).toSorted()).toEqual(["Closed with an answer", "Open with an answer"]);
+      const closed = await readBoard(bystander, { tab: ASK_BOARD_TABS.closed });
+      expect(closed.asks.map(({ id }) => id)).toEqual([closedId]);
+      expect(closed.asks[0]).toMatchObject({ state: ASK_STATES.closed, outcome: ASK_OUTCOMES.solvedHere, canReopen: false });
+      expect((await readBoard(asker, { tab: ASK_BOARD_TABS.closed })).asks[0]?.canReopen).toBe(true);
+    });
+
+    it("finds a closed ask by a word in one of its answers, and every word must match", async () => {
+      const closedId = await createAsk(asker, { title: "Database help" });
+      await answer(helper, closedId, "A Postgres consultant sorted it in a week.");
+      await call(postClose, asker, { askId: closedId, outcome: ASK_OUTCOMES.solvedHere });
+      await createAsk(asker, { title: "Pricing page review", detail: "Our pricing confuses people." });
+
+      expect(await readBoardTitles(bystander, { search: "postgres" })).toEqual(["Database help"]);
+      expect(await readBoardTitles(bystander, { search: "CONSULTANT week" })).toEqual(["Database help"]);
+      expect(await readBoardTitles(bystander, { search: "confuses" })).toEqual(["Pricing page review"]);
+      expect(await readBoardTitles(bystander, { search: "postgres pricing" })).toEqual([]);
+      expect(await readBoardTitles(bystander, { search: "100%" })).toEqual([]);
+    });
+
+    it("leaves out what a block hides, answers too", async () => {
+      const askId = await createAsk(asker, { title: "Database help" });
+      await answer(helper, askId, "A Postgres consultant.");
+      await block(bystander, helper);
+
+      expect(await readBoardTitles(bystander, { search: "postgres" })).toEqual([]);
+      expect(await readBoardTitles(bystander, { search: "database" })).toEqual(["Database help"]);
+    });
+  });
+
+  describe("pinning", () => {
+    it("puts a pinned ask on top of the open board, once, and audits it", async () => {
+      const pinnedId = await createAsk(asker, { title: "Pin me" });
+      await createAsk(helper, { title: "Newer ask" });
+
+      expect((await call(postPin, admin, { askId: pinnedId, isPinned: true })).status).toBe(OK_STATUS);
+
+      const board = await readBoard(bystander);
+      expect(board.pinnedAsks.map(({ id, isPinned }) => [id, isPinned])).toEqual([[pinnedId, true]]);
+      expect(board.asks.map(({ title }) => title)).toEqual(["Newer ask"]);
+      expect(await readBoardTitles(bystander, { category: ASK_CATEGORIES.hire })).toContain("Pin me");
+      const audit = await database.select({ action: adminAuditEntry.action, detail: adminAuditEntry.detail }).from(adminAuditEntry);
+      expect(audit).toContainEqual({ action: AUDIT_ACTIONS.askPinned, detail: "Pin me" });
+
+      expect((await call(postPin, admin, { askId: pinnedId, isPinned: false })).status).toBe(OK_STATUS);
+      expect((await readBoard(bystander)).pinnedAsks).toEqual([]);
+      const actions = (await database.select({ action: adminAuditEntry.action }).from(adminAuditEntry)).map(({ action }) => action);
+      expect(actions).toContain(AUDIT_ACTIONS.askUnpinned);
+    });
+
+    it("is for admins only, and only for open asks", async () => {
+      const askId = await createAsk(asker);
+      expect((await call(postPin, asker, { askId, isPinned: true })).status).toBe(FORBIDDEN_STATUS);
+
+      await call(postClose, asker, { askId, outcome: ASK_OUTCOMES.noLongerNeeded });
+      const closed = await call(postPin, admin, { askId, isPinned: true });
+      expect(closed.status).toBe(CONFLICT_STATUS);
+      expect((await closed.json()).code).toBe(ASK_ERROR_CODES.notOpen);
+    });
+
+    it("stops at the pin limit, and closing a pinned ask frees its place", async () => {
+      const ids: string[] = [];
+      for (const member of [asker, helper, bystander, admin]) ids.push(await createAsk(member, { title: `Ask by ${member.userId}` }));
+      for (const askId of ids.slice(0, ASK_LIMITS.pinnedAsks)) expect((await call(postPin, admin, { askId, isPinned: true })).status).toBe(OK_STATUS);
+
+      const tooMany = await call(postPin, admin, { askId: ids.at(-1), isPinned: true });
+      expect(tooMany.status).toBe(CONFLICT_STATUS);
+      expect((await tooMany.json()).code).toBe(ASK_ERROR_CODES.pinLimit);
+
+      await call(postClose, asker, { askId: ids[0], outcome: ASK_OUTCOMES.solvedHere });
+      expect((await call(postPin, admin, { askId: ids.at(-1), isPinned: true })).status).toBe(OK_STATUS);
+    });
+  });
+
+  describe("reopening", () => {
+    async function closedAsk(title = "Closed for now") {
+      const askId = await createAsk(asker, { title });
+      await call(postClose, asker, { askId, outcome: ASK_OUTCOMES.noLongerNeeded });
+      return askId;
+    }
+
+    it("lets the author put a closed ask back on the board for a fresh 30 days, audited", async () => {
+      const askId = await closedAsk();
+      await ageAsk(askId, ASK_LIMITS.lifetimeDays + 10);
+
+      expect((await call(postReopen, asker, { askId })).status).toBe(OK_STATUS);
+
+      expect(await readBoardTitles(bystander)).toEqual(["Closed for now"]);
+      expect((await readOwn(asker)).asks[0]).toMatchObject({ state: ASK_STATES.open, outcome: null });
+      const audit = await database.select({ action: adminAuditEntry.action, actorId: adminAuditEntry.actorId }).from(adminAuditEntry);
+      expect(audit).toContainEqual({ action: AUDIT_ACTIONS.askReopened, actorId: asker.userId });
+    });
+
+    it("lets an admin reopen someone else's ask, and nobody else", async () => {
+      const askId = await closedAsk();
+
+      expect((await call(postReopen, helper, { askId })).status).toBe(NOT_FOUND_STATUS);
+      expect((await call(postReopen, admin, { askId })).status).toBe(OK_STATUS);
+      const audit = await database.select({ action: adminAuditEntry.action, actorId: adminAuditEntry.actorId }).from(adminAuditEntry);
+      expect(audit).toContainEqual({ action: AUDIT_ACTIONS.askReopened, actorId: admin.userId });
+    });
+
+    it("refuses an open ask, and keeps the author's open limit", async () => {
+      const openId = await createAsk(asker, { title: "Still open" });
+      expect((await call(postReopen, asker, { askId: openId })).status).toBe(CONFLICT_STATUS);
+
+      const askId = await closedAsk();
+      for (let index = 1; index < ASK_LIMITS.openPerMember; index += 1) await createAsk(asker, { title: `Open ${index}` });
+      const full = await call(postReopen, asker, { askId });
+      expect(full.status).toBe(CONFLICT_STATUS);
+      expect((await full.json()).code).toBe(ASK_ERROR_CODES.openLimit);
+    });
+  });
+
+  describe("the admin asks page", () => {
+    it("counts this quarter's asks the way the data says, deleted accounts included", async () => {
+      const answeredId = await createAsk(asker, { title: "Answered one" });
+      await call(postAnswer, helper, { askId: answeredId, body: "Done it." });
+      const solvedId = await createAsk(asker, { title: "Solved one" });
+      await call(postClose, asker, { askId: solvedId, outcome: ASK_OUTCOMES.solvedHere });
+      const elsewhereId = await createAsk(helper, { title: "Elsewhere one" });
+      await call(postClose, helper, { askId: elsewhereId, outcome: ASK_OUTCOMES.solvedElsewhere });
+      const oldestId = await createAsk(bystander, { title: "Waiting longest" });
+      await ageAsk(oldestId, 20);
+      await createAsk(bystander, { title: "An update", kind: "update" });
+      await database.insert(askTally).values({ category: ASK_CATEGORIES.hire, kind: "ask", outcome: ASK_OUTCOMES.noLongerNeeded, createdAt: new Date() });
+
+      const page = await readAdminAsks(database);
+
+      expect(page.counts).toEqual({ asked: 5, answered: 1, closed: 3, solvedHere: 1, solvedElsewhere: 1, noLongerNeeded: 1 });
+      expect(page.oldest.map(({ title }) => title)).toEqual(["Waiting longest"]);
+      expect(page.weeklyAllowance).toBe(ASK_ALLOWANCE.maximum);
+    });
+
+    it("lists reported asks once each, and the pinned ones", async () => {
+      const askId = await createAsk(asker, { title: "Reported ask" });
+      await call(postReport, helper, { askId });
+      await call(postReport, bystander, { askId });
+      await call(postPin, admin, { askId, isPinned: true });
+
+      const page = await readAdminAsks(database);
+
+      expect(page.reported).toHaveLength(1);
+      expect(page.reported[0]).toMatchObject({ targetType: REPORT_TARGETS.ask, reportCount: 2 });
+      expect(page.pinned.map(({ id }) => id)).toEqual([askId]);
     });
   });
 });

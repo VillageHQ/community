@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, notExists, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, gt, gte, ilike, inArray, isNotNull, isNull, lt, ne, notExists, or, type SQL } from "drizzle-orm";
 import { alias, QueryBuilder, type AnyPgColumn } from "drizzle-orm/pg-core";
 
 import { isActiveMember } from "../../platform/auth/member-status.ts";
@@ -12,6 +12,7 @@ import { readSettings } from "../../platform/settings/store.ts";
 import {
   ASK_ALLOWANCE,
   ASK_ALLOWANCE_SETTING,
+  ASK_BOARD_TABS,
   ASK_HELPER_REASONS,
   ASK_KINDS,
   ASK_LIMITS,
@@ -20,6 +21,7 @@ import {
   ownAsksSchema,
   type AskBoardPage,
   type AskAnswer,
+  type AskBoardTab,
   type AskCategory,
   type AskCursor,
   type AskHelper,
@@ -76,6 +78,9 @@ function selectBoardAsks(database: Database) {
       targetSlug: ask.targetSlug,
       targetName: ask.targetName,
       listedAt: ask.listedAt,
+      closedAt: ask.closedAt,
+      outcome: ask.outcome,
+      pinnedAt: ask.pinnedAt,
       authorId: user.id,
       authorName: user.name,
       authorTitle: memberProfile.title,
@@ -167,26 +172,68 @@ async function readWhyYou(database: Database, askIds: string[], viewerId: string
   return new Map(rows.map(({ askId, why }) => [askId, why]));
 }
 
-type BoardRequest = { viewerId: string; category: AskCategory | null; kind: AskKind | null; cursor: AskCursor | null; canIntro: boolean };
+type BoardRequest = {
+  viewerId: string;
+  isViewerAdmin?: boolean;
+  tab?: AskBoardTab;
+  search?: string | null;
+  category: AskCategory | null;
+  kind: AskKind | null;
+  cursor: AskCursor | null;
+  canIntro: boolean;
+};
 
-export async function readAskBoard(database: Database, { viewerId, category, kind, cursor, canIntro }: BoardRequest, now = new Date()): Promise<AskBoardPage> {
-  const pageSize = ASK_LIMITS.asksPerPage;
-  const rows = await selectBoardAsks(database)
-    .where(and(isOpenAsk(now), isActiveMember(now), hasNoBlockBetween(viewerId, ask.authorId), category ? eq(ask.category, category) : undefined, kind ? eq(ask.kind, kind) : undefined, isBeforeCursor(cursor)))
-    .orderBy(desc(ask.listedAt), desc(ask.id))
-    .limit(pageSize + 1);
-  const pageRows = rows.slice(0, pageSize);
-  const askIds = pageRows.map(({ id }) => id);
+// A typed word as a LIKE pattern that matches it anywhere, with LIKE's own wildcards taken literally.
+function toContainsPattern(word: string) {
+  return `%${word.replace(/[\\%_]/g, (character) => `\\${character}`)}%`;
+}
+
+export function readSearchWords(search: string | null | undefined) {
+  if (!search) return [];
+  return [...new Set(search.toLowerCase().split(/\s+/).filter(Boolean))].slice(0, ASK_LIMITS.searchWords);
+}
+
+function hasVisibleAnswer(viewerId: string, now: Date, bodyMatches?: SQL) {
+  return exists(
+    new QueryBuilder()
+      .select({ id: askAnswer.id })
+      .from(askAnswer)
+      .innerJoin(answerAuthor, eq(answerAuthor.id, askAnswer.authorId))
+      .where(and(eq(askAnswer.askId, ask.id), isActiveMember(now, answerAuthor), hasNoBlockBetween(viewerId, askAnswer.authorId), bodyMatches)),
+  );
+}
+
+// Every word must appear in the title, the details or an answer the viewer can see. Closed and expired asks count too.
+function matchesSearch(words: string[], viewerId: string, now: Date) {
+  if (words.length === 0) return undefined;
+  return and(
+    ...words.map((word) => {
+      const pattern = toContainsPattern(word);
+      return or(ilike(ask.title, pattern), ilike(ask.detail, pattern), hasVisibleAnswer(viewerId, now, ilike(askAnswer.body, pattern)));
+    }),
+  );
+}
+
+function isOnTab(tab: AskBoardTab, viewerId: string, now: Date) {
+  if (tab === ASK_BOARD_TABS.answered) return and(eq(ask.kind, ASK_KINDS.ask), hasVisibleAnswer(viewerId, now));
+  if (tab === ASK_BOARD_TABS.closed) return isNotNull(ask.closedAt);
+  return isOpenAsk(now);
+}
+
+type BoardRow = Awaited<ReturnType<ReturnType<typeof selectBoardAsks>["execute"]>>[number];
+
+async function toBoardAsks(database: Database, rows: BoardRow[], { viewerId, isViewerAdmin }: { viewerId: string; isViewerAdmin: boolean }, now: Date) {
+  const askIds = rows.map(({ id }) => id);
   const [offerCounts, myOffers, answers, whyYou] = await Promise.all([
     readOfferCounts(database, askIds, viewerId),
     readMyOffers(database, askIds, viewerId),
     readAnswers(database, askIds, viewerId, now),
     readWhyYou(database, askIds, viewerId),
   ]);
-  const lastRow = pageRows.at(-1);
-
-  return askBoardPageSchema.parse({
-    asks: pageRows.map((row) => ({
+  return rows.map((row) => {
+    const state = readAskState(row, now);
+    const isMine = row.authorId === viewerId;
+    return {
       id: row.id,
       title: row.title,
       detail: row.detail,
@@ -196,11 +243,47 @@ export async function readAskBoard(database: Database, { viewerId, category, kin
       author: toAskMember({ id: row.authorId, name: row.authorName, title: row.authorTitle, company: row.authorCompany, avatarUpdatedAt: row.authorAvatarUpdatedAt, filledFace: row.authorFilledFace, companyLogoUrl: row.authorCompanyLogoUrl }),
       target: toTarget(row.targetSlug, row.targetName),
       offerCount: offerCounts.get(row.id) ?? 0,
-      isMine: row.authorId === viewerId,
+      isMine,
       myOffer: myOffers.get(row.id) ?? null,
       answers: answers.get(row.id) ?? [],
       whyYou: whyYou.get(row.id) ?? null,
-    })),
+      state,
+      outcome: row.outcome,
+      isPinned: row.pinnedAt !== null && state === ASK_STATES.open,
+      canReopen: state === ASK_STATES.closed && (isMine || isViewerAdmin),
+    };
+  });
+}
+
+// The board. Open: open asks and updates, with the pinned ones on top of the unfiltered first page. Answered: asks
+// with an answer the viewer can see. Closed: closed asks. A search ignores the tab and the filters and looks everywhere.
+export async function readAskBoard(database: Database, request: BoardRequest, now = new Date()): Promise<AskBoardPage> {
+  const { viewerId, isViewerAdmin = false, tab = ASK_BOARD_TABS.open, search = null, category, kind, cursor, canIntro } = request;
+  const pageSize = ASK_LIMITS.asksPerPage;
+  const words = readSearchWords(search);
+  const isSearching = words.length > 0;
+  const showsPins = !isSearching && tab === ASK_BOARD_TABS.open && !category && !kind;
+  const visible = and(isActiveMember(now), hasNoBlockBetween(viewerId, ask.authorId));
+  const filters = isSearching
+    ? matchesSearch(words, viewerId, now)
+    : and(isOnTab(tab, viewerId, now), category ? eq(ask.category, category) : undefined, kind ? eq(ask.kind, kind) : undefined, showsPins ? isNull(ask.pinnedAt) : undefined);
+  const [rows, pinnedRows] = await Promise.all([
+    selectBoardAsks(database)
+      .where(and(visible, filters, isBeforeCursor(cursor)))
+      .orderBy(desc(ask.listedAt), desc(ask.id))
+      .limit(pageSize + 1),
+    showsPins && !cursor
+      ? selectBoardAsks(database).where(and(visible, isOpenAsk(now), isNotNull(ask.pinnedAt))).orderBy(desc(ask.pinnedAt), desc(ask.id)).limit(ASK_LIMITS.pinnedAsks)
+      : Promise.resolve([]),
+  ]);
+  const pageRows = rows.slice(0, pageSize);
+  const viewer = { viewerId, isViewerAdmin };
+  const [asks, pinnedAsks] = await Promise.all([toBoardAsks(database, pageRows, viewer, now), toBoardAsks(database, pinnedRows, viewer, now)]);
+  const lastRow = pageRows.at(-1);
+
+  return askBoardPageSchema.parse({
+    asks,
+    pinnedAsks,
     nextCursor: rows.length > pageSize && lastRow ? { listedAt: lastRow.listedAt.toISOString(), id: lastRow.id } : null,
     canIntro,
   });

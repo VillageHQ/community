@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, count, eq, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
@@ -25,8 +25,9 @@ import {
   type CloseAskBody,
   type CreateAskBody,
   type OfferHelpBody,
+  type PinAskBody,
 } from "./contract.ts";
-import { hasNoBlockBetween, readOpenAskCount } from "./reads.ts";
+import { hasNoBlockBetween, isOpenAsk, readOpenAskCount } from "./reads.ts";
 import { canRenewAsk, readAskState } from "./rules-state.ts";
 import { ask, askAnswer, askHelper, askOffer } from "./schema.ts";
 
@@ -170,8 +171,84 @@ export async function closeAsk({ database, member }: RequestContext, { askId, ou
   await database.transaction(async (transaction) => {
     const { closedAt } = await lockOwnAsk(transaction, askId, member.id);
     if (closedAt) throw new RequestError(CONFLICT_STATUS, ASK_ERROR_CODES.closed, "You already closed this ask.");
-    await transaction.update(ask).set({ closedAt: new Date(), outcome }).where(eq(ask.id, askId));
+    await transaction.update(ask).set({ closedAt: new Date(), outcome, pinnedAt: null, pinnedByUserId: null }).where(eq(ask.id, askId));
   });
+}
+
+// One lock for every pin, so two admins pinning at once can't pass the limit together. The feed's pin lock is 7260412.
+const ASK_PIN_LOCK_ID = 7260414;
+
+async function lockAskForAdmin(transaction: Transaction, askId: string) {
+  const [target] = await transaction
+    .select({ authorId: ask.authorId, authorName: user.name, title: ask.title, listedAt: ask.listedAt, closedAt: ask.closedAt, pinnedAt: ask.pinnedAt })
+    .from(ask)
+    .innerJoin(user, eq(user.id, ask.authorId))
+    .where(eq(ask.id, askId))
+    .for("update", { of: ask });
+  if (!target) throw askGoneError();
+  return target;
+}
+
+async function readPinnedAskCount(transaction: Transaction, now: Date) {
+  const [row] = await transaction.select({ pinned: count() }).from(ask).where(and(isNotNull(ask.pinnedAt), isOpenAsk(now)));
+  return row?.pinned ?? 0;
+}
+
+export async function setAskPinned({ database, member }: RequestContext, { askId, isPinned }: PinAskBody) {
+  await withAdminTransaction(database, member.id, async (transaction) => {
+    await transaction.execute(sql`select pg_advisory_xact_lock(${ASK_PIN_LOCK_ID})`);
+    const target = await lockAskForAdmin(transaction, askId);
+    const now = new Date();
+    if (isPinned === (target.pinnedAt !== null)) return;
+    if (isPinned && readAskState(target, now) !== ASK_STATES.open) {
+      throw new RequestError(CONFLICT_STATUS, ASK_ERROR_CODES.notOpen, "Only an open ask can be pinned. Reopen or renew it first.");
+    }
+    if (isPinned && (await readPinnedAskCount(transaction, now)) >= ASK_LIMITS.pinnedAsks) {
+      throw new RequestError(CONFLICT_STATUS, ASK_ERROR_CODES.pinLimit, `${ASK_LIMITS.pinnedAsks} asks are pinned already. Unpin one first.`);
+    }
+    await transaction
+      .update(ask)
+      .set({ pinnedAt: isPinned ? now : null, pinnedByUserId: isPinned ? member.id : null })
+      .where(eq(ask.id, askId));
+    await recordAdminAction(transaction, member.id, {
+      action: isPinned ? AUDIT_ACTIONS.askPinned : AUDIT_ACTIONS.askUnpinned,
+      targetMemberId: target.authorId,
+      targetName: target.authorName,
+      detail: target.title,
+    });
+  });
+  logAdminAction(isPinned ? "ask_pinned" : "ask_unpinned", member.id, askId);
+}
+
+// The author or an admin puts a closed ask back on the board for a fresh 30 days. The author's open limit still
+// applies, so a reopen can't be a way past it. Every reopen goes in the audit log.
+export async function reopenAsk({ database, member }: RequestContext, askId: string, isAdmin: boolean) {
+  const reopen = async (transaction: Transaction) => {
+    const [owner] = await transaction.select({ authorId: ask.authorId }).from(ask).where(eq(ask.id, askId));
+    if (!owner || (!isAdmin && owner.authorId !== member.id)) throw askGoneError();
+    await lockMemberAsks(transaction, owner.authorId);
+    const target = await lockAskForAdmin(transaction, askId);
+    if (!target.closedAt) throw new RequestError(CONFLICT_STATUS, ASK_ERROR_CODES.notClosed, "This ask is already open.");
+    const now = new Date();
+    if ((await readOpenAskCount(transaction, target.authorId, now)) >= ASK_LIMITS.openPerMember) {
+      throw new RequestError(
+        CONFLICT_STATUS,
+        ASK_ERROR_CODES.openLimit,
+        target.authorId === member.id
+          ? `You already have ${ASK_LIMITS.openPerMember} open asks. Close one, then reopen this.`
+          : `They already have ${ASK_LIMITS.openPerMember} open asks, so this one can't reopen now.`,
+      );
+    }
+    await transaction.update(ask).set({ closedAt: null, outcome: null, listedAt: now }).where(eq(ask.id, askId));
+    await recordAdminAction(transaction, member.id, {
+      action: AUDIT_ACTIONS.askReopened,
+      targetMemberId: target.authorId,
+      targetName: target.authorName,
+      detail: target.title,
+    });
+  };
+  if (isAdmin) await withAdminTransaction(database, member.id, reopen);
+  else await database.transaction(reopen);
 }
 
 export async function renewAsk({ database, member }: RequestContext, askId: string) {
