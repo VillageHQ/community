@@ -62,13 +62,16 @@ describe("the Set up list", () => {
     expect(states).toContainEqual(["Reports", "2 open"]);
   });
 
-  it("sends a switched-off feature's row to the switch", () => {
+  it("sends a switched-off feature's row to the switch, in Founderhall's words", () => {
     const rows = readSetupRows({ ...FRESH_INSTALL, isNetworkOn: false, isChatOn: false, isPerksOn: false });
-    for (const key of ["village", "integrations", "perks"]) {
-      const row = rows.find((candidate) => candidate.key === key);
-      expect(row?.state).toEqual({ kind: SETUP_ROW_STATES.word, text: "off" });
-      expect(row?.href).toBe("/admin/features");
-    }
+    const row = (key: string) => rows.find((candidate) => candidate.key === key);
+    expect(row("village")?.state).toEqual({ kind: SETUP_ROW_STATES.word, text: "off" });
+    expect(row("village")?.href).toBe("/admin/features");
+    expect(row("integrations")?.state).toEqual({ kind: SETUP_ROW_STATES.word, text: "optional" });
+    expect(row("integrations")?.href).toBe("/admin/features");
+    // Perks' own page holds the switch that turns it on.
+    expect(row("perks")?.state).toEqual({ kind: SETUP_ROW_STATES.word, text: "optional" });
+    expect(row("perks")?.href).toBe("/admin/perks");
   });
 
   it("tells a managed fund it has nothing to paste", () => {

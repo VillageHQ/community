@@ -98,14 +98,16 @@ export function readSetupRows(facts: SetupFacts): SetupRow[] {
       title: "Integrations",
       href: facts.isChatOn ? CHAT_ADMIN_PAGE : ROUTES.adminFeatures,
       description: "New asks and a weekly line in your Slack or Discord; /ask from Slack.",
-      state: !facts.isChatOn ? OFF : facts.isChatPosting ? done : OPTIONAL,
+      // Founderhall says "optional" until it posts; switched off, the row still leads to the switch.
+      state: facts.isChatOn && facts.isChatPosting ? done : OPTIONAL,
     },
     {
       key: "perks",
       title: "Perks",
-      href: facts.isPerksOn ? PERKS_ADMIN_PAGE : ROUTES.adminFeatures,
+      // The Perks page stays open while Perks is off: its "Show Perks to members" switch turns it on.
+      href: PERKS_ADMIN_PAGE,
       description: "A perks page for your founders, from your BuiltFirst marketplace.",
-      state: !facts.isPerksOn ? OFF : facts.isPerksShown ? done : OPTIONAL,
+      state: facts.isPerksOn && facts.isPerksShown ? done : OPTIONAL,
     },
     {
       key: "audit",
