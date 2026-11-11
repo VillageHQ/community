@@ -6,7 +6,7 @@
   with an answer from an active, unblocked member; Closed = `closed_at` set. Newest listing first, cursor paging.
 - **Search:** `?q=` in the URL, `search` in the request. It ignores the tab and the chips. Every word (case-insensitive,
   LIKE wildcards taken literally) must match the title, details or a visible answer. 120 characters at most.
-- **Pins:** `ask.pinned_at`, `ask.pinned_by_user_id` (migration 0028; a check keeps a closed ask unpinned).
+- **Pins:** `ask.pinned_at`, `ask.pinned_by_user_id` (migration 0029; a check keeps a closed ask unpinned).
   `setAskPinned` in `service.ts` takes an advisory lock (7260414), refuses a closed or expired ask and a 4th pin, and
   audits `ask_pinned` / `ask_unpinned`. The unfiltered first page of Open returns them as `pinnedAsks` and leaves them
   out of `asks`. Closing an ask unpins it; an expired pinned ask keeps its place until renewed, unpinned or closed.
