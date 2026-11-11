@@ -30,7 +30,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 
 ## Next (queued)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
-- [ ] Intros from a profile without Village, and "Who <name> can introduce you to" — intros-no-village — open pull request — [charter](features/intros-no-village/CHARTER.md) · [spec](features/intros-from-profile/SPEC.md)
+- [ ] Intros from a profile without Village, and "Who <name> can introduce you to" — intros-no-village — open pull request, [PR #40](https://github.com/VillageHQ/community/pull/40) — [charter](features/intros-no-village/CHARTER.md) · [spec](features/intros-from-profile/SPEC.md)
 - [ ] The finer intro rules: 7 days per step, the admin's outcome day, an event history, the connector on the joining email — parity — [spec](features/intros-from-profile/SPEC.md)
 - [ ] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
 
