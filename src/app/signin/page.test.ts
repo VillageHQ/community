@@ -73,9 +73,10 @@ describe("the sign-in page", () => {
     expect(html).toContain("A checklist takes you through the rest.");
   });
 
-  it("welcomes everyone else back", async () => {
+  it("asks everyone else for the email their invite went to, in Founderhall's words", async () => {
     const html = renderToStaticMarkup(await SignInPage({ searchParams: Promise.resolve({}) }));
 
-    expect(html).toContain("Welcome back.");
+    expect(html).toContain("Sign in to ");
+    expect(html).toContain("is invite-only. If you were invited, use the address the invite went to.");
   });
 });

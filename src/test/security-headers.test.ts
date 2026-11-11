@@ -85,7 +85,7 @@ describe("security headers", () => {
     expect((await readSecurityHeaders()).get("Content-Security-Policy")).not.toContain("builtfirst");
   });
 
-  it.each(["/join/:token", "/meet/:token", "/confirm-email", "/reset-password"])("keep tokens at %s out of referrers and search engines", async (path) => {
+  it.each(["/invite", "/auth", "/join/:token", "/meet/:token", "/confirm-email", "/reset-password"])("keep tokens at %s out of referrers and search engines", async (path) => {
     const rules = await nextConfig.headers();
     const inviteRule = rules.find(({ source }) => source === path);
 

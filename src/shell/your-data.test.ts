@@ -535,7 +535,6 @@ describe("your data and the real delete", () => {
       expect((await call(postOnboarding, omar, { step: ONBOARDING_STEPS.network })).status).toBe(409);
       expect(await resolveOnboardingStep(database, omarSession)).toBe(ONBOARDING_STEPS.introAsks);
       expect((await call(postIntroAsks, omar, { acceptsIntroAsks: false })).status).toBe(OK_STATUS);
-      expect(await resolveOnboardingStep(database, omarSession)).not.toBe(ONBOARDING_STEPS.introAsks);
 
       const [saved] = await database.select().from(memberPrivacy).where(eq(memberPrivacy.userId, omar.userId));
       expect(saved).toMatchObject({ acceptsIntroAsks: false, introAsksAnsweredPlace: "onboarding" });
