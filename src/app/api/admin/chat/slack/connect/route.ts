@@ -6,8 +6,8 @@ export const POST = chatRoutes.member(
   "admin-chat-slack-connect",
   slackConnectBodySchema,
   async (context, body) => {
-    const { accountName } = await connectSlack(context, body);
-    return Response.json({ message: `Slack connected to ${accountName}. Pick the channel to post to.` });
+    await connectSlack(context, body);
+    return Response.json({ message: "Slack connected. Pick the channel to post to." });
   },
   { adminOnly: true },
 );

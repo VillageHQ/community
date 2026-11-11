@@ -45,6 +45,23 @@ const TEXT_PAIRS = [
   ["--tint-f-fg", "--tint-f-bg"],
 ] as const;
 
+// Founderhall's own names (design-system.md §1.1), the pairs its parts draw.
+const FOUNDERHALL_TEXT_PAIRS = [
+  ["--ink", "--paper"],
+  ["--ink", "--leaf"],
+  ["--ink", "--vellum"],
+  ["--ink", "--side"],
+  ["--paper", "--ink"],
+  ["--graphite", "--paper"],
+  ["--graphite", "--leaf"],
+  ["--graphite", "--vellum"],
+  ["--graphite", "--side"],
+  ["--spine", "--spine-tint"],
+  ["--spine", "--leaf"],
+  ["--ribbon", "--ribbon-tint"],
+  ["--ribbon", "--leaf"],
+] as const;
+
 describe.each([
   ["light", ":root"],
   ["dark", ".dark"],
@@ -59,9 +76,29 @@ describe.each([
     expect(failures).toEqual([]);
   });
 
+  it("keep Founderhall's text pairs readable", () => {
+    const failures = FOUNDERHALL_TEXT_PAIRS.filter(
+      ([text, background]) => contrastRatio(readColor(tokens, text), readColor(tokens, background)) < AA_TEXT,
+    );
+
+    expect(failures).toEqual([]);
+  });
+
   it("keep field boundaries visible", () => {
     expect(contrastRatio(readColor(tokens, "--input"), readColor(tokens, "--card"))).toBeGreaterThanOrEqual(AA_NON_TEXT);
     expect(contrastRatio(readColor(tokens, "--input"), readColor(tokens, "--muted"))).toBeGreaterThanOrEqual(AA_NON_TEXT);
+  });
+});
+
+describe("the dark parts with a literal colour", () => {
+  const tokens = readBlock(".dark");
+  const leaf = readColor(tokens, "--leaf");
+
+  it("keep placeholders readable and dashed edges and the off switch visible", () => {
+    expect(contrastRatio(readColor(tokens, "--fh-placeholder"), leaf)).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(contrastRatio(readColor(tokens, "--fh-dash"), leaf)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(contrastRatio(readColor(tokens, "--fh-switch-off"), leaf)).toBeGreaterThanOrEqual(AA_NON_TEXT);
+    expect(contrastRatio(readColor(tokens, "--ink"), readColor(tokens, "--fh-chip-hover"))).toBeGreaterThanOrEqual(AA_TEXT);
   });
 });
 

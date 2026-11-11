@@ -13,13 +13,13 @@ import { BULK_INVITE_FORMATS, MAXIMUM_LISTED_INVITES, parseInviteList, type Bulk
 import { FILL_IN_BASES, type FillInBasis } from "@/modules/members/contract-fill-in";
 import { readInviteWords } from "@/modules/members/contract-invite-email";
 import { createBulkInvitesRequest } from "@/modules/members/queries-invites";
-import { API_ROUTES } from "@/platform/http/routes";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { postRequest } from "@/platform/http/post-request";
 
 // Founderhall's Import members and Mail pages (Set up). Invites only link to them.
 const IMPORT_PAGE = "/admin/import";
-const MAIL_PAGE = "/admin/email";
+const MAIL_PAGE = ROUTES.adminMail;
 
 const EMPTY_MESSAGE = "Paste at least one email address.";
 const TERMS_DATE_MESSAGE = "Pick the date your terms started saying this.";

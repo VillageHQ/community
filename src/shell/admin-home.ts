@@ -32,7 +32,7 @@ type AdminHomeCounts = { pendingInvites: number; stuckIntros: number; isNetworkO
 // With network on, the Village item opens the Village check, which says what's wrong and links to the fix.
 function readVillageHref(trouble: string | null, isNetworkOn: boolean) {
   if (isNetworkOn) return ROUTES.adminVillage;
-  return trouble === VILLAGE_TROUBLES.keysRejected ? `${ROUTES.adminSettings}?step=${SETUP_STEPS.keys}` : ROUTES.adminCredits;
+  return trouble === VILLAGE_TROUBLES.keysRejected ? `${ROUTES.adminSettings}?step=${SETUP_STEPS.keys}` : ROUTES.adminVillage;
 }
 
 function plural(count: number, one: string, many: string) {

@@ -6,8 +6,8 @@ export const POST = chatRoutes.member(
   "admin-chat-discord-connect",
   discordConnectBodySchema,
   async (context, body) => {
-    const { channelName } = await connectDiscord(context, body);
-    return Response.json({ message: `Discord connected. New asks go to #${channelName}. Send a test post to check it.` });
+    await connectDiscord(context, body);
+    return Response.json({ message: "Discord connected." });
   },
   { adminOnly: true },
 );

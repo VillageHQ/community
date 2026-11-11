@@ -35,6 +35,25 @@ export const INSTANCE_SETTING_KEYS = {
   dataLocation: "data_location",
   dataContactName: "data_contact_name",
   dataContactEmail: "data_contact_email",
+  // Set up › Settings (Founderhall's settings page): hosting, plan, the mail sender, the default message policy.
+  hostingBy: "hosting_by",
+  plan: "plan",
+  managedSetupBy: "managed_setup_by",
+  mailFromName: "mail_from_name",
+  mailDomain: "mail_domain",
+  logoUrl: "logo_url",
+  messagePolicyDefault: "message_policy_default",
+  // Set up › Mail: the DKIM selector and reply subdomain the DNS check looks up.
+  mailDkimSelector: "mail_dkim_selector",
+  mailReplyDomain: "mail_reply_domain",
+  // Set up › Village: what members read on the connect screen, the sync screen switches, the nightly fill-in.
+  villageDataRegion: "village_data_region",
+  villageDpaUrl: "village_dpa_url",
+  villageEmbed: "village_embed",
+  villageEmbedAuth: "village_embed_auth",
+  villageFillInNightly: "village_fill_in_nightly",
+  // Set up › Perks: whether members see the saved marketplace.
+  perksEnabled: "perks_enabled",
   // Written only by the demo seed (DEMO_MODE=true). Its presence is what lets demo mode start on a database with members.
   demoSeededAt: "demo_seeded_at",
   demoResetAt: "demo_reset_at",

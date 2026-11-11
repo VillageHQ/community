@@ -100,8 +100,8 @@ describe("the shell with modules off", () => {
     });
 
     it("hides the credits tab", async () => {
-      // Jobs, Perks and Slack and Discord start off, so their tabs are hidden too.
-      expect((await readAdminTabFacts(database, ENVIRONMENT)).hiddenTabHrefs).toEqual(["/admin/credits", "/admin/jobs", "/admin/perks", "/admin/chat"]);
+      // Jobs and Slack and Discord start off, so their tabs are hidden too. Set up › Perks stays: its switch turns Perks on.
+      expect((await readAdminTabFacts(database, ENVIRONMENT)).hiddenTabHrefs).toEqual(["/admin/village", "/admin/jobs", "/admin/integrations"]);
     });
 
     it("doesn't count an out-of-credits notice", async () => {
@@ -115,14 +115,15 @@ describe("the shell with modules off", () => {
       expect(readRunsOnVillage(await readEnabledIds(database))).toBe(false);
     });
 
-    it("skips the network step of onboarding", async () => {
-      const { memberPrivacy, memberProfile } = await import("@/modules/members/schema");
+    it("finishes onboarding after the two welcome steps, with no network step", async () => {
+      const { memberProfile } = await import("@/modules/members/schema");
+      const { finishWelcome } = await import("@/shell/onboarding");
       const member = await createSignedInMember(database);
+      const sessionMember = { id: member.userId, email: member.email };
       await database.insert(memberProfile).values({ userId: member.userId, cardStepDoneAt: new Date() });
-      // Intros stay on without network, so the member answers "accept intro asks?" first.
-      await database.insert(memberPrivacy).values({ userId: member.userId, acceptsIntroAsks: true });
+      await finishWelcome(database, sessionMember, { isHidden: false, acceptsIntroAsks: true });
 
-      expect(await resolveOnboardingStep(database, { id: member.userId, email: member.email })).toBe("done");
+      expect(await resolveOnboardingStep(database, sessionMember)).toBe("done");
     });
 
     it("still lets a member leave the Village group", async () => {

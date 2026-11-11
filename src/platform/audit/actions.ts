@@ -58,6 +58,10 @@ export const AUDIT_ACTIONS = {
   villageSettingsChanged: "village_settings_changed",
   dataHomeSaved: "data_home_saved",
   emailUnsuppressed: "email_unsuppressed",
+  // Set up › Settings and Set up › Mail.
+  settingsSaved: "settings_saved",
+  mailSettingsSaved: "mail_settings_saved",
+  mailDnsChecked: "mail_dns_checked",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

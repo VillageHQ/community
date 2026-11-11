@@ -19,6 +19,7 @@ import { user } from "@/platform/database/auth-schema";
 import type { Database } from "@/platform/database/client";
 import type { Environment } from "@/platform/environment";
 import { resolveAppUrl } from "@/platform/http/app-url";
+import { ROUTES } from "@/platform/http/routes";
 import { jobLease } from "@/platform/jobs/schema";
 import { readCurrentWeek } from "@/platform/weekly-email/schedule";
 import { readWeeklySchedule } from "@/platform/weekly-email/schedule-store";
@@ -78,7 +79,7 @@ async function readWeekItem(database: Database, enabledIds: ReadonlySet<string>,
   return {
     ref: `${CHAT_REF_PREFIXES.week}${week.weekKey}`,
     happenedAt: week.at,
-    compose: (kind) => composeWeekPost(kind, { community, introsMade, openAsks, url: `${appUrl}${ASKS_PAGE}` }),
+    compose: (kind) => composeWeekPost(kind, { community, introsMade, openAsks, url: `${appUrl}${ROUTES.admin}` }),
   };
 }
 

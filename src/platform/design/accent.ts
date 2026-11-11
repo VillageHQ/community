@@ -194,24 +194,45 @@ function toLightAccentVariables(brandHex: string) {
   };
 }
 
-export function toAccentVariables(brandHex: string, mode: ThemeMode) {
-  if (mode === "light") return toLightAccentVariables(brandHex);
-  // Dark mode waits on the owner: the fund takes its readable text tone on the dark sheets and its tint stays dark.
-  const { accent, onAccent, accentText, accentSoft, accentEdge, focusRing } = deriveAccentTokens(brandHex, mode);
+// The dark version of the same rule (Founderhall has no dark mode; the owner chose one). The tint is a dark wash of the
+// fund's hue; the fund keeps its hue, is calmed to a modest chroma, and is lightened until it reads at 4.5:1 on every
+// dark surface it sits on (Leaf, Paper, Vellum and its own tint). "deep" is one step further from the page, as in light.
+export const DARK_SURFACES = { paper: "#1a1915", leaf: "#23211c", vellum: "#2f2c25" } as const;
+const DARK_FUND_MAX_CHROMA = 0.13;
+const DARK_TINT = { lightness: 0.3, maxChroma: 0.03 };
+const DARK_DEEP_LIFT = 0.07;
+
+export function deriveDarkFundColors(brandHex: string) {
+  const brand = hexToOklch(brandHex);
+  const calm = { ...brand, chroma: Math.min(brand.chroma, DARK_FUND_MAX_CHROMA) };
+  const tint = oklchToHex({ lightness: DARK_TINT.lightness, chroma: Math.min(brand.chroma, DARK_TINT.maxChroma), hue: brand.hue });
+  const { paper, leaf, vellum } = DARK_SURFACES;
+  const fund = shiftUntilContrast(oklchToHex(calm), [leaf, paper, vellum, tint], AA_TEXT, 1);
+  const lifted = hexToOklch(fund);
+  const deep = oklchToHex({ ...lifted, lightness: Math.min(1, lifted.lightness + DARK_DEEP_LIFT) });
+  return { fund, deep, tint };
+}
+
+function toDarkAccentVariables(brandHex: string) {
+  const { fund, deep, tint } = deriveDarkFundColors(brandHex);
   return {
-    "--fund": accentText,
-    "--fund-deep": accentText,
-    "--fund-tint": accentSoft,
-    "--primary": accent,
-    "--primary-foreground": onAccent,
-    "--secondary": accentSoft,
-    "--secondary-foreground": accentText,
-    "--accent": accentSoft,
-    "--accent-foreground": accentText,
-    "--brand-emphasis": accentText,
-    "--brand-edge": accentEdge,
-    "--ring": focusRing,
+    "--fund": fund,
+    "--fund-deep": deep,
+    "--fund-tint": tint,
+    "--primary": fund,
+    "--primary-foreground": DARK_SURFACES.leaf,
+    "--secondary": tint,
+    "--secondary-foreground": deep,
+    "--accent": tint,
+    "--accent-foreground": deep,
+    "--brand-emphasis": fund,
+    "--brand-edge": fund,
+    "--ring": fund,
   };
+}
+
+export function toAccentVariables(brandHex: string, mode: ThemeMode) {
+  return mode === "light" ? toLightAccentVariables(brandHex) : toDarkAccentVariables(brandHex);
 }
 
 function toDeclarations(variables: Record<string, string>) {

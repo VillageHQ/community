@@ -264,7 +264,7 @@ function MailSheet({ mail }: { mail: ConsoleHome["mail"] }) {
     <section className="fh-sheet">
       <div className="fh-sheet-head">
         <h2 className="fh-h3">{mail.domain ? `Mail from ${mail.domain}` : "Mail"}</h2>
-        <TextLink href={ROUTES.adminEmail}>Mail checklist</TextLink>
+        <TextLink href={ROUTES.adminMail}>Mail checklist</TextLink>
       </div>
       <StatusChecklist
         items={[

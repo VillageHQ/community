@@ -12,7 +12,7 @@ import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-s
 const APP_URL = "http://localhost:3000";
 const MEMBER = { id: "member-1", name: "Mo Member", email: "mo@example.test" };
 const PASSWORD = "the-member-long-password";
-const LINK_PATTERN = /\/sign-in\/link\?token=([A-Za-z0-9_-]+)/;
+const LINK_PATTERN = /\/auth\?token=([A-Za-z0-9_-]+)/;
 const JSON_HEADERS = { "Content-Type": "application/json", Origin: APP_URL };
 const SETTLE_MS = 150;
 

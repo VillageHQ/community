@@ -20,6 +20,7 @@ import { POST as postCreate } from "@/app/api/admin/invites/route";
 import { POST as postRevoke } from "@/app/api/admin/invites/revoke/route";
 import { POST as postAuth } from "@/app/api/auth/[...all]/route";
 import { POST as postAccept } from "@/app/api/invites/accept/route";
+import { readInviteToken } from "@/test/invite-link";
 
 const APP_URL = "http://localhost:3000";
 const INVITEE = "amara@tidewell.example";
@@ -65,7 +66,7 @@ describe("accepting an invite", () => {
       }),
     );
     const issued = issuedInviteSchema.parse(await response.json());
-    token = z.string().parse(issued.link.split("/").at(-1));
+    token = z.string().parse(readInviteToken(issued.link));
     inviteId = issued.invite.id;
   });
 
@@ -160,6 +161,35 @@ describe("accepting an invite", () => {
 
       expect(response.status).toBe(CONFLICT_STATUS);
       expect(await readInvitee()).toBeUndefined();
+    });
+  });
+
+  // Founderhall's "Accept and sign in": the token alone. The name comes in welcome step 1.
+  describe("with one button, no password", () => {
+    function acceptWithButton() {
+      return postAccept(acceptRequest({ token }));
+    }
+
+    it("creates a passwordless account and signs the person in", async () => {
+      const response = await acceptWithButton();
+
+      expect(response.status).toBe(CREATED_STATUS);
+      expect(await response.json()).toEqual({ isSignedIn: true });
+      expect(response.headers.getSetCookie().join(";")).toContain("session_token");
+      const invitee = await readInvitee();
+      expect(invitee).toMatchObject({ email: INVITEE, role: "user", name: "amara" });
+      expect(await database.select().from(account).where(eq(account.providerId, "credential")).then((rows) => rows.filter((row) => row.userId === invitee?.id))).toEqual([]);
+    });
+
+    it("leaves the email unconfirmed, because holding a link doesn't prove owning the inbox", async () => {
+      await acceptWithButton();
+
+      expect((await readInvitee())?.emailVerified).toBe(false);
+    });
+
+    it("works once", async () => {
+      expect((await acceptWithButton()).status).toBe(CREATED_STATUS);
+      expect((await acceptWithButton()).status).toBe(GONE_STATUS);
     });
   });
 

@@ -447,18 +447,28 @@ describe("the admin screens", () => {
       render(wrap(queryClient, createElement(AuditLog)));
     }
 
-    it("reads as a sentence with who, what and when", () => {
+    function readRow() {
+      return document.querySelector("[data-audit-row]")?.textContent ?? "";
+    }
+
+    it("says the action in words, what it was done to, who did it and when", () => {
       renderLog([makeEntry({})]);
 
-      const row = screen.getByRole("listitem");
-      expect(row.textContent).toContain("Ada Admin made Mo Member an admin");
-      expect(row.textContent).toContain("Nov 5, 2026, 12:00 PM UTC");
+      expect(readRow()).toContain("Made an admin · Mo Member");
+      expect(readRow()).toContain("Ada Admin");
+      expect(readRow()).toContain("5 Nov 12:00 UTC");
+    });
+
+    it("says a Settings save in words", () => {
+      renderLog([makeEntry({ action: AUDIT_ACTIONS.settingsSaved, targetName: null, detail: "name, accent" })]);
+
+      expect(readRow()).toContain("Changed settings: community name, brand colour");
     });
 
     it("shows an existing deletion record with its reply count and text", () => {
       renderLog([makeEntry({ kind: AUDIT_KINDS.postDeleted, action: null, removedText: "Old words", removedReplyCount: 2 })]);
 
-      expect(screen.getByRole("listitem").textContent).toContain("deleted a post by Mo Member and its 2 replies");
+      expect(readRow()).toContain("Deleted a post and its 2 replies · Mo Member");
       expect(screen.getByText("Old words")).toBeTruthy();
     });
   });
