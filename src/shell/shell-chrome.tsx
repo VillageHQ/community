@@ -25,11 +25,12 @@ export function ShellFooterLine({ isAdmin, pathname }: { isAdmin: boolean; pathn
   return useShellMode(isAdmin, pathname) === SHELL_MODES.console ? <ProductCredit /> : <SourceLine />;
 }
 
-// The menu items with no phone tab (Jobs and Perks; the Partner report, Invites and the Job board in the console).
-// Founderhall reaches them from its pages; until the areas add those links, the phone foot lists them.
+// The menu items with no phone tab and no link from a page yet (the Feed; the Partner report, Invites and the Job
+// board in the console). Founderhall reaches them from its pages: Jobs and Perks from Today's cards, so they're not here.
+const LINKED_FROM_TODAY: ReadonlySet<string> = new Set([MEMBER_KEYS.jobs, MEMBER_KEYS.perks]);
 function PhoneMoreLinks({ navigation, isAdmin, pathname }: { navigation: ShellNavigation; isAdmin: boolean; pathname?: string }) {
   const mode = useShellMode(isAdmin, pathname);
-  const items = (mode === SHELL_MODES.console ? navigation.console : navigation.member).filter((item) => !item.tabLabel && item.key !== MEMBER_KEYS.me);
+  const items = (mode === SHELL_MODES.console ? navigation.console : navigation.member).filter((item) => !item.tabLabel && item.key !== MEMBER_KEYS.me && !LINKED_FROM_TODAY.has(item.key));
   if (items.length === 0) return null;
   return (
     <nav aria-label="More" className="mb-2 flex flex-wrap gap-x-4 gap-y-1">

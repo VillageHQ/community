@@ -282,10 +282,10 @@ async function readPrivateOffers(database: Database, askId: string, viewerId: st
     .map((row) => ({ id: row.id, author: toMember(row.member), body: row.note, kind: ASK_ANSWER_KINDS.knowSomeone, createdAt: row.createdAt.toISOString(), isMine: false }) satisfies PostAnswer);
 }
 
-// "Your asks in motion" on Today: the viewer's open asks, newest first, with Founderhall's one line under each.
+// "Your asks in motion" on Today: the viewer's open asks (not updates), newest first, with Founderhall's one line under each.
 export async function readOpenOwnPosts(database: Database, viewerId: string, now = new Date()) {
   const rows = await selectPosts(database)
-    .where(and(eq(ask.authorId, viewerId), isOpenAsk(now)))
+    .where(and(eq(ask.authorId, viewerId), eq(ask.kind, ASK_KINDS.ask), isOpenAsk(now)))
     .orderBy(desc(ask.createdAt), desc(ask.id))
     .limit(BOARD_LIMIT);
   return toPosts(database, rows, viewerId, now);

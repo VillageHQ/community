@@ -24,7 +24,8 @@ export function AsksComposer({ communityName, allowance, draft = null }: Compose
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const element = event.currentTarget;
+    const form = new FormData(element);
     setIsPending(true);
     setError(null);
     try {
@@ -38,7 +39,10 @@ export function AsksComposer({ communityName, allowance, draft = null }: Compose
         },
         createdAskSchema,
       );
+      element.reset();
+      setIsPending(false);
       router.push(isUpdate ? `${ASKS_PAGE}?tab=updates&m=updated` : `${toAskPage(id)}?m=${helperCount > 0 ? "posted" : "posted0"}`);
+      router.refresh();
     } catch (failure) {
       const isCap = failure instanceof RequestFailure && failure.code === ASK_ERROR_CODES.allowanceUsed;
       setError({ text: failure instanceof Error ? failure.message : "Something went wrong. Try again.", field: isCap ? "cap" : "body" });

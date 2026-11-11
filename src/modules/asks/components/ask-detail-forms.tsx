@@ -19,13 +19,18 @@ function useAction() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  async function run(action: () => Promise<string>) {
+  // The page stays mounted when only its query changes, so a form clears itself once the action is done.
+  async function run(action: () => Promise<string>, form?: HTMLFormElement) {
     setIsPending(true);
     setError(null);
     try {
-      router.push(await action());
+      const next = await action();
+      form?.reset();
+      router.push(next);
+      router.refresh();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Something went wrong. Try again.");
+    } finally {
       setIsPending(false);
     }
   }
@@ -45,11 +50,12 @@ export function AnswerForm({ askId }: { askId: string }) {
   const { error, isPending, run } = useAction();
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const body = String(new FormData(event.currentTarget).get("body") ?? "");
+    const form = event.currentTarget;
+    const body = String(new FormData(form).get("body") ?? "");
     void run(async () => {
       await postRequest(ASK_API_ROUTES.answer, { askId, body }, createdAnswerSchema);
       return `${toAskPage(askId)}?m=commented#answers`;
-    });
+    }, form);
   }
   return (
     <>
@@ -73,12 +79,13 @@ export function HelpForm({ askId, authorFirstName, defaultPerson }: { askId: str
   const { error, isPending, run } = useAction();
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const element = event.currentTarget;
+    const form = new FormData(element);
     const kind = form.get("kind") === ASK_HELP_KINDS.doneMyself ? ASK_HELP_KINDS.doneMyself : ASK_HELP_KINDS.knowSomeone;
     void run(async () => {
       await postRequest(ASK_API_ROUTES.help, { askId, kind, person: String(form.get("person") ?? ""), note: String(form.get("note") ?? "") }, anySchema);
       return `${toAskPage(askId)}?m=${kind === ASK_HELP_KINDS.knowSomeone ? "knows" : "helped"}#answers`;
-    });
+    }, element);
   }
   return (
     <>

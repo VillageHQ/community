@@ -16,6 +16,7 @@ import { readNetworkProgress } from "@/modules/network/reads-progress";
 import { perksManifest } from "@/modules/perks/manifest";
 import { readPerksUrl } from "@/modules/perks/service";
 import { requireMember } from "@/platform/auth/session";
+import { isDemoMode } from "@/platform/demo/mode";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { getDatabase } from "@/platform/database/client";
 import { readResendConfig } from "@/platform/email/resend";
@@ -73,7 +74,7 @@ export default modulePage(membersManifest, async function TodayRoute({ searchPar
       digestDay={WEEKDAYS[schedule.weekday] ?? "Thursday"}
       dateLabel={now.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
       allowance={allowance}
-      perksCommunityName={perksUrl ? community.name : null}
+      perksCommunityName={perksUrl || (enabledIds.has(perksManifest.id) && isDemoMode(process.env)) ? community.name : null}
       openJobCount={jobs ? jobs.length : null}
       nextSteps={nextSteps}
       lookupQuestion={lookupState?.needsAnswer ? <LookupQuestionCard communityName={community.name} /> : null}
