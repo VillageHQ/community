@@ -247,9 +247,22 @@ const optionalEmailSchema = z
   .transform((value) => value || null)
   .pipe(z.email("Enter an email address, like clara@example.com.").toLowerCase().max(INTRO_LIMITS.emailLength).nullable());
 
+// Only the name is needed (Founderhall's "Who should Ada introduce you to?": Name, Role, Company).
+function optionalPersonTextSchema(label: string, maximumLength: number) {
+  return z
+    .string()
+    .overwrite(removeNullBytes)
+    .overwrite(removeBidiControls)
+    .trim()
+    .overwrite((value) => value.replace(REPEATED_WHITESPACE, " "))
+    .max(maximumLength, `Keep ${label} under ${maximumLength} characters.`)
+    .default("");
+}
+
 export const namedTargetSchema = z.object({
   name: personTextSchema("their name", INTRO_LIMITS.nameLength),
-  company: personTextSchema("their company", INTRO_LIMITS.headlineLength),
+  role: optionalPersonTextSchema("their role", INTRO_LIMITS.headlineLength),
+  company: optionalPersonTextSchema("their company", INTRO_LIMITS.headlineLength),
   email: optionalEmailSchema,
   linkedin: linkedinLinkSchema,
 });

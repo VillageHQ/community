@@ -151,15 +151,15 @@ export function readFirstLineAnswer(text: string) {
   return null;
 }
 
-// The YES line or the line after it, as the email asks ("put their email on the next line"): a signature or a
-// colleague's address further down never gets the note.
+// Only the YES line, or a line right after it that holds nothing but an address, counts, as the email asks ("put
+// their email on the next line"): a signature, a quoted "On … wrote:" line or a colleague's address further down never
+// gets the note.
+const ADDRESS_ONLY_LINE = /^<?\s*(mailto:)?\s*[^\s<>@]+@[^\s<>@]+\s*>?$/i;
+
 function readOutsideAddress(text: string, exclude: readonly string[], replyDomain: string) {
-  const answerLines = text
-    .split("\n")
-    .filter((line) => line.trim())
-    .slice(0, 2)
-    .join(" ");
-  return (answerLines.match(EMAIL_IN_TEXT) ?? [])
+  const [first = "", second = ""] = text.split("\n").filter((line) => line.trim());
+  const lines = ADDRESS_ONLY_LINE.test(second.trim()) ? `${first} ${second}` : first;
+  return (lines.match(EMAIL_IN_TEXT) ?? [])
     .map((address) => address.toLowerCase())
     .find((address) => !exclude.includes(address) && !address.endsWith(`@${replyDomain}`));
 }

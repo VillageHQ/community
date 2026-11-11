@@ -1255,6 +1255,7 @@ describe("intro requests", () => {
       expect(bodies).toContain(`${APP_URL}/i/`);
       expect(bodies).toContain("?a=yes");
       expect(bodies).toContain("Would you introduce them?");
+      expect(bodies).toContain(NOTE);
       expect(bodies).not.toContain("Corvane");
     });
 

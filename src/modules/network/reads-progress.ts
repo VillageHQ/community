@@ -68,3 +68,9 @@ export async function readIsInVillageGroup(database: Database, memberId: string)
   const [network] = await database.select({ groupJoinedAt: memberNetwork.groupJoinedAt }).from(memberNetwork).where(eq(memberNetwork.userId, memberId));
   return Boolean(network?.groupJoinedAt);
 }
+
+// When the member's network joined the community group: their connection finished.
+export async function readNetworkConnectedAt(database: Database, memberId: string) {
+  const [network] = await database.select({ groupJoinedAt: memberNetwork.groupJoinedAt }).from(memberNetwork).where(eq(memberNetwork.userId, memberId));
+  return network?.groupJoinedAt ?? null;
+}

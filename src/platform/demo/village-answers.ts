@@ -1,4 +1,4 @@
-import { DEMO_OUTSIDERS, DEMO_PEOPLE, toDemoEmail, toDemoSlug, type DemoOutsider, type DemoPerson } from "./people.ts";
+import { DEMO_OUTSIDERS, DEMO_PEOPLE, DEMO_SEARCH_PEOPLE, toDemoEmail, toDemoSlug, type DemoOutsider, type DemoPerson, type DemoSearchPerson } from "./people.ts";
 import { toDemoDomain, toDemoFaceUrl, toDemoLogoUrl } from "./pictures.ts";
 
 // Canned, made-up Village answers for demo mode, in the shapes Village's API uses. No key is checked and nothing is
@@ -79,6 +79,27 @@ function toSearchPerson(person: DemoOutsider, index: number) {
   };
 }
 
+// The demo's search: the story people (Founderhall's demo) whose words match any word of the search, else the other
+// made-up people who do; nobody for a search that matches no one ("zebra keeper in antarctica").
+const STOP_WORDS = new Set(["a", "an", "the", "in", "at", "for", "of", "on", "to", "from", "with", "who", "someone", "somebody", "people", "us"]);
+
+function readSearchWords(prompt: string) {
+  return prompt.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((word) => word.length > 1 && !STOP_WORDS.has(word));
+}
+
+function isFoundBy(words: readonly string[], person: DemoOutsider & { keywords?: string }) {
+  const haystack = [person.name, person.title, person.company, person.location, person.keywords ?? ""].join(" ").toLowerCase().split(/[^\p{L}\p{N}]+/u);
+  return words.some((word) => haystack.some((candidate) => candidate.startsWith(word) || (word.length > 4 && word.startsWith(candidate) && candidate.length > 3)));
+}
+
+export function findDemoSearchPeople(prompt: string): DemoOutsider[] {
+  const words = readSearchWords(prompt);
+  if (words.length === 0) return [];
+  const story = DEMO_SEARCH_PEOPLE.filter((person) => isFoundBy(words, person));
+  if (story.length > 0) return story;
+  return DEMO_OUTSIDERS.filter((person) => isFoundBy(words, person));
+}
+
 function readSlug(linkedinUrl: string) {
   return linkedinUrl.replace(/\/+$/, "").split("/in/")[1]?.split(/[/?#]/)[0] ?? "";
 }
@@ -90,13 +111,33 @@ function pickConnector(slug: string, callerEmail: string) {
   return candidates[hash % candidates.length] ?? CONNECTORS[0];
 }
 
+const SAM_KEY = "sam.lee";
+
+function readWarmthLabel(storyPerson: DemoSearchPerson | undefined) {
+  return storyPerson?.warmth ?? "Strong";
+}
+
+// Sam knows the story's "reach out yourself" people first-hand: one degree-1 path, saying how.
+function toDirectPaths(linkedinUrl: string, target: DemoSearchPerson, how: string) {
+  return {
+    person: { linkedin_url: linkedinUrl, avatar: toDemoFaceUrl(target.name), village_url: "", ...splitName(target.name), full_name: target.name, headline: `${target.title} at ${target.company}` },
+    summary: { score: 2, score_label: target.warmth, description: how },
+    count: 1,
+    paths: [{ degree: 1, summary: { score: 2, score_label: target.warmth, description: how }, introducer: null, starters: [], score_meta: [{ title: how, description: how }] }],
+  };
+}
+
 function toPaths(linkedinUrl: string, callerEmail: string) {
   const slug = readSlug(linkedinUrl);
-  const outsider = DEMO_OUTSIDERS.find((person) => person.slug === slug);
+  const storyPerson = DEMO_SEARCH_PEOPLE.find((person) => person.slug === slug);
+  if (storyPerson?.knownHow && callerEmail.startsWith(`${SAM_KEY}@`)) return toDirectPaths(linkedinUrl, storyPerson, storyPerson.knownHow);
+  const outsider = storyPerson ?? DEMO_OUTSIDERS.find((person) => person.slug === slug);
   const target = outsider ?? DEMO_PEOPLE.find((person) => toDemoSlug(person) === slug);
   if (!target) return null;
-  const connector = pickConnector(slug, callerEmail);
+  const storyConnector = storyPerson?.via ? CONNECTORS.find((person) => person.key === storyPerson.via && !callerEmail.startsWith(`${person.key}@`)) : undefined;
+  const connector = storyConnector ?? pickConnector(slug, callerEmail);
   if (!connector) return null;
+  const warmth = readWarmthLabel(storyPerson);
   const connectorProfile = {
     ...splitName(connector.name),
     linkedin_url: `${LINKEDIN_PREFIX}${toDemoSlug(connector)}`,
@@ -108,13 +149,13 @@ function toPaths(linkedinUrl: string, callerEmail: string) {
   const why = `${connector.name.split(" ")[0]} worked with ${target.name.split(" ")[0]} for two years and they still talk.`;
   return {
     person: { linkedin_url: linkedinUrl, avatar: toDemoFaceUrl(target.name), village_url: "", ...splitName(target.name), full_name: target.name, headline: `${target.title} at ${target.company}` },
-    summary: { score: 2, score_label: "Strong", description: `A warm path through ${connector.name}.` },
+    summary: { score: 2, score_label: warmth, description: `A warm path through ${connector.name}.` },
     count: 1,
     paths: [
       {
         degree: 2,
-        summary: { score: 2, score_label: "Strong", description: why },
-        introducer: { profile: connectorProfile, score: 2, score_label: "Strong", score_meta: [{ title: "Worked together", description: why }] },
+        summary: { score: 2, score_label: warmth, description: why },
+        introducer: { profile: connectorProfile, score: 2, score_label: warmth, score_meta: [{ title: "Worked together", description: why }] },
         starters: [
           {
             profile: { first_name: "You", last_name: "", linkedin_url: "", headline: "", avatar: "", title: "", company: "" },
@@ -156,6 +197,12 @@ function findDemoPerson(body: unknown) {
   return DEMO_PEOPLE.find((person) => (email && toDemoEmail(person) === email) || (slug && toDemoSlug(person) === slug)) ?? null;
 }
 
+function readIds(body: unknown) {
+  if (typeof body !== "object" || body === null) return [];
+  const ids = (body as Record<string, unknown>).linkedin_ids;
+  return Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [];
+}
+
 async function readBody(request: Request): Promise<unknown> {
   const text = await request.text();
   try {
@@ -194,9 +241,10 @@ export async function answerDemoVillage(request: Request): Promise<Response> {
       return data({ success: true, message: "Joined" });
     case "/v2/groups/leave":
       return data({ success: true, message: "Left" });
-    case "/v2/people/search":
+    case "/v2/people/search": {
+      const found = findDemoSearchPeople(readField(body, "prompt"));
       return json(200, {
-        data: DEMO_OUTSIDERS.map(toSearchPerson),
+        data: found.map(toSearchPerson),
         metadata: {
           request_id: REQUEST_ID,
           mode: "simple",
@@ -208,8 +256,17 @@ export async function answerDemoVillage(request: Request): Promise<Response> {
           counts_token: "",
           search_execution_token: "",
         },
-        pagination: { cursor: "", has_next_page: false, count: DEMO_OUTSIDERS.length },
+        pagination: { cursor: "", has_next_page: false, count: found.length },
       });
+    }
+    case "/v2/people/paths/bulk": {
+      const ids = readIds(body);
+      const answered = ids.flatMap((id) => {
+        const paths = toPaths(`${LINKEDIN_PREFIX}${id}`, callerEmail);
+        return paths ? [{ target: { linkedin_identifier: id, linkedin_url: `${LINKEDIN_PREFIX}${id}` }, paths: paths.paths, summary: paths.summary, count: paths.count }] : [];
+      });
+      return data(answered, { counts: { total: { value: answered.length } } });
+    }
     case "/v2/people/paths": {
       const paths = toPaths(readField(body, "linkedin_url"), callerEmail);
       return paths ? data(paths, { counts: { total: { value: paths.paths.length } } }) : notFound();

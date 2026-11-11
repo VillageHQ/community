@@ -3,6 +3,7 @@ import { queryOptions, skipToken } from "@tanstack/react-query";
 import { isRouteGone } from "@/platform/http/polling";
 import { API_ROUTES } from "@/platform/http/routes";
 import {
+  type SearchWhere,
   NETWORK_STAGES,
   networkPathsSchema,
   networkSearchResultSchema,
@@ -30,7 +31,7 @@ export const NETWORK_QUERY_KEYS = {
   activeSearch: "network-active-search",
 } as const;
 
-export type ActiveSearch = { prompt: string; startedAtMs: number; wasSeen: boolean };
+export type ActiveSearch = { prompt: string; scope: SearchWhere; startedAtMs: number; wasSeen: boolean };
 
 
 const SPENDS_CREDITS_ONLY_ON_REQUEST = {
@@ -58,13 +59,13 @@ export const networkStatusQuery = queryOptions({
   refetchOnWindowFocus: ({ state }) => isPolled(state.data),
 });
 
-export function networkSearchQuery(prompt: string) {
+export function networkSearchQuery(prompt: string, scope: SearchWhere) {
   return queryOptions({
-    queryKey: [NETWORK_QUERY_KEYS.search, prompt],
+    queryKey: [NETWORK_QUERY_KEYS.search, prompt, scope],
     queryFn: () =>
       postRequest(
         API_ROUTES.networkSearch,
-        { prompt },
+        { prompt, scope },
         networkSearchResultSchema,
         SEARCH_CUT_OFF_MESSAGE,
       ),

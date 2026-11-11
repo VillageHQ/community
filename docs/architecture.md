@@ -92,7 +92,7 @@ export function MemberConversationSlot(props: MemberConversationProps) {
 }
 ```
 
-`src/app/(app)/layout.tsx` wraps its children in `MessagesSlotProvider`, and in `IntrosConnectorProvider` (`src/shell/intros-network-provider.tsx`) while intros and network are both on. `src/app/(app)/network/page.tsx` wraps its flow in it too. A slot with no provider renders nothing.
+`src/app/(app)/layout.tsx` wraps its children in `MessagesSlotProvider`, and in `IntrosConnectorProvider` (`src/shell/intros-network-provider.tsx`) while intros and network are both on. A slot with no provider renders nothing.
 
 ## Dependencies that point the other way
 

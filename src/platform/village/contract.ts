@@ -44,13 +44,15 @@ export const monthlyCapBodySchema = z.object({
 });
 
 // What this site counts for each paid call. Village's own usage page is the bill.
-export const CREDIT_CALL_KINDS = { search: "search", path: "path", fillIn: "fill_in" } as const;
+// "paths_bulk" is the paths for one page of search results, part of that search (Village: 3 credits per 10 results).
+export const CREDIT_CALL_KINDS = { search: "search", path: "path", pathsBulk: "paths_bulk", fillIn: "fill_in" } as const;
 
 export type CreditCallKind = (typeof CREDIT_CALL_KINDS)[keyof typeof CREDIT_CALL_KINDS];
 
 export const ESTIMATED_CREDITS: Record<CreditCallKind, number> = {
   [CREDIT_CALL_KINDS.search]: 11,
   [CREDIT_CALL_KINDS.path]: 5,
+  [CREDIT_CALL_KINDS.pathsBulk]: 3,
   [CREDIT_CALL_KINDS.fillIn]: 1,
 };
 

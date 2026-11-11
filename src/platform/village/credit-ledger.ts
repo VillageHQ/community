@@ -44,6 +44,7 @@ export function readUsageMonth(now = new Date()) {
 const SEARCH_INCREMENT: Record<CreditCallKind, number> = {
   [CREDIT_CALL_KINDS.search]: 1,
   [CREDIT_CALL_KINDS.path]: 0,
+  [CREDIT_CALL_KINDS.pathsBulk]: 0,
   [CREDIT_CALL_KINDS.fillIn]: 0,
 };
 
@@ -133,7 +134,8 @@ export async function readMonthlyCreditUsage(database: Database, now = new Date(
 }
 
 // Who pays. A member's own searches and paths also count toward their daily limit. A fill-in only
-// counts toward the community's month, because the nightly job has no member behind it.
+// counts toward the community's month, because the nightly job has no member behind it, and the paths for a page of
+// search results are part of that search's one lookup.
 export type CreditSpender = { database: Database; environment: Environment; memberId: string | null };
 
 // Every level the month has reached. A jump past both sends both, the early one first.
@@ -167,7 +169,7 @@ async function recordCreditCall({ database, memberId }: CreditSpender, kind: Cre
 }
 
 function readDailyMemberId({ memberId }: CreditSpender, kind: CreditCallKind) {
-  return kind === CREDIT_CALL_KINDS.fillIn ? null : memberId;
+  return kind === CREDIT_CALL_KINDS.fillIn || kind === CREDIT_CALL_KINDS.pathsBulk ? null : memberId;
 }
 
 // Reserves the call's estimate against the month (and the member's day) before Village is called,

@@ -134,7 +134,7 @@ async function readNamedConnector(context: RequestContext, { connectorId, target
     introducerLinkedinSlug: connector.linkedinSlug,
     reason: `Asked from ${introducerName}'s profile`.slice(0, INTRO_LIMITS.reasonLength),
     targetName: target.name,
-    targetHeadline: target.company,
+    targetHeadline: [target.role, target.company].filter(Boolean).join(", ").slice(0, INTRO_LIMITS.headlineLength) || null,
   };
 }
 

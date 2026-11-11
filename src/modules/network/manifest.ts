@@ -13,10 +13,10 @@ export const networkManifest = {
   isOnByDefault: true,
   needsVillage: true,
   requires: [],
-  navigation: [{ label: "Meet", href: ROUTES.network, icon: Waypoints, section: NAVIGATION_SECTIONS.primary }],
+  navigation: [{ label: "Search", href: ROUTES.network, icon: Waypoints, section: NAVIGATION_SECTIONS.primary }],
   adminTabs: [{ label: "Village", href: ROUTES.adminVillage }],
   paths: {
-    pages: [ROUTES.network, ROUTES.adminVillage],
+    pages: [ROUTES.network, ROUTES.myNetwork, ROUTES.adminVillage],
     api: ["/api/network", "/api/admin/village", API_ROUTES.dailyLimit, API_ROUTES.monthlyCap],
   },
 } satisfies ToggleableManifest;
