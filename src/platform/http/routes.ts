@@ -20,7 +20,10 @@ export const ROUTES = {
   confirmEmail: "/confirm-email",
   unsubscribe: "/unsubscribe",
   weeklyAnswer: "/weekly",
-  messages: "/messages",
+  // Founderhall's Inbox; the old /messages addresses redirect here (next.config.mjs).
+  messages: "/inbox",
+  // A first message to a member: the empty thread page; the first Send starts the conversation.
+  newMessage: "/messages/new",
   intros: "/intros",
   introConsent: "/meet",
   members: "/members",
@@ -49,6 +52,8 @@ export const ROUTES = {
   adminDigest: "/admin/digest",
   // The parts review page: off unless SHOW_PARTS_PAGE=true (development and review copies only).
   parts: "/parts",
+  // A switched-off module's page, for a signed-in member: a 404 inside the app (src/proxy.ts).
+  notHere: "/not-here",
 } as const;
 
 // An invite's page: Founderhall's /invite?token=…

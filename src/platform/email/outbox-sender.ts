@@ -10,7 +10,7 @@ import { escapeHtml } from "./email-text.ts";
 import { isEmailWanted, OUTBOX_STATUSES } from "./outbox.ts";
 import { readResendConfig, sendResendEmail, type ResendConfig } from "./resend.ts";
 import { emailOutbox } from "./schema.ts";
-import { buildUnsubscribeParts } from "./unsubscribe.ts";
+import { buildUnsubscribeParts, placeTextFooter } from "./unsubscribe.ts";
 import { composeSenderAddress, readMailSettings } from "./mail-settings.ts";
 import { readBranding } from "../branding/branding.ts";
 
@@ -103,7 +103,7 @@ async function composeEmail(database: Database, environment: Environment, email:
   if (email.text.includes(UNSUBSCRIBE_LINK)) {
     return { ...base, html: email.html.replaceAll(UNSUBSCRIBE_LINK, escapeHtml(pageUrl)), text: email.text.replaceAll(UNSUBSCRIBE_LINK, pageUrl), headers };
   }
-  return { ...base, html: `${email.html}${htmlFooter}`, text: `${email.text}${textFooter}`, headers };
+  return { ...base, html: `${email.html}${htmlFooter}`, text: placeTextFooter(email.text, textFooter), headers };
 }
 
 function isExpired(email: ClaimedEmail) {

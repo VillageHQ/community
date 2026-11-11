@@ -1,79 +1,104 @@
-import { ExternalLink } from "lucide-react";
+import { Building2 } from "lucide-react";
 import Link from "next/link";
 
 import { CompanyLogo } from "@/components/company-name";
-import { CHIP_CLASSES } from "@/components/ui/chip";
-import { formatShortDate } from "@/platform/text/format-date";
+import { Button } from "@/components/ui/button";
+import { formatDay } from "@/platform/text/day-month";
 
 import { COMPANY_PARAM, type BoardCompany, type BoardJob, type PublicJob } from "../contract";
+import { CompanySelectSubmit } from "./company-select-submit";
 
-type ListedJob = PublicJob & Partial<Pick<BoardJob, "department" | "postedAt" | "memberId" | "memberName" | "companyLogoUrl">>;
+type ListedJob = PublicJob & Partial<Pick<BoardJob, "memberId" | "memberName">>;
 
+function toCompanyHref(basePath: string, slug: string) {
+  return `${basePath}?${new URLSearchParams({ [COMPANY_PARAM]: slug }).toString()}`;
+}
+
+// The members' board filter (Founderhall's `.dirform` select): "All companies", then each company with its count.
+// It applies on change; without scripts, the Filter button sends it.
 export function CompanyFilter({ basePath, companies, selected }: { basePath: string; companies: readonly BoardCompany[]; selected: string | null }) {
   if (companies.length < 2 && selected === null) return null;
   return (
-    <nav aria-label="Filter by company" className="mb-5 flex flex-wrap gap-2">
-      <Link href={basePath} aria-current={selected === null ? "page" : undefined} className={CHIP_CLASSES}>
-        All companies
-      </Link>
+    <form method="get" action={basePath} role="search" className="fh-dirform">
+      <div className="fh-filters">
+        <label className="fh-filt">
+          <span className="sr-only">Company</span>
+          <CompanySelectSubmit name={COMPANY_PARAM} defaultValue={selected ?? ""}>
+            <option value="">All companies</option>
+            {companies.map((company) => (
+              <option key={company.slug} value={company.slug}>
+                {`${company.name} (${company.jobCount})`}
+              </option>
+            ))}
+          </CompanySelectSubmit>
+        </label>
+        <noscript>
+          <Button type="submit" variant="secondary" size="sm">
+            Filter
+          </Button>
+        </noscript>
+        {selected ? (
+          <Button asChild variant="quiet" size="sm">
+            <Link href={basePath}>Clear</Link>
+          </Button>
+        ) : null}
+      </div>
+    </form>
+  );
+}
+
+// The public board's company tags ("Kilnworks · 1").
+export function CompanyTags({ basePath, companies }: { basePath: string; companies: readonly BoardCompany[] }) {
+  if (companies.length < 2) return null;
+  return (
+    <nav aria-label="Companies" className="fh-tags mt-3">
       {companies.map((company) => (
-        <Link
-          key={company.slug}
-          href={`${basePath}?${new URLSearchParams({ [COMPANY_PARAM]: company.slug }).toString()}`}
-          aria-current={selected === company.slug ? "page" : undefined}
-          className={CHIP_CLASSES}
-        >
-          {company.name}
-          <span className="text-foreground-soft">{company.jobCount}</span>
+        <Link key={company.slug} href={toCompanyHref(basePath, company.slug)} className="fh-tag">
+          {`${company.name} · ${company.jobCount}`}
         </Link>
       ))}
     </nav>
   );
 }
 
+// Founderhall's job row (jobRow(), crop rows-jobs.png): the logo, the serif title, "Company · place · team · posted
+// 10 Nov" (+ "· via Name" for members), and Apply.
 export function JobList({ jobs, memberHref }: { jobs: readonly ListedJob[]; memberHref?: (memberId: string) => string }) {
   return (
-    <ul className="grid gap-3">
+    <div className="fh-rows fh-jobrows mt-3.5">
       {jobs.map((job) => {
-        const details = [job.location, job.department].filter(Boolean).join(" · ");
+        const bits = [job.company, job.location, job.department].filter(Boolean).join(" · ");
+        const when = job.postedAt ? ` · posted ${formatDay(job.postedAt)}` : "";
         return (
-          <li key={job.id} className="flex flex-wrap items-center justify-between gap-3 rounded-card-phone bg-card p-card-phone shadow-panel sm:rounded-card sm:px-6">
-            <div className="min-w-0 flex-1">
-              <h2 className="type-h3 wrap-anywhere">{job.title}</h2>
-              <p className="type-small mt-0.5 text-foreground-soft wrap-anywhere">
-                <CompanyLogo url={job.companyLogoUrl} className="mr-1.5 mt-0 align-[-0.2em]" />
-                {job.company}
-                {job.company && details ? " · " : null}
-                {details}
-              </p>
-              {job.memberId && job.memberName && memberHref ? (
-                <p className="type-small mt-0.5 text-foreground-soft">
-                  Shared by{" "}
-                  <Link href={memberHref(job.memberId)} className="font-bold text-brand-emphasis underline underline-offset-3 hover:no-underline">
-                    {job.memberName}
-                  </Link>
-                  {job.postedAt ? ` · ${formatShortDate(job.postedAt)}` : null}
-                </p>
+          <div key={job.id} className="fh-r">
+            <span className="fh-jl">
+              {job.companyLogoUrl ? <CompanyLogo url={job.companyLogoUrl} sizePx={20} className="mt-0" /> : <Building2 aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} />}
+            </span>
+            <div className="fh-who">
+              <b>{job.title}</b>
+              <span>
+                {bits}
+                {when}
+                {job.memberId && job.memberName && memberHref ? (
+                  <>
+                    {" · via "}
+                    <Link href={memberHref(job.memberId)}>{job.memberName}</Link>
+                  </>
+                ) : null}
+              </span>
+            </div>
+            <div className="fh-end">
+              {job.url ? (
+                <Button asChild variant="secondary" size="sm">
+                  <a href={job.url} target="_blank" rel="noopener noreferrer">
+                    Apply<span className="sr-only">{` for ${job.title} at ${job.company}`}</span>
+                  </a>
+                </Button>
               ) : null}
             </div>
-            {job.url ? (
-              <a
-                href={job.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-card px-card-phone py-2 text-[15px] font-bold shadow-[inset_0_0_0_1.5px_var(--input)] hover:bg-muted max-sm:w-full max-sm:justify-center"
-              >
-                Apply
-                <ExternalLink aria-hidden="true" className="size-4" />
-                <span className="sr-only">
-                  {" "}
-                  for {job.title} at {job.company} (opens in a new tab)
-                </span>
-              </a>
-            ) : null}
-          </li>
+          </div>
         );
       })}
-    </ul>
+    </div>
   );
 }
