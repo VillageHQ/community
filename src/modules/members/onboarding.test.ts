@@ -110,7 +110,7 @@ describe("onboarding", () => {
     it("saves each choice and finishes, landing a member on the directory", async () => {
       const response = await post(postPrivacy, { isHidden: true, acceptsIntroAsks: false });
 
-      expect(await response.json()).toEqual({ next: "/members" });
+      expect(await response.json()).toEqual({ next: "/directory" });
       const [privacy] = await database.select().from(memberPrivacy).where(eq(memberPrivacy.userId, member.userId));
       expect(privacy).toMatchObject({ isHidden: true, acceptsIntroAsks: false, introAsksAnsweredPlace: "onboarding" });
       expect(await readStep()).toBe(ONBOARDING_STEPS.done);
