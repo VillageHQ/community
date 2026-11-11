@@ -14,6 +14,7 @@ import {
   NetworkMeter,
   NudgeNeedsEmail,
   NudgeSentNote,
+  SavedKeyLines,
   SelfHostBox,
   WhatVillageSees,
 } from "@/modules/network/components/admin-village-sections";
@@ -100,6 +101,8 @@ export default modulePage(networkManifest, async function AdminVillagePage() {
   const isConfigured = keyState.keys !== null;
   const hasSavedKeys = keyState.status !== VILLAGE_KEY_STATUSES.missing;
   const keyProblem = KEY_PROBLEMS[keyState.status];
+  // Keys this site can read show as Founderhall's "set on the server" lines; anything else keeps the fields open.
+  const areKeysReadable = isConfigured && !keyProblem;
   const apiUrl = `${(resolveVillageApiUrl(process.env) ?? DEFAULT_VILLAGE_API_URL).replace(/\/+$/, "")}/v2`;
   const appUrl = resolveVillageAppUrl(process.env);
   const isEmailOn = readResendConfig(process.env) !== null;
@@ -127,11 +130,17 @@ export default modulePage(networkManifest, async function AdminVillagePage() {
               </Note>
             ) : null}
             <ConnectionTestResult check={check} members={members} />
-            <VillageKeysForm hasSavedKeys={hasSavedKeys} />
+            {areKeysReadable ? <SavedKeyLines /> : <VillageKeysForm hasSavedKeys={hasSavedKeys} />}
             {isConfigured ? <TestConnectionButton /> : null}
             <p className="fh-small fh-muted mt-2.5">
               Village’s address: <span className="fh-mono">{apiUrl}</span> · for the sync screen: <span className="fh-mono">{appUrl}</span>. Both are set on the server.
             </p>
+            {areKeysReadable ? (
+              <details className="mt-2.5">
+                <summary className="fh-small">Replace the keys</summary>
+                <VillageKeysForm hasSavedKeys />
+              </details>
+            ) : null}
             {isConfigured && !group ? <GroupStep database={database} admin={admin} defaultName={branding.isSaved ? branding.name : ""} /> : null}
           </section>
 

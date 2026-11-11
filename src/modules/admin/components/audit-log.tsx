@@ -98,7 +98,34 @@ const ACTION_LINES: Partial<Record<AuditAction, (facts: ActionFacts) => ActionLi
   [AUDIT_ACTIONS.perksSaved]: () => ({ words: "Changed settings: perks" }),
   [AUDIT_ACTIONS.perksRemoved]: () => ({ words: "Removed the perks marketplace" }),
   [AUDIT_ACTIONS.villageSettingsChanged]: ({ detail }) => ({ words: `Changed the Village settings: ${detail}` }),
+  [AUDIT_ACTIONS.settingsSaved]: ({ detail }) => ({ words: detail ? `Changed settings: ${readSettingsFieldWords(detail)}` : "Changed settings" }),
+  [AUDIT_ACTIONS.mailSettingsSaved]: () => ({ words: "Changed settings: mail" }),
+  [AUDIT_ACTIONS.mailDnsChecked]: ({ detail }) => ({ words: "Checked the mail DNS records", target: detail || null }),
 };
+
+// Settings' save writes the fields it changed ("name, accent"); the log says them in words.
+const SETTINGS_FIELD_WORDS: Record<string, string> = {
+  name: "community name",
+  descriptor: "descriptor",
+  logoUrl: "logo",
+  accent: "brand colour",
+  fromName: "from name",
+  mailDomain: "sending domain",
+  hostingBy: "hosted by",
+  region: "data region",
+  contactName: "data contact",
+  contactEmail: "data contact email",
+  messagePolicy: "message policy",
+  plan: "plan",
+  managedSetupBy: "set up by",
+};
+
+function readSettingsFieldWords(detail: string) {
+  return detail
+    .split(", ")
+    .map((field) => SETTINGS_FIELD_WORDS[field] ?? field)
+    .join(", ");
+}
 
 // The detail is "self" or "admin", then what Village said, for example "admin|cancelled". It never names anyone.
 function readAccountDeletedWords(detail: string) {

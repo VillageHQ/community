@@ -21,7 +21,7 @@ import { readReplyDomain } from "../../platform/weekly-email/tokens.ts";
 const WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 const RECENT_SENDS = 50;
 export const MAIL_LOG_SIZE = 50;
-// Founderhall's fallback when no domain is known yet.
+// Founderhall’s fallback when no domain is known yet (the lede and the reply hint).
 const PLACEHOLDER_DOMAIN = "example.com";
 
 export const MAIL_LOG_STATES = { sent: "sent", failed: "failed", notSent: "not sent", waiting: "waiting" } as const;
@@ -57,6 +57,8 @@ export async function readMailOverview(database: Database, environment: Environm
   const sendingDomain = readMailDomain(config?.fromAddress ?? null, settings);
   const hostReplyDomain = readReplyDomain(environment);
   const replyDomain = readMailReplyDomain(sendingDomain, hostReplyDomain, settings, readParentDomain);
+  // What an empty Reply subdomain field falls back to.
+  const defaultReplyDomain = readMailReplyDomain(sendingDomain, hostReplyDomain, { replyDomain: "" }, readParentDomain);
   const senderEmail = senderAddress ? splitFromAddress(senderAddress).address : `hello@${sendingDomain ?? PLACEHOLDER_DOMAIN}`;
   const since = new Date(now.getTime() - WINDOW_MS);
 
@@ -72,7 +74,7 @@ export async function readMailOverview(database: Database, environment: Environm
       .from(emailOutbox)
       .where(and(gte(emailOutbox.createdAt, since), inArray(emailOutbox.status, [OUTBOX_STATUSES.sent, OUTBOX_STATUSES.failed, OUTBOX_STATUSES.skipped]))),
     database
-      .select({ id: emailOutbox.id, kind: emailOutbox.kind, toEmail: emailOutbox.toEmail, status: emailOutbox.status, lastError: emailOutbox.lastError, createdAt: emailOutbox.createdAt, finishedAt: emailOutbox.finishedAt })
+      .select({ id: emailOutbox.id, kind: emailOutbox.kind, subject: emailOutbox.subject, toEmail: emailOutbox.toEmail, status: emailOutbox.status, lastError: emailOutbox.lastError, createdAt: emailOutbox.createdAt, finishedAt: emailOutbox.finishedAt })
       .from(emailOutbox)
       .orderBy(desc(emailOutbox.createdAt))
       .limit(MAIL_LOG_SIZE),
@@ -92,6 +94,7 @@ export async function readMailOverview(database: Database, environment: Environm
     senderEmail,
     sendingDomain,
     replyDomain: replyDomain ?? PLACEHOLDER_DOMAIN,
+    defaultReplyDomain: defaultReplyDomain ?? PLACEHOLDER_DOMAIN,
     isDomainSet: Boolean(settings.domain),
     inbound: {
       isSet: Boolean(hostReplyDomain && readResendWebhookSecret(environment)),
@@ -104,7 +107,7 @@ export async function readMailOverview(database: Database, environment: Environm
       notSent: tally(windowStates, MAIL_LOG_STATES.notSent),
       repliesIn: replies?.value ?? 0,
     },
-    log: log.map(({ id, kind, toEmail, createdAt, finishedAt, ...row }) => ({ id, kind, toEmail, state: readLogState(row, isDemo), at: finishedAt ?? createdAt })),
+    log: log.map(({ id, kind, subject, toEmail, createdAt, finishedAt, ...row }) => ({ id, kind, subject, toEmail, state: readLogState(row, isDemo), at: finishedAt ?? createdAt })),
     suppressions,
   };
 }

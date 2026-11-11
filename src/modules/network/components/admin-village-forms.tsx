@@ -18,7 +18,7 @@ import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { postRequest } from "@/platform/http/post-request";
 import { API_ROUTES } from "@/platform/http/routes";
 
-import { VILLAGE_LIMITS_API, type VillageLimitsBody } from "../contract-village-admin";
+import { PUBLIC_KEY_HINT, SECRET_KEY_HINT, VILLAGE_LIMITS_API, type VillageLimitsBody } from "../contract-village-admin";
 import { INTRODUCER_RULES, SEARCH_SCOPES, type IntroducerRule, type SearchScope } from "../contract-village-settings";
 
 // Admin › Village's forms (Founderhall's Village page). Each action says what happened in the flash at the top.
@@ -55,12 +55,12 @@ export function VillageKeysForm({ hasSavedKeys }: { hasSavedKeys: boolean }) {
       <Field
         htmlFor="v-api_key"
         label="Secret key"
-        hint="From Village Platform Admin › Settings › API keys. Stays on this server, sealed in the database."
+        hint={SECRET_KEY_HINT}
         className="fh-field"
       >
         <Input id="v-api_key" name="api_key" type="password" autoComplete="off" placeholder={placeholder("Paste the secret key")} className="fh-mono" required />
       </Field>
-      <Field htmlFor="v-public_key" label="Public key" hint="For Village’s sync screen in members’ browsers." className="fh-field">
+      <Field htmlFor="v-public_key" label="Public key" hint={PUBLIC_KEY_HINT} className="fh-field">
         <Input id="v-public_key" name="public_key" autoComplete="off" placeholder={placeholder("Paste the public key")} className="fh-mono" required />
       </Field>
       <ErrorLine message={error} />
@@ -92,7 +92,7 @@ export function TestConnectionButton() {
     check.mutate();
   }
   return (
-    <div className="mt-2">
+    <div className="mt-3.5">
       <Button type="button" variant="secondary" size="sm" disabled={check.isPending} onClick={start}>
         <RefreshCw aria-hidden="true" className={check.isPending ? "animate-spin motion-reduce:animate-none" : undefined} />
         {check.isPending ? "Asking Village…" : "Test the connection"}

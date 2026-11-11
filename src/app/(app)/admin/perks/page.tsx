@@ -48,7 +48,7 @@ export default modulePage(adminManifest, async function AdminPerksPage() {
         <div className="fh-c5 fh-stack">
           <Card className="fh-sheet">
             <h2 className="type-h3">Status</h2>
-            <p className="fh-small mt-1.5">
+            <p className="fh-small mt-2">
               <StatusIcon aria-hidden="true" className="fh-i fh-xs inline align-[-2px]" strokeWidth={1.5} /> {readStatus(url, isShown, isDemoMode(process.env))}
               {isOn ? (
                 <>
@@ -62,7 +62,7 @@ export default modulePage(adminManifest, async function AdminPerksPage() {
           <Card className="fh-sheet">
             <h2 className="type-h3">Preview</h2>
             {url ? (
-              <div className="fh-perks-frame fh-preview mt-2">
+              <div className="fh-perks-frame fh-preview">
                 <PerksFrame url={url} title="Perks preview" className="h-[520px] rounded-none shadow-none" />
               </div>
             ) : (

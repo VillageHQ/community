@@ -144,7 +144,7 @@ async function queueNudges(transaction: DatabaseOrTransaction, environment: Envi
 export async function nudgeUnconnectedMembers({ database, environment, member }: RequestContext, now = new Date(), audience: NudgeAudience = NUDGE_AUDIENCES.unconnected) {
   const branding = await readEmailBranding(database, environment);
   if (!branding) {
-    throw new RequestError(CONFLICT_STATUS, NETWORK_ERROR_CODES.notConfigured, "Reminders go by email. Turn on email in Settings first.");
+    throw new RequestError(CONFLICT_STATUS, NETWORK_ERROR_CODES.notConfigured, "Nudges go by email. Set up Mail first.");
   }
   return withAdminTransaction(database, member.id, async (transaction) => {
     const queuedCount = await queueNudges(transaction, environment, branding, member.id, now, audience);

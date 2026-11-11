@@ -9,6 +9,7 @@ import { VILLAGE_PLATFORM_LINKS } from "@/platform/village/links";
 
 import { isConnectedStatus, MEMBER_CHECK_OUTCOMES, VILLAGE_CHECK_GROUP, VILLAGE_CHECK_KEYS } from "../contract-village-check";
 import type { VillageCheckRead } from "../reads-village-check";
+import { PUBLIC_KEY_HINT, SECRET_KEY_HINT } from "../contract-village-admin";
 import type { readLookupsThisMonth, readNetworkReach } from "../reads-village-admin";
 import type { FillInLastRun } from "../service-village-admin";
 
@@ -351,6 +352,26 @@ export function CostBox() {
         <a href={PRICING_URL}>Full pricing on the Founderhall site</a>
       </p>
     </section>
+  );
+}
+
+// Saved keys, as Founderhall shows keys it already has: a line each, no field (replacing them is under the address).
+export function SavedKeyLines() {
+  return (
+    <>
+      <div className="mt-3">
+        <h3 className="fh-label">Secret key</h3>
+        <p className="fh-hint">
+          set on the server · <span className="text-ink">{SECRET_KEY_HINT}</span>
+        </p>
+      </div>
+      <div className="mt-3">
+        <h3 className="fh-label">Public key</h3>
+        <p className="fh-hint">
+          set on the server · <span className="text-ink">{PUBLIC_KEY_HINT}</span>
+        </p>
+      </div>
+    </>
   );
 }
 

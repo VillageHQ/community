@@ -7,9 +7,9 @@ Core. Always on. It sits on top of the features it manages, so it may import the
 - `reads-*.ts`: the member list, audit log and community health.
 - Partner report: `reads-partner-report.ts` reads it once; `partner-report-rows.ts` makes the rows the page, CSV and email render; `service-partner-report.ts` sends it and marks it shared.
 - `schema.ts`: `content_report` and `member_removal`.
-- `components/email-setup-check.tsx`: Settings' email check; its DNS lookups (`src/platform/email/dns-check.ts`) take the resolver as an argument, so tests never touch real DNS.
+- Set up › Mail: `reads-mail.ts` reads it once (also Settings' mail checklist), `mail-checks.ts` makes the checklist rows, `service-mail.ts` runs Check DNS now and saves the DNS settings, `components/mail-forms.tsx` holds the buttons and the form. The DNS lookups (`src/platform/email/dns-check.ts`) take the resolver as an argument, so tests never touch real DNS.
 - `contract-modules.ts`, `queries-modules.ts`, `components/feature-screen.tsx`: the features screen. `src/shell/module-settings.ts` holds its logic, because it needs the registry.
-- `*-email.ts`: Admin › Email: sent emails (never a subject or body) and the do-not-send list.
+- `*-email.ts`: removing an address from the do-not-send list. The sending log shows subjects and addresses, never a body.
 - `queries-*.ts`: client requests. `components/`: the UI.
 
 Rules:

@@ -10,10 +10,9 @@ import { queueEmail } from "./outbox.ts";
 import { readSenderConfig, sendQueuedEmailNow } from "./outbox-sender.ts";
 import { splitFromAddress } from "./mail-settings.ts";
 import { readResendConfig } from "./resend.ts";
+import { EMAIL_TEST_OUTCOMES, type EmailTestOutcome } from "./dns-check-contract.ts";
 
-export const EMAIL_TEST_OUTCOMES = { sent: "sent", queued: "queued", emailOff: "email_off" } as const;
-
-export type EmailTestOutcome = (typeof EMAIL_TEST_OUTCOMES)[keyof typeof EMAIL_TEST_OUTCOMES];
+export { EMAIL_TEST_OUTCOMES, type EmailTestOutcome };
 
 // Founderhall's mail test (copy/emails/email-mail-test.md), word for word: plain words, the HTML part says the same.
 export function renderEmailTest(communityName: string, fromAddress: string) {

@@ -66,3 +66,43 @@ export function readMailChecks({ mailService, isManaged, isDomainKnown, senderEm
     ...dnsRows(dnsCheck),
   ];
 }
+
+// Set up › Mail's DNS checklist (Founderhall's mailPage): the mail service, the inbound replies webhook and one-click
+// unsubscribe, then each line of the last "Check DNS now" with the record to add when one is missing.
+export type MailPageCheck = MailCheck & { toAdd: DnsCheckLine["toAdd"] };
+
+export type MailPageFacts = { mailService: string | null; inbound: { isSet: boolean; address: string }; dnsCheck: DnsCheck | null };
+
+export function readMailPageChecks({ mailService, inbound, dnsCheck }: MailPageFacts): MailPageCheck[] {
+  return [
+    mailService
+      ? { key: "service", label: MAIL_SERVICE_LABEL, state: MAIL_CHECK_STATES.pass, value: `Set: ${mailService}`, note: "set", toAdd: null }
+      : { key: "service", label: MAIL_SERVICE_LABEL, state: MAIL_CHECK_STATES.fail, value: "Not set: nothing is emailed until the mail service is set on the server", note: "not set", toAdd: null },
+    {
+      key: "inbound",
+      label: "Inbound replies webhook",
+      state: inbound.isSet ? MAIL_CHECK_STATES.pass : MAIL_CHECK_STATES.watch,
+      value: inbound.address,
+      note: inbound.isSet ? "set" : "not set",
+      toAdd: null,
+    },
+    { key: "unsubscribe", label: "One-click unsubscribe", state: MAIL_CHECK_STATES.pass, value: "List-Unsubscribe and List-Unsubscribe-Post on every message email", note: "built in", toAdd: null },
+    ...(dnsCheck?.lines ?? []).map((line) => ({
+      key: line.key,
+      label: line.label,
+      state: toDnsCheckState(line.status),
+      value: readDnsLineValue(line),
+      note: readCheckedWord(line.status, dnsCheck?.checkedAt ?? null),
+      toAdd: line.toAdd,
+    })),
+  ];
+}
+
+// The line under "DNS checklist".
+export function readDnsCheckLine(check: DnsCheck | null) {
+  const what = "“Check DNS now” looks up SPF, DKIM, DMARC and the reply MX.";
+  if (!check) return `Not checked yet. ${what}`;
+  const missing = check.lines.filter(({ status }) => status !== DNS_CHECK_STATUSES.ok).length;
+  const result = missing === 0 ? "every record is there" : `${missing} ${missing === 1 ? "record needs" : "records need"} a fix (changes can take an hour to show)`;
+  return `Checked ${formatDayMonth(check.checkedAt)} for ${check.domain}: ${result}. ${what}`;
+}

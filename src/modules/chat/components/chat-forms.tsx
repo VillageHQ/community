@@ -250,6 +250,7 @@ export function SlackManifestBox({ manifestJson, isOpen }: { manifestJson: strin
         type="button"
         variant="quiet"
         size="sm"
+        className="mt-2"
         onClick={async () => {
           await navigator.clipboard.writeText(manifestJson);
           setWasCopied(true);

@@ -5,6 +5,10 @@ import { villageSettingsBodySchema } from "./contract-village-settings.ts";
 
 // Admin › Village › "Limits and switches" (Founderhall's form): one Save for the caps, where search starts, the
 // service email, who can introduce, what members read on the connect screen and the nightly fill-in.
+// The Connection sheet's words for the two keys (the fields, and the lines once they are saved).
+export const SECRET_KEY_HINT = "From Village Platform Admin › Settings › API keys. Stays on this server, sealed in the database.";
+export const PUBLIC_KEY_HINT = "For Village’s sync screen in members’ browsers.";
+
 export const MAXIMUM_DATA_REGION_LENGTH = 80;
 export const MAXIMUM_DPA_URL_LENGTH = 300;
 

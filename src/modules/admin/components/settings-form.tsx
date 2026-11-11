@@ -30,13 +30,15 @@ type SettingsFormProps = {
   aside: ReactNode;
 };
 
-// "Passes 8.5 : 1 on white.", or the darker shade the fund colour was moved to so text passes.
-function readContrastLine(accent: string) {
-  const color = parseAccentColor(accent);
-  if (!accent) return "Empty: the default colour.";
-  const { fund, isAdjusted } = deriveFundColors(color ?? DEFAULT_ACCENT_COLOR);
+// "Buttons, links and the path line. Passes 8.5 : 1 on white.", or the darker shade the fund colour was moved to so
+// text passes.
+// A colour that doesn't parse is measured on the last good one (the picker's).
+function readContrastLine(accent: string, fallback: string) {
+  const use = "Buttons, links and the path line.";
+  if (!accent) return `${use} Empty: the default colour.`;
+  const { fund, isAdjusted } = deriveFundColors(parseAccentColor(accent) ?? fallback);
   const ratio = Math.round(contrastRatio(fund, LEAF) * 10) / 10;
-  return `${isAdjusted ? `Darkened to ${fund.toUpperCase()} so text passes` : "Passes"} ${ratio} : 1 on white.`;
+  return `${use} ${isAdjusted ? `Darkened to ${fund.toUpperCase()} so text passes` : "Passes"} ${ratio} : 1 on white.`;
 }
 
 function isPreviewableLogo(url: string) {
@@ -102,7 +104,7 @@ export function SettingsForm({ saved, uploadedLogo, isMailOn, serverPlan, manage
           <h2 className="fh-h3">Branding</h2>
           {input("name", "Community name", "Shown at the top of every page and in every email.", { maxLength: 80, required: true })}
           {input("logoUrl", "Logo URL", "A square image, https:// or a path on this server. Empty: your initials on your colour.", { maxLength: 500, placeholder: "e.g. https://fund.example/logo.svg" })}
-          <Field htmlFor="s-accent" label="Brand colour" hint={readContrastLine(values.accent)} error={errors.accent} className="fh-field">
+          <Field htmlFor="s-accent" label="Brand colour" hint={readContrastLine(values.accent, previewColor)} error={errors.accent} className="fh-field">
             <div className="fh-colorrow">
               <input
                 type="color"
@@ -116,7 +118,7 @@ export function SettingsForm({ saved, uploadedLogo, isMailOn, serverPlan, manage
                 name="accent"
                 className="fh-mono"
                 value={values.accent}
-                maxLength={7}
+                maxLength={20}
                 placeholder="e.g. #24525A"
                 onChange={change("accent")}
                 aria-invalid={errors.accent ? true : undefined}

@@ -40,7 +40,7 @@ export default modulePage(adminManifest, async function AdminLinksPage() {
           ))}
         </div>
       ) : (
-        <EmptyState title="No links waiting" description="Links show here when you invite someone or someone asks to sign in, until they are used or expire." />
+        <EmptyState title="No links waiting" description="An invite link shows here when its email can’t go out, until it is used or ends." />
       )}
       <p className="fh-small fh-muted" style={{ marginTop: 12 }}>
         Anyone with a link can sign in as that person, so send it only to them.

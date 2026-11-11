@@ -72,7 +72,7 @@ export function PerksForm({ savedUrl, isShown }: { savedUrl: string | null; isSh
             placeholder={CODE_PLACEHOLDER}
             aria-invalid={error ? true : undefined}
             aria-describedby={`${CODE_FIELD}-hint`}
-            className="mb-1.5 min-h-0 font-mono"
+            className="mb-3 min-h-0 font-mono aria-invalid:border-input"
           />
         </Field>
         {savedUrl ? (
