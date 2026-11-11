@@ -2,123 +2,123 @@
   "shots": [
     {
       "name": "member-inbox-list",
-      "w": 1280,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-inbox-list-1280.png",
-      "url": "http://127.0.0.1:47851/inbox"
+      "width": 1280,
+      "community": "cm/member-inbox-list-1280.png",
+      "path": "/inbox"
     },
     {
       "name": "member-inbox-thread",
-      "w": 1280,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-inbox-thread-1280.png",
-      "url": "http://127.0.0.1:47851/inbox/74fbffcf-781b-4856-a6a0-bf610c8228d1"
+      "width": 1280,
+      "community": "cm/member-inbox-thread-1280.png",
+      "path": "/inbox/<id>"
     },
     {
       "name": "member-message-new",
-      "w": 1280,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-message-new-1280.png",
-      "url": "http://127.0.0.1:47851/messages/new?to=07e6195c-c29f-4586-ad69-a7a17509c23d"
+      "width": 1280,
+      "community": "cm/member-message-new-1280.png",
+      "path": "/messages/new"
     },
     {
       "name": "member-message-sent-thread",
-      "w": 1280,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-message-sent-thread-1280.png",
-      "url": "http://127.0.0.1:47851/inbox/33cbf835-6e2c-47b3-8f43-876a45ed38a4"
+      "width": 1280,
+      "community": "cm/member-message-sent-thread-1280.png",
+      "path": "/inbox/<id>"
     },
     {
       "name": "member-jobs-board",
-      "w": 1280,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-jobs-board-1280.png",
-      "url": "http://127.0.0.1:47851/jobs"
+      "width": 1280,
+      "community": "cm/member-jobs-board-1280.png",
+      "path": "/jobs"
     },
     {
       "name": "member-perks-on",
-      "w": 1280,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-perks-on-1280.png",
-      "url": "http://127.0.0.1:47851/perks"
+      "width": 1280,
+      "community": "cm/member-perks-on-1280.png",
+      "path": "/perks"
     },
     {
       "name": "extra-our-jobs",
-      "w": 1280,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\extra-our-jobs-1280.png",
-      "url": "http://127.0.0.1:47851/jobs/yours"
+      "width": 1280,
+      "community": "cm/extra-our-jobs-1280.png",
+      "path": "/jobs/yours"
     },
     {
       "name": "public-jobs-board",
-      "w": 1280,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\public-jobs-board-1280.png",
-      "url": "http://127.0.0.1:47851/jobs"
+      "width": 1280,
+      "community": "cm/public-jobs-board-1280.png",
+      "path": "/jobs"
     },
     {
       "name": "member-inbox-list",
-      "w": 390,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-inbox-list-390.png",
-      "url": "http://127.0.0.1:47851/inbox"
+      "width": 390,
+      "community": "cm/member-inbox-list-390.png",
+      "path": "/inbox"
     },
     {
       "name": "member-inbox-thread",
-      "w": 390,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-inbox-thread-390.png",
-      "url": "http://127.0.0.1:47851/inbox/74fbffcf-781b-4856-a6a0-bf610c8228d1"
+      "width": 390,
+      "community": "cm/member-inbox-thread-390.png",
+      "path": "/inbox/<id>"
     },
     {
       "name": "member-message-new",
-      "w": 390,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-message-new-390.png",
-      "url": "http://127.0.0.1:47851/messages/new?to=07e6195c-c29f-4586-ad69-a7a17509c23d"
+      "width": 390,
+      "community": "cm/member-message-new-390.png",
+      "path": "/messages/new"
     },
     {
       "name": "member-message-sent-thread",
-      "w": 390,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-message-sent-thread-390.png",
-      "url": "http://127.0.0.1:47851/inbox/719635ee-80cc-4f5a-af31-79ef8b8cbb54"
+      "width": 390,
+      "community": "cm/member-message-sent-thread-390.png",
+      "path": "/inbox/<id>"
     },
     {
       "name": "member-jobs-board",
-      "w": 390,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-jobs-board-390.png",
-      "url": "http://127.0.0.1:47851/jobs"
+      "width": 390,
+      "community": "cm/member-jobs-board-390.png",
+      "path": "/jobs"
     },
     {
       "name": "member-perks-on",
-      "w": 390,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-perks-on-390.png",
-      "url": "http://127.0.0.1:47851/perks"
+      "width": 390,
+      "community": "cm/member-perks-on-390.png",
+      "path": "/perks"
     },
     {
       "name": "extra-our-jobs",
-      "w": 390,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\extra-our-jobs-390.png",
-      "url": "http://127.0.0.1:47851/jobs/yours"
+      "width": 390,
+      "community": "cm/extra-our-jobs-390.png",
+      "path": "/jobs/yours"
     },
     {
       "name": "public-jobs-board",
-      "w": 390,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\public-jobs-board-390.png",
-      "url": "http://127.0.0.1:47851/jobs"
+      "width": 390,
+      "community": "cm/public-jobs-board-390.png",
+      "path": "/jobs"
     },
     {
       "name": "member-inbox-empty",
-      "w": 1280,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-inbox-empty-1280.png",
-      "url": "http://127.0.0.1:47851/inbox"
+      "width": 1280,
+      "community": "cm/member-inbox-empty-1280.png",
+      "path": "/inbox"
     },
     {
       "name": "member-perks-off",
-      "w": 1280,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-perks-off-1280.png",
-      "url": "http://127.0.0.1:47851/perks"
+      "width": 1280,
+      "community": "cm/member-perks-off-1280.png",
+      "path": "/perks"
     },
     {
       "name": "member-inbox-empty",
-      "w": 390,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-inbox-empty-390.png",
-      "url": "http://127.0.0.1:47851/inbox"
+      "width": 390,
+      "community": "cm/member-inbox-empty-390.png",
+      "path": "/inbox"
     },
     {
       "name": "member-perks-off",
-      "w": 390,
-      "file": "C:\\Users\\absi\\.autobuild\\worktrees\\community__fh-inbox-jobs-perks\\.ai\\features\\fh-inbox-jobs-perks\\reports\\cm\\member-perks-off-390.png",
-      "url": "http://127.0.0.1:47851/perks"
+      "width": 390,
+      "community": "cm/member-perks-off-390.png",
+      "path": "/perks"
     }
   ],
   "pairs": [

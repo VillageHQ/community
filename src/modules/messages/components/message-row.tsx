@@ -48,9 +48,7 @@ function Bubble({ entry, peerName, action, actionRef }: BubbleProps) {
   return (
     // A tap on a phone focuses the message, which shows its link.
     <div tabIndex={action ? 0 : undefined} className={cn("fh-msg group", entry.isMine && "fh-me", isFailed(entry) && "shadow-[inset_0_0_0_1px_var(--ribbon)]")}>
-      <p className={cn(entry.body === null && "text-graphite italic")}>
-        {entry.body === null ? DELETED_LABEL : <RichText text={entry.body} tone={RICH_TEXT_TONES.surface} />}
-      </p>
+      {entry.body === null ? <p className="text-graphite italic">{DELETED_LABEL}</p> : <RichText text={entry.body} tone={RICH_TEXT_TONES.surface} />}
       <small>
         <span>{entry.isMine ? "You" : peerName}</span>
         <span>{readWhen(entry)}</span>
