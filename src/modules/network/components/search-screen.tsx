@@ -1,13 +1,14 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { KeyRound, UsersRound } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 
 import { QueryBoundary } from "@/components/query-boundary";
 import { ExampleChips } from "@/components/ui/chip";
+import { FhIcon } from "@/components/ui/fh-icon";
 import { Note } from "@/components/ui/note";
 import { SearchBox, StripLine } from "@/components/ui/search-box";
 import { SegmentedControl } from "@/components/ui/segmented";
@@ -42,7 +43,7 @@ function StripWords({ sharingMemberCount, isConnected }: { sharingMemberCount: n
   const members = sharingMemberCount === 1 ? "member who shares" : "members who share";
   return (
     <StripLine>
-      <UsersRound aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} />
+      <FhIcon name="users" className="fh-s" />
       <span>
         Paths come from {sharingMemberCount} {members} their network so far.
         {isConnected ? null : (

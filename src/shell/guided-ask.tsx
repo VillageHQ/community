@@ -1,9 +1,10 @@
 import "server-only";
 
-import { BookUser, Building2, ChevronRight, GraduationCap, Landmark, Search, UserPlus, type LucideIcon } from "lucide-react";
+import { BookUser, ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
 
 import { Avatar } from "@/components/ui/avatar";
+import { FhIcon, type FhIconName } from "@/components/ui/fh-icon";
 import { Button } from "@/components/ui/button";
 import { ConsentLine, Note } from "@/components/ui/note";
 import { Stepper } from "@/components/ui/stepper";
@@ -22,11 +23,11 @@ import { searchMemberNetwork } from "@/modules/network/service";
 // the back button and "Change" work without a script.
 
 export const NEEDS = {
-  customer: { label: "A customer", sub: "Someone who could buy from you", icon: Building2, ask: "a customer", examples: ["Head of procurement at a US hospital", "Halcyon Health", "a VP Finance at a mid-size bank"] },
-  hire: { label: "A hire", sub: "Someone to join your team", icon: UserPlus, ask: "a hire", examples: ["a VP Sales who has sold to finance teams", "a plant manager in cement", "a former CFO"] },
-  investor: { label: "An investor", sub: "A fund or angel for your next round", icon: Landmark, ask: "an investor", examples: ["seed investors in climate", "Greenline Climate Fund", "a fintech angel in London"] },
-  expert: { label: "An expert", sub: "Someone who has solved this before", icon: GraduationCap, ask: "an expert", examples: ["a former CFO", "someone who has sold to the NHS", "an EU lending licence expert"] },
-} as const satisfies Record<string, { label: string; sub: string; icon: LucideIcon; ask: string; examples: readonly string[] }>;
+  customer: { label: "A customer", sub: "Someone who could buy from you", icon: "building", ask: "a customer", examples: ["Head of procurement at a US hospital", "Halcyon Health", "a VP Finance at a mid-size bank"] },
+  hire: { label: "A hire", sub: "Someone to join your team", icon: "invite", ask: "a hire", examples: ["a VP Sales who has sold to finance teams", "a plant manager in cement", "a former CFO"] },
+  investor: { label: "An investor", sub: "A fund or angel for your next round", icon: "bank", ask: "an investor", examples: ["seed investors in climate", "Greenline Climate Fund", "a fintech angel in London"] },
+  expert: { label: "An expert", sub: "Someone who has solved this before", icon: "cap", ask: "an expert", examples: ["a former CFO", "someone who has sold to the NHS", "an EU lending licence expert"] },
+} as const satisfies Record<string, { label: string; sub: string; icon: FhIconName; ask: string; examples: readonly string[] }>;
 
 export type NeedKey = keyof typeof NEEDS;
 
@@ -90,11 +91,10 @@ export function NeedStep() {
       <h1 className="fh-h1">What do you need?</h1>
       <div className="fh-needs">
         {Object.entries(NEEDS).map(([key, need]) => {
-          const Icon = need.icon;
           return (
             <Link key={key} className="fh-needcard" href={toGuidedHref({ need: key })}>
               <span className="fh-ic">
-                <Icon aria-hidden="true" className="fh-i" strokeWidth={1.5} />
+                <FhIcon name={need.icon} />
               </span>
               <span>
                 <b>{need.label}</b>
