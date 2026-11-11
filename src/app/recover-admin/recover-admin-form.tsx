@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 
 import { FormError } from "@/components/form-error";
@@ -29,16 +28,16 @@ export function RecoverAdminForm() {
   const [state, formAction, isPending] = useActionState(submitRecovery, INITIAL_STATE);
   if (state.isDone) {
     return (
-      <div className="grid gap-4">
+      <div className="fh-field grid gap-4">
         <Alert variant="success">Your password changed, and every device was signed out.</Alert>
-        <Button asChild size="lg">
-          <Link href={ROUTES.signIn}>Sign in</Link>
+        <Button asChild width="block">
+          <a href={ROUTES.signIn}>Sign in</a>
         </Button>
       </div>
     );
   }
   return (
-    <form action={formAction} className="grid gap-5">
+    <form action={formAction} className="fh-field grid gap-4">
       <FormField name="token" label="Setup token" type="password" autoComplete="off" hint="The long password you set when you deployed. It's called SETUP_TOKEN in your host's settings." required />
       <FormField name="email" label="Your admin email" type="email" autoComplete="email" required />
       <FormField
@@ -52,7 +51,7 @@ export function RecoverAdminForm() {
         required
       />
       <FormError message={state.errorMessage} />
-      <Button type="submit" size="lg" disabled={isPending}>
+      <Button type="submit" width="block" disabled={isPending}>
         {isPending ? "Saving…" : "Save my new password"}
       </Button>
     </form>

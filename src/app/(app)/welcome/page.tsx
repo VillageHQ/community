@@ -3,28 +3,26 @@ import { redirect } from "next/navigation";
 
 import { getDatabase } from "@/platform/database/client";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
-import { readInviterOfMember } from "@/modules/members/service-invites";
-import { readActiveMemberCount, readMemberNeighbours } from "@/modules/members/reads-directory";
+import { readBrandingForPage } from "@/platform/branding/branding";
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { readMemberProfile } from "@/modules/members/service-profile";
 import { ONBOARDING_STEPS } from "@/modules/members/contract-profile";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
-import { NETWORK_PROGRESS, readNetworkProgress } from "@/modules/network/reads-progress";
-
-import { ConsentStep } from "@/modules/network/components/consent-step";
-import { LinkedinWelcome } from "@/modules/network/components/linkedin-step";
-import { loadWelcomeContext } from "@/shell/load-welcome-context";
-import { CardStep } from "@/modules/members/components/card-step";
-import { IntroAsksStep } from "@/modules/members/components/intro-asks-step";
-import { ConfirmationStep } from "@/modules/members/components/confirmation-step";
 import { membersManifest } from "@/modules/members/manifest";
-import { networkManifest } from "@/modules/network/manifest";
-import { isModuleEnabled } from "@/platform/modules/enablement";
 import { modulePage } from "@/platform/modules/module-page";
+
+import { AboutForm } from "./about-form";
+import { WelcomeStepsHead } from "./welcome-steps-head";
 
 export const metadata: Metadata = { title: PAGE_TITLES.welcome };
 
+// Until step 1 is saved, an accepted invite carries the start of the address as the name: the field starts empty.
+function readStartingName(name: string, email: string) {
+  return name === email.split("@")[0] ? "" : name;
+}
+
+// Founderhall's welcome step 1 of 2 (views-member.mjs welcomePage, step 1), inside the member shell.
 export default modulePage(membersManifest, async function WelcomePage() {
   const member = await requireMember();
   const database = getDatabase();
@@ -32,22 +30,23 @@ export default modulePage(membersManifest, async function WelcomePage() {
   // Back to the landing, which sends a new admin on to setup.
   if (step === ONBOARDING_STEPS.done) redirect(ROUTES.landing);
 
-  const isNetworkOn = await isModuleEnabled(database, networkManifest);
-  const [context, inviter, profile, progress, memberNeighbours, memberCount] = await Promise.all([
-    loadWelcomeContext(database, member),
-    readInviterOfMember(database, member.id),
-    readMemberProfile(database, member.id),
-    isNetworkOn ? readNetworkProgress(database, member) : null,
-    readMemberNeighbours(database, member.id),
-    readActiveMemberCount(database),
-  ]);
-  const welcome = { ...context, neighbours: memberNeighbours, isOnboarding: true, inviter };
+  const [community, profile] = await Promise.all([readBrandingForPage(), readMemberProfile(database, member.id)]);
 
-  if (step === ONBOARDING_STEPS.card && profile) {
-    return <CardStep welcome={welcome} profile={profile} memberCount={memberCount} />;
-  }
-  if (step === ONBOARDING_STEPS.introAsks) return <IntroAsksStep welcome={welcome} />;
-  if (progress === NETWORK_PROGRESS.needsEmailConfirmation) return <ConfirmationStep welcome={welcome} />;
-  if (progress === NETWORK_PROGRESS.needsLinkedin) return <LinkedinWelcome welcome={welcome} />;
-  return <ConsentStep welcome={welcome} />;
+  return (
+    <div className="fh-narrow">
+      <WelcomeStepsHead current="about" />
+      <h1 className="fh-h1">Welcome to {community.name}</h1>
+      <p className="fh-lede">Two questions, so members know what you do and how you can help. Change anything later.</p>
+      <AboutForm
+        initialValues={{
+          name: readStartingName(member.name, member.email),
+          workingOn: profile?.bio ?? "",
+          canHelpWith: profile?.canHelpWith ?? "",
+          role: profile?.title ?? "",
+          company: profile?.company ?? "",
+          city: profile?.location ?? "",
+        }}
+      />
+    </div>
+  );
 });

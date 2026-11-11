@@ -1,9 +1,5 @@
 import type { Metadata } from "next";
-import { KeyRound } from "lucide-react";
-import Link from "next/link";
-
-import { EmptyState } from "@/components/empty-state";
-import { SplitLayout, VillageNote } from "@/components/split-layout";
+import { PublicMessage, PublicPage } from "@/components/public-page";
 import { Button } from "@/components/ui/button";
 import { getDatabase } from "@/platform/database/client";
 import { readBrandingForPage } from "@/platform/branding/branding";
@@ -28,18 +24,15 @@ const SETUP_TOKEN_STEPS = [
 function MissingTokenCopy() {
   return (
     <>
-      <h1 className="type-h1 lg:type-display">Add a setup token to continue</h1>
-      <p className="type-lead mt-3 text-foreground-soft">
+      <h1 className="fh-h2">Add a setup token to continue</h1>
+      <p className="fh-lede">
         A setup token is a long password that proves you own this deployment. Yours is missing or too weak, so
         nothing can be created yet.
       </p>
-      <ol className="mt-7 grid gap-3">
-        {SETUP_TOKEN_STEPS.map((step, position) => (
-          <li key={step} className="flex items-start gap-3.5 rounded-field bg-card p-4 shadow-panel">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-accent-foreground" aria-hidden="true">
-              {position + 1}
-            </span>
-            <span className="min-w-0 pt-1">{step}</span>
+      <ol className="mt-4 list-decimal pl-5">
+        {SETUP_TOKEN_STEPS.map((step) => (
+          <li key={step} className="mt-2 text-[14px] leading-5">
+            {step}
           </li>
         ))}
       </ol>
@@ -54,40 +47,33 @@ export default modulePage(PLATFORM_MANIFEST, async function SetupPage() {
 
   if (await isFirstAdminClaimed(getDatabase())) {
     return (
-      <SplitLayout community={community} note={<VillageNote />}>
-        <div className="flex min-h-[60dvh] items-center justify-center">
-          <EmptyState
-            headingLevel="h1"
-            icon={KeyRound}
-            title="Setup is complete"
-            description="This community already has an admin."
-          >
-            <Button asChild size="lg">
-              <Link href={ROUTES.signIn}>Sign in</Link>
-            </Button>
-          </EmptyState>
-        </div>
-      </SplitLayout>
+      <PublicMessage
+        community={community}
+        title="Setup is complete"
+        action={
+          <Button asChild>
+            <a href={ROUTES.signIn}>Sign in</a>
+          </Button>
+        }
+      >
+        This community already has an admin.
+      </PublicMessage>
     );
   }
 
   if (!readSetupToken(process.env)) {
     return (
-      <SplitLayout community={community} note={<VillageNote />}>
+      <PublicPage community={community}>
         <MissingTokenCopy />
-      </SplitLayout>
+      </PublicPage>
     );
   }
 
   return (
-    <SplitLayout community={community} note={<VillageNote />}>
-      <h1 className="type-h1 lg:type-display">Let&apos;s set up your community.</h1>
-      <p className="type-lead mt-3 text-foreground-soft">
-        First, create the admin account. Setup closes permanently after this.
-      </p>
-      <div className="mt-7 rounded-panel bg-card p-5 shadow-panel sm:p-7">
-        <SetupForm />
-      </div>
-    </SplitLayout>
+    <PublicPage community={community}>
+      <h1 className="fh-h2">Set up {community.isSaved ? community.name : "your community"}</h1>
+      <p className="fh-lede">First, create the admin account. Setup closes for good after this.</p>
+      <SetupForm />
+    </PublicPage>
   );
 });

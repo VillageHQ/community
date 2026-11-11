@@ -17,7 +17,7 @@ The base every transplant area builds on: Founderhall's look, its shared parts a
   edit it by hand: rerun the script, or override in `globals.css`.
 - **The fund colour** — `deriveFundColors()` in `src/platform/design/accent.ts`: Founderhall's rule (×0.92 steps to
   4.5:1 on Leaf; deep ×0.75; tint 84 % to white). `renderAccentCss()` writes `--fund`, `--fund-deep`, `--fund-tint`
-  and the older `--primary`/`--accent` names for light; dark mode keeps the older derivation.
+  and the older `--primary`/`--accent` names for light; dark mode uses `deriveDarkFundColors()` (see `.ai/features/fh-dark/NOTES.md`).
 
 ## The parts (use these; a missing part goes back to the foundation)
 | Part | File |
@@ -64,7 +64,7 @@ log, need cards) have their Founderhall classes in `parts.css` and a worked exam
 - Intro log (`/admin/intros`) and Invites (`/admin/invites`) forward to the partner report and Members until area 6
   builds them. Set up points at `/admin/settings` until the Set up list exists.
 - Count badges stay on menu items and tabs (Founderhall shows none); the owner decides.
-- Dark mode: the account menu is gone; its switch is a row on Your data (`DarkModeRow`). The owner decides whether it stays.
+- Dark mode: the account menu is gone; its switch is a row on Your data (`DarkModeRow`). The owner kept it; its look is in `.ai/features/fh-dark/NOTES.md`.
 
 ## The parts page
 `/parts`, a test page that answers 404 unless `SHOW_PARTS_PAGE=true`. It reads Founderhall's crops from
