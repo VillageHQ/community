@@ -2,6 +2,10 @@
 
 Direction: "The front room". Warm, tactile, full of faces. Reference: `mockup.html` in this folder.
 
+> Since the Founderhall look, the app uses `deriveFundColors()` (light) and `deriveDarkFundColors()` (dark) in
+> `src/platform/design/accent.ts`; the dark palette and its contrast table are in `.ai/features/fh-dark/NOTES.md`.
+> The derivation below (`deriveAccentTokens()`) is kept for reference and is no longer used by the app.
+
 ## Accent: one input, six derived tokens
 
 A fund stores one hex color. The server derives everything else per theme and writes CSS variables on `:root` and `.dark`. The mockup uses precomputed presets because it has no JavaScript.

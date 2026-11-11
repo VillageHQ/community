@@ -38,7 +38,7 @@ export function SetupForm() {
   const tokenRef = useFocusOnFailure(state);
 
   return (
-    <form action={formAction} className="grid gap-5">
+    <form action={formAction} className="fh-field grid gap-4">
       <FormError message={state.errorMessage} />
       <FormField
         ref={tokenRef}
@@ -58,7 +58,7 @@ export function SetupForm() {
       />
       <FormField
         name="email"
-        label="Email"
+        label="Your email"
         type="email"
         autoComplete="email"
         defaultValue={state.email}
@@ -74,7 +74,7 @@ export function SetupForm() {
         hint={`At least ${MINIMUM_PASSWORD_LENGTH} characters.`}
         required
       />
-      <Button type="submit" size="lg" disabled={isPending}>
+      <Button type="submit" width="block" disabled={isPending} className="mt-0.5">
         {isPending ? "Creating admin…" : "Create admin"}
       </Button>
     </form>

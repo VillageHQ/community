@@ -17,6 +17,7 @@ import { POST as postList } from "@/app/api/admin/invites/list/route";
 import { POST as postResend } from "@/app/api/admin/invites/resend/route";
 import { POST as postRevoke } from "@/app/api/admin/invites/revoke/route";
 import { POST as postCreate } from "@/app/api/admin/invites/route";
+import { readInviteToken } from "@/test/invite-link";
 
 const APP_URL = "http://localhost:3000";
 const INVITEE = "amara@tidewell.example";
@@ -38,7 +39,7 @@ function jsonRequest(member: Member | null, body: unknown, origin = APP_URL) {
 }
 
 function readToken(link: string) {
-  return z.string().parse(link.split("/").at(-1));
+  return z.string().parse(readInviteToken(link));
 }
 
 describe("admin invites", () => {
@@ -77,7 +78,7 @@ describe("admin invites", () => {
       const issued = issuedInviteSchema.parse(await response.json());
 
       expect(response.status).toBe(CREATED_STATUS);
-      expect(issued.link).toMatch(new RegExp(`^${APP_URL}/join/[A-Za-z0-9_-]{43}$`));
+      expect(issued.link).toMatch(new RegExp(`^${APP_URL}/invite\\?token=[A-Za-z0-9_-]{43}$`));
       expect(issued.invite).toMatchObject({ email: INVITEE, state: INVITE_STATES.pending });
     });
 
@@ -333,7 +334,7 @@ describe("admin invites", () => {
 
       expect(resend.state.emails).toEqual([]);
       expect(issued.invite.emailStatus).toBe(INVITE_EMAIL_STATUSES.notSent);
-      expect(issued.link).toContain("/join/");
+      expect(issued.link).toContain("/invite?token=");
     });
 
     it("sends nothing with a key but no from address", async () => {

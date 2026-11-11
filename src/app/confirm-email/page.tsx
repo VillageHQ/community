@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { CommunityNote, SplitLayout } from "@/components/split-layout";
+import { PublicPage } from "@/components/public-page";
 import { getDatabase } from "@/platform/database/client";
 import { readActiveSession } from "@/platform/auth/active-session";
 import { readBrandingForPage } from "@/platform/branding/branding";
@@ -33,20 +33,15 @@ export default modulePage(membersManifest, async function ConfirmEmailPage({ sea
 
   const [community, isNetworkOn] = await Promise.all([readBrandingForPage(), isModuleEnabled(getDatabase(), networkManifest)]);
   return (
-    <SplitLayout
-      community={community}
-      note={<CommunityNote community={community}>This is a private community, open by invitation.</CommunityNote>}
-    >
-      <div className="flex min-h-[60dvh] items-center justify-center lg:min-h-[calc(100dvh-140px)]">
-        <ConfirmEmailPanel
+    <PublicPage community={community}>
+      <ConfirmEmailPanel
           view={view}
           token={token}
           path={path}
           accountName={session?.user.name ?? ""}
           accountEmail={session?.user.email ?? ""}
-          isNetworkOn={isNetworkOn}
-        />
-      </div>
-    </SplitLayout>
+        isNetworkOn={isNetworkOn}
+      />
+    </PublicPage>
   );
 });

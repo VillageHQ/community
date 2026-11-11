@@ -37,6 +37,7 @@ import { POST as postConsent } from "@/app/api/network/consent/route";
 import { POST as postPaths } from "@/app/api/network/paths/route";
 import { POST as postSearch } from "@/app/api/network/search/route";
 import { POST as postStatus } from "@/app/api/network/status/route";
+import { readInviteToken } from "@/test/invite-link";
 
 const APP_URL = "http://localhost:3000";
 const ALICE_EMAIL = "alice@example.test";
@@ -76,7 +77,7 @@ describe("a forwarded invite", () => {
   }
 
   async function acceptAs(name: string, link: string): Promise<Holder> {
-    const token = link.split("/").at(-1);
+    const token = readInviteToken(link);
     const response = await postAccept(jsonRequest(null, { token, name, password: HOLDER_PASSWORD }));
     const cookie = response.headers.getSetCookie()[0]?.split(";")[0];
     if (!cookie) throw new Error("Accepting set no session cookie.");
@@ -230,7 +231,7 @@ describe("a forwarded invite", () => {
 
     it("emails the confirmation link to the account's address, not to the holder's browser", async () => {
       const { link } = await inviteAlice();
-      const token = link.split("/").at(-1);
+      const token = readInviteToken(link);
 
       const response = await postAccept(jsonRequest(null, { token, name: "Not Alice", password: HOLDER_PASSWORD }));
       const emailBody = emailBodySchema.parse(resend.state.emails.at(-1)?.body);
@@ -439,7 +440,7 @@ describe("a forwarded invite", () => {
   });
 
   describe("during onboarding", () => {
-    it("shows the waiting step after the card, and lets the member carry on to the feed", async () => {
+    it("keeps the member on the privacy step after the card, until they finish", async () => {
       const { link } = await inviteAlice();
       const member = await acceptAs("Alice", link);
       const sessionMember = { id: member.id, email: member.email };
@@ -447,7 +448,7 @@ describe("a forwarded invite", () => {
       expect(await resolveOnboardingStep(database, sessionMember)).toBe(ONBOARDING_STEPS.introAsks);
       await postIntroAsks(jsonRequest(member.cookie, { acceptsIntroAsks: true }));
 
-      expect(await resolveOnboardingStep(database, sessionMember)).toBe(ONBOARDING_STEPS.network);
+      expect(await resolveOnboardingStep(database, sessionMember)).toBe(ONBOARDING_STEPS.introAsks);
 
       await postOnboarding(jsonRequest(member.cookie, { step: ONBOARDING_STEPS.network }));
 

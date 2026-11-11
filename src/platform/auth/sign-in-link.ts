@@ -64,13 +64,13 @@ async function sendSignInLink(database: Database, environment: Environment, { em
   // The row for this link is already stored, so "more than the cap" means this one is over it.
   if ((await countLiveLinks(database, normalizedEmail)) > MAXIMUM_LIVE_LINKS_PER_EMAIL) return;
 
-  const { name: communityName, accentColor } = await readBranding(database);
+  const { name: communityName } = await readBranding(database);
   const queuedId = await queueEmail(database, environment, {
     kind: EMAIL_KINDS.signInLink,
     to: recipient.email,
     memberId: recipient.id,
     expiresAt: readLinkEmailExpiry(SIGN_IN_LINK_LIFETIME_SECONDS),
-    ...renderSignInLinkEmail({ link: toSignInLinkUrl(environment, token), communityName, accentColor }),
+    ...renderSignInLinkEmail({ link: toSignInLinkUrl(environment, token), communityName }),
   });
   await sendQueuedEmailNow(database, environment, queuedId);
 }

@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   contrastRatio,
   DEFAULT_ACCENT_COLOR,
+  DARK_SURFACES,
   deriveAccentTokens,
+  deriveDarkFundColors,
   deriveFundColors,
   LEAF,
   NEUTRALS,
@@ -128,5 +130,37 @@ describe("the fund colour (Founderhall's rule)", () => {
 
   it("is written as --fund, --fund-deep and --fund-tint", () => {
     expect(renderAccentCss("#24525a")).toContain("--fund:#24525a;--fund-deep:#1b3e44;--fund-tint:#dce3e5");
+  });
+});
+
+describe("the fund colour in dark mode", () => {
+  it("lightens Founderhall's demo teal until it reads on the dark sheets", () => {
+    const { fund, deep, tint } = deriveDarkFundColors("#24525A");
+
+    expect({ fund, deep, tint }).toEqual({ fund: "#6e9da5", deep: "#83b3bb", tint: "#1b3236" });
+    expect(contrastRatio(tint, DARK_SURFACES.paper)).toBeLessThan(AA_NON_TEXT);
+  });
+
+  it("keeps a sweep of colours readable as text, button fill and on its own tint", () => {
+    const failures = sampleColors().flatMap((color) => {
+      const { fund, deep, tint } = deriveDarkFundColors(color);
+      const pairs: [string, string][] = [
+        ...Object.values(DARK_SURFACES).map((surface): [string, string] => [fund, surface]),
+        [fund, tint],
+        [deep, tint],
+        [deep, DARK_SURFACES.leaf],
+      ];
+      return pairs.filter(([text, background]) => contrastRatio(text, background) < AA_TEXT).map(([text, background]) => `${color}: ${text} on ${background}`);
+    });
+
+    expect(failures).toEqual([]);
+  });
+
+  it("writes the dark fund, with dark Leaf words on the primary button", () => {
+    const { fund } = deriveDarkFundColors(DEFAULT_ACCENT_COLOR);
+    const css = renderAccentCss(DEFAULT_ACCENT_COLOR);
+
+    expect(css).toContain(`:root.dark{--fund:${fund};`);
+    expect(css).toContain(`--primary-foreground:${DARK_SURFACES.leaf}`);
   });
 });
