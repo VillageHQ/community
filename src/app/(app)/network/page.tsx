@@ -5,10 +5,6 @@ import { IntrosConnectorProvider } from "@/shell/intros-network-provider";
 import { getDatabase } from "@/platform/database/client";
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { requireMember } from "@/platform/auth/session";
-import { NETWORK_PROGRESS, readNetworkProgress } from "@/modules/network/reads-progress";
-
-import { ConsentStep } from "@/modules/network/components/consent-step";
-import { LinkedinWelcome } from "@/modules/network/components/linkedin-step";
 import { loadWelcomeContext } from "@/shell/load-welcome-context";
 import { OwnVillageLine } from "@/modules/network/components/own-village-line";
 import { OWN_VILLAGE_STATES, readOwnVillageState } from "@/modules/network/reads-village-check";
@@ -24,9 +20,10 @@ export const metadata: Metadata = { title: PAGE_TITLES.network };
 export default modulePage(networkManifest, async function NetworkPage() {
   const member = await requireMember();
   const database = getDatabase();
-  const [welcome, progress, ownVillage] = await Promise.all([
+  // The flow picks the view: search at once when there is something to search (an invitation to connect beside it),
+  // else the LinkedIn, sharing and sync steps.
+  const [welcome, ownVillage] = await Promise.all([
     loadWelcomeContext(database, member),
-    readNetworkProgress(database, member),
     readOwnVillageState(database, member.id),
     resolveOnboardingStep(database, member),
   ]);
@@ -37,9 +34,6 @@ export default modulePage(networkManifest, async function NetworkPage() {
       {content}
     </>
   );
-
-  if (progress === NETWORK_PROGRESS.needsLinkedin) return withLine(<LinkedinWelcome welcome={welcome} />);
-  if (progress === NETWORK_PROGRESS.needsConsent) return withLine(<ConsentStep welcome={welcome} />);
   const flow = <NetworkFlowLoader welcome={welcome} />;
   return withLine((await isModuleEnabled(database, introsManifest)) ? <IntrosConnectorProvider>{flow}</IntrosConnectorProvider> : flow);
 });

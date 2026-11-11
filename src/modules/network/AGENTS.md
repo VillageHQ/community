@@ -1,9 +1,10 @@
 # Network
 
-Village search, sync, the community group and intro paths. Toggleable. The only module that uses a Village account.
+Village search, sync, the community group and intro paths. Toggleable. The only module using Village.
 
-- `service.ts`: the join flow, search, paths, keys, the group, leaving and link approval.
-- `service-departure.ts`: taking a removed member out of the Village group. It never throws.
+- `service.ts`: joining, search, paths, keys, the group, leaving and link approval.
+- `service-search-pool.ts`: members who haven't joined search as the app's identity (in the group, unsynced).
+- `service-departure.ts`: takes a removed member out of the group. Never throws.
 - `service-settings.ts`, `contract-village-settings.ts`: group, daily limit, and the Village settings: search scope, who can introduce, the service email.
 - `reads-*.ts`: progress for next steps, reachable members and credit usage.
 - `contract*.ts`: Zod schemas and constants. `queries.ts`: client requests. `components/`: the UI.
@@ -13,12 +14,13 @@ Village search, sync, the community group and intro paths. Toggleable. The only 
 - `*-village-check.ts`: the admin's Village check and the member's Meet line. Free calls only, once a minute; members who never reached Village aren't asked.
 - `slots.tsx`: `ConnectorAskSlot` and `ConnectorPromiseSlot`. Intros fills them, so network never imports intros.
 
-The Village client (a thin layer over `@villagehq/sdk`), credentials, credit ledger and error mapping live in `src/platform/village`. `health.ts` there records when Village last answered and any trouble since (down, or keys refused); every admin page shows it, and members see "Search is unavailable right now".
+The Village client, credentials, credit ledger and error mapping live in `src/platform/village`. `health.ts` there records Village's last answer and any trouble since; admins see it, members see "Search is unavailable right now".
 
 Rules:
 
 - The secret key stays on the server. A member token leaves it only through `/api/network/sync-token`, for the signed-in member at the sync step.
+- Never search or share a member's own network before they agree and sync.
 - Never name a path through a member who hasn't agreed to share. With "chosen members" on, paths through other members are dropped before anything reads them, and only the chosen can offer intros.
-- Every paid call goes through `withCreditCall`. It reserves the call's estimate against the community's monthly cap (and the member's day, except fill-in) before Village is called, and emails admins once at 80% and once at 100%.
-- Departure runs whatever else happens. A removed member's network must stop being shared.
+- Every paid call goes through `withCreditCall`. It reserves the estimate against the monthly cap (and the member's day, except fill-in) first, and emails admins once at 80% and 100%.
+- Departure always runs: a removed member's network must stop being shared.
 - `service-erasure.ts`: before a real delete, leave the group and cancel the Village user (`POST /v2/user/cancel`).

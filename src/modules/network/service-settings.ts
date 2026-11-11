@@ -46,6 +46,7 @@ export async function deleteVillageGroup(database: Database) {
       or(
         eq(instanceSettings.key, INSTANCE_SETTING_KEYS.villageGroupId),
         eq(instanceSettings.key, INSTANCE_SETTING_KEYS.villageGroupInviteLink),
+        eq(instanceSettings.key, INSTANCE_SETTING_KEYS.villageSearchGroupId),
       ),
     );
 }

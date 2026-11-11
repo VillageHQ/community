@@ -15,6 +15,7 @@ import { expireDueIntros } from "@/modules/intros/reads";
 import { readIntroReport } from "@/modules/intros/reads-report";
 import { introRequest } from "@/modules/intros/schema";
 import { CHOICE_PLACES } from "@/modules/members/contract-privacy";
+import { memberNetwork } from "@/modules/members/schema";
 import { saveIntroAsksAnswer } from "@/modules/members/service-privacy";
 import { INTRODUCER_RULES } from "@/modules/network/contract-village-settings";
 import { networkManifest } from "@/modules/network/manifest";
@@ -198,6 +199,56 @@ describe("an intro asked from a profile, with Village off", () => {
 
     expect(response.status).toBe(CONFLICT_STATUS);
     expect(await response.json()).toMatchObject({ code: INTRO_ERROR_CODES.notTakingAsks });
+  });
+
+  // Who must be in the network: the connector of a path ask only. A named ask needs nobody in it, and an asker never.
+  describe.each([
+    { kind: "path", isNamedTarget: false, requesterJoined: true },
+    { kind: "path", isNamedTarget: false, requesterJoined: false },
+    { kind: "named", isNamedTarget: true, requesterJoined: true },
+    { kind: "named", isNamedTarget: true, requesterJoined: false },
+  ])("a $kind ask, requester joined: $requesterJoined", ({ isNamedTarget, requesterJoined }) => {
+    const IN_A_WEEK_MS = 7 * 86_400_000;
+
+    async function seedIntro() {
+      await saveModuleState(database, networkManifest, true);
+      if (requesterJoined) await joinMemberToGroup(database, amara.userId, "amara-osei");
+      if (!isNamedTarget) await joinMemberToGroup(database, jonas.userId, "jonas-lindqvist");
+      const [row] = await database
+        .insert(introRequest)
+        .values({
+          requesterId: amara.userId,
+          introducerId: jonas.userId,
+          targetLinkedinSlug: "clara-bergstrom",
+          targetName: CLARA.name,
+          introducerName: "Jonas Lindqvist",
+          reason: "Worked together",
+          note: WHY,
+          isNamedTarget,
+          expiresAt: new Date(Date.now() + IN_A_WEEK_MS),
+        })
+        .returning({ id: introRequest.id });
+      if (!row) throw new Error("Expected the seeded intro.");
+      return row.id;
+    }
+
+    it("stays open, reaches the connector, and the connector can say yes", async () => {
+      const introId = await seedIntro();
+
+      await expireDueIntros(database, null);
+
+      expect((await readJonasBoard()).asksForYou[0]?.state).toBe(INTRO_STATES.requested);
+      expect((await call(postTransition, jonas, { introId, action: INTRO_ACTIONS.accept })).status).toBe(OK_STATUS);
+    });
+
+    it(isNamedTarget ? "stays open when the connector isn't in the network" : "closes when the connector leaves the network", async () => {
+      const introId = await seedIntro();
+      await database.update(memberNetwork).set({ groupJoinedAt: null }).where(eq(memberNetwork.userId, jonas.userId));
+
+      await expireDueIntros(database, null);
+
+      expect((await readRow(introId)).state).toBe(isNamedTarget ? INTRO_STATES.requested : INTRO_STATES.expired);
+    });
   });
 
   it("refuses a path ask while the network is off", async () => {

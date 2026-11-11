@@ -1215,15 +1215,20 @@ describe("double opt-in intros", () => {
         expect((await answer(token)).status).toBe(GONE_STATUS);
       });
 
-      it.each([
-        ["a requester who left the group", () => amara],
-        ["a connector who left the group", () => jonas],
-      ])("closes for %s", async (_label, readMember) => {
+      it("closes for a connector who left the group", async () => {
         const { token } = await reachState(INTRO_STATES.askingTarget);
 
-        await database.update(memberNetwork).set({ groupJoinedAt: null }).where(eq(memberNetwork.userId, readMember().userId));
+        await database.update(memberNetwork).set({ groupJoinedAt: null }).where(eq(memberNetwork.userId, jonas.userId));
 
         expect((await answer(token)).status).toBe(GONE_STATUS);
+      });
+
+      it("stays open for a requester who left the group: askers needn't share their own network", async () => {
+        const { token } = await reachState(INTRO_STATES.askingTarget);
+
+        await database.update(memberNetwork).set({ groupJoinedAt: null }).where(eq(memberNetwork.userId, amara.userId));
+
+        expect((await answer(token)).status).not.toBe(GONE_STATUS);
       });
 
       it("disappears when the requester is removed", async () => {

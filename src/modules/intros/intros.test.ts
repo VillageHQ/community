@@ -288,12 +288,12 @@ describe("intro requests", () => {
       expect((await lookUpPaths()).connectors).toEqual([]);
     });
 
-    it("treats a banned member as unreachable", async () => {
+    it("treats a banned member as unreachable, and doesn't name them on a path", async () => {
       await database.update(user).set({ banned: true }).where(eq(user.id, jonas.userId));
 
       const { connectors } = await lookUpPaths();
 
-      expect(connectors.find(({ name }) => name === "Jonas Lindqvist")?.member).toBeNull();
+      expect(connectors.find(({ name }) => name === "Jonas Lindqvist")).toBeUndefined();
     });
 
     it("marks a real direct connection without inventing a connector", async () => {
@@ -602,11 +602,15 @@ describe("intro requests", () => {
         expect(await (await ask()).json()).toMatchObject({ code: NETWORK_ERROR_CODES.emailNotConfirmed });
       });
 
-      it("refuses a requester who hasn't joined", async () => {
+      it("lets a requester who hasn't joined ask a member who shared", async () => {
         await lookUpPaths();
         await database.update(memberNetwork).set({ groupJoinedAt: null }).where(eq(memberNetwork.userId, amara.userId));
 
-        expect(await (await ask()).json()).toMatchObject({ code: NETWORK_ERROR_CODES.notReady });
+        const response = await ask();
+        expect(response.status).toBe(OK_STATUS);
+        const { id } = await response.json();
+        expect(await readState(id)).toBe(INTRO_STATES.requested);
+        expect((await readBoard(jonas)).asksForYou[0]?.state).toBe(INTRO_STATES.requested);
       });
 
       it("refuses a requester whose Village link needs approval", async () => {
@@ -1093,11 +1097,11 @@ describe("intro requests", () => {
       expect((await readBoard(amara)).yourAsks[0]?.state).toBe(INTRO_STATES.expired);
     });
 
-    it("closes the ask when the requester left", async () => {
+    it("keeps the ask open when the requester left: askers needn't share their own network", async () => {
       await leave(amara);
 
-      expect((await readBoard(jonas)).asksForYou[0]?.state).toBe(INTRO_STATES.expired);
-      expect((await readCounts(jonas)).waitingOnYou).toBe(0);
+      expect((await readBoard(jonas)).asksForYou[0]?.state).toBe(INTRO_STATES.requested);
+      expect((await readCounts(jonas)).waitingOnYou).toBe(1);
     });
 
     it("refuses an accept from an introducer who left", async () => {
@@ -1107,11 +1111,11 @@ describe("intro requests", () => {
       expect(await readState(intro.id)).toBe(INTRO_STATES.expired);
     });
 
-    it("refuses to finish an ask once the requester left", async () => {
+    it("refuses to finish an ask once the requester is banned", async () => {
       await makeOldAccepted(intro.id);
-      await leave(amara);
+      await database.update(user).set({ banned: true }).where(eq(user.id, amara.userId));
 
-      expect((await transition(jonas, intro.id, INTRO_ACTIONS.complete)).status).toBe(CONFLICT_STATUS);
+      expect((await transition(jonas, intro.id, INTRO_ACTIONS.complete)).status).not.toBe(OK_STATUS);
     });
 
     it("leaves closed asks as they were", async () => {

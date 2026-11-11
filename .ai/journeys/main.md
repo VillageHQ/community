@@ -10,7 +10,8 @@ asked for (often outside the community), and the fund's platform lead (admin).
    ([admin-invite-and-import.md](admin-invite-and-import.md)).
 2. The founder signs in with an emailed link → lands on Today, which lists only what needs them this week
    ([sign-in.md](sign-in.md), [today.md](today.md)).
-3. The founder searches the network for the person they need → sees a path through a member who agreed to share →
+3. The founder searches the network for the person they need, even before connecting their own (adding it is an
+   invitation, not a gate) → sees a path through a member who agreed to share →
    asks that member for an intro with one note ([ask-for-an-intro.md](ask-for-an-intro.md)).
 4. The connector says yes → the person asked gets one private link and says yes too → the connector joins them
    ([answer-an-intro.md](answer-an-intro.md)).

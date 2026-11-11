@@ -24,6 +24,12 @@ export function readLiveConsentHash(token: string) {
   return isInviteTokenShape(token) ? hashInviteToken(token) : null;
 }
 
+// Whoever asks only needs to be an active member: since search-first, a member can ask before sharing their own
+// network. The connector must have joined the group, so they shared theirs.
+export function selectActiveMemberIds(connection: DatabaseOrTransaction, now: Date) {
+  return connection.select({ userId: user.id }).from(user).where(isActiveMember(now));
+}
+
 export function selectActiveJoinedMemberIds(connection: DatabaseOrTransaction, now: Date) {
   return connection
     .select({ userId: memberNetwork.userId })
@@ -50,25 +56,23 @@ function hasConsentLink(connection: DatabaseOrTransaction, tokenHash: string) {
   return inArray(introRequest.id, linkedIntros);
 }
 
-function selectActiveMemberIds(connection: DatabaseOrTransaction, now: Date) {
-  return connection.select({ userId: user.id }).from(user).where(isActiveMember(now));
-}
-
-// Active, and joined to the network unless the ask is a named one (from a profile), which needs no network.
-export function isActiveParticipant(connection: DatabaseOrTransaction, column: typeof introRequest.requesterId | typeof introRequest.introducerId, now: Date) {
+// The connector of a path ask must be active and have joined the group; a named ask (from a profile) needs no network,
+// so its connector only needs to be active.
+export function isActiveConnector(connection: DatabaseOrTransaction, now: Date) {
   return or(
-    and(eq(introRequest.isNamedTarget, true), inArray(column, selectActiveMemberIds(connection, now))),
-    inArray(column, selectActiveJoinedMemberIds(connection, now)),
+    and(eq(introRequest.isNamedTarget, true), inArray(introRequest.introducerId, selectActiveMemberIds(connection, now))),
+    inArray(introRequest.introducerId, selectActiveJoinedMemberIds(connection, now)),
   );
 }
 
-// Open, not withheld, not past its deadline, between two active members (joined, for a path ask) with no block either way.
+// Open, not withheld, not past its deadline, from an active member to an active connector (joined, for a path ask),
+// with no block either way.
 export function isLiveBetweenMembers(connection: DatabaseOrTransaction, now: Date) {
   return and(
     eq(introRequest.isWithheld, false),
     gt(introRequest.expiresAt, now),
-    isActiveParticipant(connection, introRequest.requesterId, now),
-    isActiveParticipant(connection, introRequest.introducerId, now),
+    inArray(introRequest.requesterId, selectActiveMemberIds(connection, now)),
+    isActiveConnector(connection, now),
     hasNoBlockBetweenParticipants(connection),
   );
 }

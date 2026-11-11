@@ -9,6 +9,7 @@ import { GROUP_DEPARTURE_OUTCOMES, type GroupDepartureOutcome } from "./contract
 import { recordAdminAction } from "../../platform/audit/record.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
 import { createVillageSession, leaveVillageGroup, readVillageUser } from "../../platform/village/client.ts";
+import { leaveSearchIdentityForLastMember } from "./service-search-pool.ts";
 import { clearMemberFromGroup } from "./service.ts";
 import { type RequestContext } from "../../platform/http/request-context.ts";
 import { readVillageGroup, type VillageGroup } from "./service-settings.ts";
@@ -29,6 +30,7 @@ type DepartureAttempt = {
   keys: VillageKeys;
   group: VillageGroup;
   externalId: string;
+  memberId: string;
   email: string;
   approvedVillageEmail: string | null;
 };
@@ -46,7 +48,12 @@ async function leaveAs(attempt: DepartureAttempt): Promise<GroupDepartureOutcome
   );
   const { email: villageEmail } = await readVillageUser(session);
   if (villageEmail === null || !isOwnVillageAccount(villageEmail, attempt)) return GROUP_DEPARTURE_OUTCOMES.failed;
-  return DEPARTURE_FROM_VILLAGE_OUTCOME[await leaveVillageGroup(session, group.id)];
+  const outcome = await leaveVillageGroup(session, group.id);
+  // The search identity alone in the group still blocks its creator from leaving: it leaves first.
+  if (outcome === "admin_blocked" && (await leaveSearchIdentityForLastMember(context, keys, group, attempt.memberId))) {
+    return DEPARTURE_FROM_VILLAGE_OUTCOME[await leaveVillageGroup(session, group.id)];
+  }
+  return DEPARTURE_FROM_VILLAGE_OUTCOME[outcome];
 }
 
 async function leaveOrFail(attempt: DepartureAttempt) {
@@ -72,7 +79,7 @@ async function attemptDeparture(context: RequestContext, { memberId, email }: De
   const [keys, group] = await Promise.all([readVillageKeys(database), readVillageGroup(database)]);
   if (!keys || !group) return GROUP_DEPARTURE_OUTCOMES.failed;
 
-  const shared = { context, keys, group, email, approvedVillageEmail: network.approvedVillageEmail };
+  const shared = { context, keys, group, memberId, email, approvedVillageEmail: network.approvedVillageEmail };
   const currentOutcome = network.groupJoinedAt ? await leaveOrFail({ ...shared, externalId: network.villageExternalId }) : GROUP_DEPARTURE_OUTCOMES.left;
   const staleOutcome = network.staleGroupExternalId ? await leaveOrFail({ ...shared, externalId: network.staleGroupExternalId }) : GROUP_DEPARTURE_OUTCOMES.left;
 

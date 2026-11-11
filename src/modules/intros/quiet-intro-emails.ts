@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, gte, isNull, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte } from "drizzle-orm";
 
 import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
 import { readEmailBranding } from "../../platform/email/outbox.ts";
@@ -9,7 +9,7 @@ import type { Environment } from "../../platform/environment.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
 import { CONNECTOR_REMINDER_AFTER_DAYS, EXPIRY_EMAIL_WINDOW_DAYS, INTRO_STATES } from "./contract.ts";
 import { INTRO_EMAIL_EVENTS, queueIntroEmail, type IntroEmailEvent } from "./email.ts";
-import { isActiveParticipant, isLiveBetweenMembers } from "./reads-consent.ts";
+import { isLiveBetweenMembers, selectActiveMemberIds } from "./reads-consent.ts";
 import { introRequest } from "./schema.ts";
 
 const MILLISECONDS_PER_DAY = 86_400_000;
@@ -36,7 +36,7 @@ function isExpiryEmailDue(connection: DatabaseOrTransaction, now: Date) {
     eq(introRequest.state, INTRO_STATES.expired),
     isNull(introRequest.expiryEmailAt),
     lte(introRequest.expiresAt, now),
-    isActiveParticipant(connection, introRequest.requesterId, now),
+    inArray(introRequest.requesterId, selectActiveMemberIds(connection, now)),
     // A row closed long ago (or before this email existed) is left alone.
     gte(introRequest.closedAt, daysBefore(now, EXPIRY_EMAIL_WINDOW_DAYS)),
   );

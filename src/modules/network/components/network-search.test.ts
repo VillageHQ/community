@@ -27,6 +27,7 @@ const WELCOME = {
 const SEARCH_RESULT = {
   people: [{ fullName: "Clara Bergström", headline: "VP", linkedinSlug: "clara", isMember: false, memberId: null, imageUrl: null }],
   discardedOffNetworkResults: false,
+  includesOwnNetwork: true,
   dailyLookupsLeft: 40,
 };
 

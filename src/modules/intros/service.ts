@@ -45,7 +45,7 @@ import { enforceIntroLimit, INTRO_LIMIT_KINDS } from "./limits.ts";
 import {
   CLOSES_CONSENT,
   expireDueIntros,
-  hasBothParticipantsJoined,
+  hasConnectorJoined,
   isOutcomeDueForRequester,
   readIntroDeadline,
   readIntroForViewer,
@@ -118,7 +118,7 @@ async function readNamedConnector(context: RequestContext, { connectorId, target
   if (network && !(await network.canIntroduce(context.database, connector.id))) {
     throw new RequestError(FORBIDDEN_STATUS, INTRO_ERROR_CODES.notIntroducer, "In this community, intros go through members the admins chose. Ask one of them.");
   }
-  const ownSlugs = [connector.linkedinSlug, (await readJoinedNetwork(context, context.member.id))?.linkedinSlug].filter(Boolean);
+  const ownSlugs = [connector.linkedinSlug, await readRequesterSlug(context, context.member.id)].filter(Boolean);
   if (target.linkedin && ownSlugs.includes(target.linkedin)) {
     throw new RequestError(UNPROCESSABLE_STATUS, INTRO_ERROR_CODES.ownTarget, "That's one of you two. Name the person you'd like to meet.");
   }
@@ -295,7 +295,7 @@ export async function transitionIntro(context: RequestContext, body: IntroTransi
         eq(actorColumn, member.id),
         inArray(introRequest.state, readStatesLeadingTo(nextState)),
         gt(introRequest.expiresAt, now),
-        hasBothParticipantsJoined(database),
+        hasConnectorJoined(database),
         isRequesterActing ? undefined : eq(introRequest.isWithheld, false),
       ),
     )
@@ -428,7 +428,7 @@ export async function recordIntroOutcome(context: RequestContext, { introId, out
 
 export type OfferedIntroBody = { requesterId: string; askId: string; targetSlug: string; targetName: string; note: string };
 
-const NOT_JOINED_MESSAGE = "Intros go through the community network. You both need to have joined it on the Network page.";
+const NOT_JOINED_MESSAGE = "Intros go through the community network. You need to have joined it on the Network page to introduce someone.";
 
 async function readJoinedNetwork(context: RequestContext, memberId: string) {
   const [row] = await context.database
@@ -440,17 +440,23 @@ async function readJoinedNetwork(context: RequestContext, memberId: string) {
   return row?.linkedinSlug ? { ...row, linkedinSlug: row.linkedinSlug } : null;
 }
 
+// The asker of an offered intro needn't have joined: members can ask before sharing their own network.
+async function readRequesterSlug(context: RequestContext, memberId: string) {
+  const [row] = await context.database.select({ linkedinSlug: memberNetwork.linkedinSlug }).from(memberNetwork).where(eq(memberNetwork.userId, memberId));
+  return row?.linkedinSlug ?? null;
+}
+
 // "I know someone" on an ask: the helper is the connector and has already said yes by offering, so the intro starts
 // waiting on the target. The helper then makes the consent link on the Intros page, as after any yes.
 export async function createOfferedIntro(context: RequestContext, body: OfferedIntroBody, network: IntroNetwork | null) {
   const { database, member, environment } = context;
   await enforceIntroLimit(database, member.id, INTRO_LIMIT_KINDS.ask);
-  const [connector, requester] = await Promise.all([readJoinedNetwork(context, member.id), readJoinedNetwork(context, body.requesterId)]);
-  if (!connector || !requester) throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.notJoined, NOT_JOINED_MESSAGE);
+  const [connector, requesterSlug] = await Promise.all([readJoinedNetwork(context, member.id), readRequesterSlug(context, body.requesterId)]);
+  if (!connector) throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.notJoined, NOT_JOINED_MESSAGE);
   if (network && !(await network.canIntroduce(database, member.id))) {
     throw new RequestError(FORBIDDEN_STATUS, INTRO_ERROR_CODES.notIntroducer, "In this community, intros go through members the admins chose. Ask one of them, or post your lead on the ask.");
   }
-  if (body.targetSlug === connector.linkedinSlug || body.targetSlug === requester.linkedinSlug) {
+  if (body.targetSlug === connector.linkedinSlug || body.targetSlug === requesterSlug) {
     throw new RequestError(UNPROCESSABLE_STATUS, INTRO_ERROR_CODES.ownTarget, "That's one of you two. Name the person you'd introduce them to.");
   }
   if (await isTargetRefusingRequester(database, environment, body.requesterId, body.targetSlug)) {

@@ -57,20 +57,14 @@ function selectJoinedMemberIds(database: Database) {
   return database.select({ userId: memberNetwork.userId }).from(memberNetwork).where(isNotNull(memberNetwork.groupJoinedAt));
 }
 
-// A path ask goes through the Village network, so both members must have joined it. A named ask (from a profile) needs
-// no network: two members are enough.
-export function hasBothParticipantsJoined(database: Database) {
-  return or(
-    eq(introRequest.isNamedTarget, true),
-    and(inArray(introRequest.requesterId, selectJoinedMemberIds(database)), inArray(introRequest.introducerId, selectJoinedMemberIds(database))),
-  );
+// The connector of a path ask must still be in the group. The asker needn't be: members can ask before sharing their
+// own network. A named ask (from a profile) needs no network at all.
+export function hasConnectorJoined(database: Database) {
+  return or(eq(introRequest.isNamedTarget, true), inArray(introRequest.introducerId, selectJoinedMemberIds(database)));
 }
 
-function hasParticipantLeftNetwork(database: Database) {
-  return and(
-    eq(introRequest.isNamedTarget, false),
-    or(notInArray(introRequest.requesterId, selectJoinedMemberIds(database)), notInArray(introRequest.introducerId, selectJoinedMemberIds(database))),
-  );
+function hasPathConnectorLeftNetwork(database: Database) {
+  return and(eq(introRequest.isNamedTarget, false), notInArray(introRequest.introducerId, selectJoinedMemberIds(database)));
 }
 
 // With a member, expires only their asks, at read time. Without one (the timed sweep), every
@@ -84,7 +78,7 @@ export async function expireDueIntros(database: Database, memberId: string | nul
       and(
         memberId === null ? undefined : or(eq(introRequest.requesterId, memberId), eq(introRequest.introducerId, memberId)),
         inArray(introRequest.state, readStatesLeadingTo(INTRO_STATES.expired)),
-        or(lte(introRequest.expiresAt, now), hasParticipantLeftNetwork(database)),
+        or(lte(introRequest.expiresAt, now), hasPathConnectorLeftNetwork(database)),
       ),
     );
 }

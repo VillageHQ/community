@@ -59,7 +59,7 @@ export type FillInOutcome = (typeof FILL_IN_OUTCOMES)[keyof typeof FILL_IN_OUTCO
 
 // The address Village sees for the app's lookup identity: the service email an admin set in Settings, or else the
 // community's first admin.
-async function readLookupEmail(database: Database) {
+export async function readLookupEmail(database: Database) {
   const { serviceEmail } = await readVillageSearchSettings(database);
   return serviceEmail ?? readFirstAdminEmail(database);
 }

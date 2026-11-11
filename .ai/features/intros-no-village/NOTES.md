@@ -3,9 +3,10 @@
 - **Two ways in.** A named ask from a member's profile ("Ask <name> for an intro", `ask-member-intro.tsx`): the asker
   types the person's name and company, and optionally an email or a LinkedIn link. A path ask from Village search, as
   before. Both share the same states, consent links, reminders, expiry, outcomes, allowance and connector cap.
-- **No network needed.** A named ask has `is_named_target`. `hasBothParticipantsJoined`, `expireDueIntros` and
-  `isActiveParticipant` (`reads.ts`, `reads-consent.ts`) skip the "joined the Village group" rule for it: two active
-  members are enough, and leaving the group never closes it. Path asks keep the old rule.
+- **No network needed.** A named ask has `is_named_target`. The asker of any ask only needs to be active (members may
+  ask before connecting, `.ai/features/search-first/`). The connector of a path ask must also have joined the Village
+  group, and leaving it closes the ask; a named ask skips that: `hasConnectorJoined`, `expireDueIntros` (`reads.ts`)
+  and `isActiveConnector` (`reads-consent.ts`). `intros-named.test.ts` covers the four path/named × joined cases.
 - **Who the person is.** `target_linkedin_slug` holds their LinkedIn slug when the asker gave a link, else
   `~` and the JSON of `[name, company]` in lower case (`readNamedTargetKey`), so a "|" in a name can't collide. "No thanks", "stop all asks" (an HMAC of this key) and the
   open-ask unique index all match on it. The email is never part of the key. `readTargetLinkedinSlug` hides the `~`
