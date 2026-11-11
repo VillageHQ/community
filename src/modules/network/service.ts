@@ -53,7 +53,14 @@ import {
   type NetworkStatus,
 } from "./contract.ts";
 import { deleteVillageGroup, readVillageGroup, readVillageSearchSettings, saveVillageGroup, type VillageGroup } from "./service-settings.ts";
-import { keepSharingMembersPaths, leaveSearchIdentityForLastMember, openPooledSearchSession, toPooledSearchRefusal } from "./service-search-pool.ts";
+import {
+  dropNonSharingMembers,
+  keepSharingMembersPaths,
+  leaveSearchIdentityForLastMember,
+  openPooledSearchSession,
+  readNonSharingSlugs,
+  toPooledSearchRefusal,
+} from "./service-search-pool.ts";
 import { INTRODUCER_RULES, SEARCH_SCOPES } from "./contract-village-settings.ts";
 import { readVillageKeys, saveVillageKeys, type VillageKeys } from "../../platform/village/settings.ts";
 import { readReachableMembers } from "./reads-reachable-members.ts";
@@ -368,11 +375,14 @@ async function openSearchSession(context: RequestContext, searcher: Searcher) {
   return session;
 }
 
-// Pooled paths keep only steps through members who shared; then the admin's "chosen introducers" rule applies to all.
-async function keepPathsForSearcher(database: Database, searcher: Searcher, villagePaths: VillagePaths | null) {
+// No path names a member who isn't sharing. Pooled paths also keep only steps through members who shared. Then the
+// admin's "chosen introducers" rule applies to all.
+async function keepPathsForSearcher(database: Database, searcher: Searcher, villagePaths: VillagePaths | null, targetSlug: string) {
+  const viewerSlug = searcher.network.linkedinSlug;
+  const withoutNonSharing = dropNonSharingMembers(villagePaths, await readNonSharingSlugs(database, [viewerSlug, targetSlug]));
   const shared = searcher.isPooled
-    ? keepSharingMembersPaths(villagePaths, await readMemberSlugs(database, searcher.network.linkedinSlug))
-    : villagePaths;
+    ? keepSharingMembersPaths(withoutNonSharing, await readMemberSlugs(database, viewerSlug))
+    : withoutNonSharing;
   return keepChosenIntroducers(database, shared);
 }
 
@@ -546,7 +556,7 @@ async function describePathsForViewer(
   readOpenAsks: OpenAsksReader,
 ) {
   const { network } = searcher;
-  villagePaths = await keepPathsForSearcher(context.database, searcher, villagePaths);
+  villagePaths = await keepPathsForSearcher(context.database, searcher, villagePaths, targetSlug);
   const facts = await readPathsFacts(context, villagePaths, network, targetSlug, isCached);
   const { openByConnector, declinedConnectorIds } = await readOpenAsks(context.database, context.member.id, targetSlug);
   const connectors = readConnectors(villagePaths, facts)
@@ -602,7 +612,7 @@ export async function readAskableConnectors(context: RequestContext, targetSlug:
     throw new RequestError(UNPROCESSABLE_STATUS, CONNECTOR_ERROR_CODES.ownTarget, "That's you. No intro needed.");
   }
 
-  const cachedPaths = await keepPathsForSearcher(database, searcher, (await readCachedPaths(database, member.id, targetSlug)) ?? null);
+  const cachedPaths = await keepPathsForSearcher(database, searcher, (await readCachedPaths(database, member.id, targetSlug)) ?? null, targetSlug);
   if (!cachedPaths) return null;
 
   const facts = await readPathsFacts(context, cachedPaths, network, targetSlug, true);

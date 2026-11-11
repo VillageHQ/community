@@ -55,7 +55,7 @@ describe("the consent screen", () => {
   });
 
   it("says the member gains access to the other networks", () => {
-    expect(renderConsent()).toContain("You gain access to the networks of the other members");
+    expect(renderConsent()).toContain("Your searches cover the people you know too");
   });
 
   it("lets a member skip sharing and come back later", () => {

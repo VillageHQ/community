@@ -139,6 +139,7 @@ describe("searching before connecting your own network", () => {
         { degree: 1, description: "direct", introducer: profile("Target", TARGET_SLUG) },
         { degree: 3, description: "outsider via refuser", introducer: profile("Out", "outsider"), starter: profile("Test", "refusing-member") },
         { degree: 3, description: "outsider via sharer", introducer: profile("Out", "outsider"), starter: profile("Test", "sharing-member") },
+        { degree: 3, description: "refuser via sharer", introducer: profile("Test", "refusing-member"), starter: profile("Test", "sharing-member") },
       ],
     });
 
@@ -148,6 +149,27 @@ describe("searching before connecting your own network", () => {
     expect(paths.connectors.map(({ member }) => member?.id)).toEqual([sharer.userId]);
     expect(JSON.stringify(paths)).not.toContain("refusing-member");
     expect(village.readRequests(PATHS_PATH).map(({ headers }) => readCaller(headers))).toEqual([SEARCH_IDENTITY]);
+  });
+
+  it("never names a member who refused, even to a member who connected, even as the contact a sharer goes through", async () => {
+    const sharer = await createSignedInMember(database);
+    await connect(sharer, "sharing-member");
+    const refuser = await createSignedInMember(database);
+    await addLinkedin(refuser, "refusing-member");
+    const viewer = await createSignedInMember(database);
+    await connect(viewer, "viewer-member");
+    village.state.pathsByUrl.set(TARGET_URL, {
+      summary: "s",
+      paths: [
+        { degree: 3, description: "refuser via sharer", introducer: profile("Test", "refusing-member"), starter: profile("Test", "sharing-member") },
+        { degree: 2, description: "via my own contact", introducer: profile("Own", "own-contact") },
+      ],
+    });
+
+    const paths = await readPaths(viewer);
+
+    expect(paths.paths.map(({ description }) => description)).toEqual(["via my own contact"]);
+    expect(JSON.stringify(paths)).not.toContain("refusing-member");
   });
 
   it("counts the member's own contacts once they connect, and forgets the paths found before", async () => {

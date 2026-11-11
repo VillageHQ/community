@@ -11,6 +11,11 @@
   member's identity before they agree would share their network the moment they later sync.
 - `keepSharingMembersPaths`: pooled paths keep only steps through members who joined the group. Direct paths and
   steps through anyone else are dropped before anything reads them. The admin's "chosen introducers" rule applies after.
+- `dropNonSharingMembers` (every searcher): a path naming a member who isn't sharing (never joined, left, or banned)
+  is dropped, even when that member is only the outside contact a sharing member goes through.
+- Intros: only the connector must be in the group. The asker needs only to be an active member
+  (`hasConnectorJoined`, `selectActiveMemberIds`), so leaving the group no longer closes your own asks. A connector
+  never sees an ask from a banned or removed member.
 - The search identity counts as a group member, so Village would block the group's creator from leaving while it
   is in. `leaveSearchIdentityForLastMember` takes it out first when the creator is the last member (leaving, and
   removal by an admin).

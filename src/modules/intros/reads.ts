@@ -56,11 +56,9 @@ function selectJoinedMemberIds(database: Database) {
   return database.select({ userId: memberNetwork.userId }).from(memberNetwork).where(isNotNull(memberNetwork.groupJoinedAt));
 }
 
-export function hasBothParticipantsJoined(database: Database) {
-  return and(
-    inArray(introRequest.requesterId, selectJoinedMemberIds(database)),
-    inArray(introRequest.introducerId, selectJoinedMemberIds(database)),
-  );
+// The connector must still be in the group. The asker needn't be: members can ask before sharing their own network.
+export function hasConnectorJoined(database: Database) {
+  return inArray(introRequest.introducerId, selectJoinedMemberIds(database));
 }
 
 // With a member, expires only their asks, at read time. Without one (the timed sweep), every
@@ -76,7 +74,6 @@ export async function expireDueIntros(database: Database, memberId: string | nul
         inArray(introRequest.state, readStatesLeadingTo(INTRO_STATES.expired)),
         or(
           lte(introRequest.expiresAt, now),
-          notInArray(introRequest.requesterId, selectJoinedMemberIds(database)),
           notInArray(introRequest.introducerId, selectJoinedMemberIds(database)),
         ),
       ),
