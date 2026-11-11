@@ -102,6 +102,8 @@ export const directoryFiltersSchema = z.object({
   cohort: z.string().overwrite(removeNullBytes).trim().max(PROFILE_LIMITS.cohort).default(""),
   // 0 is any time.
   updatedWithinDays: z.union([z.literal(0), ...UPDATED_WITHIN_DAYS.map((days) => z.literal(days))]).default(0),
+  // Only members whose company has open jobs. Ignored while the job board is off.
+  hiring: z.boolean().default(false),
   page: z.number().int().min(1).default(1),
 });
 
@@ -118,6 +120,8 @@ export const directoryMemberSchema = z.object({
   cohort: z.string().nullable(),
   avatarUrl: z.string().nullable(),
   companyLogoUrl: z.string().nullable(),
+  // Open jobs at the member's company; 0 while the job board is off.
+  hiringJobCount: z.number(),
   tags: z.array(z.string()),
 });
 
@@ -132,6 +136,8 @@ export const directorySchema = z.object({
   popularTags: z.array(z.object({ label: z.string(), value: z.string() })),
   // The values active members use, for the stage, sector and cohort filters.
   filterOptions: z.object({ stage: z.array(z.string()), sector: z.array(z.string()), cohort: z.array(z.string()) }),
+  // True while the job board is on: the cards show "Hiring" and the Hiring filter is offered.
+  isHiringShown: z.boolean(),
 });
 
 export type Directory = z.infer<typeof directorySchema>;

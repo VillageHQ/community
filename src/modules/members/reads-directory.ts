@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, exists, gte, ilike, inArray, min, ne, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, gte, ilike, inArray, min, ne, or, sql, type SQL } from "drizzle-orm";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
@@ -142,8 +142,13 @@ export function isListedInDirectory(now = new Date()) {
   return and(isActiveMember(now), isListedMember());
 }
 
-export async function readDirectory(database: Database, filters: Partial<DirectoryFilters>, now = new Date()): Promise<Directory> {
-  const { search, tag, stage, sector, cohort, updatedWithinDays, page } = { ...EMPTY_DIRECTORY_FILTERS, ...filters };
+// How many open jobs a member's company has, from a feature above members (the job board). The directory page and
+// route pass it in while that feature is on; without it the cards show no "Hiring" and the filter is ignored.
+export type HiringLookup = { jobCountColumn: (company: SQL) => SQL<number> };
+
+export async function readDirectory(database: Database, filters: Partial<DirectoryFilters>, now = new Date(), hiring: HiringLookup | null = null): Promise<Directory> {
+  const { search, tag, stage, sector, cohort, updatedWithinDays, hiring: onlyHiring, page } = { ...EMPTY_DIRECTORY_FILTERS, ...filters };
+  const hiringJobCount = hiring ? hiring.jobCountColumn(shownCompany) : sql<number>`0`.mapWith(Number);
   const conditions = and(
     isListedInDirectory(now),
     matchesSearch(database, search),
@@ -152,11 +157,14 @@ export async function readDirectory(database: Database, filters: Partial<Directo
     matchesValue(memberProfile.sector, sector),
     matchesValue(memberProfile.cohort, cohort),
     isUpdatedWithin(updatedWithinDays, now),
+    hiring && onlyHiring ? sql`${hiringJobCount} > 0` : undefined,
   );
+  // The shown company may come from a filled-in line, so the count joins it too.
   const [counted] = await database
     .select({ matchCount: count() })
     .from(user)
     .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
+    .leftJoin(filledCompany.line, filledCompany.joinCondition)
     .where(conditions);
   const matchCount = counted?.matchCount ?? 0;
   const pageCount = Math.max(1, Math.ceil(matchCount / DIRECTORY_PAGE_SIZE));
@@ -175,6 +183,7 @@ export async function readDirectory(database: Database, filters: Partial<Directo
       avatarUpdatedAt: memberAvatar.updatedAt,
       filledFaceUrl: filledFace.line.value,
       companyLogoUrl: companyLogoColumn(user.id),
+      hiringJobCount,
     })
     .from(user)
     .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
@@ -206,6 +215,7 @@ export async function readDirectory(database: Database, filters: Partial<Directo
     pageCount,
     popularTags,
     filterOptions,
+    isHiringShown: hiring !== null,
   };
 }
 
