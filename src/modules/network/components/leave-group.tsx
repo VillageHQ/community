@@ -34,7 +34,7 @@ export function LeaveGroup({ onLeft }: { onLeft?: () => void }) {
       {isConfirming ? (
         <>
           <p className="type-small text-foreground-soft">
-            You lose access to other members&apos; networks, and they lose access to yours. People who already saw
+            Other members lose access to your network, and your searches cover only what they share. People who already saw
             your contacts can&apos;t unsee them. Your Village account stays linked to this site. To rejoin, you agree
             to share again.
           </p>

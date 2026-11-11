@@ -4,10 +4,6 @@ import { IntrosConnectorProvider } from "@/modules/intros/components/connector-a
 import { getDatabase } from "@/platform/database/client";
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { requireMember } from "@/platform/auth/session";
-import { NETWORK_PROGRESS, readNetworkProgress } from "@/modules/network/reads-progress";
-
-import { ConsentStep } from "@/modules/network/components/consent-step";
-import { LinkedinWelcome } from "@/modules/network/components/linkedin-step";
 import { loadWelcomeContext } from "@/shell/load-welcome-context";
 import { NetworkFlowLoader } from "@/modules/network/components/network-flow-loader";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
@@ -21,14 +17,9 @@ export const metadata: Metadata = { title: PAGE_TITLES.network };
 export default modulePage(networkManifest, async function NetworkPage() {
   const member = await requireMember();
   const database = getDatabase();
-  const [welcome, progress] = await Promise.all([
-    loadWelcomeContext(database, member),
-    readNetworkProgress(database, member),
-    resolveOnboardingStep(database, member),
-  ]);
-
-  if (progress === NETWORK_PROGRESS.needsLinkedin) return <LinkedinWelcome welcome={welcome} />;
-  if (progress === NETWORK_PROGRESS.needsConsent) return <ConsentStep welcome={welcome} />;
+  // The flow picks the view: search at once when there is something to search (an invitation to connect beside it),
+  // else the LinkedIn, sharing and sync steps.
+  const [welcome] = await Promise.all([loadWelcomeContext(database, member), resolveOnboardingStep(database, member)]);
   const flow = <NetworkFlowLoader welcome={welcome} />;
   return (await isModuleEnabled(database, introsManifest)) ? <IntrosConnectorProvider>{flow}</IntrosConnectorProvider> : flow;
 });

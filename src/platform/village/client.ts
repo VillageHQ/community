@@ -189,6 +189,16 @@ export function createVillageLookupSession(connection: VillageConnection, email:
   return { village: readVillageApp(connection).as({ id: LOOKUP_IDENTITY_ID, email, grant: "public" }), deadlineAtMs: connection.deadlineAtMs };
 }
 
+// Members who haven't connected their own network search as one identity of the app. Village runs a search as a user
+// and shows a group's shared networks only to its members, so this identity joins the community group. It has a full
+// grant because a "public" one creates no Village user, and so can't join a group. It never syncs, so it brings no
+// network of its own, and its token never leaves the server.
+const SEARCH_IDENTITY_ID = "community-pooled-search";
+
+export function createVillageSearchSession(connection: VillageConnection, email: string): VillageSession {
+  return { village: readVillageApp(connection).as({ id: SEARCH_IDENTITY_ID, email }), deadlineAtMs: connection.deadlineAtMs };
+}
+
 const companySchema = z.object({ name: z.string().nullish(), domain: z.string().nullish(), image_url: z.string().nullish() }).nullish();
 const workSchema = z.object({ title: z.string().nullish(), company: companySchema }).nullish();
 

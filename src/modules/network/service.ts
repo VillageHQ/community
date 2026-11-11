@@ -52,7 +52,8 @@ import {
   type NetworkStage,
   type NetworkStatus,
 } from "./contract.ts";
-import { deleteVillageGroup, readVillageGroup, readVillageSearchSettings, saveVillageGroup } from "./service-settings.ts";
+import { deleteVillageGroup, readVillageGroup, readVillageSearchSettings, saveVillageGroup, type VillageGroup } from "./service-settings.ts";
+import { keepSharingMembersPaths, leaveSearchIdentityForLastMember, openPooledSearchSession, toPooledSearchRefusal } from "./service-search-pool.ts";
 import { INTRODUCER_RULES, SEARCH_SCOPES } from "./contract-village-settings.ts";
 import { readVillageKeys, saveVillageKeys, type VillageKeys } from "../../platform/village/settings.ts";
 import { readReachableMembers } from "./reads-reachable-members.ts";
@@ -169,7 +170,22 @@ export async function recordSharingConsent({ database, member }: RequestContext)
 }
 
 function describeStage(context: RequestContext, stage: NetworkStage): NetworkStatus {
-  return { stage, isAdmin: isAdminMember(context.member), sync: null };
+  return { stage, isAdmin: isAdminMember(context.member), sync: null, canSearch: stage === NETWORK_STAGES.ready };
+}
+
+// Before a member connects, they can still search the networks other members shared, once Village is set up, the
+// group exists and nothing about their identity is in doubt. Connecting is then an invitation, not a gate.
+const POOLED_SEARCH_STAGES: ReadonlySet<NetworkStage> = new Set([
+  NETWORK_STAGES.needsLinkedin,
+  NETWORK_STAGES.needsConsent,
+  NETWORK_STAGES.needsSync,
+  NETWORK_STAGES.syncing,
+]);
+
+async function canSearchPooled({ database, member }: RequestContext, stage: NetworkStage) {
+  if (!POOLED_SEARCH_STAGES.has(stage)) return false;
+  const [group, network] = await Promise.all([readVillageGroup(database), ensureMemberNetwork(database, member.id)]);
+  return group !== null && !network.pendingVillageEmail;
 }
 
 async function markVillageLinked(database: Database, memberId: string) {
@@ -215,11 +231,15 @@ async function readNetworkProgress(context: RequestContext): Promise<NetworkProg
     .update(memberNetwork)
     .set({ groupJoinedAt: new Date() })
     .where(eq(memberNetwork.userId, member.id));
+  // Paths looked up before they joined came from the shared networks only. Their own contacts count from now on.
+  await database.delete(memberPathResult).where(eq(memberPathResult.userId, member.id));
   return atStage(NETWORK_STAGES.ready);
 }
 
 export async function advanceNetwork(context: RequestContext): Promise<NetworkStatus> {
-  return (await readNetworkProgress(context)).status;
+  const { status } = await readNetworkProgress(context);
+  if (status.canSearch) return status;
+  return { ...status, canSearch: await canSearchPooled(context, status.stage) };
 }
 
 export async function mintSyncToken(context: RequestContext) {
@@ -319,15 +339,41 @@ async function readMemberSlugs(database: Database, ownSlug: string | null) {
   return new Set(slugs.filter((slug) => slug !== ownSlug));
 }
 
-async function requireJoinedMember({ database, member }: RequestContext) {
+// Who a search runs as. A member who joined the group searches as themselves, their own network included. Anyone else
+// searches the networks members shared, as the app's search identity: their own network is never searched or shared
+// before they agree and sync.
+type Searcher =
+  | { keys: VillageKeys; network: MemberNetworkRow; isPooled: false }
+  | { keys: VillageKeys; network: MemberNetworkRow; isPooled: true; group: VillageGroup };
+
+async function readSearcher({ database, member }: RequestContext): Promise<Searcher> {
   const keys = await requireVillageKeys(database);
   const network = await ensureMemberNetwork(database, member.id);
-  if (network.groupJoinedAt) return { keys, network };
+  if (network.groupJoinedAt) return { keys, network, isPooled: false };
+  if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
+  if (network.pendingVillageEmail) throw linkMismatchError(member);
+  const group = await readVillageGroup(database);
+  if (group) return { keys, network, isPooled: true, group };
   throw new RequestError(
     CONFLICT_STATUS,
     NETWORK_ERROR_CODES.notReady,
-    "Finish joining the community on this page first.",
+    "The community group isn't ready yet. Check back soon.",
   );
+}
+
+async function openSearchSession(context: RequestContext, searcher: Searcher) {
+  if (searcher.isPooled) return openPooledSearchSession(context, searcher.keys, searcher.group);
+  const { session } = await connectMember(context, searcher.keys);
+  await requireTrustedVillageUser(context, searcher.network, session);
+  return session;
+}
+
+// Pooled paths keep only steps through members who shared; then the admin's "chosen introducers" rule applies to all.
+async function keepPathsForSearcher(database: Database, searcher: Searcher, villagePaths: VillagePaths | null) {
+  const shared = searcher.isPooled
+    ? keepSharingMembersPaths(villagePaths, await readMemberSlugs(database, searcher.network.linkedinSlug))
+    : villagePaths;
+  return keepChosenIntroducers(database, shared);
 }
 
 function isUnreadableAnswer(error: unknown) {
@@ -353,9 +399,9 @@ export async function searchMemberNetwork(
   prompt: string,
 ): Promise<NetworkSearchResult> {
   const { database, member } = context;
-  const { keys, network } = await requireJoinedMember(context);
-  const { session } = await connectMember(context, keys);
-  await requireTrustedVillageUser(context, network, session);
+  const searcher = await readSearcher(context);
+  const session = await openSearchSession(context, searcher);
+  const includesOwnNetwork = !searcher.isPooled;
 
   const spender = { database, environment: context.environment, memberId: member.id };
   // "Everyone" shows people beyond the members' networks too. They name no path: paths come only from the paths
@@ -365,7 +411,7 @@ export async function searchMemberNetwork(
   const { people, source } = await withCreditCall(spender, CREDIT_CALL_KINDS.search, () =>
     searchVillageNetwork(session, prompt, scope),
   ).catch((error: unknown) => {
-    throw toSearchCutOffError(error);
+    throw searcher.isPooled ? toPooledSearchRefusal(toSearchCutOffError(error)) : toSearchCutOffError(error);
   });
   if (source !== NETWORK_SOURCE && scope === NETWORK_SOURCE) {
     console.log(
@@ -375,6 +421,7 @@ export async function searchMemberNetwork(
       people: [],
       discardedOffNetworkResults: true,
       dailyLookupsLeft: await readDailyLookupsLeft(database, member.id),
+      includesOwnNetwork,
     };
   }
 
@@ -403,6 +450,7 @@ export async function searchMemberNetwork(
     ),
     discardedOffNetworkResults: false,
     dailyLookupsLeft: await readDailyLookupsLeft(database, member.id),
+    includesOwnNetwork,
   };
 }
 
@@ -492,12 +540,13 @@ export const NO_OPEN_ASKS: OpenAsksReader = async () => ({ openByConnector: new 
 async function describePathsForViewer(
   context: RequestContext,
   villagePaths: VillagePaths | null,
-  network: MemberNetworkRow,
+  searcher: Searcher,
   targetSlug: string,
   isCached: boolean,
   readOpenAsks: OpenAsksReader,
 ) {
-  villagePaths = await keepChosenIntroducers(context.database, villagePaths);
+  const { network } = searcher;
+  villagePaths = await keepPathsForSearcher(context.database, searcher, villagePaths);
   const facts = await readPathsFacts(context, villagePaths, network, targetSlug, isCached);
   const { openByConnector, declinedConnectorIds } = await readOpenAsks(context.database, context.member.id, targetSlug);
   const connectors = readConnectors(villagePaths, facts)
@@ -511,17 +560,18 @@ async function describePathsForViewer(
 
 export async function readMemberPaths(context: RequestContext, linkedinSlug: string, readOpenAsks: OpenAsksReader) {
   const { database, member } = context;
-  const { keys, network } = await requireJoinedMember(context);
-  const { session } = await connectMember(context, keys);
-  await requireTrustedVillageUser(context, network, session);
+  const searcher = await readSearcher(context);
+  const session = await openSearchSession(context, searcher);
 
   const cachedPaths = await readCachedPaths(database, member.id, linkedinSlug);
   if (cachedPaths !== undefined) {
-    return describePathsForViewer(context, cachedPaths, network, linkedinSlug, true, readOpenAsks);
+    return describePathsForViewer(context, cachedPaths, searcher, linkedinSlug, true, readOpenAsks);
   }
 
-  const villagePaths = await fetchVillagePathsOrNull(context, session, linkedinSlug);
-  if (villagePaths === null) await requireTrustedVillageUser(context, network, session);
+  const villagePaths = await fetchVillagePathsOrNull(context, session, linkedinSlug).catch((error: unknown) => {
+    throw searcher.isPooled ? toPooledSearchRefusal(error) : error;
+  });
+  if (villagePaths === null && !searcher.isPooled) await requireTrustedVillageUser(context, searcher.network, session);
 
   const fetchedAt = new Date();
   const paths = villagePaths && { ...villagePaths, person: villagePaths.person ?? {} };
@@ -533,7 +583,7 @@ export async function readMemberPaths(context: RequestContext, linkedinSlug: str
       set: { paths, fetchedAt },
     });
 
-  return describePathsForViewer(context, villagePaths, network, linkedinSlug, false, readOpenAsks);
+  return describePathsForViewer(context, villagePaths, searcher, linkedinSlug, false, readOpenAsks);
 }
 
 export type AskableConnectors = {
@@ -544,14 +594,15 @@ export type AskableConnectors = {
 
 export async function readAskableConnectors(context: RequestContext, targetSlug: string): Promise<AskableConnectors | null> {
   const { database, member } = context;
-  const { network } = await requireJoinedMember(context);
+  const searcher = await readSearcher(context);
+  const { network } = searcher;
   if (!(await isMemberEmailTrusted(database, member))) throw emailNotConfirmedError();
   if (network.pendingVillageEmail) throw linkMismatchError(member);
   if (targetSlug === network.linkedinSlug) {
     throw new RequestError(UNPROCESSABLE_STATUS, CONNECTOR_ERROR_CODES.ownTarget, "That's you. No intro needed.");
   }
 
-  const cachedPaths = await keepChosenIntroducers(database, (await readCachedPaths(database, member.id, targetSlug)) ?? null);
+  const cachedPaths = await keepPathsForSearcher(database, searcher, (await readCachedPaths(database, member.id, targetSlug)) ?? null);
   if (!cachedPaths) return null;
 
   const facts = await readPathsFacts(context, cachedPaths, network, targetSlug, true);
@@ -663,7 +714,10 @@ export async function leaveCommunityGroup(context: RequestContext) {
   if (email === null) throw leaveNotConfirmedError();
   if (!(await confirmVillageLink(context, network, email))) throw linkMismatchError(context.member);
 
-  const outcome = await leaveVillageGroup(session, group.id);
+  let outcome = await leaveVillageGroup(session, group.id);
+  if (outcome === "admin_blocked" && (await leaveSearchIdentityForLastMember(context, keys, group, member.id))) {
+    outcome = await leaveVillageGroup(session, group.id);
+  }
   if (outcome === "admin_blocked") {
     throw new RequestError(
       CONFLICT_STATUS,

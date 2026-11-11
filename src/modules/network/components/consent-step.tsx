@@ -113,8 +113,8 @@ export function ConsentStep({ welcome }: { welcome: WelcomeContext }) {
             <NotNowAction welcome={welcome} />
           </div>
           <p className="type-small text-muted-foreground">
-            Not now shares nothing. Network search waits until you share, and you can come back here from Network any
-            time.
+            Not now shares nothing. You can still search what other members share, and come back here from Network
+            any time.
           </p>
         </form>
       </section>

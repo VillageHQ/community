@@ -1,3 +1,5 @@
+import { INSTANCE_SETTING_KEYS } from "@/platform/settings/schema";
+import { saveSettings } from "@/platform/settings/store";
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -541,14 +543,18 @@ describe("member network safeguards", () => {
       expect(await readVillageGroup(database)).not.toBeNull();
     });
 
-    it("blocks search after leaving", async () => {
+    it("searches only what others share after leaving, never as the member", async () => {
       await createJoinedMember("stays-in-group");
       const member = await createJoinedMember("leaver");
+      const leaverId = (await readNetwork(member)).villageExternalId;
       await postLeave(jsonRequest(member, { confirmed: true }));
+      village.state.requests.length = 0;
+        await saveSettings(database, { [INSTANCE_SETTING_KEYS.villageServiceEmail]: "village@example.com" });
 
       const response = await search(member);
 
-      expect(await response.json()).toMatchObject({ code: NETWORK_ERROR_CODES.notReady });
+      expect(await response.json()).toMatchObject({ includesOwnNetwork: false });
+      expect(village.readRequests(SEARCH_PATH).map(({ headers }) => headers.authorization)).not.toContain(`Bearer fake-token.${leaverId}`);
     });
 
     it("explains why a group admin with other members can't leave", async () => {

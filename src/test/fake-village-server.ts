@@ -87,6 +87,12 @@ type FakeVillageState = {
   profilesByEmail: Map<string, FakeProfile>;
   profilesByUrl: Map<string, FakeProfile>;
   mintedGrants: Map<string, string>;
+  // Paths that only one caller sees (their own contacts), checked before pathsByUrl.
+  pathsByCaller: Map<string, Map<string, FakePaths>>;
+  // Modelled, not confirmed with live Village: a user who never synced but joined a group may search it.
+  isUnsyncedGroupSearchRefused: boolean;
+  // When true, a group's creator is blocked from leaving only while someone else is still in the group.
+  isCreatorBlockedOnlyWithOthers: boolean;
 };
 
 export function createFakeVillageState(): FakeVillageState {
@@ -115,6 +121,9 @@ export function createFakeVillageState(): FakeVillageState {
     profilesByEmail: new Map(),
     profilesByUrl: new Map(),
     mintedGrants: new Map(),
+    pathsByCaller: new Map(),
+    isUnsyncedGroupSearchRefused: false,
+    isCreatorBlockedOnlyWithOthers: false,
   };
 }
 
@@ -296,10 +305,21 @@ function respondToAuthenticated(
   }
   const linked = state.linkedMembers.get(externalId);
   if (path === "/v2/user/status") return respondWithData(response, 200, toVillageUserStatus(state, externalId, linked));
-  if (path === "/v2/people/search" && !linked) {
+  // A user who never synced may join a group (a full grant makes the user), and then search what the group shares.
+  const isUnsyncedInGroup = !linked && state.joinedMembers.has(externalId);
+  if (path === "/v2/groups/join" && !linked && state.mintedGrants.get(externalId) !== "public") {
+    if (state.joinedMembers.has(externalId)) return respondWithError(response, 409, "conflict");
+    state.joinedMembers.add(externalId);
+    return respondWithData(response, 200, { success: true, message: "Joined" });
+  }
+  const isUnsyncedSearch = isUnsyncedInGroup && (path === "/v2/people/search" || path === "/v2/people/paths" || path === "/v2/groups/leave");
+  if (isUnsyncedSearch && state.isUnsyncedGroupSearchRefused && path !== "/v2/groups/leave") {
     return respondWithError(response, 403, "authorization_error");
   }
-  if (!linked) return respondWithError(response, 404, "not_found");
+  if (path === "/v2/people/search" && !linked && !isUnsyncedSearch) {
+    return respondWithError(response, 403, "authorization_error");
+  }
+  if (!linked && !isUnsyncedSearch) return respondWithError(response, 404, "not_found");
 
   if (path === "/v2/groups" && method === "GET") {
     return respondWithData(response, 200, {
@@ -320,9 +340,12 @@ function respondToAuthenticated(
       state.linkedMembers.delete(externalId);
       return respondWithError(response, 404, "not_found");
     }
-    if (state.groupCreatorIds.has(externalId)) return respondWithError(response, 400, "bad_request");
+    const isSomeoneElseIn = [...state.joinedMembers].some((id) => id !== externalId && !state.leftMembers.has(id));
+    const isCreatorBlocked = state.isCreatorBlockedOnlyWithOthers ? isSomeoneElseIn : true;
+    if (state.groupCreatorIds.has(externalId) && isCreatorBlocked) return respondWithError(response, 400, "bad_request");
     if (!state.joinedMembers.has(externalId) && state.isLeaveStrict) return respondWithError(response, 404, "not_found");
     state.leftMembers.add(externalId);
+    if (state.isCreatorBlockedOnlyWithOthers) state.joinedMembers.delete(externalId);
     return respondWithData(response, 200, { success: true, message: "Left" });
   }
   if (path === "/v2/people/search") {
@@ -351,7 +374,7 @@ function respondToAuthenticated(
     if (state.isPathsNotSynced) return respondWithError(response, 409, "network_not_synced");
     const linkedinUrl = readObjectField(body, "linkedin_url");
     if (!LINKEDIN_PERSON_URL_PATTERN.test(linkedinUrl)) return respondWithInvalidField(response, "linkedin_url");
-    const paths = state.pathsByUrl.get(linkedinUrl);
+    const paths = state.pathsByCaller.get(externalId)?.get(linkedinUrl) ?? state.pathsByUrl.get(linkedinUrl);
     if (!paths) return respondWithError(response, 404, "not_found");
     return respondWithData(response, 200, toVillagePaths(paths), { counts: { total: { value: paths.paths.length } } });
   }

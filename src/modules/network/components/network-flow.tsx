@@ -1,8 +1,8 @@
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Clock, KeyRound, ShieldAlert, UsersRound } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { QueryBoundary } from "@/components/query-boundary";
 import { ROUTES } from "@/platform/http/routes";
@@ -13,7 +13,8 @@ import { EmailConfirmationNotice } from "@/modules/members/components/shared/ema
 import { LinkedinWelcome } from "./linkedin-step";
 import { NetworkFailure } from "./network-failure";
 import { NetworkSkeleton } from "./network-skeleton";
-import { networkStatusQuery } from "@/modules/network/queries";
+import { activeSearchQuery, NETWORK_QUERY_KEYS, networkStatusQuery } from "@/modules/network/queries";
+import { ConnectInvitation } from "./connect-invitation";
 import { NetworkSearch } from "./network-search";
 import { NoticeCard } from "./notice-card";
 import { SyncStep } from "./sync-step";
@@ -92,9 +93,44 @@ const STAGE_VIEWS: Record<NetworkStatus["stage"], (status: NetworkStatus, welcom
   [NETWORK_STAGES.ready]: (_status, welcome) => <NetworkSearch welcome={welcome} />,
 };
 
+// Results found before the member connected covered only the shared networks. Once they're in, those results are
+// cleared, so the next search, and every path, counts their own contacts too.
+function useForgetPooledResults(status: NetworkStatus) {
+  const queryClient = useQueryClient();
+  const wasPooled = useRef(false);
+  const isPooled = status.canSearch && status.stage !== NETWORK_STAGES.ready;
+  useEffect(() => {
+    if (isPooled) wasPooled.current = true;
+    if (isPooled || !wasPooled.current || status.stage !== NETWORK_STAGES.ready) return;
+    wasPooled.current = false;
+    queryClient.removeQueries({ queryKey: [NETWORK_QUERY_KEYS.search] });
+    queryClient.removeQueries({ queryKey: [NETWORK_QUERY_KEYS.paths] });
+    queryClient.setQueryData(activeSearchQuery.queryKey, null);
+  }, [isPooled, status.stage, queryClient]);
+}
+
+// Once a member opens "Add your network", the steps stay open across the one reload the LinkedIn step does. The mark is
+// read once, so coming back to the page later, after "Not now", shows the search again.
+const CONNECTING_KEY = "network-connecting";
+
+function useConnecting() {
+  const [isConnecting, setIsConnecting] = useState(() => window.sessionStorage.getItem(CONNECTING_KEY) === "true");
+  useEffect(() => window.sessionStorage.removeItem(CONNECTING_KEY), []);
+  const startConnecting = () => {
+    window.sessionStorage.setItem(CONNECTING_KEY, "true");
+    setIsConnecting(true);
+  };
+  return [isConnecting, startConnecting] as const;
+}
+
 function CurrentStage({ welcome }: { welcome: WelcomeContext }) {
   const { data: status } = useSuspenseQuery(networkStatusQuery);
-  return STAGE_VIEWS[status.stage](status, welcome);
+  useForgetPooledResults(status);
+  const [isConnecting, startConnecting] = useConnecting();
+  if (status.stage === NETWORK_STAGES.ready || !status.canSearch || isConnecting) {
+    return STAGE_VIEWS[status.stage](status, welcome);
+  }
+  return <NetworkSearch welcome={welcome} invitation={<ConnectInvitation stage={status.stage} onOpen={startConnecting} />} />;
 }
 
 export function NetworkFlow({ welcome }: { welcome: WelcomeContext }) {

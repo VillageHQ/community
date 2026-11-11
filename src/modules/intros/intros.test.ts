@@ -602,11 +602,11 @@ describe("intro requests", () => {
         expect(await (await ask()).json()).toMatchObject({ code: NETWORK_ERROR_CODES.emailNotConfirmed });
       });
 
-      it("refuses a requester who hasn't joined", async () => {
+      it("lets a requester who hasn't joined ask a member who shared", async () => {
         await lookUpPaths();
         await database.update(memberNetwork).set({ groupJoinedAt: null }).where(eq(memberNetwork.userId, amara.userId));
 
-        expect(await (await ask()).json()).toMatchObject({ code: NETWORK_ERROR_CODES.notReady });
+        expect((await ask()).status).toBe(OK_STATUS);
       });
 
       it("refuses a requester whose Village link needs approval", async () => {

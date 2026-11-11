@@ -40,6 +40,7 @@ export const NETWORK_ERROR_CODES = {
   fillInTooSoon: "fill_in_too_soon",
   fillInRunning: "fill_in_running",
   nudgeTooSoon: "nudge_too_soon",
+  pooledSearchUnavailable: "pooled_search_unavailable",
 } as const;
 
 const networkStageSchema = z.enum([
@@ -59,6 +60,9 @@ export const networkStatusSchema = z.object({
   stage: networkStageSchema,
   isAdmin: z.boolean(),
   sync: z.object({ appUrl: z.string() }).nullable(),
+  // True when the member can search now: their own network is in, or, before they connect, the community's shared
+  // networks are there to search.
+  canSearch: z.boolean(),
 });
 
 export type NetworkStatus = z.infer<typeof networkStatusSchema>;
@@ -80,6 +84,8 @@ export const networkSearchResultSchema = z.object({
   ),
   discardedOffNetworkResults: z.boolean(),
   dailyLookupsLeft: z.number().int(),
+  // False before the member connects: the search covered only the networks other members shared.
+  includesOwnNetwork: z.boolean(),
 });
 
 export type NetworkSearchResult = z.infer<typeof networkSearchResultSchema>;

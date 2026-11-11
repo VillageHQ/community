@@ -63,7 +63,7 @@ describe("the consent screen", () => {
 
     expect(markup).toContain("Not now");
     expect(markup).toContain(`href="${ROUTES.feed}"`);
-    expect(renderConsent()).toContain("you can come back here from Network any time");
+    expect(renderConsent()).toContain("You can still search what other members share, and come back here from Network");
   });
 
   it("promises a yes or no on every intro", () => {
@@ -119,12 +119,12 @@ describe("status polling", () => {
   it.each([NETWORK_STAGES.needsSync, NETWORK_STAGES.syncing, NETWORK_STAGES.linkMismatch])(
     "keeps checking at %s, so the page moves on by itself",
     (stage) => {
-      expect(readStatusPollInterval({ stage, isAdmin: false, sync: null })).toBeGreaterThan(0);
+      expect(readStatusPollInterval({ stage, isAdmin: false, sync: null, canSearch: false })).toBeGreaterThan(0);
     },
   );
 
   it("stops once the member is ready", () => {
-    expect(readStatusPollInterval({ stage: NETWORK_STAGES.ready, isAdmin: false, sync: null })).toBe(false);
+    expect(readStatusPollInterval({ stage: NETWORK_STAGES.ready, isAdmin: false, sync: null, canSearch: false })).toBe(false);
   });
 
   it("stops in background tabs, so a hidden tab mints and fetches nothing", () => {
