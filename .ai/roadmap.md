@@ -58,6 +58,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - Gaps neither product had (merge plan): Google/Microsoft sign-in and SSO, groups inside one community, CRM export, events, other languages.
 
 ## Done
+- [x] 2026-11-11 — Jobs on member cards, profiles, the directory (Hiring chip and filter) and Today — [spec](features/jobs-on-cards/SPEC.md)
 - [x] 2026-11-10 — The demo shows the job board and perks, with made-up jobs and deals — [spec](features/demo-jobs-perks/SPEC.md)
 - [x] 2026-11-10 — The merged look: serif headings, flat sheets, fund name only, one way to ask — [PR #26](https://github.com/VillageHQ/community/pull/26) · [spec](features/look-theme/SPEC.md)
 - [x] 2026-11-10 — Demo mode for sales: a made-up community, one-click demo sign-in, nightly reset — [PR #25](https://github.com/VillageHQ/community/pull/25) · [spec](features/demo-mode/SPEC.md)
@@ -210,6 +211,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **done** · Public board — `/public/jobs`, off until an admin turns it on (PR #21)
 - **done** · Website widget — `/api/job-board/widget.js` (PR #21)
 - **done** · Admin › Job board — `/admin/jobs` (PR #21)
+- **done** · Jobs on the card, profiles, the directory and Today — [jobs-on-cards](features/jobs-on-cards/SPEC.md)
 
 ### Perks
 - **done** · Admin › Perks — `/admin/perks`, `src/modules/perks/service.ts` (PR #18)

@@ -14,6 +14,8 @@ type CardJobsSectionProps = { sources: readonly JobSourceView[]; company: string
 
 // The card page: link the company's hiring tool here too (the same link as Your company's jobs), or see what is linked.
 export function CardJobsSection({ sources, company, isCompanyFixed }: CardJobsSectionProps) {
+  // A founder shares jobs only for the company on their card, so without one there is nothing to link yet.
+  const isCompanyMissing = sources.length === 0 && isCompanyFixed && company.trim() === "";
   return (
     <section aria-labelledby="card-jobs-title" className="mt-5 grid gap-4 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
       <div className="grid gap-1">
@@ -21,9 +23,11 @@ export function CardJobsSection({ sources, company, isCompanyFixed }: CardJobsSe
           Your company&apos;s jobs
         </h2>
         <p className="type-small text-foreground-soft">
-          {sources.length === 0
-            ? "Paste your careers link and your open jobs show on your profile and the job board, kept up to date every hour."
-            : "Your open jobs show on your profile and the job board."}
+          {isCompanyMissing
+            ? "Add your company to your card above and save. Then paste your careers link here, and your open jobs show on your profile and the job board."
+            : sources.length === 0
+              ? "Paste your careers link and your open jobs show on your profile and the job board, kept up to date every hour."
+              : "Your open jobs show on your profile and the job board."}
         </p>
       </div>
       {sources.length > 0 ? (
@@ -41,7 +45,7 @@ export function CardJobsSection({ sources, company, isCompanyFixed }: CardJobsSe
             <Link href={JOB_BOARD_PAGES.yours}>{sources.length < JOB_BOARD_LIMITS.sourcesPerMember ? "Manage or link another" : "Manage your jobs"}</Link>
           </Button>
         </>
-      ) : (
+      ) : isCompanyMissing ? null : (
         <LinkSourceForm defaultCompany={company} isCompanyFixed={isCompanyFixed} />
       )}
     </section>

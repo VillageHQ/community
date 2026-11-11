@@ -1,7 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 
-import { CompanyName } from "@/components/company-name";
+import { CompanyLogo } from "@/components/company-name";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 
@@ -31,10 +31,11 @@ export function NewJobsCard({ newJobs }: { newJobs: NewJobs }) {
             ) : (
               <span className="type-label wrap-anywhere">{job.title}</span>
             )}
-            <div className="type-micro flex flex-wrap items-center gap-x-1 font-medium text-muted-foreground">
-              <CompanyName company={job.company} logoUrl={job.companyLogoUrl} logoSizePx={14} />
-              {job.location ? <span className="wrap-anywhere">· {job.location}</span> : null}
-            </div>
+            <p className="type-micro font-medium wrap-anywhere text-muted-foreground">
+              <CompanyLogo url={job.companyLogoUrl} sizePx={14} className="mt-0 mr-1.5 align-[-0.15em]" />
+              {job.company}
+              {job.location ? ` · ${job.location}` : null}
+            </p>
           </li>
         ))}
       </ul>

@@ -203,10 +203,12 @@ function DirectoryFilterMenus({ filters, options }: { filters: DirectoryFilters;
 
 type DirectoryResultsProps = { filters: DirectoryFilters; onClear: () => void; isStale: boolean; viewerId: string };
 
-function DirectoryResults({ filters, onClear, isStale, viewerId }: DirectoryResultsProps) {
-  const { data: directory } = useSuspenseQuery(directoryQuery(filters));
+function DirectoryResults({ filters: askedFilters, onClear, isStale, viewerId }: DirectoryResultsProps) {
+  const { data: directory } = useSuspenseQuery(directoryQuery(askedFilters));
   const { members, matchCount, page, pageCount, popularTags, filterOptions, isHiringShown } = directory;
-  const isFiltered = hasDirectoryFilters(isHiringShown ? filters : { ...filters, hiring: false });
+  // With the job board off, a stale "hiring" in the URL is ignored and dropped on the next change.
+  const filters = isHiringShown ? askedFilters : { ...askedFilters, hiring: false };
+  const isFiltered = hasDirectoryFilters(filters);
   return (
     <>
       <DirectoryFilterMenus filters={filters} options={filterOptions} />

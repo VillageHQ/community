@@ -8,6 +8,7 @@ Founders show their companies' open jobs. A member links the company's hiring to
 - `rules-feeds.ts`: one reader per tool: find the board's name in a link, build the feed address, map its jobs. Pure.
 - `service-pull.ts`: `fetchBoard` (15 s, 2 MB cap, Ashby 20 MB, one redirect inside the tool's domain, plain-word `FeedError`), `pullSource`, and `pullDueSources`, which the job runner calls every 5 minutes.
 - `service.ts`: link, add by hand, pull now, hide, remove, the public switch. `reads.ts`: the boards, the companies, the sources.
+- `reads-hiring.ts`: a company's jobs for a profile, the directory's hiring count (`companyJobCountColumn`), Today's new jobs. `components/shared/`: the profile and Today cards.
 - `rules-widget.ts`: the website widget's script, the frame's script, the frame's HTML and headers, the embed snippets.
 - `components/`: the UI.
 
