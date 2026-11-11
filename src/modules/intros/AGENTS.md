@@ -6,7 +6,7 @@ Screens, words and emails are Founderhall's: read `.ai/features/fh-intros/NOTES.
 `.ai/features/intros-no-village/NOTES.md` first. Intros never imports network; the shell joins them (`src/shell/intro-*`).
 
 - `contract.ts`: states, moves (`INTRO_TRANSITIONS`), limits, what an asker sees (`REQUESTER_STATES`), the two
-  owner-pending rules (`REQUESTER_SEES_WHO_ANSWERED`, `ADMINS_SEE_INTRO_NAMES`).
+  Community-only switches (`REQUESTER_SEES_WHO_ANSWERED` off; `ADMINS_SEE_INTRO_NAMES` on, as the owner decided).
 - `service.ts`: create, move, consent links, email the person, record an outcome. `service-answers.ts`: the connector's
   one-step answer and answers through email links. `service-consent.ts`: the person's answer and "stop intro asks".
 - `reads*.ts`: boards, counts, details; `reads-links.ts` and `reads-consent.ts`: what `/i/<token>` shows.
