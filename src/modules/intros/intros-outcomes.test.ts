@@ -240,8 +240,10 @@ describe("asking if an intro helped", () => {
       const [email] = readEmails();
       expect(readEmails()).toHaveLength(1);
       expect([email?.to].flat()).toEqual([requester.email]);
-      expect(email?.subject).toBe("Did your intro to Clara help?");
-      expect(email?.text).toContain(`/intros/${introId}`);
+      expect(email?.subject).toBe("Was the intro to Clara helpful?");
+      // One click from the email: a link that answers without signing in.
+      expect(email?.text).toMatch(/\/i\/[\w-]+\?a=helpful/);
+      expect(email?.text).not.toContain(introId);
       expect(email?.text).not.toContain(NOTE);
     });
 
@@ -263,7 +265,7 @@ describe("asking if an intro helped", () => {
       await settle();
 
       expect(readEmails()).toHaveLength(2);
-      expect(readEmails()[1]?.subject).toBe("A quick one: did meeting Clara help?");
+      expect(readEmails()[1]?.subject).toBe("Reminder: was the intro to Clara helpful?");
     });
 
     it("sends no reminder once the requester answered in the app", async () => {
@@ -276,7 +278,8 @@ describe("asking if an intro helped", () => {
       await readBadgeAgain();
       await settle();
 
-      expect(readEmails()).toHaveLength(1);
+      // The connector's thank-you goes; no reminder does.
+      expect(readEmails().map(({ subject }) => subject)).toEqual(["Was the intro to Clara helpful?", "Test found your intro helpful"]);
     });
 
     it("sends exactly one email when several servers run at once", async () => {

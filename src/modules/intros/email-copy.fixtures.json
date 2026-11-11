@@ -1,0 +1,50 @@
+{
+  "email-intro-ask-to-connector": {
+    "subject": "Marcus, would you introduce Sam Lee to Rosa Lindqvist?",
+    "text": "Hi Marcus,\n\nSam Lee (Co-founder & CEO, Tallyhealth) asked Northwind Founders for an intro to Rosa Lindqvist (CTO, Halcyon Health), through you.\n\nSam's note, written so you can forward it:\n\n  I’m Sam, Co-founder & CEO at Tallyhealth. Prior-authorisation automation for outpatient clinics. An intro to procurement at a US hospital group. Could you introduce me to Rosa at Halcyon Health?\n\nWould you introduce them?\n\nYes, introduce them: http://127.0.0.1:9600/i/5-c-27b34109c5f171684a32?a=yes\nNot this time: http://127.0.0.1:9600/i/5-c-27b34109c5f171684a32?a=not_now\nI don't know them well enough: http://127.0.0.1:9600/i/5-c-27b34109c5f171684a32?a=dont_know\n\nOr reply to this email with YES or NO on the first line. With a yes, put Rosa's email on the next line: we email Rosa once, from Northwind Founders, and introduce you only if Rosa says yes too.\n\nIf you say no, Sam is told you can't make this one, never why. Nobody is introduced without saying yes.\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-intro-ask-to-target": {
+    "subject": "Marcus Webb would like to introduce you to Sam Lee",
+    "text": "Hi Rosa,\n\nMarcus Webb, a member of Northwind Founders, thinks you and Sam Lee (Co-founder & CEO, Tallyhealth) should meet.\n\nSam's note:\n\n  I’m Sam, Co-founder & CEO at Tallyhealth. Prior-authorisation automation for outpatient clinics. An intro to procurement at a US hospital group. Could you introduce me to Rosa at Halcyon Health?\n\nYes, introduce us: http://127.0.0.1:9600/i/5-t-e39ffc9978087e8924da?a=yes\nNo thanks: http://127.0.0.1:9600/i/5-t-e39ffc9978087e8924da?a=no\n\nOr reply YES or NO on the first line. If you say yes, we send one email to you and Sam, with Marcus copied. If you say no, nobody is told why, and this is the only email you get about it (one reminder at most).\n\nDon't send me intro asks from Northwind Founders: http://127.0.0.1:9600/intro/optout/5-0b976a3ccef3c2ac5c6f\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-intro-ask-to-target-reminder": {
+    "subject": "Reminder: Marcus Webb would like to introduce you to Sam Lee",
+    "text": "Hi Rosa,\n\nA reminder, in case this got buried. Marcus asked a few days ago:\n\nSam's note:\n\n  I’m Sam, Co-founder & CEO at Tallyhealth…\n\nYes, introduce us: https://portal.northwind.example/i/…?a=yes\nNo thanks: https://portal.northwind.example/i/…?a=no\n\nOr reply YES or NO on the first line. If you say yes, we send one email to you and Sam, with Marcus copied. If you say no, nobody is told why.\n\nDon't send me intro asks from Northwind Founders: https://portal.northwind.example/intro/optout/…\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-introduction": {
+    "subject": "Sam ↔ Rosa, via Marcus",
+    "text": "Sam, meet Rosa. Rosa, meet Sam.\n\nMarcus Webb introduced you through Northwind Founders, and you both said yes.\n\nSam Lee (Co-founder & CEO, Tallyhealth): sam.lee@example.com\nRosa Lindqvist (CTO, Halcyon Health): tom.becker@greenline.example\n\nSam's note:\n\n  I’m Sam, Co-founder & CEO at Tallyhealth. Prior-authorisation automation for outpatient clinics. An intro to procurement at a US hospital group. Could you introduce me to Rosa at Halcyon Health?\n\nReply to this email to write to Rosa (Marcus is copied); replies also show in the portal. Or write to each other directly.\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-intro-declined-to-asker": {
+    "subject": "Marcus can't make this one",
+    "text": "Hi Sam,\n\nMarcus can't make the intro to Rosa Lindqvist. That happens; it says nothing about your ask.\n\nYour ask is back: you have 4 of 5 asks left this week.\nFind another way in: https://portal.northwind.example/search\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-intro-expired-to-asker": {
+    "subject": "No answer on your intro to Rosa",
+    "text": "Hi Sam,\n\nYour ask for an intro to Rosa Lindqvist had no answer in 7 days, so it has closed.\n\nYour ask is back: you have 4 of 5 asks left this week.\nFind another way in: https://portal.northwind.example/search\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-intro-closed-to-connector": {
+    "subject": "Intro to Nina Patel: closed",
+    "text": "Hi Ada,\n\nSam Lee withdrew the ask for an intro to Nina Patel. There is nothing more to do.\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-intro-closed-to-connector-declined": {
+    "subject": "Intro to Rosa Lindqvist: closed",
+    "text": "Hi Marcus,\n\nRosa Lindqvist can't take the intro to Sam Lee right now. Thank you for asking.\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-intro-closed-to-connector-expired": {
+    "subject": "Intro to Rosa Lindqvist: closed",
+    "text": "Hi Marcus,\n\nRosa Lindqvist didn't answer the intro ask in 7 days, so it has closed. Nothing more is sent to Rosa.\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-intro-outcome-question": {
+    "subject": "Was the intro to Rosa helpful?",
+    "text": "Hi Sam,\n\nTwo weeks ago Marcus Webb introduced you to Rosa Lindqvist. Was it helpful?\n\nYes: https://portal.northwind.example/i/…?a=helpful\nNot really: https://portal.northwind.example/i/…?a=not_really\nToo early to say: https://portal.northwind.example/i/…?a=too_early\n\nThe page also asks what came of it: a customer conversation, a hire, an investor meeting, or nothing yet.\n\nOne click. Northwind Founders counts the answers, never the details; Marcus gets a thank-you if it helped.\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-intro-outcome-question-reminder": {
+    "subject": "Reminder: was the intro to Rosa helpful?",
+    "text": "Hi Sam,\n\nThree weeks ago Marcus Webb introduced you to Rosa Lindqvist. Was it helpful?\n\nYes: https://portal.northwind.example/i/…?a=helpful\nNot really: https://portal.northwind.example/i/…?a=not_really\nToo early to say: https://portal.northwind.example/i/…?a=too_early\n\nThe page also asks what came of it: a customer conversation, a hire, an investor meeting, or nothing yet.\n\nOne click. Northwind Founders counts the answers, never the details; Marcus gets a thank-you if it helped.\n\nSent by Northwind Founders via its member portal."
+  },
+  "email-intro-thanks-to-connector": {
+    "subject": "Sam found your intro helpful",
+    "text": "Hi Marcus,\n\nSam Lee said your intro to Rosa Lindqvist was helpful. Thank you.\n\nSent by Northwind Founders via its member portal."
+  }
+}

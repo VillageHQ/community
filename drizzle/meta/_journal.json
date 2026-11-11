@@ -225,6 +225,13 @@
       "when": 1794372146545,
       "tag": "0032_intros_no_village",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794419875597,
+      "tag": "0033_intro_answer_links",
+      "breakpoints": true
     }
   ]
 }
