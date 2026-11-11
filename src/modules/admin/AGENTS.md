@@ -5,10 +5,11 @@ Core. Always on. It sits on top of the features it manages, so it may import the
 - `service-roster.ts`: roles, removal, unban, reclaim and reinvite. Every write takes the roster lock first.
 - `service-reports.ts`, `service-report-resolution.ts`: saving reports and working the queue.
 - `reads-*.ts`: the member list, audit log and community health.
-- Partner report: `reads-partner-report.ts` reads it once; `partner-report-rows.ts` turns that into the rows the page, the CSV and the email all render; `service-partner-report.ts` sends it to partners through the outbox and marks it shared.
+- Partner report: `reads-partner-report.ts` reads it once; `partner-report-rows.ts` makes the rows the page, CSV and email render; `service-partner-report.ts` sends it and marks it shared.
 - `schema.ts`: `content_report` and `member_removal`.
-- `components/email-setup-check.tsx`: Settings' email check. The DNS lookups live in `src/platform/email/dns-check.ts`, with the resolver passed in so tests never touch real DNS.
+- `components/email-setup-check.tsx`: Settings' email check; its DNS lookups (`src/platform/email/dns-check.ts`) take the resolver as an argument, so tests never touch real DNS.
 - `contract-modules.ts`, `queries-modules.ts`, `components/feature-screen.tsx`: the features screen. `src/shell/module-settings.ts` holds its logic, because it needs the registry.
+- `*-email.ts`: Admin › Email: sent emails (never a subject or body) and the do-not-send list.
 - `queries-*.ts`: client requests. `components/`: the UI.
 
 Rules:
