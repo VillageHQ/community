@@ -57,12 +57,13 @@ export function AboutForm({ initialValues }: { initialValues: AboutValues }) {
       <Field htmlFor="w-name" label="Your name">
         <Input id="w-name" name="name" autoComplete="name" maxLength={MAXIMUM_NAME_LENGTH} defaultValue={values.name} key={`name-${values.name}`} />
       </Field>
+      {/* Founderhall's textareas sit inline, so each keeps a 6 px line gap under it (mb-1.5). */}
       <Field htmlFor="w1" label="What are you working on?" className="fh-field">
         <Textarea
           id="w1"
           name="workingOn"
           maxLength={PROFILE_LIMITS.bio}
-          className="min-h-24"
+          className="mb-1.5 min-h-24"
           placeholder="e.g. a claims tool for mid-size insurers; hiring our first sales lead"
           defaultValue={values.workingOn}
           key={`working-${values.workingOn}`}
@@ -73,7 +74,7 @@ export function AboutForm({ initialValues }: { initialValues: AboutValues }) {
           id="w2"
           name="canHelpWith"
           maxLength={PROFILE_LIMITS.canHelpWith}
-          className="min-h-[84px]"
+          className="mb-1.5 min-h-[84px]"
           placeholder="e.g. founders pricing a B2B product; intros to hospital buyers"
           defaultValue={values.canHelpWith}
           key={`help-${values.canHelpWith}`}

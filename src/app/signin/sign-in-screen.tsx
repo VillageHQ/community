@@ -75,7 +75,7 @@ export function SignInScreen({ community, hosting, isLinkOn, returnPath, notice,
   return (
     <PublicPage community={community} withCredit hosting={hosting}>
       <h1 className="fh-h2">Sign in to {community.name}</h1>
-      <p className="fh-lede">{isPasswordShown && !isLinkOn ? "Sign in with your email and password." : "We email you a link that signs you in. No password."}</p>
+      <p className="fh-lede">{isPasswordShown ? "Sign in with your email and password." : "We email you a link that signs you in. No password."}</p>
       {notice}
       {isPasswordShown ? (
         <SignInForm returnPath={returnPath} initialEmail={email} onEmailChange={setEmail} />

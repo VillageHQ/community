@@ -15,6 +15,8 @@ type SignInState = { errorMessage: string | null; email: string };
 const INITIAL_STATE: SignInState = { errorMessage: null, email: "" };
 const ERROR_ID = "sign-in-error";
 const FALLBACK_ERROR_MESSAGE = "We could not sign you in. Try again.";
+const WRONG_PASSWORD_MESSAGE = "That email and password don’t match. Try again.";
+const UNAUTHORIZED_STATUS = 401;
 
 async function signIn(returnPath: string, formData: FormData): Promise<SignInState> {
   const email = String(formData.get("email"));
@@ -22,7 +24,7 @@ async function signIn(returnPath: string, formData: FormData): Promise<SignInSta
     email,
     password: String(formData.get("password")),
   });
-  if (error) return { errorMessage: error.message ?? FALLBACK_ERROR_MESSAGE, email };
+  if (error) return { errorMessage: error.status === UNAUTHORIZED_STATUS ? WRONG_PASSWORD_MESSAGE : (error.message ?? FALLBACK_ERROR_MESSAGE), email };
 
   window.location.assign(returnPath);
   return INITIAL_STATE;
