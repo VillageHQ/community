@@ -10,7 +10,7 @@ When the job board is on:
 2. A member's profile shows their company's open jobs: title, place and an Apply link, up to 5, then
    "See all N jobs" (the members' board filtered to that company).
 3. Directory cards show a small "Hiring · N jobs" chip for members whose company has open jobs, and the directory
-   gets a "Hiring" filter.
+   gets a "Hiring now" filter.
 4. Today gets a jobs card: new jobs at the community's companies this week, hidden when there are none.
 
 When the job board is off, none of this shows (and the directory ignores a stale `hiring=1`). Demo mode shows it

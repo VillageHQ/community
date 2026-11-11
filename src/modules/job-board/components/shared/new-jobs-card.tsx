@@ -23,9 +23,9 @@ export function NewJobsCard({ newJobs }: { newJobs: NewJobs }) {
         {jobs.map((job) => (
           <li key={job.id} className="min-w-0">
             {job.url ? (
-              <a href={job.url} target="_blank" rel="noopener noreferrer" className="type-label inline-flex items-baseline gap-1.5 wrap-anywhere hover:underline">
+              <a href={job.url} target="_blank" rel="noopener noreferrer" className="type-label wrap-anywhere hover:underline">
                 {job.title}
-                <ExternalLink aria-hidden="true" className="size-3.5 shrink-0 self-center text-muted-foreground" />
+                <ExternalLink aria-hidden="true" className="ml-1.5 inline size-3.5 align-[-0.1em] text-muted-foreground" />
                 <span className="sr-only"> at {job.company} (opens in a new tab)</span>
               </a>
             ) : (

@@ -213,17 +213,22 @@ function DirectoryResults({ filters, onClear, isStale, viewerId }: DirectoryResu
       {popularTags.length > 0 || isHiringShown ? (
         <div role="group" aria-label="Filter members" className="mb-6 flex flex-wrap gap-2">
           {isHiringShown ? (
-            <Chip isPressed={filters.hiring} onClick={() => applyFilters({ ...filters, hiring: !filters.hiring, page: 1 })}>
-              <BriefcaseBusiness aria-hidden="true" className="size-4" />
-              Hiring
-            </Chip>
+            <>
+              <Chip isPressed={filters.hiring} onClick={() => applyFilters({ ...filters, hiring: !filters.hiring, page: 1 })}>
+                <BriefcaseBusiness aria-hidden="true" className="size-4" />
+                Hiring now
+              </Chip>
+              {popularTags.length > 0 ? <span aria-hidden="true" className="mx-1 w-px self-stretch bg-border" /> : null}
+            </>
           ) : null}
+          {popularTags.length > 0 ? (
           <Chip
             isPressed={filters.tag === EVERYONE_TAG}
             onClick={() => applyFilters({ ...filters, tag: EVERYONE_TAG, page: 1 })}
           >
             Everyone
           </Chip>
+          ) : null}
           {popularTags.map(({ label, value }) => (
             <Chip
               key={value}
