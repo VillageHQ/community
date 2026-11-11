@@ -2,18 +2,17 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { Download, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { z } from "zod";
+import { useState } from "react";
 
-import { useFlash } from "@/components/flash";
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
-import { Pill } from "@/components/ui/pill";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Note } from "@/components/ui/note";
 import { postRequest } from "@/platform/http/post-request";
 import { readResponseFailure } from "@/platform/http/read-response-message";
-import { API_ROUTES } from "@/platform/http/routes";
-import { formatDayMonth } from "@/platform/text/format-date";
-import { toPossessive } from "@/modules/members/rules-words";
+import { API_ROUTES, ROUTES } from "@/platform/http/routes";
+import { DELETE_CONFIRMATION_WORD, deleteAccountResponseSchema } from "@/modules/members/contract-privacy";
 
 const DOWNLOAD_FAILED = "We couldn't make your file. Try again.";
 const FILE_NAME_PATTERN = /filename="([^"]+)"/;
@@ -51,46 +50,68 @@ export function ExportSheet() {
   );
 }
 
-const deletionRequestResponseSchema = z.object({ requestedAt: z.string() });
-
-function askToDelete() {
-  return postRequest(API_ROUTES.profileDeletionRequest, {}, deletionRequestResponseSchema);
+function deleteOwnAccount(confirmation: string) {
+  return postRequest(API_ROUTES.profileDelete, { confirmation }, deleteAccountResponseSchema);
 }
 
-// Founderhall's "Delete my account": a request to the admins, who delete the account and say so by email.
-export function DeleteRequestSheet({ communityName, requestedAt }: { communityName: string; requestedAt: string | null }) {
-  const router = useRouter();
-  const flash = useFlash();
-  const ask = useMutation({
-    mutationFn: askToDelete,
-    onSuccess: () => {
-      flash("Sent. The admins have your request and tell you by email.");
-      router.refresh();
-    },
-  });
-  const askedAt = requestedAt ?? ask.data?.requestedAt ?? null;
+function goToSignIn() {
+  window.location.assign(ROUTES.signInAfterDeletion);
+}
+
+// Founderhall's "Delete my account" sheet holding the real delete (owner-approved): the member types the word, the
+// account goes for good, and they land on sign-in. When Village could not be reached they read what is left first.
+export function DeleteAccountSheet({ communityName, isAdmin }: { communityName: string; isAdmin: boolean }) {
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [typed, setTyped] = useState("");
+  const deletion = useMutation({ mutationFn: deleteOwnAccount, onSuccess: ({ isVillageIncomplete }) => (isVillageIncomplete ? undefined : goToSignIn()) });
+  const isTypedRight = typed.trim().toLowerCase() === DELETE_CONFIRMATION_WORD;
   return (
     <section className="fh-sheet" id="delete" aria-labelledby="delete-title">
       <h2 id="delete-title" className="fh-h3 flex items-center gap-1.5">
         <X aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} /> Delete my account
       </h2>
-      {askedAt ? (
-        <>
-          <p className="mt-2">
-            <Pill tone="open">Asked {formatDayMonth(askedAt)}</Pill>
-          </p>
-          <p className="fh-small mt-2">{toPossessive(communityName)} admins have your request. They delete your account and tell you by email.</p>
-        </>
-      ) : (
-        <>
-          <p className="fh-small mt-1.5">Sends a request to {toPossessive(communityName)} admins, who delete your profile, asks and messages and tell you by email.</p>
+      <p className="fh-small mt-1.5">
+        Deletes your profile, asks and messages from {communityName} for good. If you joined network search, Village is asked to remove you too. Intros you were part of
+        stay only as anonymous counts. There is no undo: export your data first if you want a copy.
+      </p>
+      {isAdmin ? <p className="fh-small mt-1.5">You are an admin. If you are the only one, make another member an admin first.</p> : null}
+      {deletion.data?.isVillageIncomplete ? (
+        <div role="status" className="mt-2.5">
+          <Note kind="needs">{deletion.data.message}</Note>
           <div className="fh-btn-row mt-2.5">
-            <Button type="button" variant="secondary" size="sm" disabled={ask.isPending} onClick={() => ask.mutate()}>
-              Ask to delete my account
+            <Button type="button" size="sm" onClick={goToSignIn}>
+              Done
             </Button>
           </div>
-          <FormError message={ask.error?.message ?? null} />
-        </>
+        </div>
+      ) : isConfirming ? (
+        <form
+          className="mt-2.5 grid gap-2.5"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (isTypedRight) deletion.mutate(typed);
+          }}
+        >
+          <div className="grid gap-1.5">
+            <Label htmlFor="delete-confirmation">Type &quot;{DELETE_CONFIRMATION_WORD}&quot; to confirm</Label>
+            <Input id="delete-confirmation" autoComplete="off" value={typed} onChange={(event) => setTyped(event.target.value)} autoFocus />
+          </div>
+          <FormError message={deletion.error?.message ?? null} />
+          <div className="fh-btn-row">
+            <Button type="submit" variant="destructive" size="sm" disabled={!isTypedRight || deletion.isPending}>
+              {deletion.isPending ? "Deleting…" : "Delete my account for good"}
+            </Button>
+            <Button type="button" variant="secondary" size="sm" onClick={() => setIsConfirming(false)}>
+              Keep my account
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="fh-btn-row mt-2.5">
+          <Button type="button" variant="secondary" size="sm" onClick={() => setIsConfirming(true)}>
+            Delete my account
+          </Button>
+        </div>
       )}
     </section>
   );

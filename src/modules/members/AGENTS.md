@@ -9,7 +9,6 @@ Core. Always on. Others build on it; it never imports them.
 - `service-admin.ts`: what an admin does to one member: confirm an email, confirm or clear a LinkedIn claim.
 - `service-blocks.ts`, `contract-blocks.ts`: blocks. Whoever calls `setMemberBlocked` passes the effects that run in the same transaction.
 - `service-report-credit.ts`: the "credit me in reports" switch, off by default.
-- `service-deletion-request.ts`: "Ask to delete my account" and the admins' email.
 - Pages `/directory`, `/people/<id>`, `/me`, `/me/data`, `/me/email`: `.ai/features/fh-directory-profile/NOTES.md`.
 - `slots.tsx`: `MemberConversationSlot`, filled by messages. The shell passes the directory its `HiringLookup`.
 - `service-linkedin.ts`: claiming a LinkedIn profile, and whether a member's email is trusted.

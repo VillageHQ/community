@@ -166,7 +166,6 @@ export const API_ROUTES = {
   profilePrivacy: "/api/profile/privacy",
   profileExport: "/api/profile/export",
   profileDelete: "/api/profile/delete",
-  profileDeletionRequest: "/api/profile/deletion-request",
   profileField: "/api/profile/field",
   onboardingIntroAsks: "/api/onboarding/intro-asks",
   onboarding: "/api/onboarding",

@@ -8,6 +8,7 @@ import { getDatabase } from "@/platform/database/client";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { ROUTES } from "@/platform/http/routes";
+import { isAdminMember } from "@/platform/auth/roles";
 import { requireMember } from "@/platform/auth/session";
 import { readEnabledModuleIds } from "@/platform/modules/enablement";
 import { modulePage } from "@/platform/modules/module-page";
@@ -17,12 +18,11 @@ import { FILL_IN_BASES, FILL_IN_FIELDS, LOOKUP_STATUSES } from "@/modules/member
 import { memberNetwork } from "@/modules/members/schema";
 import { membersManifest } from "@/modules/members/manifest";
 import { toPossessive } from "@/modules/members/rules-words";
-import { readDeletionRequestedAt } from "@/modules/members/service-deletion-request";
 import { readFilledLines, readLookupState, type LookupState } from "@/modules/members/service-fill-in";
 import { readPrivacy, type MemberPrivacy } from "@/modules/members/service-privacy";
 import { readReportCredit } from "@/modules/members/service-report-credit";
 import { ShareNetworkSheet, SwitchesSheet, type ShareState } from "@/modules/members/components/your-data-switches";
-import { DeleteRequestSheet, ExportSheet } from "@/modules/members/components/your-data-actions";
+import { DeleteAccountSheet, ExportSheet } from "@/modules/members/components/your-data-actions";
 import { asksManifest } from "@/modules/asks/manifest";
 import { feedManifest } from "@/modules/feed/manifest";
 import { introsManifest } from "@/modules/intros/manifest";
@@ -118,7 +118,7 @@ function readShareState(network: NetworkDates | undefined): ShareState {
 }
 
 // Founderhall's Your data (member-me-data): what is stored and where, what the lookup service receives, the consent
-// record, the switches, the export and the request to delete.
+// record, the switches, the export and the real delete.
 export default modulePage(membersManifest, async function YourDataPage() {
   const member = await requireMember();
   const database = getDatabase();
@@ -126,7 +126,7 @@ export default modulePage(membersManifest, async function YourDataPage() {
   const [isFeedOn, isAsksOn, isIntrosOn, isMessagesOn, isNetworkOn] = [feedManifest, asksManifest, introsManifest, messagesManifest, networkManifest].map(({ id }) =>
     enabledIds.has(id),
   ) as [boolean, boolean, boolean, boolean, boolean];
-  const [privacy, lookup, lines, [network], isReportCreditOn, branding, dataHome, requestedAt] = await Promise.all([
+  const [privacy, lookup, lines, [network], isReportCreditOn, branding, dataHome] = await Promise.all([
     readPrivacy(database, member.id),
     readLookupState(database, member.id),
     readFilledLines(database, member.id),
@@ -137,7 +137,6 @@ export default modulePage(membersManifest, async function YourDataPage() {
     readReportCredit(database, member.id),
     readBrandingForPage(),
     readDataHome(database),
-    readDeletionRequestedAt(database, member.id),
   ]);
   const community = branding.name;
   const fillInRecord = readFillInRecord(lookup, community);
@@ -164,7 +163,7 @@ export default modulePage(membersManifest, async function YourDataPage() {
               <Item term="Your profile:"> your name, your own words, the lines filled in from public profiles, and your privacy choices.</Item>
               {isAsksOn || isFeedOn ? <Item term="Your asks and answers"> in Asks &amp; updates.</Item> : null}
               {isIntrosOn ? (
-                <Item term="Your intros:"> who asked whom, the states and dates, and the note. Only the people in an intro see its note; admins see counts, not names.</Item>
+                <Item term="Your intros:"> who asked whom, the states and dates, and the note. Only the people in an intro see its note; admins see names, states and dates.</Item>
               ) : null}
               {isMessagesOn ? <Item term="Your messages.">{` ${toPossessive(community)} admins can’t read them in the portal.`}</Item> : null}
               <Item term="Your email address"> (only admins see it), and a log of sign-ins and changes.</Item>
@@ -249,7 +248,7 @@ export default modulePage(membersManifest, async function YourDataPage() {
           />
           {isNetworkOn ? <ShareNetworkSheet state={readShareState(network)} /> : null}
           <ExportSheet />
-          <DeleteRequestSheet communityName={community} requestedAt={requestedAt?.toISOString() ?? null} />
+          <DeleteAccountSheet communityName={community} isAdmin={isAdminMember(member)} />
         </div>
       </div>
     </>

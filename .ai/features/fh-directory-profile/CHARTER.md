@@ -24,6 +24,9 @@ Community's engine, Founderhall's screens copied exactly (structure, sections in
 Out: other areas' screens (search, intro ask page, `/me/network`, jobs tools, the console's Members page). Where this
 area links to them it uses their Founderhall paths.
 
+**Changed by the owner on 2026-11-11 (follow-up round):** members keep the real "Delete my account" (no request to
+the admins, no admin email), and Your data says the admins see who asked whom for an intro.
+
 ## Engine work this area needs (owner-approved: bring Founderhall's features over)
 - City filter and the "working on" line in the directory; "fresh as of" = when the member last saved their own words.
 - Past roles from public profiles (a new filled-in line, hideable as one, "Hide my past roles").

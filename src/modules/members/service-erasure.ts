@@ -16,7 +16,6 @@ import {
   memberLookup,
   memberNetwork,
   memberPrivacy,
-  memberDeletionRequest,
   memberProfile,
   memberRemoval,
   memberTag,
@@ -63,7 +62,6 @@ export async function eraseMemberAccount(transaction: Transaction, { facts, acto
   await transaction.delete(memberFillIn).where(eq(memberFillIn.userId, memberId));
   await transaction.delete(memberLookup).where(eq(memberLookup.userId, memberId));
   await transaction.delete(memberPrivacy).where(eq(memberPrivacy.userId, memberId));
-  await transaction.delete(memberDeletionRequest).where(eq(memberDeletionRequest.userId, memberId));
   await transaction.delete(memberBlock).where(or(eq(memberBlock.blockerId, memberId), eq(memberBlock.blockedId, memberId)));
   await transaction.delete(memberNetwork).where(eq(memberNetwork.userId, memberId));
 

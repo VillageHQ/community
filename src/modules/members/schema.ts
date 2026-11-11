@@ -166,15 +166,6 @@ export const memberPrivacy = pgTable(
   ],
 );
 
-// A member's "Ask to delete my account" on Your data. The admins delete the account (the real delete clears this row);
-// no row means never asked.
-export const memberDeletionRequest = pgTable("member_deletion_request", {
-  userId: text("user_id")
-    .primaryKey()
-    .references(() => user.id, { onDelete: "cascade" }),
-  requestedAt: timestamp("requested_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
 // A member's own answer about the profile fill-in, and how their last lookup went.
 // No row means they never answered and were never looked up.
 export const memberLookup = pgTable(

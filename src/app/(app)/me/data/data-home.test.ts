@@ -115,3 +115,37 @@ describe("where the data is kept, and whom to ask", () => {
     expect(await readDataHome(database)).toEqual({ location: null, contact: null });
   });
 });
+
+function readTreeText(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(readTreeText).join("");
+  if (!isValidElement<{ children?: ReactNode }>(node)) return "";
+  return readTreeText(node.props.children);
+}
+
+describe("what Your data tells a member and offers them", () => {
+  const database = createTestDatabase();
+
+  beforeEach(async () => {
+    await clearDatabase(database);
+  });
+
+  afterAll(async () => {
+    await database.$client.end();
+  });
+
+  it("says the admins see who asked whom for an intro, and offers the real delete to members and admins", async () => {
+    const admin = await createSignedInMember(database, "admin");
+    const member = await createSignedInMember(database);
+
+    session.cookie = member.cookie;
+    const page = await YourDataPage();
+    const text = readTreeText(page);
+    expect(text).toContain("Only the people in an intro see its note; admins see names, states and dates.");
+    expect(text).not.toContain("admins see counts");
+    expect(findByName(page, "DeleteAccountSheet")?.props).toMatchObject({ isAdmin: false });
+
+    session.cookie = admin.cookie;
+    expect(findByName(await YourDataPage(), "DeleteAccountSheet")?.props).toMatchObject({ isAdmin: true });
+  });
+});

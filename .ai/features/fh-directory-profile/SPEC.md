@@ -23,12 +23,12 @@ touches: ["src/app/(app)/directory/", "src/app/(app)/people/", "src/app/(app)/me
   section; password and "credit me in reports".
 - **Your data** (`/me/data`): what is stored and where, what the lookup service receives, the consent record; Your
   switches (don't look me up, hide me, who can message me with "The community's default", one Save); share my network;
-  export (JSON); "Ask to delete my account", which saves the request and emails each admin once.
+  export (JSON); "Delete my account": the member's own real delete, confirmed by typing "delete". Says the admins see
+  who asked whom for an intro (names, states and dates); notes stay with the people in the intro.
 - **Email** (`/me/email`): the weekly digest, ask emails and message emails, one Save.
 - The old addresses (`/members`, `/members/<id>`, `/members/card`, `/members/data`) redirect permanently.
 
 ## Not in it
-Search, the intro ask page (`/intros/new`), `/me/network`, the job tools inside "Our jobs" and the console's Members
-filter for deletion requests belong to the other transplant areas.
+Search, the intro ask page (`/intros/new`), `/me/network`, and the job tools inside "Our jobs" belong to the other transplant areas.
 
 How it works: [NOTES.md](NOTES.md). Approved scope: [CHARTER.md](CHARTER.md).
