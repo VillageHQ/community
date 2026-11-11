@@ -15,7 +15,7 @@ Founderhall's intro screens, steps and emails on Community's intro engine. Found
 - **The intro thread** `/intros/<id>/thread`: the replies to the introduction email, for the asker and the connector.
 - **Public pages** `/i/<token>` (`src/app/i/[token]/page.tsx`, views from `reads-links.ts`, forms in `public-intro.tsx`):
   the connector's question (a connector link), the person's question (a consent link), the outcome question (an outcome
-  link), "Nothing to do" with the reason (answered, withdrawn, expired). A GET never changes anything; `?a=yes` only
+  link), "Nothing to do" with the reason (answered, withdrawn, expired, or a link nobody issued). A GET never changes anything; `?a=yes` only
   picks the answer. `/intro/optout/<token>` takes the person's consent token. `/meet/<token>` redirects there (308).
 - All words are in `intro-words.ts` (screens) and `email-copy.ts` (emails); `email-copy.test.ts` checks every email
   against Founderhall's text (`email-copy.fixtures.json`, captured from Founderhall's demo).
@@ -32,7 +32,8 @@ Founderhall's intro screens, steps and emails on Community's intro engine. Found
   other's addresses). Intro thread replies reach the two others (`INTRO_THREAD_AUTHORS.introducer`, migration 0033).
 - New emails: withdrawn and "no answer" to the connector, thanks to the connector when the asker says it helped.
   "Sam withdrew" goes only to a connector who got the ask by email (the cooldown may have held it).
-- **7 days per step** (`INTRO_LIFETIME_DAYS = 7`): the connector has 7 days, then the person has their own 7.
+- **7 days per step** (`INTRO_LIFETIME_DAYS = 7`): the connector has 7 days, then the person has their own 7. The
+  outcome question comes 14 days after the intro and its one reminder 14 days later; "Two weeks ago" counts whole days.
 - The asks-left line in emails reads the shared allowance through `src/platform/allowance/weekly-allowance.ts`; the
   reader is provided at boot in `src/instrumentation.ts`. Without it (scripts, tests) the line says only "Your ask is
   back."

@@ -173,7 +173,8 @@ async function renderOutcomeFor({ connection, environment, community, introId, f
     target: facts.targetName,
     connector: facts.introducerName,
     links: { helpful: `${link}?a=${OUTCOME_CHOICES.helpful}`, notReally: `${link}?a=${OUTCOME_CHOICES.notReally}`, tooEarly: `${link}?a=${OUTCOME_CHOICES.tooEarly}` },
-    daysAgo: Math.round((Date.now() - introducedAt.getTime()) / MILLISECONDS_PER_DAY),
+    // Whole days, so a run a few hours after day 14 still reads "Two weeks ago".
+    daysAgo: Math.floor((Date.now() - introducedAt.getTime()) / MILLISECONDS_PER_DAY),
     isReminder,
   });
 }

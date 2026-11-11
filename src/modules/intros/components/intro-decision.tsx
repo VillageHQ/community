@@ -45,9 +45,11 @@ type DecisionFormProps = {
   withPrivateNote?: boolean;
   submit: (values: DecisionValues) => Promise<void>;
   after?: ReactNode;
+  // The step closed meanwhile (answered in another tab): the page shows "Nothing to do" instead of an error.
+  onClosed?: () => void;
 };
 
-export function DecisionForm({ legend, choices, initialChoice = null, email = null, note = null, withResults = false, hasConsentLine = true, withPrivateNote = false, submit, after }: DecisionFormProps) {
+export function DecisionForm({ legend, choices, initialChoice = null, email = null, note = null, withResults = false, hasConsentLine = true, withPrivateNote = false, submit, after, onClosed }: DecisionFormProps) {
   const id = useId();
   const [error, setError] = useState<{ message: string; field: Field | null } | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -74,6 +76,10 @@ export function DecisionForm({ legend, choices, initialChoice = null, email = nu
     } catch (failure) {
       const message = failure instanceof Error ? failure.message : "This answer didn't come through. Try again.";
       const code = failure instanceof RequestFailure ? failure.code : null;
+      if (code === INTRO_ERROR_CODES.consentLinkClosed && onClosed) {
+        onClosed();
+        return;
+      }
       setError({ message, field: code ? (FIELD_BY_CODE[code] ?? null) : null });
     } finally {
       setIsPending(false);

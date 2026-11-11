@@ -32,8 +32,6 @@ type IntroPageProps = {
   community: string;
   // The community sends email, so a yes asks the person by email.
   canEmail: boolean;
-  // Search is on: "Find another way in" also offers it.
-  hasSearch: boolean;
   hasThread: boolean;
   // "Who else can help" after a closed path ask (Community's, while Network is on).
   otherPaths?: ReactNode;
@@ -50,7 +48,7 @@ function ThreadButton({ introId }: { introId: string }) {
   );
 }
 
-function AskerMain({ intro, community, hasSearch, hasThread, otherPaths }: IntroPageProps) {
+function AskerMain({ intro, community, hasThread, otherPaths }: IntroPageProps) {
   const { targetFirst } = readNames(intro);
   const made = isMade(intro);
   const open = isOpen(intro);
@@ -69,14 +67,7 @@ function AskerMain({ intro, community, hasSearch, hasThread, otherPaths }: Intro
           <div className="fh-note fh-section">
             <Search aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} />
             <span>
-              Find another way in: <Link href={ROUTES.members}>the directory</Link>
-              {hasSearch ? (
-                <>
-                  {" "}
-                  or <Link href={ROUTES.network}>search</Link>
-                </>
-              ) : null}
-              .
+              Find another way in: <Link href={ROUTES.members}>the directory</Link>.
             </span>
           </div>
           {otherPaths}

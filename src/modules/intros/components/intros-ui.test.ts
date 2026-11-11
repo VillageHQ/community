@@ -103,7 +103,7 @@ describe("the intro screens (Founderhall's)", () => {
 
   describe("the asker's tracker", () => {
     it("shows the steps ahead and withdraws the ask", async () => {
-      renderInApp(createElement(IntroPage, { intro: makeIntro(), community: COMMUNITY, canEmail: true, hasSearch: false, hasThread: false }));
+      renderInApp(createElement(IntroPage, { intro: makeIntro(), community: COMMUNITY, canEmail: true, hasThread: false }));
 
       expect(screen.getByRole("heading", { level: 1, name: "Sam ↔ Rosa, via Marcus" })).toBeTruthy();
       expect(screen.getByText("With Marcus")).toBeTruthy();
@@ -121,16 +121,17 @@ describe("the intro screens (Founderhall's)", () => {
     });
 
     it("never names who said no, under Community's rule", () => {
-      renderInApp(createElement(IntroPage, { intro: makeIntro({ state: INTRO_STATES.declined, closedAt: "2026-11-12T10:00:00.000Z" }), community: COMMUNITY, canEmail: true, hasSearch: true, hasThread: false }));
+      renderInApp(createElement(IntroPage, { intro: makeIntro({ state: INTRO_STATES.declined, closedAt: "2026-11-12T10:00:00.000Z" }), community: COMMUNITY, canEmail: true, hasThread: false }));
 
       expect(screen.getAllByText("They can’t make this one")).toHaveLength(2);
       expect(screen.queryByText(/Marcus can’t/)).toBeNull();
-      expect(screen.getByRole("link", { name: "search" })).toBeTruthy();
+      expect(screen.getByText(/Find another way in:/)).toBeTruthy();
+      expect(screen.queryByRole("link", { name: "search" })).toBeNull();
     });
 
     it("asks if it helped once that's due, and offers the thread", () => {
       const introduced = makeIntro({ state: INTRO_STATES.completed, askedTargetAt: "2026-11-11T11:00:00.000Z", targetAgreedAt: "2026-11-11T12:00:00.000Z", closedAt: "2026-11-11T12:00:00.000Z", isOutcomeDue: true });
-      renderInApp(createElement(IntroPage, { intro: introduced, community: COMMUNITY, canEmail: true, hasSearch: false, hasThread: true }));
+      renderInApp(createElement(IntroPage, { intro: introduced, community: COMMUNITY, canEmail: true, hasThread: true }));
 
       expect(screen.getByText("Marcus said yes and asked Rosa")).toBeTruthy();
       expect(screen.getByText("Rosa said yes")).toBeTruthy();
@@ -141,7 +142,7 @@ describe("the intro screens (Founderhall's)", () => {
 
     it("marks the answer given", () => {
       const answered = makeIntro({ state: INTRO_STATES.completed, closedAt: "2026-11-11T12:00:00.000Z", outcome: INTRO_OUTCOMES.helped });
-      renderInApp(createElement(IntroPage, { intro: answered, community: COMMUNITY, canEmail: true, hasSearch: false, hasThread: false }));
+      renderInApp(createElement(IntroPage, { intro: answered, community: COMMUNITY, canEmail: true, hasThread: false }));
 
       expect(screen.getByText("You said: helpful")).toBeTruthy();
       expect(screen.getByText("Introduced · helpful")).toBeTruthy();
@@ -152,7 +153,7 @@ describe("the intro screens (Founderhall's)", () => {
     const asked = makeIntro({ viewerRole: INTRO_ROLES.introducer, requester: { ...MARCUS }, introducer: { ...SAM }, target: { name: "Rachel Kim", headline: "CFO at Brightside Clinics", linkedinSlug: null, isNamed: true } });
 
     it("shows Founderhall's three choices, the person's email and the note to edit", () => {
-      renderInApp(createElement(IntroPage, { intro: asked, community: COMMUNITY, canEmail: true, hasSearch: false, hasThread: false }));
+      renderInApp(createElement(IntroPage, { intro: asked, community: COMMUNITY, canEmail: true, hasThread: false }));
 
       expect(screen.getByText("Would you introduce them?")).toBeTruthy();
       expect(screen.getByText("We email Rachel once, from Northwind Founders, in your name.")).toBeTruthy();
@@ -166,7 +167,7 @@ describe("the intro screens (Founderhall's)", () => {
     });
 
     it("sends the yes with the address and the edited note in one step", async () => {
-      renderInApp(createElement(IntroPage, { intro: asked, community: COMMUNITY, canEmail: true, hasSearch: false, hasThread: false }));
+      renderInApp(createElement(IntroPage, { intro: asked, community: COMMUNITY, canEmail: true, hasThread: false }));
 
       fireEvent.click(screen.getByLabelText(/Yes, introduce them/));
       fireEvent.change(screen.getByLabelText("Rachel’s email, if you say yes"), { target: { value: "rachel@brightside.example" } });
@@ -181,7 +182,7 @@ describe("the intro screens (Founderhall's)", () => {
     });
 
     it("asks for an answer before sending", async () => {
-      renderInApp(createElement(IntroPage, { intro: asked, community: COMMUNITY, canEmail: false, hasSearch: false, hasThread: false }));
+      renderInApp(createElement(IntroPage, { intro: asked, community: COMMUNITY, canEmail: false, hasThread: false }));
 
       expect(screen.queryByLabelText("Rachel’s email, if you say yes")).toBeNull();
       fireEvent.click(screen.getByRole("button", { name: "Send my answer" }));

@@ -49,6 +49,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 function readClosedText(view: Extract<IntroLinkView, { view: "closed" }>) {
   if (view.reason === CLOSED_REASONS.withdrawn) return `${readFirstName(view.askerName)} withdrew this ask. There’s nothing to do.`;
   if (view.reason === CLOSED_REASONS.expired) return "This ask closed after 7 days with no answer. There’s nothing to do.";
+  if (view.reason === CLOSED_REASONS.unknown) return "This link doesn’t work. It may be old or cut short.";
   return "This ask was already answered. Thank you.";
 }
 

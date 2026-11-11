@@ -7,7 +7,7 @@
   Only a token nobody issued counts toward the failed-try rate limit.
 - Stop all saves an HMAC of the slug keyed with the auth secret (`opt-out.ts`). Rotating that secret forgets
   earlier stop-all choices.
-- "Did it help?": in the app from 14 days after the intro; by email once at 14 days and once more 3 days later,
+- "Did it help?": in the app from 14 days after the intro; by email once at 14 days and once more 14 days later (Founderhall's timing, fh-intros),
   only while there's no answer (`outcome-email.ts`). It runs from the intros badge and board reads, at most once a
   minute per server, claiming rows with a conditional UPDATE so two servers can't both send.
   TODO: call `sendDueOutcomeEmails` from the shared job runner once it exists, and drop the read-time calls.

@@ -23,7 +23,7 @@ export const LINK_VIEWS = {
   notForYou: "not_for_you",
 } as const;
 
-export const CLOSED_REASONS = { answered: "answered", withdrawn: "withdrawn", expired: "expired" } as const;
+export const CLOSED_REASONS = { answered: "answered", withdrawn: "withdrawn", expired: "expired", unknown: "unknown" } as const;
 
 type ClosedReason = (typeof CLOSED_REASONS)[keyof typeof CLOSED_REASONS];
 
@@ -100,7 +100,7 @@ export async function readIntroLinkView(context: LinkViewContext, token: string)
   // Closed or answered: say why, from the intro the link belongs to.
   const tokenHash = readLiveConsentHash(token);
   const linked = tokenHash ? await readLinkedIntro(context.database, tokenHash) : null;
-  return closed(linked ? readClosedReason(linked.state) : CLOSED_REASONS.answered);
+  return closed(linked ? readClosedReason(linked.state) : CLOSED_REASONS.unknown);
 }
 
 export type IntroLinkView = Awaited<ReturnType<typeof readIntroLinkView>>;

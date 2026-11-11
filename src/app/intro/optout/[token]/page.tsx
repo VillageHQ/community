@@ -23,7 +23,8 @@ export default modulePage(introsManifest, async function IntroOptOutPage({ param
       ) : (
         <>
           <h1 className="fh-h2">Stop intro asks from {community.name}?</h1>
-          <p className="fh-small">This link doesn’t work. It may be old or cut short.</p>
+          <p className="fh-lede">We won’t send intro asks to this address again. Any ask waiting for you now closes, and nobody is told why.</p>
+          <p className="fh-small mt-4">This link doesn’t work. It may be old or cut short.</p>
         </>
       )}
     </PublicPage>

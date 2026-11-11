@@ -17,6 +17,8 @@ import { OUTCOME_LABELS, poss } from "./intro-words";
 
 type Done = { title: string; text: string; hasConsentLine: boolean };
 
+const NOTHING_TO_DO: Done = { title: "Nothing to do", text: "This ask was already answered. Thank you.", hasConsentLine: false };
+
 function DoneCard({ done }: { done: Done }) {
   useEffect(() => {
     document.title = document.title.replace(/^[^·]*·/, `${done.title} ·`);
@@ -55,6 +57,7 @@ export function ConnectorLinkQuestion({ token, community, facts, initialChoice }
   return (
     <Question title={`${readFirstName(facts.connectorName)}, would you introduce ${facts.askerName} to ${facts.targetName}?`} lede={`${facts.askerName} asked ${community} for an intro, through you.`} note={facts.note}>
       <DecisionForm
+        onClosed={() => setDone(NOTHING_TO_DO)}
         legend="Would you introduce them?"
         initialChoice={initialChoice}
         choices={[
@@ -98,6 +101,7 @@ export function TargetLinkQuestion({ token, community, facts, initialChoice, opt
   return (
     <Question title={`${facts.connectorName} would like to introduce you to ${facts.askerName}`} lede={`${connectorFirst} is a member of ${community}.`} note={facts.note}>
       <DecisionForm
+        onClosed={() => setDone(NOTHING_TO_DO)}
         legend={`Would you like to meet ${askerFirst}?`}
         initialChoice={initialChoice}
         choices={[
@@ -149,6 +153,7 @@ export function OutcomeLinkQuestion({ token, facts, initialChoice }: { token: st
   return (
     <Question title={`Was the intro to ${facts.targetName} helpful?`} lede={`${facts.connectorName} introduced you ${facts.introducedOn}.`} note={null}>
       <DecisionForm
+        onClosed={() => setDone(NOTHING_TO_DO)}
         legend="Your answer"
         initialChoice={initialChoice ?? OUTCOME_CHOICES.helpful}
         withResults

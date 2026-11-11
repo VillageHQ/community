@@ -168,6 +168,7 @@ describe("intro links from emails", () => {
       expect((await answerByLink({ purpose: "connector", token: "x".repeat(43), choice: "yes", targetEmail: TARGET_EMAIL, note: null })).status).toBe(410);
       expect((await answerByLink({ purpose: "connector", token: outcomeToken, choice: "yes", targetEmail: TARGET_EMAIL, note: null })).status).toBe(410);
       expect((await readRow(intro.id)).state).toBe(INTRO_STATES.requested);
+      expect(await viewOf("y".repeat(43))).toMatchObject({ view: LINK_VIEWS.closed, reason: CLOSED_REASONS.unknown });
     });
   });
 

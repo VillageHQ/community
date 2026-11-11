@@ -213,9 +213,9 @@ describe("asking if an intro helped", () => {
       await resend.stop();
     });
 
-    it("waits 14 days by default, and reminds 3 days after that", () => {
+    it("waits 14 days by default, and reminds 14 days after that (Founderhall's timing)", () => {
       expect(OUTCOME_PROMPT_AFTER_DAYS).toBe(14);
-      expect(OUTCOME_REMINDER_AFTER_DAYS).toBe(3);
+      expect(OUTCOME_REMINDER_AFTER_DAYS).toBe(14);
     });
 
     it("sends nothing before it's due", async () => {
@@ -247,7 +247,7 @@ describe("asking if an intro helped", () => {
       expect(email?.text).not.toContain(NOTE);
     });
 
-    it("sends one reminder 3 days later, then stops", async () => {
+    it("sends one reminder 14 days later, then stops", async () => {
       const introId = await seedIntroducedDaysAgo(OUTCOME_PROMPT_AFTER_DAYS);
       await readBadgeAgain();
       await vi.waitFor(() => expect(readEmails()).toHaveLength(1), EVENTUALLY);

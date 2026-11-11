@@ -1271,6 +1271,10 @@ describe("intro requests", () => {
     });
 
     describe("cooling down new-ask emails", () => {
+      function readAskSubjects() {
+        return resend.state.emails.map(({ body }) => (body as { subject: string }).subject).filter((subject) => subject.includes("would you introduce"));
+      }
+
       async function askAndWithdraw(times: number) {
         await lookUpPaths();
         for (let attempt = 0; attempt < times; attempt += 1) {
@@ -1308,7 +1312,8 @@ describe("intro requests", () => {
 
         await ask(amara, { connectorSlug: NOOR_SLUG });
 
-        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2), EVENTUALLY);
+        // The asks only: the first connector also hears that the ask was withdrawn.
+        await vi.waitFor(() => expect(readAskSubjects()).toHaveLength(2), EVENTUALLY);
       });
 
       it("emails again after the cooldown", async () => {
@@ -1318,7 +1323,7 @@ describe("intro requests", () => {
 
         await ask();
 
-        await vi.waitFor(() => expect(resend.state.emails).toHaveLength(2), EVENTUALLY);
+        await vi.waitFor(() => expect(readAskSubjects()).toHaveLength(2), EVENTUALLY);
       });
     });
 

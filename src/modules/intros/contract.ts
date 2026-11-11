@@ -9,7 +9,8 @@ import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-te
 export const INTRO_LIFETIME_DAYS = 7;
 export const TARGET_ANSWER_MINIMUM_DAYS = 7;
 export const OUTCOME_PROMPT_AFTER_DAYS = 14;
-export const OUTCOME_REMINDER_AFTER_DAYS = 3;
+// Founderhall: the outcome question 14 days after the intro, one reminder 14 days after that.
+export const OUTCOME_REMINDER_AFTER_DAYS = 14;
 // The one reminder to the person asked, this many days after the app last emailed them.
 export const TARGET_REMINDER_AFTER_DAYS = 4;
 // The one reminder to a connector who hasn't answered, this many days after the ask.
