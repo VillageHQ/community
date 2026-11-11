@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { CONNECTOR_ERROR_CODES, CONNECTOR_LIMITS } from "../network/contract.ts";
+import { readLinkedinSlug } from "../members/contract-linkedin.ts";
+import { CONNECTOR_ERROR_CODES, CONNECTOR_LIMITS } from "../../platform/village/contract.ts";
 import { feedTextSchema } from "../../platform/text/text-schema.ts";
 import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
 
@@ -141,6 +142,7 @@ export const INTRO_ERROR_CODES = {
   notIntroducer: "intro_not_introducer",
   targetRefuses: "intro_target_refuses",
   notTakingAsks: "intro_not_taking_asks",
+  networkOff: "intro_network_off",
 } as const;
 
 const slugSchema = z.string().trim().toLowerCase().min(1).max(INTRO_LIMITS.slugLength);
@@ -158,11 +160,96 @@ const declineReasonTextSchema = z
 
 export const declineReasonSchema = z.union([z.null(), declineReasonTextSchema]);
 
-export const createIntroBodySchema = z.object({
+// An ask through a Village path: the server reads the person and the connector from the member's own cached paths.
+export const pathIntroBodySchema = z.object({
   targetSlug: slugSchema,
   connectorSlug: slugSchema,
   note: introNoteSchema,
 });
+
+const LINKEDIN_PROFILE_PREFIX = "https://www.linkedin.com/in/";
+const LINKEDIN_INPUT_LENGTH = 300;
+// A LinkedIn profile name: letters, digits, hyphens and underscores. Anything else is junk or a spoof.
+const PROFILE_NAME_PATTERN = /^[\p{L}\p{N}_-]{2,100}$/u;
+const REPEATED_WHITESPACE = /\s+/g;
+
+function personTextSchema(label: string, maximumLength: number) {
+  return z
+    .string()
+    .overwrite(removeNullBytes)
+    .overwrite(removeBidiControls)
+    .trim()
+    .overwrite((value) => value.replace(REPEATED_WHITESPACE, " "))
+    .min(1, `Add ${label}.`)
+    .max(maximumLength, `Keep ${label} under ${maximumLength} characters.`);
+}
+
+// A pasted LinkedIn link, or a bare profile name. Blank means none.
+const linkedinLinkSchema = z
+  .string()
+  .trim()
+  .max(LINKEDIN_INPUT_LENGTH)
+  .nullable()
+  .default(null)
+  .transform((value, context) => {
+    if (!value) return null;
+    const slug = readLinkedinSlug(value.includes("/") ? value : `${LINKEDIN_PROFILE_PREFIX}${value}`);
+    if (!slug || !PROFILE_NAME_PATTERN.test(slug)) {
+      context.addIssue({ code: "custom", message: "Paste their LinkedIn link, like https://www.linkedin.com/in/their-name." });
+      return z.NEVER;
+    }
+    return slug.toLowerCase();
+  });
+
+const optionalEmailSchema = z
+  .string()
+  .trim()
+  .nullable()
+  .default(null)
+  .transform((value) => value || null)
+  .pipe(z.email("Enter an email address, like clara@example.com.").toLowerCase().max(INTRO_LIMITS.emailLength).nullable());
+
+export const namedTargetSchema = z.object({
+  name: personTextSchema("their name", INTRO_LIMITS.nameLength),
+  company: personTextSchema("their company", INTRO_LIMITS.headlineLength),
+  email: optionalEmailSchema,
+  linkedin: linkedinLinkSchema,
+});
+
+// An ask from a member's profile: the asker names the person. No Village path, so it works with Village off.
+export const namedIntroBodySchema = z.object({
+  connectorId: z.string().trim().min(1).max(INTRO_LIMITS.slugLength),
+  target: namedTargetSchema,
+  note: introNoteSchema,
+});
+
+// A body with `connectorId` is a named ask; any other is a path ask. Picking the schema first keeps its own messages
+// ("Paste their LinkedIn link…"), where a plain union would answer "Invalid input".
+export const createIntroBodySchema = z.custom<z.input<typeof pathIntroBodySchema> | z.input<typeof namedIntroBodySchema>>().transform((body, context) => {
+  const isNamed = typeof body === "object" && body !== null && "connectorId" in body;
+  const parsed = isNamed ? namedIntroBodySchema.safeParse(body) : pathIntroBodySchema.safeParse(body);
+  if (parsed.success) return parsed.data;
+  for (const issue of parsed.error.issues) context.addIssue({ code: "custom", message: issue.message, path: issue.path });
+  return z.NEVER;
+});
+
+const NAMED_TARGET_KEY_PREFIX = "~";
+
+// The key that stands for a named person in `targetLinkedinSlug`: their LinkedIn slug when the asker gave one, so a
+// "stop all asks" covers every ask for them, or else their name and company. Never their email.
+export function readNamedTargetKey({ name, company, linkedin }: Pick<NamedTarget, "name" | "company" | "linkedin">) {
+  if (linkedin) return linkedin;
+  return `${NAMED_TARGET_KEY_PREFIX}${JSON.stringify([name.toLowerCase(), company.toLowerCase()])}`;
+}
+
+// A LinkedIn slug the app can link to, or null for a key made from a name.
+export function readTargetLinkedinSlug(targetKey: string) {
+  return targetKey.startsWith(NAMED_TARGET_KEY_PREFIX) ? null : targetKey;
+}
+
+export function isNamedIntroBody(body: CreateIntroBody): body is NamedIntroBody {
+  return "connectorId" in body;
+}
 
 export const introIdBodySchema = z.object({ introId: z.uuid() });
 
@@ -231,7 +318,10 @@ export const introSchema = z.object({
   isOutcomeDue: z.boolean(),
   closedAt: timestampSchema.nullable(),
   expiresAt: timestampSchema,
-  target: z.object({ name: z.string(), headline: z.string().nullable(), linkedinSlug: z.string() }),
+  // `linkedinSlug` is null for a person the asker named without a LinkedIn link. `isNamed`: asked from a profile.
+  target: z.object({ name: z.string(), headline: z.string().nullable(), linkedinSlug: z.string().nullable(), isNamed: z.boolean() }),
+  // The address the asker typed for the person, while the ask is open: it fills in the connector's consent email.
+  suggestedTargetEmail: z.string().nullable(),
   requester: introPersonSchema,
   introducer: introPersonSchema,
 });
@@ -255,6 +345,10 @@ export type IntroBoard = z.infer<typeof introBoardSchema>;
 export type IntroCounts = z.infer<typeof introCountsSchema>;
 export type IntroPerson = z.infer<typeof introPersonSchema>;
 export type CreateIntroBody = z.infer<typeof createIntroBodySchema>;
+export type PathIntroBody = z.infer<typeof pathIntroBodySchema>;
+export type NamedIntroBody = z.infer<typeof namedIntroBodySchema>;
+export type NamedTarget = z.infer<typeof namedTargetSchema>;
+export type NamedIntroRequest = z.input<typeof namedIntroBodySchema>;
 export type IntroTransitionBody = z.infer<typeof introTransitionBodySchema>;
 export type IntroOutcomeBody = z.infer<typeof introOutcomeBodySchema>;
 export type IntroOutcomeRequest = z.input<typeof introOutcomeBodySchema>;

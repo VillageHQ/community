@@ -218,6 +218,13 @@
       "when": 1794371037874,
       "tag": "0031_asks_tools",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794372146545,
+      "tag": "0032_intros_no_village",
+      "breakpoints": true
     }
   ]
 }

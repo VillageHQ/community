@@ -31,7 +31,15 @@ import { ConsentLinkPanel } from "./consent-link-panel";
 import { useIntroTransition } from "./use-intro-actions";
 
 function TargetLink({ intro }: { intro: Intro }) {
-  const { name, linkedinSlug } = intro.target;
+  const { name, headline, linkedinSlug } = intro.target;
+  if (!linkedinSlug) {
+    return (
+      <span className="font-bold wrap-anywhere text-foreground">
+        {name}
+        {intro.target.isNamed && headline ? <span className="font-normal text-foreground-soft"> at {headline}</span> : null}
+      </span>
+    );
+  }
   return (
     <a
       href={linkedinUrl(linkedinSlug)}

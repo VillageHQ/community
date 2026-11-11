@@ -12,8 +12,9 @@ import { networkPathsQuery } from "@/modules/network/queries";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { ROUTES } from "@/platform/http/routes";
 
-import { ConnectorAsk } from "./connector-ask";
-import { IntroReason } from "./intro-parts";
+import { IntroReason } from "@/modules/intros/components/intro-parts";
+
+import { ConnectorAsk } from "./intro-connector-ask";
 
 function FindSomeoneElse({ targetFirst }: { targetFirst: string }) {
   return (
@@ -29,10 +30,10 @@ function FindSomeoneElse({ targetFirst }: { targetFirst: string }) {
   );
 }
 
-function OtherConnectors({ intro }: { intro: Intro }) {
+function OtherConnectors({ intro, targetSlug }: { intro: Intro; targetSlug: string }) {
   const { target, introducer, requester } = intro;
   const targetFirst = readFirstName(target.name);
-  const { data: paths } = useSuspenseQuery(networkPathsQuery(target.linkedinSlug));
+  const { data: paths } = useSuspenseQuery(networkPathsQuery(targetSlug));
   const others = paths.connectors.filter(({ member }) => member && member.id !== introducer.id);
   if (others.length === 0) return <FindSomeoneElse targetFirst={targetFirst} />;
 
@@ -45,7 +46,7 @@ function OtherConnectors({ intro }: { intro: Intro }) {
         <li key={connector.linkedinSlug ?? connector.name} className="grid gap-2.5 rounded-field bg-muted p-4">
           <p className="type-label wrap-anywhere">{connector.name}</p>
           <IntroReason reason={connector.reason} />
-          <ConnectorAsk connector={connector} isTop={false} targetSlug={target.linkedinSlug} targetName={target.name} viewer={viewer} />
+          <ConnectorAsk connector={connector} isTop={false} targetSlug={targetSlug} targetName={target.name} viewer={viewer} />
         </li>
       ))}
       </ul>
@@ -53,14 +54,17 @@ function OtherConnectors({ intro }: { intro: Intro }) {
   );
 }
 
+// Village paths to the same person, for a path ask. The shell renders it only while Network is on.
 export function OtherPaths({ intro }: { intro: Intro }) {
   const [isLooking, setIsLooking] = useState(false);
   const targetFirst = readFirstName(intro.target.name);
+  const targetSlug = intro.target.linkedinSlug;
+  if (intro.target.isNamed || !targetSlug) return null;
   return (
     <section aria-label={`Other ways to reach ${targetFirst}`} className="grid gap-3">
       {isLooking ? (
         <QueryBoundary loadingMessage={`Looking for other ways to reach ${targetFirst}…`}>
-          <OtherConnectors intro={intro} />
+          <OtherConnectors intro={intro} targetSlug={targetSlug} />
         </QueryBoundary>
       ) : (
         <Button type="button" size="lg" variant="soft" className="w-full" onClick={() => setIsLooking(true)}>

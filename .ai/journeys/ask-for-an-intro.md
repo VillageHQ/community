@@ -1,8 +1,8 @@
 # Journey: ask for an intro
 
 > ⚠ RECONSTRUCTED from code on 2026-11-10 — needs confirmation
-> Sources: `src/modules/intros/AGENTS.md`, `src/modules/intros/components/ask-intro-dialog.tsx`,
-> `src/modules/network/AGENTS.md`, `src/modules/asks/AGENTS.md`. Needs the Network and Intros modules (and Village).
+> Sources: `src/modules/intros/AGENTS.md`, `src/shell/intro-ask-dialog.tsx`, `src/modules/intros/components/ask-member-intro.tsx`,
+> `src/modules/network/AGENTS.md`, `src/modules/asks/AGENTS.md`. Needs the Intros module; steps 1–2 also need Network (and Village).
 
 Who: a member (the asker) who needs to reach someone.
 
@@ -16,5 +16,9 @@ Who: a member (the asker) who needs to reach someone.
 4. They follow it on `/intros/<id>`: waiting on the connector, then on the person asked. A no from either side shows
    only as a kind decline; they never learn who said no or why. They can withdraw while it is open.
 5. Other ways in: on the asks board a helper's "I know someone", or "ask a helper for an intro" on their own ask.
+6. Without Village (or as well as it): on any member's profile, "Ask <name> for an intro" → one dialog: the person's
+   name and company, optionally their email (only the connector sees it, to email the yes-or-no link) or LinkedIn link,
+   and why. Then steps 3–4 as above. With Village on, the profile also shows "Who <name> can introduce you to": whether
+   their network is shared, and a Search button; never their contacts.
 
-Tests: `src/modules/intros/intros.test.ts`, `src/modules/intros/intro-state.test.ts`, `src/modules/intros/components/intros-ui.test.ts`.
+Tests: `src/modules/intros/intros.test.ts`, `src/modules/intros/intros-named.test.ts`, `src/modules/intros/intro-state.test.ts`, `src/modules/intros/components/intros-ui.test.ts`.

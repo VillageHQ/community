@@ -56,13 +56,23 @@ function hasConsentLink(connection: DatabaseOrTransaction, tokenHash: string) {
   return inArray(introRequest.id, linkedIntros);
 }
 
-// Open, not withheld, not past its deadline, from an active member to an active joined connector, with no block either way.
+// The connector of a path ask must be active and have joined the group; a named ask (from a profile) needs no network,
+// so its connector only needs to be active.
+export function isActiveConnector(connection: DatabaseOrTransaction, now: Date) {
+  return or(
+    and(eq(introRequest.isNamedTarget, true), inArray(introRequest.introducerId, selectActiveMemberIds(connection, now))),
+    inArray(introRequest.introducerId, selectActiveJoinedMemberIds(connection, now)),
+  );
+}
+
+// Open, not withheld, not past its deadline, from an active member to an active connector (joined, for a path ask),
+// with no block either way.
 export function isLiveBetweenMembers(connection: DatabaseOrTransaction, now: Date) {
   return and(
     eq(introRequest.isWithheld, false),
     gt(introRequest.expiresAt, now),
     inArray(introRequest.requesterId, selectActiveMemberIds(connection, now)),
-    inArray(introRequest.introducerId, selectActiveJoinedMemberIds(connection, now)),
+    isActiveConnector(connection, now),
     hasNoBlockBetweenParticipants(connection),
   );
 }

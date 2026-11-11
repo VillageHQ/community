@@ -22,6 +22,7 @@ import {
   TARGET_ANSWER_MINIMUM_DAYS,
   introSchema,
   readRequesterState,
+  readTargetLinkedinSlug,
   readStatesLeadingTo,
   type Intro,
   type IntroBoard,
@@ -46,7 +47,7 @@ export function readTargetDeadline(currentDeadline: Date, from = new Date()) {
   return new Date(Math.max(currentDeadline.getTime(), earliestDeadline));
 }
 
-export const CLOSES_CONSENT = { targetEmail: null };
+export const CLOSES_CONSENT = { targetEmail: null, suggestedTargetEmail: null };
 
 function daysBefore(now: Date, days: number) {
   return new Date(now.getTime() - days * MILLISECONDS_PER_DAY);
@@ -56,9 +57,14 @@ function selectJoinedMemberIds(database: Database) {
   return database.select({ userId: memberNetwork.userId }).from(memberNetwork).where(isNotNull(memberNetwork.groupJoinedAt));
 }
 
-// The connector must still be in the group. The asker needn't be: members can ask before sharing their own network.
+// The connector of a path ask must still be in the group. The asker needn't be: members can ask before sharing their
+// own network. A named ask (from a profile) needs no network at all.
 export function hasConnectorJoined(database: Database) {
-  return inArray(introRequest.introducerId, selectJoinedMemberIds(database));
+  return or(eq(introRequest.isNamedTarget, true), inArray(introRequest.introducerId, selectJoinedMemberIds(database)));
+}
+
+function hasPathConnectorLeftNetwork(database: Database) {
+  return and(eq(introRequest.isNamedTarget, false), notInArray(introRequest.introducerId, selectJoinedMemberIds(database)));
 }
 
 // With a member, expires only their asks, at read time. Without one (the timed sweep), every
@@ -72,10 +78,7 @@ export async function expireDueIntros(database: Database, memberId: string | nul
       and(
         memberId === null ? undefined : or(eq(introRequest.requesterId, memberId), eq(introRequest.introducerId, memberId)),
         inArray(introRequest.state, readStatesLeadingTo(INTRO_STATES.expired)),
-        or(
-          lte(introRequest.expiresAt, now),
-          notInArray(introRequest.introducerId, selectJoinedMemberIds(database)),
-        ),
+        or(lte(introRequest.expiresAt, now), hasPathConnectorLeftNetwork(database)),
       ),
     );
 }
@@ -197,7 +200,13 @@ function toIntro(row: IntroRow, viewerId: string, now = new Date()): Intro {
     targetAgreedAt: toIso(request.targetAgreedAt),
     closedAt: toIso(request.closedAt),
     ...(isRequester ? readIntroForRequester(request, now) : readIntroForIntroducer(request)),
-    target: { name: request.targetName, headline: request.targetHeadline, linkedinSlug: request.targetLinkedinSlug },
+    target: {
+      name: request.targetName,
+      headline: request.targetHeadline,
+      linkedinSlug: readTargetLinkedinSlug(request.targetLinkedinSlug),
+      isNamed: request.isNamedTarget,
+    },
+    suggestedTargetEmail: request.suggestedTargetEmail,
     requester: {
       id: request.requesterId,
       name: removeBidiControls(row.requesterName),
@@ -210,7 +219,7 @@ function toIntro(row: IntroRow, viewerId: string, now = new Date()): Intro {
       id: request.introducerId,
       name: request.introducerName,
       headline: request.introducerHeadline,
-      linkedinSlug: request.introducerLinkedinSlug,
+      linkedinSlug: request.introducerLinkedinSlug || null,
       avatarUrl: toShownFaceUrl(request.introducerId, row.introducerAvatarUpdatedAt, row.introducerFilledFace),
       isAvailable: !isBanActive({ banned: row.introducerBanned, banExpires: row.introducerBanExpires }),
     },

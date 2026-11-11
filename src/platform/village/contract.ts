@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+// The longest name, headline and reason the app keeps for a person on a Village path (an intro ask copies them).
+export const CONNECTOR_LIMITS = { nameLength: 200, headlineLength: 300, reasonLength: 600 } as const;
+
+export const CONNECTOR_ERROR_CODES = { ownTarget: "intro_own_target" } as const;
+
 export const VILLAGE_KEY_STATUSES = {
   missing: "missing",
   sealed: "sealed",

@@ -4,7 +4,9 @@ import { QueryProvider } from "@/components/query-provider";
 import { readAvatarUrl } from "@/modules/members/service-profile";
 import { messagesManifest } from "@/modules/messages/manifest";
 import { MessagesSlotProvider } from "@/modules/messages/components/messages-slot-provider";
+import { introsManifest } from "@/modules/intros/manifest";
 import { networkManifest } from "@/modules/network/manifest";
+import { IntrosConnectorProvider } from "@/shell/intros-network-provider";
 import { requireMember } from "@/platform/auth/session";
 import { isAdminMember } from "@/platform/auth/roles";
 import { readBrandingForPage } from "@/platform/branding/branding";
@@ -39,10 +41,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     </AppShell>
   );
 
+  const withPaths = enabledIds.has(introsManifest.id) && enabledIds.has(networkManifest.id) ? <IntrosConnectorProvider>{shell}</IntrosConnectorProvider> : shell;
+
   return (
     <QueryProvider>
       <EnabledModulesProvider ids={[...enabledIds]}>
-        {enabledIds.has(messagesManifest.id) ? <MessagesSlotProvider>{shell}</MessagesSlotProvider> : shell}
+        {enabledIds.has(messagesManifest.id) ? <MessagesSlotProvider>{withPaths}</MessagesSlotProvider> : withPaths}
       </EnabledModulesProvider>
     </QueryProvider>
   );

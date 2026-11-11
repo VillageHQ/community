@@ -15,7 +15,7 @@ The root map for agents in this repo. The root `AGENTS.md` is not tracked: `next
 ## What this repo is
 An open-source community app for a venture fund and its founders (AGPL-3.0): Today home, the weekly email, double
 opt-in intros, the asks board, the partner report, and switchable modules. Next.js, TypeScript, Postgres + Drizzle,
-Better Auth, Vitest, pnpm. Village is optional (network search and profile fill-in).
+Better Auth, Vitest, pnpm. Village is optional (network search, intro paths and profile fill-in; intros from profiles work without it).
 
 ## How to run / test
 - Run: `cp .env.example .env`, `docker compose up -d --wait`, `pnpm install`, `pnpm dev`; set `SETUP_TOKEN`, open `/setup`.
@@ -39,7 +39,7 @@ Better Auth, Vitest, pnpm. Village is optional (network search and profile fill-
   `.ai/features/admin-home/NOTES.md`, `.ai/features/admin-firstrun/NOTES.md`, `.ai/features/faces-logos/NOTES.md`, `.ai/features/demo-jobs-perks/NOTES.md`, `.ai/features/village-check/NOTES.md`,
   `.ai/features/reply-by-email/NOTES.md`,
   `.ai/features/jobs-on-cards/NOTES.md`,
-  `.ai/features/asks-tools/NOTES.md`, `.ai/features/search-first/NOTES.md`.
+  `.ai/features/asks-tools/NOTES.md`, `.ai/features/search-first/NOTES.md`, `.ai/features/intros-no-village/NOTES.md`.
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (guides), `drizzle/` (generated), `site/` (has its README), `public/` (demo pictures),
   `vercel.json` (the Vercel Cron Job running the timed jobs daily). Every deploy setup runs the job runner;
   `src/test/deploy-setups.test.ts` guards it.

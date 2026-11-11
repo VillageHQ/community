@@ -1,18 +1,17 @@
 "use client";
 
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useRef, type ReactNode, type RefObject } from "react";
+import { useRef, type RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
 import { INTRO_STATES } from "@/modules/intros/contract";
-import { readIntroPromise } from "@/modules/intros/copy";
 import type { Connector } from "@/modules/network/contract";
-import { ConnectorSlotsContext, type ConnectorSlotProps } from "@/modules/network/slots";
+import type { ConnectorSlotProps } from "@/modules/network/slots";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { ROUTES } from "@/platform/http/routes";
 
-import { AskIntroDialog } from "./ask-intro-dialog";
+import { AskIntroDialog } from "./intro-ask-dialog";
 
 const OPEN_ASK_LABELS: Record<string, (firstName: string) => string> = {
   [INTRO_STATES.requested]: (firstName) => `You asked. Waiting on ${firstName}.`,
@@ -69,23 +68,4 @@ export function ConnectorAsk({ connector, isTop, targetSlug, targetName, viewer 
       />
     </>
   );
-}
-
-function renderAsk(props: ConnectorSlotProps) {
-  return <ConnectorAsk {...props} />;
-}
-
-function renderPromise(connectorName: string, targetName: string) {
-  return (
-    <p className="type-small flex gap-2.5 text-foreground-soft">
-      <Lock aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-      <span>{readIntroPromise(connectorName, targetName)}</span>
-    </p>
-  );
-}
-
-const CONNECTOR_SLOTS = { renderAsk, renderPromise };
-
-export function IntrosConnectorProvider({ children }: { children: ReactNode }) {
-  return <ConnectorSlotsContext.Provider value={CONNECTOR_SLOTS}>{children}</ConnectorSlotsContext.Provider>;
 }

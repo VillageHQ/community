@@ -26,7 +26,7 @@ export async function anonymizeMemberIntros(transaction: Transaction, { memberId
 
   await transaction
     .update(introRequest)
-    .set({ state: INTRO_STATES.withdrawn, closedAt: now, targetEmail: null, requesterHasUpdate: false })
+    .set({ state: INTRO_STATES.withdrawn, closedAt: now, targetEmail: null, suggestedTargetEmail: null, requesterHasUpdate: false })
     .where(and(isPartOf, inArray(introRequest.state, [...OPEN_INTRO_STATES])));
 
   // The intro threads they were in go, with the outside person's address and every reply.

@@ -8,7 +8,7 @@ import { INTRO_STATES } from "@/modules/intros/contract";
 import { API_ROUTES } from "@/platform/http/routes";
 import type { Connector } from "@/modules/network/contract";
 
-import { IntrosConnectorProvider } from "./connector-ask";
+import { IntrosConnectorProvider } from "./intros-network-provider";
 import { MessagesSlotProvider } from "@/modules/messages/components/messages-slot-provider";
 
 import { ConnectorCard, OUTSIDE_COMMUNITY_LABEL } from "@/modules/network/components/connector-card";
@@ -122,7 +122,8 @@ describe("a connector", () => {
               isOutcomeDue: false,
               closedAt: null,
               expiresAt: "2026-11-19T10:00:00.000Z",
-              target: { name: "Clara Bergström", headline: null, linkedinSlug: "clara-bergstrom" },
+              target: { name: "Clara Bergström", headline: null, linkedinSlug: "clara-bergstrom", isNamed: false },
+              suggestedTargetEmail: null,
               requester: { id: "amara", name: "Amara Osei", headline: null, linkedinSlug: null, avatarUrl: null, isAvailable: true },
               introducer: { id: "jonas", name: "Jonas Lindqvist", headline: null, linkedinSlug: "jonas-lindqvist", avatarUrl: null, isAvailable: true },
             }),

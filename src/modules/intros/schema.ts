@@ -33,7 +33,8 @@ export const introRequest = pgTable(
     targetHeadline: text("target_headline"),
     introducerName: text("introducer_name").notNull(),
     introducerHeadline: text("introducer_headline"),
-    introducerLinkedinSlug: text("introducer_linkedin_slug").notNull(),
+    // Empty when the connector has no LinkedIn address on file (an ask from a profile, with no Village).
+    introducerLinkedinSlug: text("introducer_linkedin_slug"),
     reason: text("reason").notNull(),
     note: text("note").notNull(),
     state: text("state").notNull().default(INTRO_STATES.requested),
@@ -68,6 +69,11 @@ export const introRequest = pgTable(
     askId: uuid("ask_id"),
     // The connector offered it ("I know someone") instead of being asked. It counts toward no allowance or cap.
     isConnectorOffer: boolean("is_connector_offer").notNull().default(false),
+    // The asker named the person (from a profile), so there is no Village path and neither member needs the network.
+    // `targetLinkedinSlug` then holds their LinkedIn slug if the asker gave one, or a key made from name and company.
+    isNamedTarget: boolean("is_named_target").notNull().default(false),
+    // The address the asker typed for the person, shown only to the connector to fill in the consent email. Open asks only.
+    suggestedTargetEmail: text("suggested_target_email"),
   },
   (table) => [
     uniqueIndex("intro_request_open_unique")
@@ -90,6 +96,10 @@ export const introRequest = pgTable(
     check(
       "intro_request_target_email_while_open",
       sql`${table.targetEmail} is null or ${table.state} in (${toSqlLiterals([INTRO_STATES.askingTarget, INTRO_STATES.targetAgreed])})`,
+    ),
+    check(
+      "intro_request_suggested_email_while_open",
+      sql`${table.suggestedTargetEmail} is null or ${table.state} in (${toSqlLiterals(OPEN_INTRO_STATES)})`,
     ),
     check("intro_request_target_answer_known", sql`${table.targetAnswer} is null or ${table.targetAnswer} in (${toSqlLiterals(Object.values(CONSENT_ANSWERS))})`),
     check(

@@ -208,7 +208,8 @@ export function buildSampleItems(now = new Date()): TodayItems {
     isOutcomeDue: false,
     closedAt: null,
     expiresAt: at,
-    target: { name: "Jo Rivera", headline: "Head of Design", linkedinSlug: "jo-rivera-example" },
+    target: { name: "Jo Rivera", headline: "Head of Design", linkedinSlug: "jo-rivera-example", isNamed: false },
+    suggestedTargetEmail: null,
     requester: person("sample-requester", "Alex Morgan"),
     introducer: person(SAMPLE_MEMBER.id, SAMPLE_MEMBER.name),
   };

@@ -12,7 +12,8 @@ import type { Transaction } from "../../platform/database/client.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
-import { canMemberIntroduce, readAskableConnectors } from "../network/service.ts";
+import { isActiveMember } from "../../platform/auth/member-status.ts";
+import type { Database } from "../../platform/database/client.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import { type RequestContext } from "../../platform/http/request-context.ts";
 import {
@@ -24,6 +25,8 @@ import {
   INTRO_STATES,
   REQUESTER_STATES,
   readStatesLeadingTo,
+  isNamedIntroBody,
+  readNamedTargetKey,
   type ConsentEmailBody,
   type ConsentIssue,
   type CreateIntroBody,
@@ -31,6 +34,8 @@ import {
   type IntroAction,
   type IntroOutcomeBody,
   type IntroTransitionBody,
+  type NamedIntroBody,
+  type PathIntroBody,
 } from "./contract.ts";
 import { INTRO_EMAIL_EVENTS, queueIntroEmail, type IntroEmailEvent } from "./email.ts";
 import { readEmailBranding } from "../../platform/email/outbox.ts";
@@ -75,44 +80,78 @@ async function readRequiredIntro(context: RequestContext, introId: string) {
   return intro;
 }
 
-async function readAskedConnector(context: RequestContext, { targetSlug, connectorSlug }: CreateIntroBody) {
-  const askable = await readAskableConnectors(context, targetSlug);
-  if (!askable) {
-    throw new RequestError(
-      CONFLICT_STATUS,
-      INTRO_ERROR_CODES.pathsStale,
-      "Look up who can intro you to this person first. It only takes a moment.",
-    );
+// What an ask copies about its connector and the person, from a Village path or from the asker's own words.
+export type AskedConnector = {
+  introducerId: string;
+  introducerName: string;
+  introducerHeadline: string | null;
+  introducerLinkedinSlug: string | null;
+  reason: string;
+  targetName: string;
+  targetHeadline: string | null;
+};
+
+// The Village network, passed in by the shell while the Network module is on; null when it is off. Intros never
+// imports network: paths are an extra way in, and "chosen introducers" is a Village setting.
+export type IntroNetwork = {
+  readPathAsk: (context: RequestContext, body: PathIntroBody) => Promise<AskedConnector>;
+  canIntroduce: (database: Database, memberId: string) => Promise<boolean>;
+};
+
+function networkOffError() {
+  return new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.networkOff, "Search is off in this community. Ask a member from their profile instead.");
+}
+
+function namedConnectorGone() {
+  return new RequestError(NOT_FOUND_STATUS, INTRO_ERROR_CODES.notConnector, "This member can't take intro asks right now.");
+}
+
+async function readNamedConnector(context: RequestContext, { connectorId, target }: NamedIntroBody, network: IntroNetwork | null): Promise<AskedConnector> {
+  if (connectorId === context.member.id) throw namedConnectorGone();
+  const [connector] = await context.database
+    .select({ id: user.id, name: user.name, email: user.email, title: memberProfile.title, company: memberProfile.company, linkedinSlug: memberNetwork.linkedinSlug })
+    .from(user)
+    .leftJoin(memberProfile, eq(memberProfile.userId, user.id))
+    .leftJoin(memberNetwork, eq(memberNetwork.userId, user.id))
+    .where(and(eq(user.id, connectorId), isActiveMember()));
+  if (!connector) throw namedConnectorGone();
+  if (network && !(await network.canIntroduce(context.database, connector.id))) {
+    throw new RequestError(FORBIDDEN_STATUS, INTRO_ERROR_CODES.notIntroducer, "In this community, intros go through members the admins chose. Ask one of them.");
   }
-  const connector = askable.connectors.find(({ linkedinSlug, member }) => linkedinSlug === connectorSlug && member !== null);
-  if (!connector?.member) {
-    throw new RequestError(
-      CONFLICT_STATUS,
-      INTRO_ERROR_CODES.notConnector,
-      "This person can't take this intro request through the community. Look up who can intro you again.",
-    );
+  const ownSlugs = [connector.linkedinSlug, await readRequesterSlug(context, context.member.id)].filter(Boolean);
+  if (target.linkedin && ownSlugs.includes(target.linkedin)) {
+    throw new RequestError(UNPROCESSABLE_STATUS, INTRO_ERROR_CODES.ownTarget, "That's one of you two. Name the person you'd like to meet.");
   }
-  if (!askable.targetName) {
-    throw new RequestError(
-      CONFLICT_STATUS,
-      INTRO_ERROR_CODES.targetUnknown,
-      "Village didn't tell us who this person is, so we can't send this intro request. Try someone else.",
-    );
+  if (target.email && (await isOwnAddress(context, [context.member.id, connector.id], target.email))) {
+    throw new RequestError(UNPROCESSABLE_STATUS, INTRO_ERROR_CODES.targetEmailRefused, `That address belongs to one of you two. Enter ${target.name}'s email.`);
   }
+  const introducerName = connector.name.slice(0, INTRO_LIMITS.nameLength);
   return {
-    introducerId: connector.member.id,
-    introducerName: connector.name,
-    introducerHeadline: connector.headline,
-    introducerLinkedinSlug: connectorSlug,
-    reason: connector.reason,
-    targetName: askable.targetName,
-    targetHeadline: askable.targetHeadline,
+    introducerId: connector.id,
+    introducerName,
+    introducerHeadline: [connector.title, connector.company].filter(Boolean).join(", ").slice(0, INTRO_LIMITS.headlineLength) || null,
+    introducerLinkedinSlug: connector.linkedinSlug,
+    reason: `Asked from ${introducerName}'s profile`.slice(0, INTRO_LIMITS.reasonLength),
+    targetName: target.name,
+    targetHeadline: target.company,
   };
+}
+
+async function readAskedPerson(context: RequestContext, body: CreateIntroBody, network: IntroNetwork | null) {
+  if (isNamedIntroBody(body)) return readNamedConnector(context, body, network);
+  if (!network) throw networkOffError();
+  return network.readPathAsk(context, body);
+}
+
+// What a create writes about the person asked for, beside the connector.
+function readTargetColumns(body: CreateIntroBody) {
+  if (!isNamedIntroBody(body)) return { targetLinkedinSlug: body.targetSlug, isNamedTarget: false, suggestedTargetEmail: null };
+  return { targetLinkedinSlug: readNamedTargetKey(body.target), isNamedTarget: true, suggestedTargetEmail: body.target.email };
 }
 
 // Checks the member's weekly allowance inside the create transaction. The shell passes it, because asks share it.
 export type IntroAllowanceCheck = (transaction: Transaction, memberId: string) => Promise<void>;
-export type CreateIntroOptions = { assertAllowance: IntroAllowanceCheck; askId?: string | null };
+export type CreateIntroOptions = { assertAllowance: IntroAllowanceCheck; network: IntroNetwork | null; askId?: string | null };
 
 // Both rows are locked in one order, so two members asking each other at once can't deadlock.
 async function lockMembers(transaction: Transaction, memberIds: string[]) {
@@ -148,7 +187,8 @@ async function assertConnectorHasRoom(transaction: Transaction, introducerId: st
 
 export async function createIntroRequest(context: RequestContext, body: CreateIntroBody, options: CreateIntroOptions) {
   const { database, member } = context;
-  const asked = await readAskedConnector(context, body);
+  const asked = await readAskedPerson(context, body, options.network);
+  const targetColumns = readTargetColumns(body);
   await enforceIntroLimit(database, member.id, INTRO_LIMIT_KINDS.ask);
 
   if (await isBlockedBy(context, member.id, asked.introducerId)) {
@@ -166,7 +206,7 @@ export async function createIntroRequest(context: RequestContext, body: CreateIn
     );
   }
   const isWithheld =
-    (await isBlockedBy(context, asked.introducerId, member.id)) || (await isTargetRefusingRequester(database, context.environment, member.id, body.targetSlug));
+    (await isBlockedBy(context, asked.introducerId, member.id)) || (await isTargetRefusingRequester(database, context.environment, member.id, targetColumns.targetLinkedinSlug));
 
   await expireDueIntros(database, member.id);
   const createdAt = new Date();
@@ -179,8 +219,8 @@ export async function createIntroRequest(context: RequestContext, body: CreateIn
       .insert(introRequest)
       .values({
         ...asked,
+        ...targetColumns,
         requesterId: member.id,
-        targetLinkedinSlug: body.targetSlug,
         note: body.note,
         isWithheld,
         createdAt,
@@ -222,7 +262,8 @@ function readTransitionPatch(body: IntroTransitionBody, currentDeadline: Date, n
 }
 
 async function withholdFromOptedOutTarget(context: RequestContext, intro: Intro) {
-  if (!(await isTargetOptedOut(context.database, context.environment, intro.target.linkedinSlug))) return;
+  const [row] = await context.database.select({ targetKey: introRequest.targetLinkedinSlug }).from(introRequest).where(eq(introRequest.id, intro.id));
+  if (!row || !(await isTargetOptedOut(context.database, context.environment, row.targetKey))) return;
   await context.database.update(introRequest).set({ isWithheld: true }).where(eq(introRequest.id, intro.id));
   throw introGoneError();
 }
@@ -407,12 +448,12 @@ async function readRequesterSlug(context: RequestContext, memberId: string) {
 
 // "I know someone" on an ask: the helper is the connector and has already said yes by offering, so the intro starts
 // waiting on the target. The helper then makes the consent link on the Intros page, as after any yes.
-export async function createOfferedIntro(context: RequestContext, body: OfferedIntroBody) {
+export async function createOfferedIntro(context: RequestContext, body: OfferedIntroBody, network: IntroNetwork | null) {
   const { database, member, environment } = context;
   await enforceIntroLimit(database, member.id, INTRO_LIMIT_KINDS.ask);
   const [connector, requesterSlug] = await Promise.all([readJoinedNetwork(context, member.id), readRequesterSlug(context, body.requesterId)]);
   if (!connector) throw new RequestError(CONFLICT_STATUS, INTRO_ERROR_CODES.notJoined, NOT_JOINED_MESSAGE);
-  if (!(await canMemberIntroduce(database, member.id))) {
+  if (network && !(await network.canIntroduce(database, member.id))) {
     throw new RequestError(FORBIDDEN_STATUS, INTRO_ERROR_CODES.notIntroducer, "In this community, intros go through members the admins chose. Ask one of them, or post your lead on the ask.");
   }
   if (body.targetSlug === connector.linkedinSlug || body.targetSlug === requesterSlug) {

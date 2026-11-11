@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { IntrosConnectorProvider } from "@/modules/intros/components/connector-ask";
+import { IntrosConnectorProvider } from "@/shell/intros-network-provider";
 import { getDatabase } from "@/platform/database/client";
 import { resolveOnboardingStep } from "@/shell/onboarding";
 import { requireMember } from "@/platform/auth/session";

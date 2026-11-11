@@ -23,7 +23,7 @@ import {
   readIntroLinkLabel,
   type HeadingLevel,
 } from "./intro-parts";
-import { OtherPaths } from "./other-paths";
+import { IntroOtherPathsSlot } from "../slots";
 import { OutcomePrompt } from "./outcome-prompt";
 import { useIntroTransition } from "./use-intro-actions";
 
@@ -109,7 +109,7 @@ export function YourAskCard({ intro, headingLevel: Heading = "h3" }: YourAskCard
       <IntroTimeline intro={intro} />
       <IntroNote label="Your note" note={note} />
       {intro.isOutcomeDue ? <OutcomePrompt intro={intro} /> : null}
-      {hasNoYes(intro) ? <OtherPaths intro={intro} /> : null}
+      {hasNoYes(intro) ? <IntroOtherPathsSlot intro={intro} /> : null}
       {FOLLOW_UP_STATES.has(state) ? <IntroMessageButton person={introducer} isPrimary /> : null}
       {state === INTRO_STATES.requested ? <WithdrawAction intro={intro} /> : null}
       {FOLLOW_UP_STATES.has(state) || hasNoYes(intro) ? null : <IntroMessageButton person={introducer} isPrimary={false} />}
