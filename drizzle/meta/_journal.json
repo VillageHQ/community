@@ -225,13 +225,6 @@
       "when": 1794372146545,
       "tag": "0032_intros_no_village",
       "breakpoints": true
-    },
-    {
-      "idx": 33,
-      "version": "7",
-      "when": 1794420132385,
-      "tag": "0033_village_credit_calls",
-      "breakpoints": true
     }
   ]
 }
