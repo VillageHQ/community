@@ -22,7 +22,7 @@ import { AskMemberIntro } from "@/modules/intros/components/ask-member-intro";
 import { introsManifest } from "@/modules/intros/manifest";
 import { MemberReachCard } from "@/modules/network/components/member-reach-card";
 import { networkManifest } from "@/modules/network/manifest";
-import { readSharesNetwork } from "@/modules/network/reads-member-reach";
+import { readMemberReach } from "@/modules/network/reads-member-reach";
 import { isModuleEnabled } from "@/platform/modules/enablement";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { ROUTES } from "@/platform/http/routes";
@@ -77,8 +77,11 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
   if (!isOwnProfile && !isAdminMember(viewer) && (await isHiddenMember(database, profile.id))) notFound();
   const isBlockedByViewer = !isOwnProfile && (await isBlockedBy(database, viewer.id, profile.id));
   const [isIntrosOn, isNetworkOn] = await Promise.all([isModuleEnabled(database, introsManifest), isModuleEnabled(database, networkManifest)]);
-  const canAskForIntro = isIntrosOn && !isOwnProfile && !isBlockedByViewer && (await readAcceptsIntroAsks(database, profile.id));
-  const reach = isNetworkOn && !isOwnProfile ? { sharesNetwork: await readSharesNetwork(database, profile.id), communityName: (await readBrandingForPage()).name } : null;
+  // With search on, the admins' "chosen introducers" rule decides who can be asked, as it does on the server.
+  const reach = isNetworkOn && !isOwnProfile ? await readMemberReach(database, profile.id) : null;
+  const canAskForIntro =
+    isIntrosOn && !isOwnProfile && !isBlockedByViewer && (reach?.isIntroducer ?? true) && (await readAcceptsIntroAsks(database, profile.id));
+  const communityName = reach ? (await readBrandingForPage()).name : "";
   const { shown } = profile;
   const roleLine = shown.title ? `${shown.title}${shown.company ? ", " : ""}` : "";
   const facts = [profile.stage, profile.sector, profile.cohort].filter(Boolean).join(" · ");
@@ -171,7 +174,7 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
       {profile.canHelpWith ? <ProfileSection title="Ask me about">{profile.canHelpWith}</ProfileSection> : null}
       {profile.needs ? <ProfileSection title="What I need right now">{profile.needs}</ProfileSection> : null}
 
-      {reach ? <MemberReachCard memberName={profile.name} communityName={reach.communityName} sharesNetwork={reach.sharesNetwork} /> : null}
+      {reach ? <MemberReachCard memberName={profile.name} communityName={communityName} reach={reach} canAsk={canAskForIntro} /> : null}
 
       {profile.tags.length > 0 ? (
         <Card>

@@ -7,7 +7,7 @@
   `isActiveParticipant` (`reads.ts`, `reads-consent.ts`) skip the "joined the Village group" rule for it: two active
   members are enough, and leaving the group never closes it. Path asks keep the old rule.
 - **Who the person is.** `target_linkedin_slug` holds their LinkedIn slug when the asker gave a link, else
-  `~<name>|<company>` in lower case (`readNamedTargetKey`). "No thanks", "stop all asks" (an HMAC of this key) and the
+  `~` and the JSON of `[name, company]` in lower case (`readNamedTargetKey`), so a "|" in a name can't collide. "No thanks", "stop all asks" (an HMAC of this key) and the
   open-ask unique index all match on it. The email is never part of the key. `readTargetLinkedinSlug` hides the `~`
   key, so the UI shows the name and company with no LinkedIn link.
 - **The asker's email for the person.** `suggested_target_email`, open asks only (a check constraint), cleared by
@@ -22,8 +22,12 @@
 - **"Who <name> can introduce you to"** (`network/components/member-reach-card.tsx`, while Network is on). Village never
   hands over a member's contacts, so it says whether the member shares their network (joined the group, and not left
   out by "chosen introducers", `readSharesNetwork`) and offers Search. It never lists anyone.
-- **The profile button** shows for another member while Intros is on, unless the viewer blocked them or they turned
-  off intro asks. A block the other way still withholds the ask silently, as before.
+- **The profile button** shows for another member while Intros is on, unless the viewer blocked them, they turned off
+  intro asks, or (Network on) the admins limited intros to chosen members and this one isn't chosen; the server refuses
+  the same cases. A block the other way still withholds the ask silently, as before.
 
-Known gaps: the finer intro rules in `.ai/features/intros-from-profile/SPEC.md` (7 days per step, the admin's outcome
+Known gaps: a key from name and company is only as good as the typing ("Stonecraft" vs "Stonecraft Inc"), and a
+"stop all asks" given on a name-only ask doesn't cover a later ask with their LinkedIn link. Only the asker's and the
+connector's own addresses are refused as the person's email: refusing every member's address would tell the asker
+which addresses belong to members. The finer intro rules in `.ai/features/intros-from-profile/SPEC.md` (7 days per step, the admin's outcome
 day, an event history, the connector on the joining email) are not built.

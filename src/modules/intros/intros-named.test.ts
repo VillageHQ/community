@@ -16,7 +16,10 @@ import { readIntroReport } from "@/modules/intros/reads-report";
 import { introRequest } from "@/modules/intros/schema";
 import { CHOICE_PLACES } from "@/modules/members/contract-privacy";
 import { saveIntroAsksAnswer } from "@/modules/members/service-privacy";
+import { INTRODUCER_RULES } from "@/modules/network/contract-village-settings";
 import { networkManifest } from "@/modules/network/manifest";
+import { INSTANCE_SETTING_KEYS } from "@/platform/settings/schema";
+import { saveSettings } from "@/platform/settings/store";
 import { saveModuleState } from "@/platform/modules/enablement";
 import { EVENTUALLY } from "@/test/async-timeouts";
 import { clearDatabase, createTestDatabase } from "@/test/database";
@@ -169,6 +172,19 @@ describe("an intro asked from a profile, with Village off", () => {
     expect((await readRow(again.id)).isWithheld).toBe(true);
   });
 
+  it("explains a link that isn't a LinkedIn profile", async () => {
+    const response = await askJonas({ ...CLARA, linkedin: "https://evil.example.com/in/clara" });
+
+    expect(response.status).toBe(UNPROCESSABLE_STATUS);
+    expect(await response.json()).toMatchObject({ message: expect.stringContaining("Paste their LinkedIn link") });
+  });
+
+  it("keeps a name with a bar apart from another name and company", async () => {
+    await askedIntro({ ...CLARA, email: null, name: "Ana|Corp", company: "West" });
+
+    expect((await askJonas({ ...CLARA, email: null, name: "Ana", company: "Corp|West" })).status).toBe(OK_STATUS);
+  });
+
   it("refuses a member's own address for the person", async () => {
     const response = await askJonas({ ...CLARA, email: jonas.email });
 
@@ -206,6 +222,19 @@ describe("an intro asked from a profile, with Village off", () => {
       await saveModuleState(database, introsManifest, false);
 
       expect(await renderJonasProfile()).not.toContain("Ask Jonas for an intro");
+    });
+
+    it("offers no ask through a member the admins didn't choose, while the network is on", async () => {
+      await saveModuleState(database, networkManifest, true);
+      await saveSettings(database, {
+        [INSTANCE_SETTING_KEYS.villageIntroducers]: INTRODUCER_RULES.chosen,
+        [INSTANCE_SETTING_KEYS.villageChosenIntroducerIds]: JSON.stringify([amara.userId]),
+      });
+
+      const page = await renderJonasProfile();
+
+      expect(page).not.toContain("Ask Jonas for an intro");
+      expect(page).toContain("intros go through members the admins chose");
     });
 
     it("shows who they can introduce only while the network is on", async () => {

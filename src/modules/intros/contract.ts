@@ -220,7 +220,15 @@ export const namedIntroBodySchema = z.object({
   note: introNoteSchema,
 });
 
-export const createIntroBodySchema = z.union([pathIntroBodySchema, namedIntroBodySchema]);
+// A body with `connectorId` is a named ask; any other is a path ask. Picking the schema first keeps its own messages
+// ("Paste their LinkedIn link…"), where a plain union would answer "Invalid input".
+export const createIntroBodySchema = z.custom<z.input<typeof pathIntroBodySchema> | z.input<typeof namedIntroBodySchema>>().transform((body, context) => {
+  const isNamed = typeof body === "object" && body !== null && "connectorId" in body;
+  const parsed = isNamed ? namedIntroBodySchema.safeParse(body) : pathIntroBodySchema.safeParse(body);
+  if (parsed.success) return parsed.data;
+  for (const issue of parsed.error.issues) context.addIssue({ code: "custom", message: issue.message, path: issue.path });
+  return z.NEVER;
+});
 
 const NAMED_TARGET_KEY_PREFIX = "~";
 
@@ -228,7 +236,7 @@ const NAMED_TARGET_KEY_PREFIX = "~";
 // "stop all asks" covers every ask for them, or else their name and company. Never their email.
 export function readNamedTargetKey({ name, company, linkedin }: Pick<NamedTarget, "name" | "company" | "linkedin">) {
   if (linkedin) return linkedin;
-  return `${NAMED_TARGET_KEY_PREFIX}${name.toLowerCase()}|${company.toLowerCase()}`;
+  return `${NAMED_TARGET_KEY_PREFIX}${JSON.stringify([name.toLowerCase(), company.toLowerCase()])}`;
 }
 
 // A LinkedIn slug the app can link to, or null for a key made from a name.
