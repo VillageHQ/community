@@ -3,11 +3,9 @@ import { z } from "zod";
 import { MEMBER_ERROR_CODES } from "../members/contract-linkedin.ts";
 import { REQUEST_ERROR_CODES } from "../../platform/http/error-codes.ts";
 import { VILLAGE_ERROR_CODES } from "../../platform/village/error-codes.ts";
-import { CREDIT_CALL_KINDS, ESTIMATED_CREDITS, USD_PER_CREDIT } from "../../platform/village/contract.ts";
+import { CONNECTOR_ERROR_CODES, CONNECTOR_LIMITS, CREDIT_CALL_KINDS, ESTIMATED_CREDITS, USD_PER_CREDIT } from "../../platform/village/contract.ts";
 
-export const CONNECTOR_LIMITS = { nameLength: 200, headlineLength: 300, reasonLength: 600 } as const;
-
-export const CONNECTOR_ERROR_CODES = { ownTarget: "intro_own_target" } as const;
+export { CONNECTOR_ERROR_CODES, CONNECTOR_LIMITS };
 
 export const NETWORK_STAGES = {
   notConfigured: "not_configured",

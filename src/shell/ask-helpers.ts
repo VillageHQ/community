@@ -19,6 +19,7 @@ import { isModuleEnabled } from "@/platform/modules/enablement";
 import { formatLongDate } from "@/platform/text/format-date";
 
 import { sendOfferAsMessage } from "./ask-offer-delivery";
+import { readIntroNetwork } from "./intro-network";
 
 const CONFLICT_STATUS = 409;
 const UNPROCESSABLE_STATUS = 422;
@@ -84,7 +85,7 @@ export async function knowSomeone(context: RequestContext, body: KnowSomeoneBody
   const targetName = body.targetName || (targetSlug === target.targetSlug ? target.targetName : null);
   if (!targetName) throw new RequestError(UNPROCESSABLE_STATUS, ASK_ERROR_CODES.introUnavailable, "Add the name of the person you know.");
 
-  const { id: introId } = await createOfferedIntro(context, { requesterId: target.authorId, askId: body.askId, targetSlug, targetName, note: body.note });
+  const { id: introId } = await createOfferedIntro(context, { requesterId: target.authorId, askId: body.askId, targetSlug, targetName, note: body.note }, await readIntroNetwork(context.database));
   await offerHelp(context, { askId: body.askId, note: body.note }, sendOfferAsMessage);
   return { introId };
 }
@@ -95,6 +96,6 @@ export async function askHelperForIntro(context: RequestContext, { askId, helper
   if (!(await isAskIntroOn(context.database))) throw introOffError();
   const { targetSlug, connectorSlug } = await readPathHelperForAuthor(context.database, context.member.id, askId, helperId);
   await readMemberPaths(context, targetSlug, NO_OPEN_ASKS);
-  const intro = await createIntroRequest(context, { targetSlug, connectorSlug, note }, { assertAllowance: assertAskAllowance, askId });
+  const intro = await createIntroRequest(context, { targetSlug, connectorSlug, note }, { assertAllowance: assertAskAllowance, askId, network: await readIntroNetwork(context.database) });
   return { introId: intro.id };
 }

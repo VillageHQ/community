@@ -92,11 +92,11 @@ describe("the shell with modules off", () => {
       });
     });
 
-    it("hides the network and intros entries", async () => {
+    it("hides the network entry and keeps intros, which work from profiles", async () => {
       const enabledIds = await readEnabledIds(database);
       const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false, enabledIds).map(({ label }) => label);
 
-      expect(labels).toEqual(["Home", "Messages", "Members", "Asks"]);
+      expect(labels).toEqual(["Home", "Intros", "Messages", "Members", "Asks"]);
     });
 
     it("hides the credits tab", async () => {
@@ -116,9 +116,11 @@ describe("the shell with modules off", () => {
     });
 
     it("skips the network step of onboarding", async () => {
-      const { memberProfile } = await import("@/modules/members/schema");
+      const { memberPrivacy, memberProfile } = await import("@/modules/members/schema");
       const member = await createSignedInMember(database);
       await database.insert(memberProfile).values({ userId: member.userId, cardStepDoneAt: new Date() });
+      // Intros stay on without network, so the member answers "accept intro asks?" first.
+      await database.insert(memberPrivacy).values({ userId: member.userId, acceptsIntroAsks: true });
 
       expect(await resolveOnboardingStep(database, { id: member.userId, email: member.email })).toBe("done");
     });

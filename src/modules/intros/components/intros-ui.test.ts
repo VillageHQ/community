@@ -9,6 +9,7 @@ import { introBoardQuery, issuedConsentQuery } from "@/modules/intros/queries";
 import { API_ROUTES } from "@/platform/http/routes";
 
 import { MessagesSlotProvider } from "@/modules/messages/components/messages-slot-provider";
+import { IntrosConnectorProvider } from "@/shell/intros-network-provider";
 
 import { AskForYouCard } from "./ask-for-you-card";
 import { IntroBoardView } from "./intro-board";
@@ -41,7 +42,8 @@ function makeIntro(overrides: Partial<Intro> = {}): Intro {
     isOutcomeDue: false,
     closedAt: null,
     expiresAt: EXPIRY,
-    target: { name: "Clara Bergström", headline: null, linkedinSlug: "clara-bergstrom" },
+    target: { name: "Clara Bergström", headline: null, linkedinSlug: "clara-bergstrom", isNamed: false },
+    suggestedTargetEmail: null,
     requester: AMARA,
     introducer: JONAS,
     ...overrides,
@@ -274,10 +276,20 @@ describe("the intro screens", () => {
       expect(screen.queryByText(/Clara said/)).toBeNull();
     });
 
-    it("offers other paths after a no", () => {
-      renderWithClient(createElement(YourAskCard, { intro: makeIntro({ ...requesterIntro, state: INTRO_STATES.declined, closedAt: TIMESTAMP }) }));
+    it("offers other paths after a no, while search is on", () => {
+      const intro = makeIntro({ ...requesterIntro, state: INTRO_STATES.declined, closedAt: TIMESTAMP });
+      renderWithClient(createElement(IntrosConnectorProvider, null, createElement(YourAskCard, { intro })));
 
       expect(screen.getByRole("button", { name: "See who else can help" })).toBeTruthy();
+    });
+
+    it("offers no other paths for a person the asker named, or with search off", () => {
+      const declined = { ...requesterIntro, state: INTRO_STATES.declined, closedAt: TIMESTAMP };
+      const named = makeIntro({ ...declined, target: { name: "Clara Bergström", headline: "Corvane", linkedinSlug: null, isNamed: true } });
+      renderWithClient(createElement(IntrosConnectorProvider, null, createElement(YourAskCard, { intro: named })));
+      renderWithClient(createElement(YourAskCard, { intro: makeIntro(declined) }));
+
+      expect(screen.queryByRole("button", { name: "See who else can help" })).toBeNull();
     });
 
     it("doesn't nudge them to message the connector after a no", () => {

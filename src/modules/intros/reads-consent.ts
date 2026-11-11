@@ -50,13 +50,25 @@ function hasConsentLink(connection: DatabaseOrTransaction, tokenHash: string) {
   return inArray(introRequest.id, linkedIntros);
 }
 
-// Open, not withheld, not past its deadline, between two active joined members with no block either way.
+function selectActiveMemberIds(connection: DatabaseOrTransaction, now: Date) {
+  return connection.select({ userId: user.id }).from(user).where(isActiveMember(now));
+}
+
+// Active, and joined to the network unless the ask is a named one (from a profile), which needs no network.
+export function isActiveParticipant(connection: DatabaseOrTransaction, column: typeof introRequest.requesterId | typeof introRequest.introducerId, now: Date) {
+  return or(
+    and(eq(introRequest.isNamedTarget, true), inArray(column, selectActiveMemberIds(connection, now))),
+    inArray(column, selectActiveJoinedMemberIds(connection, now)),
+  );
+}
+
+// Open, not withheld, not past its deadline, between two active members (joined, for a path ask) with no block either way.
 export function isLiveBetweenMembers(connection: DatabaseOrTransaction, now: Date) {
   return and(
     eq(introRequest.isWithheld, false),
     gt(introRequest.expiresAt, now),
-    inArray(introRequest.requesterId, selectActiveJoinedMemberIds(connection, now)),
-    inArray(introRequest.introducerId, selectActiveJoinedMemberIds(connection, now)),
+    isActiveParticipant(connection, introRequest.requesterId, now),
+    isActiveParticipant(connection, introRequest.introducerId, now),
     hasNoBlockBetweenParticipants(connection),
   );
 }

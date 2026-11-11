@@ -17,7 +17,14 @@ import { FILL_IN_SOURCE_LABEL } from "@/modules/members/contract-fill-in";
 import { readExternalHost } from "@/modules/members/rules-external-url";
 import { isBlockedBy } from "@/modules/members/service-blocks";
 import { isCardFilledIn, readMemberProfile } from "@/modules/members/service-profile";
-import { isHiddenMember } from "@/modules/members/service-privacy";
+import { isHiddenMember, readAcceptsIntroAsks } from "@/modules/members/service-privacy";
+import { AskMemberIntro } from "@/modules/intros/components/ask-member-intro";
+import { introsManifest } from "@/modules/intros/manifest";
+import { MemberReachCard } from "@/modules/network/components/member-reach-card";
+import { networkManifest } from "@/modules/network/manifest";
+import { readSharesNetwork } from "@/modules/network/reads-member-reach";
+import { isModuleEnabled } from "@/platform/modules/enablement";
+import { readBrandingForPage } from "@/platform/branding/branding";
 import { ROUTES } from "@/platform/http/routes";
 import { requireMember } from "@/platform/auth/session";
 import { linkedinUrl } from "@villagehq/sdk";
@@ -69,6 +76,9 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
   // "Hide me from the directory": members can't open the profile either. Admins still can.
   if (!isOwnProfile && !isAdminMember(viewer) && (await isHiddenMember(database, profile.id))) notFound();
   const isBlockedByViewer = !isOwnProfile && (await isBlockedBy(database, viewer.id, profile.id));
+  const [isIntrosOn, isNetworkOn] = await Promise.all([isModuleEnabled(database, introsManifest), isModuleEnabled(database, networkManifest)]);
+  const canAskForIntro = isIntrosOn && !isOwnProfile && !isBlockedByViewer && (await readAcceptsIntroAsks(database, profile.id));
+  const reach = isNetworkOn && !isOwnProfile ? { sharesNetwork: await readSharesNetwork(database, profile.id), communityName: (await readBrandingForPage()).name } : null;
   const { shown } = profile;
   const roleLine = shown.title ? `${shown.title}${shown.company ? ", " : ""}` : "";
   const facts = [profile.stage, profile.sector, profile.cohort].filter(Boolean).join(" · ");
@@ -129,13 +139,16 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
               </Link>
             </Button>
           ) : (
-            <MemberConversationSlot
-              memberId={profile.id}
-              label="Message"
-              accessibleName={`Message ${profile.name}`}
-              size="lg"
-              className="max-sm:w-full"
-            />
+            <div className="flex flex-wrap gap-2 max-sm:w-full">
+              <MemberConversationSlot
+                memberId={profile.id}
+                label="Message"
+                accessibleName={`Message ${profile.name}`}
+                size="lg"
+                className="max-sm:w-full"
+              />
+              {canAskForIntro ? <AskMemberIntro connectorId={profile.id} connectorName={profile.name} /> : null}
+            </div>
           )}
         </div>
         {profile.linkedinSlug || profile.website ? (
@@ -157,6 +170,8 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
       {profile.bio ? <ProfileSection title={`About ${readFirstName(profile.name)}`}>{profile.bio}</ProfileSection> : null}
       {profile.canHelpWith ? <ProfileSection title="Ask me about">{profile.canHelpWith}</ProfileSection> : null}
       {profile.needs ? <ProfileSection title="What I need right now">{profile.needs}</ProfileSection> : null}
+
+      {reach ? <MemberReachCard memberName={profile.name} communityName={reach.communityName} sharesNetwork={reach.sharesNetwork} /> : null}
 
       {profile.tags.length > 0 ? (
         <Card>

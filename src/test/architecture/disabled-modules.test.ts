@@ -116,13 +116,11 @@ describe("a module that's turned off", () => {
     expect(await response.json()).toMatchObject({ code: REQUEST_ERROR_CODES.moduleOff, message: expect.stringContaining("turned this off") });
   });
 
-  it("pauses a module that requires it", async () => {
+  // Pausing a module whose requirement is off is covered in src/platform/modules/enablement.test.ts. No module
+  // requires another today: intros works without network (asks from profiles).
+  it("keeps intros on with network off", async () => {
     const { cookie } = await createSignedInMember(database);
     await saveModuleState(database, networkManifest, false);
-
-    expect((await readIntroBoard(jsonRequest("/api/intros", cookie))).status).toBe(NOT_FOUND_STATUS);
-
-    await saveModuleState(database, networkManifest, true);
 
     expect((await readIntroBoard(jsonRequest("/api/intros", cookie))).status).toBe(SUCCESS_STATUS);
   });

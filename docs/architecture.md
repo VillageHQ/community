@@ -15,7 +15,7 @@ src/
     feed/       Toggle. Posts, replies, reactions, pins.
     messages/   Toggle. Direct messages.
     network/    Toggle. Village search, sync, group, paths, credits.
-    intros/     Toggle. Warm intros. Needs network.
+    intros/     Toggle. Warm intros. Works without network; paths join in through the shell.
     asks/       Toggle, off by default. Members post what they need, others offer help.
                 The feed is a toggle too, off by default for a new community.
     job-board/  Toggle, off by default. Founders' open jobs from their hiring tools, a public
@@ -43,8 +43,7 @@ app -> shell -> modules -> components -> platform
 Inside `modules`:
 
 ```text
-members <- messages, feed, network, asks, job-board
-network <- intros
+members <- messages, feed, network, intros, asks, job-board
 all     <- admin
 ```
 
@@ -93,7 +92,7 @@ export function MemberConversationSlot(props: MemberConversationProps) {
 }
 ```
 
-`src/app/(app)/layout.tsx` wraps its children in `MessagesSlotProvider`. `src/app/(app)/network/page.tsx` wraps its flow in `IntrosConnectorProvider`. A slot with no provider renders nothing.
+`src/app/(app)/layout.tsx` wraps its children in `MessagesSlotProvider`, and in `IntrosConnectorProvider` (`src/shell/intros-network-provider.tsx`) while intros and network are both on. `src/app/(app)/network/page.tsx` wraps its flow in it too. A slot with no provider renders nothing.
 
 ## Dependencies that point the other way
 
@@ -160,8 +159,8 @@ export const introsManifest = {
   description: "Members ask each other for warm introductions.",
   icon: Handshake,
   isOnByDefault: true,
-  needsVillage: true,
-  requires: [networkManifest],
+  needsVillage: false,
+  requires: [],
   navigation: [{ label: "Intros", href: ROUTES.intros, icon: Handshake, section: NAVIGATION_SECTIONS.primary, badge: "intros" }],
   adminTabs: [],
   paths: { pages: [ROUTES.intros], api: [API_ROUTES.intros] },
@@ -189,7 +188,7 @@ Hook names carry a rule:
 
 Each toggleable module has one `instance_settings` row: key `module_state:<id>`, value `on` or `off`. No row means the manifest's `isOnByDefault`. The state isn't cached, so every instance sees a change on its next request.
 
-A module is enabled when it and everything in its `requires` chain are stored on. A dependent's stored choice survives, so turning network off pauses intros, and turning network on restores it.
+A module is enabled when it and everything in its `requires` chain are stored on. A dependent's stored choice survives, so turning a requirement off pauses its dependents, and turning it on restores them. No module requires another today: intros works without network.
 
 When a module is off:
 

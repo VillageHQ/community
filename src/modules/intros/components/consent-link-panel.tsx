@@ -18,8 +18,9 @@ import { readFirstName } from "@/platform/design/avatar-identity";
 function EmailLinkForm({ intro, consentIssue }: { intro: Intro; consentIssue: ConsentIssue }) {
   const emailId = useId();
   const hintId = useId();
-  const [targetEmail, setTargetEmail] = useState("");
+  const [targetEmail, setTargetEmail] = useState(intro.suggestedTargetEmail ?? "");
   const targetFirst = readFirstName(intro.target.name);
+  const requesterFirst = readFirstName(intro.requester.name);
   const send = useMutation({ mutationFn: () => emailConsentLinkRequest({ introId: intro.id, token: consentIssue.token, targetEmail }) });
 
   function submit(event: FormEvent) {
@@ -43,6 +44,7 @@ function EmailLinkForm({ intro, consentIssue }: { intro: Intro; consentIssue: Co
         onChange={(event) => setTargetEmail(event.target.value)}
       />
       <p id={hintId} className="type-small text-muted-foreground">
+        {intro.suggestedTargetEmail ? `${requesterFirst} gave this address. Check it before you send. ` : null}
         We use this address to ask {targetFirst} once, and to join them if they say yes. Then we delete it. Nobody else sees it.
       </p>
       <FormError message={send.error?.message ?? null} />

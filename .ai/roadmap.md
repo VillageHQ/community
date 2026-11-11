@@ -30,7 +30,8 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 
 ## Next (queued)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
-- [ ] Intros from a profile without Village, and the finer intro rules — parity — [spec](features/intros-from-profile/SPEC.md)
+- [ ] Intros from a profile without Village, and "Who <name> can introduce you to" — intros-no-village — open pull request — [charter](features/intros-no-village/CHARTER.md) · [spec](features/intros-from-profile/SPEC.md)
+- [ ] The finer intro rules: 7 days per step, the admin's outcome day, an event history, the connector on the joining email — parity — [spec](features/intros-from-profile/SPEC.md)
 - [ ] Reply by email for messages, intro threads and asks — parity — [spec](features/reply-by-email/SPEC.md)
 
 ### From the final check of the merged app (2026-11-10), not covered by another part
@@ -132,7 +133,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 ### Directory
 - **done** · Member directory — `/members` (Community)
 - **open** · Search and filters — stage, sector, cohort, freshness (PR #19); no city filter: [search-without-village](features/search-without-village/SPEC.md)
-- **open** · Member profile page — Message only; no "Ask for an intro" or "Who X can introduce you to": [intros-from-profile](features/intros-from-profile/SPEC.md)
+- **done** · Member profile page — Message, "Ask <name> for an intro" and, with Village on, "Who <name> can introduce you to" (intros-no-village)
 - **done** · Visibility — emails stay hidden (Community); hide from the directory (PR #20)
 - **done** · Jobs link — a Jobs entry in the navigation (PR #21) instead of a directory link
 
@@ -152,7 +153,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 - **dropped** · "Intros via Village" — dead Founderhall client code (merge plan)
 
 ### Intros
-- **open** · Ask for an intro from a profile — intros start only from search paths: [intros-from-profile](features/intros-from-profile/SPEC.md)
+- **done** · Ask for an intro from a profile, with or without Village (intros-no-village)
 - **done** · One-step ask from search — path picture and one ask dialog (Community, PR #10)
 - **dropped** · Guided ask (`/ask`) — merge plan: four ways to ask become one ask path
 - **open** · Connector step — decline kinds and the target's email (PR #10); no YES/NO reply by email: [reply-by-email](features/reply-by-email/SPEC.md)

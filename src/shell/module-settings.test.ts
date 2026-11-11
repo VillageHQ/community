@@ -82,32 +82,34 @@ describe("changing a feature", () => {
     expect(await response.json()).toMatchObject({ code: MODULE_ERROR_CODES.notFound });
   });
 
-  it("refuses to turn on a module whose requirement is off", async () => {
+  // No module requires another today, so the refusal itself is covered with made-up modules in
+  // src/platform/modules/enablement.test.ts. Intros used to require network; now it works without it.
+  it("turns intros on with network off", async () => {
     await setState(adminCookie, introsManifest.id, false);
     await setState(adminCookie, networkManifest.id, false);
 
     const response = await setState(adminCookie, introsManifest.id, true);
 
-    expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({ code: MODULE_ERROR_CODES.requirementOff });
-    expect(await isModuleEnabled(database, introsManifest)).toBe(false);
+    expect(response.status).toBe(200);
+    expect(await isModuleEnabled(database, introsManifest)).toBe(true);
   });
 
   describe("the screen", () => {
-    it("shows a dependent as paused while its requirement is off", async () => {
+    it("shows intros as working, not paused, while network is off", async () => {
       await setState(adminCookie, networkManifest.id, false);
 
       const { features } = await readFeatureScreen(database);
       const intros = features.find(({ id }) => id === introsManifest.id);
 
-      expect(intros?.missingRequirement).toEqual({ id: networkManifest.id, label: networkManifest.label });
+      expect(intros?.missingRequirement).toBeNull();
+      expect(intros?.needsVillage).toBe(false);
     });
 
-    it("names what turning off a requirement would pause", async () => {
+    it("says turning off network pauses nothing else", async () => {
       const { features } = await readFeatureScreen(database);
       const network = features.find(({ id }) => id === networkManifest.id);
 
-      expect(network?.dependentLabels).toEqual([introsManifest.label]);
+      expect(network?.dependentLabels).toEqual([]);
     });
 
     it("lists core modules as always on, not as switches", async () => {

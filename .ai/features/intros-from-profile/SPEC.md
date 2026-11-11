@@ -1,6 +1,6 @@
 ---
 id: intros-from-profile
-status: idea
+status: in-progress
 waits-on: []
 size:
 touches: ["src/modules/intros/", "src/app/(app)/members/"]
@@ -20,5 +20,7 @@ Here intros start only from network search paths and need Village. Founderhall l
 ## Rough scope
 Ask from a profile without Village (merge plan revision 6), "Who X can introduce you to", 7 days per step, the outcome-day setting (default 14), an event history on the intro page, the connector on the joining email.
 
-## Open questions
-- How does an intro from a profile pick its target with no path data?
+## Progress
+- Built in intros-no-village: the ask from a profile without Village (the asker names the person: name, company,
+  optional email or LinkedIn) and "Who X can introduce you to". How it works: `../intros-no-village/NOTES.md`.
+- Still open: 7 days per step, the outcome-day setting, the event history, the connector on the joining email.

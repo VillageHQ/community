@@ -88,7 +88,7 @@ describe("what a requester sees of each state", () => {
 describe("intro copy", () => {
   const PERSON = { id: "1", name: "Amara Osei", headline: "Founder, Tidewell", linkedinSlug: "amara-osei", avatarUrl: null, isAvailable: true };
   const INTRODUCER = { ...PERSON, id: "2", name: "Jonas Lindqvist" };
-  const TARGET = { name: "Clara Bergström", headline: null, linkedinSlug: "clara" };
+  const TARGET = { name: "Clara Bergström", headline: null, linkedinSlug: "clara", isNamed: false };
 
   it("makes the promise in the mockup's words", () => {
     expect(readIntroPromise("Jonas Lindqvist", "Clara Bergström")).toBe("Jonas reads your note first. Clara hears nothing unless they say yes.");
