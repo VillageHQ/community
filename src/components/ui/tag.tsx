@@ -25,9 +25,9 @@ export function Tags({ className, ...props }: ComponentProps<"div">) {
   return <div data-slot="tags" className={cn("fh-tags", className)} {...props} />;
 }
 
-// The source badge on a profile line: "You" (fund tint) or "Village" (Vellum).
+// The source badge on a profile line, in Founderhall's words: "you" (fund tint) or "from public profiles" (Vellum).
 export function SourceBadge({ source }: { source: "you" | "village" }) {
-  return <span className={cn("fh-src", source === "you" ? "fh-you" : "fh-village")}>{source === "you" ? "You" : "Village"}</span>;
+  return <span className={cn("fh-src", source === "you" ? "fh-you" : "fh-village")}>{source === "you" ? "you" : "from public profiles"}</span>;
 }
 
 // Warmth of a path ("Close", "Met"): fund tint, or Vellum when they only met.

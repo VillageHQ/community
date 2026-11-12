@@ -79,6 +79,12 @@ export const nextConfig = {
     { source: "/join/:token", destination: "/invite?token=:token", permanent: true },
     // Demo faces moved from drawn .svg to .webp portraits; a demo seeded before that keeps the old links until its reset.
     { source: "/demo/faces/:name([a-z0-9-]+)\.svg", destination: "/demo/faces/:name.webp", permanent: true },
+    // Founderhall's addresses for the directory and profiles (the transplant). Old links in emails and bookmarks still
+    // work; the query goes along.
+    { source: "/members", destination: "/directory", permanent: true },
+    { source: "/members/card", destination: "/me", permanent: true },
+    { source: "/members/data", destination: "/me/data", permanent: true },
+    { source: "/members/:memberId", destination: "/people/:memberId", permanent: true },
     // Founderhall's addresses: Messages became the Inbox, and the public job board moved to /jobs (visitors see it
     // there; members see their own board). /messages/new stays: it is Founderhall's "Message" page.
     { source: "/messages", destination: "/inbox", permanent: true },

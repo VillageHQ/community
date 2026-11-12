@@ -2,6 +2,7 @@ import "server-only";
 
 import { jobBoardManifest } from "@/modules/job-board/manifest";
 import { companyJobCountColumn } from "@/modules/job-board/reads-hiring";
+import { readBoardJobs } from "@/modules/job-board/reads";
 import type { HiringLookup } from "@/modules/members/reads-directory";
 import type { Database } from "@/platform/database/client";
 import { isModuleEnabled } from "@/platform/modules/enablement";
@@ -11,4 +12,10 @@ import { isModuleEnabled } from "@/platform/modules/enablement";
 export async function readHiringLookup(database: Database): Promise<HiringLookup | null> {
   if (!(await isModuleEnabled(database, jobBoardManifest))) return null;
   return { jobCountColumn: (company) => companyJobCountColumn(company) };
+}
+
+// "Jobs at member companies (5)" under the directory's title, while the job board is on: open jobs on the board.
+export async function readDirectoryJobCount(database: Database) {
+  if (!(await isModuleEnabled(database, jobBoardManifest))) return null;
+  return (await readBoardJobs(database, null)).length;
 }

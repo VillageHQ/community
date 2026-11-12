@@ -42,7 +42,7 @@ export default modulePage(jobBoardManifest, async function JobsPage({ searchPara
       </header>
       <CompanyFilter basePath={JOB_BOARD_PAGES.board} companies={readCompaniesWithJobs(companies)} selected={company} />
       {jobs.length > 0 ? (
-        <JobList jobs={jobs} memberHref={(memberId) => `${ROUTES.members}/${memberId}`} />
+        <JobList jobs={jobs} memberHref={(memberId) => `${ROUTES.people}/${memberId}`} />
       ) : (
         <div className="mt-4">
           <EmptyState title={empty.title} description={empty.description} />

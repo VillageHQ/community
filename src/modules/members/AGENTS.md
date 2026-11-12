@@ -5,17 +5,18 @@ Core. Always on. Others build on it; it never imports them.
 - `schema.ts`: profiles, tags, avatars, invites and `member_network`. It also holds Village columns: LinkedIn lives on it, and splitting needs a data migration.
 - `service-profile.ts`, `reads-directory.ts`: the member card and the directory. Stage, sector and cohort are free text, filtered as whole values ignoring case; the cohort starts from the invite.
 - `service-invites.ts`, `service-email-confirmation.ts`: issuing and accepting invites, and confirming an email.
-- `contract-bulk-invites.ts`, `service-bulk-invites.ts`: inviting many people from a pasted list or a CSV. Parsing drops leading formula characters; a CSV the admin downloads goes through `toCsv`.
+- `*-bulk-invites.ts`: inviting from a pasted list or a CSV. Parsing drops leading formula characters; a downloaded CSV goes through `toCsv`.
 - `service-admin.ts`: what an admin does to one member: confirm an email, confirm or clear a LinkedIn claim.
 - `service-blocks.ts`, `contract-blocks.ts`: blocks. Whoever calls `setMemberBlocked` passes the effects that run in the same transaction.
 - `service-report-credit.ts`: the "credit me in reports" switch, off by default.
+- Pages `/directory`, `/people/<id>`, `/me`, `/me/data`, `/me/email`: `.ai/features/fh-directory-profile/NOTES.md`.
 - `slots.tsx`: `MemberConversationSlot`, filled by messages. The shell passes the directory its `HiringLookup`.
 - `service-linkedin.ts`: claiming a LinkedIn profile, and whether a member's email is trusted.
-- `service-fill-in.ts`, `contract-fill-in.ts`, `rules-fill-in.ts`: the profile fill-in's data. The admin's legal basis, each member's yes or no (`member_lookup`), and the filled-in lines (`member_fill_in`). Network makes the Village calls and saves through here.
+- `*-fill-in.ts`: the fill-in's data: the admin's basis, each member's yes or no (`member_lookup`), the lines (`member_fill_in`). Network calls Village and saves here.
 - `service-onboarding.ts`: onboarding state; `src/shell/onboarding.ts` runs the two welcome steps.
 - `contract-privacy.ts`, `service-privacy.ts`: `member_privacy`: hide me, who can message me, accept intro asks (null = never answered, treated as yes). `isListedMember` keeps hidden members out of every directory list.
 - `service-erasure.ts`: the real delete's part here. The `user` row stays as a "Deleted member" placeholder with `deleted-<id>@reclaimed.invalid`; `member_removal.erased_at` marks it. `src/shell/account-deletion.ts` runs the whole delete.
-- `contract-*.ts`: Zod schemas and constants. The schema loads them outside Next, so they use relative imports and no `server-only`.
+- `contract-*.ts`: Zod schemas and constants, loaded outside Next too: relative imports, no `server-only`.
 - `queries-*.ts`: client requests. `components/`: the UI.
 
 Rules:

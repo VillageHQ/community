@@ -18,13 +18,13 @@ export function ReportCreditCard({ isOn: initialIsOn }: { isOn: boolean }) {
     onSuccess: (saved) => setIsOn(saved.isOn),
   });
   return (
-    <section aria-labelledby={LABEL_ID} className="mt-5 grid gap-2 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
+    <section aria-labelledby={LABEL_ID} className="fh-sheet grid gap-2">
       <div className="flex items-start justify-between gap-4">
         <div className="grid gap-1">
-          <h2 id={LABEL_ID} className="type-h3">
+          <h2 id={LABEL_ID} className="fh-h3">
             Credit me in reports
           </h2>
-          <p className="type-small text-foreground-soft">
+          <p className="fh-small">
             Admins send a partner report with this community&apos;s totals. Turn this on to be named among its top connectors. Off, you&apos;re only part of a count. Who you introduced is never in it.
           </p>
         </div>

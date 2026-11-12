@@ -1,13 +1,14 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { Download, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Download, X } from "lucide-react";
+import { useRef, useState } from "react";
 
 import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Note } from "@/components/ui/note";
 import { postRequest } from "@/platform/http/post-request";
 import { readResponseFailure } from "@/platform/http/read-response-message";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
@@ -29,21 +30,19 @@ async function downloadExport() {
   URL.revokeObjectURL(url);
 }
 
-export function ExportCard() {
+// Founderhall's "Take it with you".
+export function ExportSheet() {
   const download = useMutation({ mutationFn: downloadExport });
   return (
-    <section aria-labelledby="export-title" className="grid gap-3 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
-      <h2 id="export-title" className="type-h3">
-        Take it with you
+    <section className="fh-sheet" aria-labelledby="export-title">
+      <h2 id="export-title" className="fh-h3 flex items-center gap-1.5">
+        <Download aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} /> Take it with you
       </h2>
-      <p className="type-small text-foreground-soft">
-        Everything above about you, in one JSON file: your card, choices, posts, asks, answers, offers, the intros you are part of, and the messages you sent. It never
-        holds another member&apos;s private notes or messages.
-      </p>
-      <div>
-        <Button type="button" variant="outline" disabled={download.isPending} onClick={() => download.mutate()} className="max-sm:w-full">
-          <Download aria-hidden="true" />
-          {download.isPending ? "Making your file…" : "Export my data"}
+      <p className="fh-small mt-1.5">Everything above about you, as one JSON file.</p>
+      <div className="fh-btn-row mt-2.5">
+        <Button type="button" variant="secondary" size="sm" disabled={download.isPending} onClick={() => download.mutate()}>
+          <Download aria-hidden="true" className="fh-i fh-xs" strokeWidth={1.5} />
+          Export my data (JSON)
         </Button>
       </div>
       <FormError message={download.error?.message ?? null} />
@@ -59,39 +58,42 @@ function goToSignIn() {
   window.location.assign(ROUTES.signInAfterDeletion);
 }
 
-export function DeleteAccountCard({ communityName, isAdmin }: { communityName: string; isAdmin: boolean }) {
+// Founderhall's "Delete my account" sheet holding the real delete (owner-approved): the member types the word, the
+// account goes for good, and they land on sign-in. When Village could not be reached they read what is left first.
+export function DeleteAccountSheet({ communityName, isAdmin }: { communityName: string; isAdmin: boolean }) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [typed, setTyped] = useState("");
-  // When Village couldn't be reached the member reads what is left to do before leaving; otherwise they go straight on.
+  // One delete per page: a double click must not send a second request, whose "already gone" would hide the first answer.
+  const hasSubmitted = useRef(false);
   const deletion = useMutation({ mutationFn: deleteOwnAccount, onSuccess: ({ isVillageIncomplete }) => (isVillageIncomplete ? undefined : goToSignIn()) });
   const isTypedRight = typed.trim().toLowerCase() === DELETE_CONFIRMATION_WORD;
-
   return (
-    <section aria-labelledby="delete-title" className="grid gap-3 rounded-card bg-card p-5 shadow-panel sm:rounded-panel sm:p-7">
-      <h2 id="delete-title" className="type-h3">
-        Delete my account
+    <section className="fh-sheet" id="delete" aria-labelledby="delete-title">
+      <h2 id="delete-title" className="fh-h3 flex items-center gap-1.5">
+        <X aria-hidden="true" className="fh-i fh-s" strokeWidth={1.5} /> Delete my account
       </h2>
-      <p className="type-small text-foreground-soft">
-        This deletes your account from {communityName} for good: your card, photo, posts, asks, answers and offers, and the words of every message you sent (the other
-        member sees &quot;deleted&quot;). If you joined network search, Village is asked to remove you too. Intros you were part of stay only as anonymous counts. There is
-        no undo. Export your data first if you want a copy.
+      <p className="fh-small mt-1.5">
+        Deletes your profile, asks and messages from {communityName} for good. If you joined network search, Village is asked to remove you too. Intros you were part of
+        stay only as anonymous counts. There is no undo: export your data first if you want a copy.
       </p>
-      {isAdmin ? <p className="type-small text-foreground-soft">You are an admin. If you are the only one, make another member an admin first.</p> : null}
+      {isAdmin ? <p className="fh-small mt-1.5">You are an admin. If you are the only one, make another member an admin first.</p> : null}
       {deletion.data?.isVillageIncomplete ? (
-        <div role="status" className="grid gap-3 rounded-field bg-muted p-3.5">
-          <p>{deletion.data.message}</p>
-          <div>
-            <Button type="button" onClick={goToSignIn} className="max-sm:w-full">
+        <div role="status" className="mt-2.5">
+          <Note kind="needs">{deletion.data.message}</Note>
+          <div className="fh-btn-row mt-2.5">
+            <Button type="button" size="sm" onClick={goToSignIn}>
               Done
             </Button>
           </div>
         </div>
       ) : isConfirming ? (
         <form
-          className="grid gap-3 rounded-field bg-muted p-3.5"
+          className="mt-2.5 grid gap-2.5"
           onSubmit={(event) => {
             event.preventDefault();
-            if (isTypedRight) deletion.mutate(typed);
+            if (!isTypedRight || hasSubmitted.current) return;
+            hasSubmitted.current = true;
+            deletion.mutate(typed, { onError: () => (hasSubmitted.current = false) });
           }}
         >
           <div className="grid gap-1.5">
@@ -99,19 +101,18 @@ export function DeleteAccountCard({ communityName, isAdmin }: { communityName: s
             <Input id="delete-confirmation" autoComplete="off" value={typed} onChange={(event) => setTyped(event.target.value)} autoFocus />
           </div>
           <FormError message={deletion.error?.message ?? null} />
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant="destructive" disabled={!isTypedRight || deletion.isPending} className="max-sm:w-full">
+          <div className="fh-btn-row">
+            <Button type="submit" variant="destructive" size="sm" disabled={!isTypedRight || deletion.isPending}>
               {deletion.isPending ? "Deleting…" : "Delete my account for good"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setIsConfirming(false)} className="max-sm:w-full">
+            <Button type="button" variant="secondary" size="sm" onClick={() => setIsConfirming(false)}>
               Keep my account
             </Button>
           </div>
         </form>
       ) : (
-        <div>
-          <Button type="button" variant="outline" onClick={() => setIsConfirming(true)} className="max-sm:w-full">
-            <Trash2 aria-hidden="true" />
+        <div className="fh-btn-row mt-2.5">
+          <Button type="button" variant="secondary" size="sm" onClick={() => setIsConfirming(true)}>
             Delete my account
           </Button>
         </div>

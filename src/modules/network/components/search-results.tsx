@@ -48,7 +48,7 @@ function WorkLine({ title, company, city, logoUrl }: { title: string | null; com
 }
 
 function MemberRow({ member, communityName }: { member: SearchMember; communityName: string }) {
-  const href = `${ROUTES.members}/${member.id}`;
+  const href = `${ROUTES.people}/${member.id}`;
   return (
     <article className="fh-result">
       <div className="fh-top">

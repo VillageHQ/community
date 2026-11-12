@@ -4,7 +4,7 @@ import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 
 import { introRequest } from "@/modules/intros/schema";
 import { INTRO_STATES } from "@/modules/intros/contract";
-import { MESSAGE_POLICIES } from "@/modules/members/contract-privacy";
+import { MESSAGE_POLICIES, readEffectiveMessagePolicy } from "@/modules/members/contract-privacy";
 import { memberNetwork } from "@/modules/members/schema";
 import { readPrivacy } from "@/modules/members/service-privacy";
 import type { MessagePermission } from "@/modules/messages/service";
@@ -66,7 +66,7 @@ export async function wereIntroduced(connection: DatabaseOrTransaction, firstId:
 // The recipient's "who can message me". Admins can always write, and anyone can answer a member who wrote first.
 export const mayMessage: MessagePermission = async (connection, senderId, recipientId) => {
   const { messagePolicy } = await readPrivacy(connection, recipientId);
-  if (messagePolicy === MESSAGE_POLICIES.anyone) return true;
+  if (readEffectiveMessagePolicy(messagePolicy) === MESSAGE_POLICIES.anyone) return true;
   if (await isAdmin(connection, senderId)) return true;
   if (await hasWrittenTo(connection, recipientId, senderId)) return true;
   return wereIntroduced(connection, senderId, recipientId);

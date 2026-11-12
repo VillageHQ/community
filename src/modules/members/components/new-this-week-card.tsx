@@ -18,7 +18,7 @@ function NewMemberRow({ member }: { member: NewMember }) {
     <li className="flex flex-wrap items-center gap-3">
       <Avatar stableId={id} name={name} imageUrl={avatarUrl} sizePx={RAIL_AVATAR_SIZE_PX} />
       <div className="min-w-0 flex-1">
-        <Link href={`${ROUTES.members}/${id}`} className="type-label wrap-anywhere hover:underline">
+        <Link href={`${ROUTES.people}/${id}`} className="type-label wrap-anywhere hover:underline">
           {name}
         </Link>
         <div className="type-micro font-medium wrap-anywhere text-muted-foreground">

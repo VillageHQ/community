@@ -10,6 +10,8 @@ export const FILL_IN_FIELDS = {
   face: "face",
   companyLogo: "company_logo",
   companyDomain: "company_domain",
+  // Founderhall's "Past roles": the work history, as JSON (`PastRole[]`), hidden or shown as one line.
+  pastRoles: "past_roles",
 } as const;
 
 export type FillInField = (typeof FILL_IN_FIELDS)[keyof typeof FILL_IN_FIELDS];
@@ -19,12 +21,42 @@ export const FILL_IN_FIELD_VALUES = Object.values(FILL_IN_FIELDS);
 export const FILL_IN_FIELD_LABELS: Record<FillInField, string> = {
   [FILL_IN_FIELDS.title]: "Role",
   [FILL_IN_FIELDS.company]: "Company",
-  [FILL_IN_FIELDS.location]: "Location",
+  [FILL_IN_FIELDS.location]: "City",
   [FILL_IN_FIELDS.headline]: "Headline",
   [FILL_IN_FIELDS.face]: "Photo",
   [FILL_IN_FIELDS.companyLogo]: "Company logo",
   [FILL_IN_FIELDS.companyDomain]: "Company website",
+  [FILL_IN_FIELDS.pastRoles]: "Past roles",
 };
+
+// One past role: "Hardware Engineer, SunBox Energy · 2019–2023". Years only; no end year means "now".
+export type PastRole = { title: string; company: string | null; start: string | null; end: string | null };
+
+const pastRoleSchema = z.object({
+  title: z.string().min(1),
+  company: z.string().nullable(),
+  start: z.string().nullable(),
+  end: z.string().nullable(),
+});
+
+export const MAXIMUM_PAST_ROLES = 8;
+
+// The stored line back as roles; anything unreadable is no roles.
+export function readPastRoles(value: string | null | undefined): PastRole[] {
+  if (!value) return [];
+  try {
+    const parsed = z.array(pastRoleSchema).safeParse(JSON.parse(value));
+    return parsed.success ? parsed.data.slice(0, MAXIMUM_PAST_ROLES) : [];
+  } catch {
+    return [];
+  }
+}
+
+// "2024–now", "2019–2023", "2019", or nothing.
+export function toRoleYears({ start, end }: Pick<PastRole, "start" | "end">) {
+  if (!start) return end ?? "";
+  return `${start}–${end ?? "now"}`;
+}
 
 // The legal basis an admin records before anyone is looked up. No basis means fill-in is off.
 export const FILL_IN_BASES = { terms: "terms", ask: "ask" } as const;

@@ -1,9 +1,17 @@
-import { FILL_IN_FIELDS, type FillInField } from "../members/contract-fill-in.ts";
+import { FILL_IN_FIELDS, MAXIMUM_PAST_ROLES, type FillInField, type PastRole } from "../members/contract-fill-in.ts";
 import { PROFILE_LIMITS } from "../members/contract-profile.ts";
 import { removeBidiControls, removeNullBytes } from "../../platform/text/safe-text.ts";
 
 type VillageLocation = { city?: string | null; state?: string | null; country?: string | null } | null | undefined;
-type VillageWork = { title?: string | null; company?: { name?: string | null; domain?: string | null; image_url?: string | null } | null } | null | undefined;
+type VillageWork =
+  | {
+      title?: string | null;
+      start_date?: string | null;
+      end_date?: string | null;
+      company?: { name?: string | null; domain?: string | null; image_url?: string | null } | null;
+    }
+  | null
+  | undefined;
 
 export type VillageProfileFacts = {
   avatar?: string | null;
@@ -55,6 +63,22 @@ function readPlace(location: VillageLocation) {
   return parts.length > 0 ? parts.join(", ") : undefined;
 }
 
+const YEAR = /^(\d{4})/;
+
+function readYear(date: string | null | undefined) {
+  return date ? (YEAR.exec(date.trim())?.[1] ?? null) : null;
+}
+
+// Founderhall's "Past roles": the work history, newest first, as a JSON line.
+function readPastRolesLine(history: VillageWork[] | null | undefined) {
+  const roles = (history ?? []).flatMap((work): PastRole[] => {
+    const title = cleanLine(work?.title, PROFILE_LIMITS.title);
+    if (!title) return [];
+    return [{ title, company: cleanLine(work?.company?.name, PROFILE_LIMITS.company) ?? null, start: readYear(work?.start_date), end: readYear(work?.end_date) }];
+  });
+  return roles.length > 0 ? JSON.stringify(roles.slice(0, MAXIMUM_PAST_ROLES)) : undefined;
+}
+
 export function toFilledProfile(profile: VillageProfileFacts): Partial<Record<FillInField, string>> {
   const work = profile.work_relevant ?? profile.work_history?.[0] ?? null;
   const filled: Partial<Record<FillInField, string>> = {
@@ -65,6 +89,7 @@ export function toFilledProfile(profile: VillageProfileFacts): Partial<Record<Fi
     [FILL_IN_FIELDS.face]: readSafeImageUrl(profile.avatar),
     [FILL_IN_FIELDS.companyLogo]: readSafeImageUrl(work?.company?.image_url),
     [FILL_IN_FIELDS.companyDomain]: readCompanyDomain(work?.company?.domain),
+    [FILL_IN_FIELDS.pastRoles]: readPastRolesLine(profile.work_history),
   };
   return Object.fromEntries(Object.entries(filled).filter(([, value]) => value));
 }

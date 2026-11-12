@@ -33,9 +33,13 @@ export const ROUTES = {
   introConsent: "/i",
   introOptOut: "/intro/optout",
   introConsentOld: "/meet",
-  members: "/members",
-  editCard: "/members/card",
-  yourData: "/members/data",
+  // Founderhall's addresses. The old ones (/members, /members/<id>, /members/card, /members/data) answer with
+  // permanent redirects (next.config.mjs).
+  members: "/directory",
+  people: "/people",
+  editCard: "/me",
+  yourData: "/me/data",
+  emailSettings: "/me/email",
   // Search (Founderhall's "/search"; the old "/network" redirects here), the guided ask, the intro ask page and My network.
   network: "/search",
   guidedAsk: "/ask",
@@ -185,6 +189,7 @@ export const API_ROUTES = {
   profilePrivacy: "/api/profile/privacy",
   profileExport: "/api/profile/export",
   profileDelete: "/api/profile/delete",
+  profileField: "/api/profile/field",
   onboardingIntroAsks: "/api/onboarding/intro-asks",
   onboarding: "/api/onboarding",
   onboardingWelcome: "/api/onboarding/welcome",

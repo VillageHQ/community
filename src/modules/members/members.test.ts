@@ -198,17 +198,18 @@ describe("the member directory", () => {
     });
 
     it("keeps only cards updated in the window", async () => {
-      // The viewer has saved no card yet, so has no update to count.
-      expect(await searchNames({ updatedWithinDays: 30 })).toEqual(["Ada"]);
+      // "Fresh as of" is the last save of a member's own words; Bo saved 40 days ago and Cy 100.
+      expect(await searchNames({ updatedWithinDays: 30, sector: "Fintech" })).toEqual([]);
+      expect(await searchNames({ updatedWithinDays: 90, stage: "seed" })).toEqual(["Ada", "Bo"]);
       expect(await searchNames({ updatedWithinDays: 90, sector: "Climate" })).toEqual(["Ada"]);
-      expect(await searchNames({ updatedWithinDays: 0, sector: "Climate" })).toEqual(["Ada", "Cy"]);
+      expect(await searchNames({ updatedWithinDays: 365, sector: "Climate" })).toEqual(["Ada", "Cy"]);
     });
 
     it("offers the values active members use, once each", async () => {
       const { filterOptions, members } = await search({ cohort: "Fund I" });
 
       expect(filterOptions.stage.map((stage) => stage.toLowerCase())).toEqual(["pre-seed", "seed"]);
-      expect(filterOptions).toMatchObject({ sector: ["Climate", "Fintech"], cohort: ["Fund I", "Fund II"] });
+      expect(filterOptions).toMatchObject({ sector: ["Climate", "Fintech"], city: [], cohort: ["Fund I", "Fund II"] });
       expect(members[0]).toMatchObject({ name: "Bo", stage: "seed ", sector: "Fintech", cohort: "Fund I" });
     });
 

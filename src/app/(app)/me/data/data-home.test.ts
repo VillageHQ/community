@@ -40,8 +40,9 @@ function findByName(node: ReactNode, name: string): ReactElement | null {
 
 async function readYourDataText(member: Member) {
   session.cookie = member.cookie;
-  const facts = findByName(await YourDataPage(), "DataHomeFacts");
-  return facts ? renderToStaticMarkup(facts) : "";
+  const page = await YourDataPage();
+  const facts = ["HostingLine", "DataQuestionsLine"].map((name) => findByName(page, name)).filter((element) => element !== null);
+  return facts.map((element) => renderToStaticMarkup(element)).join("");
 }
 
 describe("where the data is kept, and whom to ask", () => {
@@ -68,7 +69,6 @@ describe("where the data is kept, and whom to ask", () => {
     });
     const html = await readYourDataText(member);
     expect(html).toContain("EU, Frankfurt, a made-up host");
-    expect(html).toContain("Data protection lead");
     expect(html).toContain('href="mailto:privacy@example.com"');
     expect(await database.select().from(adminAuditEntry).where(eq(adminAuditEntry.action, AUDIT_ACTIONS.dataHomeSaved))).toHaveLength(1);
   });
@@ -87,8 +87,8 @@ describe("where the data is kept, and whom to ask", () => {
     await save(admin, { location: "", contactName: "", contactEmail: "privacy@example.com" });
 
     const html = await readYourDataText(member);
-    expect(html).not.toContain("Where the data is kept");
-    expect(html).toContain("Write to");
+    expect(html).not.toContain("Hosted by");
+    expect(html).toContain("Questions about your data:");
   });
 
   it("refuses a bad email, a name with no email, or hidden characters, in plain words", async () => {
@@ -113,5 +113,39 @@ describe("where the data is kept, and whom to ask", () => {
   it("is for admins only", async () => {
     expect((await save(member, FILLED)).status).toBe(403);
     expect(await readDataHome(database)).toEqual({ location: null, contact: null });
+  });
+});
+
+function readTreeText(node: ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(readTreeText).join("");
+  if (!isValidElement<{ children?: ReactNode }>(node)) return "";
+  return readTreeText(node.props.children);
+}
+
+describe("what Your data tells a member and offers them", () => {
+  const database = createTestDatabase();
+
+  beforeEach(async () => {
+    await clearDatabase(database);
+  });
+
+  afterAll(async () => {
+    await database.$client.end();
+  });
+
+  it("says the admins see who asked whom for an intro, and offers the real delete to members and admins", async () => {
+    const admin = await createSignedInMember(database, "admin");
+    const member = await createSignedInMember(database);
+
+    session.cookie = member.cookie;
+    const page = await YourDataPage();
+    const text = readTreeText(page);
+    expect(text).toContain("Only the people in an intro see its note; admins see names, states and dates.");
+    expect(text).not.toContain("admins see counts");
+    expect(findByName(page, "DeleteAccountSheet")?.props).toMatchObject({ isAdmin: false });
+
+    session.cookie = admin.cookie;
+    expect(findByName(await YourDataPage(), "DeleteAccountSheet")?.props).toMatchObject({ isAdmin: true });
   });
 });

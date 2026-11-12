@@ -38,7 +38,7 @@ export default modulePage(introsManifest, async function NewIntroPage({ searchPa
   const blockedReason = !connector.canBeAsked ? `${connector.name} has paused intro asks.` : allowance.left === 0 ? describeAllowanceUsed(allowance) : null;
   return (
     <>
-      <BackLink href={`${ROUTES.members}/${connector.id}`}>{connector.name}</BackLink>
+      <BackLink href={`${ROUTES.people}/${connector.id}`}>{connector.name}</BackLink>
       <FlowLayout
         rail={<HowAnIntroWorks connectorFirst={connectorFirst} targetFirst="" communityName={branding.name} lifetimeDays={INTRO_LIFETIME_DAYS} outcomeDays={OUTCOME_PROMPT_AFTER_DAYS} />}
       >

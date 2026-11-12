@@ -89,7 +89,7 @@ describe("search", () => {
 
     await waitFor(() => expect(screen.getByText("3 people in reach through Northwind Founders")).toBeTruthy());
     expect(searchBodies).toEqual([{ prompt: "cto", scope: "network" }]);
-    expect(screen.getByRole("link", { name: "See Marcus’ profile" }).getAttribute("href")).toBe(`${ROUTES.members}/marcus`);
+    expect(screen.getByRole("link", { name: "See Marcus’ profile" }).getAttribute("href")).toBe(`${ROUTES.people}/marcus`);
     expect(screen.getAllByText("Close", { selector: ".fh-warm" })).toHaveLength(2);
     const ask = screen.getByRole("link", { name: "Ask Marcus for an intro" }).getAttribute("href") ?? "";
     expect(ask.startsWith(`${ROUTES.searchAsk}?`)).toBe(true);

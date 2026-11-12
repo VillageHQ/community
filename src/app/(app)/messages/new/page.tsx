@@ -39,7 +39,7 @@ export default modulePage(messagesManifest, async function NewMessagePage({ sear
   if (!target) notFound();
   if (target.conversationId) redirect(`${ROUTES.messages}/${target.conversationId}`);
   const { member } = target;
-  const profileHref = `${ROUTES.members}/${member.id}`;
+  const profileHref = `${ROUTES.people}/${member.id}`;
 
   if (!(await mayMessage(getDatabase(), target.viewerId, member.id))) {
     const firstName = readFirstName(member.name);

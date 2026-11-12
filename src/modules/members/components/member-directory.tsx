@@ -2,33 +2,34 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { BriefcaseBusiness, Search, UsersRound, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useDeferredValue, useState } from "react";
 
 import { EmptyState } from "@/components/empty-state";
-import { Pagination } from "@/components/pagination";
 import { QueryBoundary } from "@/components/query-boundary";
-import { CompanyName } from "@/components/company-name";
+import { CompanyLogo } from "@/components/company-name";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
-import { Input } from "@/components/ui/input";
+import { SearchBox } from "@/components/ui/search-box";
 import { Select } from "@/components/ui/select";
 import { Tag } from "@/components/ui/tag";
 import { EMPTY_DIRECTORY_FILTERS, hasDirectoryFilters, parseDirectoryFilters, readUpdatedWithinDays, toDirectoryQueryString } from "@/modules/members/rules-directory-url";
 import { PROFILE_LIMITS, UPDATED_WITHIN_DAYS, type Directory, type DirectoryFilters, type DirectoryMember } from "@/modules/members/contract-profile";
+import { toRoleLine } from "@/modules/members/rules-words";
 import { ROUTES } from "@/platform/http/routes";
+import { formatDayMonth } from "@/platform/text/format-date";
 
-import { MemberConversationSlot } from "@/modules/members/slots";
 import { directoryQuery } from "@/modules/members/queries-directory";
 
+// Founderhall's directory (member-directory-populated): one search box, five selects, the count, then two columns of
+// ruled rows. A row is one link to the profile: photo, serif name, logo + "Role, Company · City", the "working on"
+// line, square chips and "fresh as of".
+
 const SEARCH_DEBOUNCE_MS = 250;
-const MEMBER_AVATAR_SIZE_PX = 72;
+const MEMBER_AVATAR_SIZE_PX = 36;
 const RESULTS_ID = "member-results";
 const SEARCH_INPUT_ID = "member-search";
-const EVERYONE_TAG = "";
 
 let pendingSearch: ReturnType<typeof setTimeout> | undefined;
 
@@ -55,122 +56,67 @@ function goToPage(page: number, filters: DirectoryFilters) {
   document.getElementById(RESULTS_ID)?.focus();
 }
 
-function readHiringLabel(jobCount: number) {
-  return `Hiring · ${jobCount === 1 ? "1 job" : `${jobCount} jobs`}`;
-}
-
-function MemberCard({ member, viewerId }: { member: DirectoryMember; viewerId: string }) {
-  const { id, name, title, company, companyLogoUrl, canHelpWith, avatarUrl, tags, hiringJobCount } = member;
-  const facts = [member.stage, member.sector, member.cohort].filter(Boolean).join(" · ");
+function MemberRow({ member }: { member: DirectoryMember }) {
+  const { id, name, title, company, location, companyLogoUrl, bio, avatarUrl, freshAt } = member;
+  const roleLine = toRoleLine({ title, company, location });
+  const chips = [member.stage, member.sector, member.cohort].filter((chip): chip is string => Boolean(chip));
   return (
-    <li className="flex">
-      <article className="flex w-full flex-col rounded-card-phone bg-card p-card-phone shadow-panel sm:rounded-card sm:p-6">
-        <div className="flex items-center gap-4">
-          <Avatar stableId={id} name={name} imageUrl={avatarUrl} sizePx={MEMBER_AVATAR_SIZE_PX} />
-          <div className="min-w-0">
-            <h2 className="text-lg leading-6 font-bold tracking-[-0.006em]">{name}</h2>
-            {title ? <div className="type-small text-muted-foreground">{title}</div> : null}
-            {company ? (
-              <div className="type-small flex text-muted-foreground">
-                <CompanyName company={company} logoUrl={companyLogoUrl} />
-              </div>
-            ) : null}
-            {facts ? <div className="type-small text-muted-foreground">{facts}</div> : null}
-            {hiringJobCount > 0 ? (
-              <Tag tone="sage" className="mt-1.5">
-                <BriefcaseBusiness aria-hidden="true" />
-                {readHiringLabel(hiringJobCount)}
-              </Tag>
-            ) : null}
-          </div>
-        </div>
-        {canHelpWith ? (
-          <p className="mt-4 type-note text-foreground-soft">
-            <b className="type-micro block font-bold text-muted-foreground">Ask me about</b>
-            {canHelpWith}
-          </p>
-        ) : (
-          <p className="mt-4 type-note text-muted-foreground">Still settling in.</p>
-        )}
-        <div className="mt-3.5 mb-[18px] flex flex-wrap gap-1.5">
-          {tags.map((tag) => (
-            <Tag key={tag}>{tag}</Tag>
-          ))}
-        </div>
-        <div className="mt-auto grid gap-2">
-          {id === viewerId ? null : (
-            <MemberConversationSlot memberId={id} label="Message" accessibleName={`Message ${name}`} className="w-full" />
-          )}
-          <Button asChild variant="outline" className="w-full">
-            <Link href={`${ROUTES.members}/${id}`} aria-label={`View profile of ${name}`}>
-              View profile
-            </Link>
-          </Button>
-        </div>
-      </article>
-    </li>
+    <Link href={`${ROUTES.people}/${id}`} className="fh-mcard">
+      <Avatar stableId={id} name={name} imageUrl={avatarUrl} sizePx={MEMBER_AVATAR_SIZE_PX} />
+      <div className="fh-who min-w-0">
+        <b>{name}</b>
+        <span className="wrap-anywhere">
+          {company ? <CompanyLogo url={companyLogoUrl} className="fh-colog mt-0" /> : null}
+          {roleLine || " "}
+        </span>
+      </div>
+      {bio ? <p className="fh-wo wrap-anywhere">{bio}</p> : null}
+      <div className="fh-meta">
+        {chips.map((chip) => (
+          <Tag key={chip}>{chip}</Tag>
+        ))}
+        <span className="fh-fresh">fresh as of {formatDayMonth(freshAt)}</span>
+      </div>
+    </Link>
   );
-}
-
-function readMatchSentence(matchCount: number) {
-  return matchCount === 1 ? "1 member matches." : `${matchCount} members match.`;
 }
 
 function DirectoryEmpty({ filters, onClear }: { filters: DirectoryFilters; onClear: () => void }) {
   if (!hasDirectoryFilters(filters)) {
-    return (
-      <div className="rounded-panel bg-card shadow-panel">
-        <EmptyState
-          icon={UsersRound}
-          title="It's just you for now"
-          description="As people accept their invites, they'll show up here."
-        />
-      </div>
-    );
+    return <EmptyState title="No members in the directory yet" description="Members show here once they accept their invite." />;
   }
   return (
-    <div className="rounded-panel bg-card shadow-panel">
-      <EmptyState
-        title="Nobody matches that yet"
-        description="Try a different name, company or tag, or fewer filters."
-      >
-        <Button type="button" size="lg" onClick={onClear}>
-          Show everyone
-        </Button>
-      </EmptyState>
-    </div>
+    <EmptyState title="No member matches" description="Try a company, a city or a skill, or clear the filters.">
+      <Button type="button" variant="secondary" size="sm" onClick={onClear}>
+        Clear
+      </Button>
+    </EmptyState>
   );
 }
 
-type FilterKey = "stage" | "sector" | "cohort";
+type FilterKey = "stage" | "sector" | "city" | "cohort";
 
 const FILTER_LABELS: Record<FilterKey, { label: string; any: string }> = {
   stage: { label: "Stage", any: "Any stage" },
   sector: { label: "Sector", any: "Any sector" },
-  cohort: { label: "Cohort", any: "Any cohort" },
+  city: { label: "City", any: "Any city" },
+  cohort: { label: "Cohort or fund", any: "Any cohort" },
 };
 
-function readUpdatedLabel(days: number) {
-  return days === 0 ? "Updated any time" : `Updated in the last ${days} days`;
-}
+const FILTER_KEYS = Object.keys(FILTER_LABELS) as FilterKey[];
+
+const UPDATED_LABELS: Record<number, string> = { 0: "Updated: any time", 30: "Updated: last 30 days", 90: "Updated: last 90 days", 365: "Updated: last 12 months" };
 
 function DirectoryFilterMenus({ filters, options }: { filters: DirectoryFilters; options: Directory["filterOptions"] }) {
-  const keys = (Object.keys(FILTER_LABELS) as FilterKey[]).filter((key) => options[key].length > 0 || filters[key]);
   return (
-    <div role="group" aria-label="Narrow the list" className="mb-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-      {keys.map((key) => {
+    <div role="group" aria-label="Narrow the list" className="fh-filters">
+      {FILTER_KEYS.map((key) => {
         const chosen = options[key].find((value) => value.toLowerCase() === filters[key].toLowerCase()) ?? filters[key];
         const values = chosen && !options[key].includes(chosen) ? [chosen, ...options[key]] : options[key];
         return (
-          <div key={key}>
-            <label htmlFor={`member-filter-${key}`} className="sr-only">
-              {FILTER_LABELS[key].label}
-            </label>
-            <Select
-              id={`member-filter-${key}`}
-              value={chosen}
-              onChange={(event) => applyFilters({ ...filters, [key]: event.target.value, page: 1 })}
-            >
+          <label key={key} className="fh-filt">
+            <span className="fh-sr">{FILTER_LABELS[key].label}</span>
+            <Select value={chosen} onChange={(event) => applyFilters({ ...filters, [key]: event.target.value, page: 1 })}>
               <option value="">{FILTER_LABELS[key].any}</option>
               {values.map((value) => (
                 <option key={value} value={value}>
@@ -178,95 +124,83 @@ function DirectoryFilterMenus({ filters, options }: { filters: DirectoryFilters;
                 </option>
               ))}
             </Select>
-          </div>
+          </label>
         );
       })}
-      <div>
-        <label htmlFor="member-filter-updated" className="sr-only">
-          How recently the card was updated
-        </label>
+      <label className="fh-filt">
+        <span className="fh-sr">Fresh as of</span>
         <Select
-          id="member-filter-updated"
           value={filters.updatedWithinDays}
           onChange={(event) => applyFilters({ ...filters, updatedWithinDays: readUpdatedWithinDays(event.target.value), page: 1 })}
         >
           {[0, ...UPDATED_WITHIN_DAYS].map((days) => (
             <option key={days} value={days}>
-              {readUpdatedLabel(days)}
+              {UPDATED_LABELS[days]}
             </option>
           ))}
         </Select>
-      </div>
+      </label>
     </div>
   );
 }
 
-type DirectoryResultsProps = { filters: DirectoryFilters; onClear: () => void; isStale: boolean; viewerId: string };
+function readCountLine(count: number, isFiltered: boolean) {
+  if (isFiltered) return `${count} ${count === 1 ? "match" : "matches"}`;
+  return `${count} ${count === 1 ? "member" : "members"}`;
+}
 
-function DirectoryResults({ filters: askedFilters, onClear, isStale, viewerId }: DirectoryResultsProps) {
-  const { data: directory } = useSuspenseQuery(directoryQuery(askedFilters));
-  const { members, matchCount, page, pageCount, popularTags, filterOptions, isHiringShown } = directory;
-  // With the job board off, a stale "hiring" in the URL is ignored and dropped on the next change.
-  const filters = isHiringShown ? askedFilters : { ...askedFilters, hiring: false };
+// Founderhall shows everyone on one page; a very large community gets a quiet "Earlier" / "More" pair.
+function MoreLinks({ page, pageCount, filters }: { page: number; pageCount: number; filters: DirectoryFilters }) {
+  if (pageCount <= 1) return null;
+  return (
+    <nav aria-label="Member pages" className="fh-btn-row mt-3.5">
+      {page > 1 ? (
+        <Button type="button" variant="quiet" size="sm" onClick={() => goToPage(page - 1, filters)}>
+          Earlier
+        </Button>
+      ) : null}
+      {page < pageCount ? (
+        <Button type="button" variant="quiet" size="sm" onClick={() => goToPage(page + 1, filters)}>
+          More
+        </Button>
+      ) : null}
+    </nav>
+  );
+}
+
+type DirectoryResultsProps = { filters: DirectoryFilters; onClear: () => void; isStale: boolean };
+
+function DirectoryResults({ filters, onClear, isStale }: DirectoryResultsProps) {
+  const { data: directory } = useSuspenseQuery(directoryQuery(filters));
+  const { members, matchCount, page, pageCount, filterOptions } = directory;
   const isFiltered = hasDirectoryFilters(filters);
   return (
     <>
       <DirectoryFilterMenus filters={filters} options={filterOptions} />
-      {popularTags.length > 0 || isHiringShown ? (
-        <div role="group" aria-label="Filter members" className="mb-6 flex flex-wrap gap-2">
-          {isHiringShown ? (
-            <>
-              <Chip isPressed={filters.hiring} onClick={() => applyFilters({ ...filters, hiring: !filters.hiring, page: 1 })}>
-                <BriefcaseBusiness aria-hidden="true" className="size-4" />
-                Hiring now
-              </Chip>
-              {popularTags.length > 0 ? <span aria-hidden="true" className="mx-1 w-px self-stretch bg-border" /> : null}
-            </>
-          ) : null}
-          {popularTags.length > 0 ? (
-          <Chip
-            isPressed={filters.tag === EVERYONE_TAG}
-            onClick={() => applyFilters({ ...filters, tag: EVERYONE_TAG, page: 1 })}
-          >
-            Everyone
-          </Chip>
-          ) : null}
-          {popularTags.map(({ label, value }) => (
-            <Chip
-              key={value}
-              isPressed={filters.tag.toLowerCase() === value}
-              onClick={() => applyFilters({ ...filters, tag: value, page: 1 })}
-            >
-              {label}
-            </Chip>
-          ))}
-        </div>
-      ) : null}
       <div id={RESULTS_ID} tabIndex={-1} aria-busy={isStale} className={cn("outline-none", isStale && "opacity-60")}>
-        <p role="status" className={cn("type-small mb-3.5 font-semibold text-foreground-soft", !isFiltered && "sr-only")}>
-          {readMatchSentence(matchCount)}
-        </p>
         {members.length === 0 ? (
-          <DirectoryEmpty filters={filters} onClear={onClear} />
+          <div className="mt-4">
+            <DirectoryEmpty filters={filters} onClear={onClear} />
+          </div>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
-            {members.map((member) => (
-              <MemberCard key={member.id} member={member} viewerId={viewerId} />
-            ))}
-          </ul>
+          <>
+            <p role="status" className="fh-small fh-muted mt-3.5 mb-1">
+              {readCountLine(matchCount, isFiltered)}
+            </p>
+            <div className="fh-cards">
+              {members.map((member) => (
+                <MemberRow key={member.id} member={member} />
+              ))}
+            </div>
+          </>
         )}
       </div>
-      <Pagination
-        page={page}
-        pageCount={pageCount}
-        label="Member pages"
-        onPageChange={(nextPage) => goToPage(nextPage, filters)}
-      />
+      <MoreLinks page={page} pageCount={pageCount} filters={filters} />
     </>
   );
 }
 
-export function MemberDirectory({ viewerId }: { viewerId: string }) {
+export function MemberDirectory() {
   const searchParams = useSearchParams();
   const queryString = searchParams.toString();
   const deferredQueryString = useDeferredValue(queryString);
@@ -276,47 +210,22 @@ export function MemberDirectory({ viewerId }: { viewerId: string }) {
 
   return (
     <>
-      <div role="search" className="relative mb-3.5">
-        <label htmlFor={SEARCH_INPUT_ID} className="sr-only">
-          Search members
-        </label>
-        <Search
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-5 size-icon -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
+      <div role="search">
+        <SearchBox
           id={SEARCH_INPUT_ID}
-          type="search"
           value={searchDraft}
           maxLength={PROFILE_LIMITS.search}
-          placeholder="Search by name, company or tag"
+          placeholder="Name, company or skill"
+          aria-label="Search the directory"
           autoComplete="off"
-          className="pr-14 pl-[54px] [&::-webkit-search-cancel-button]:hidden"
           onChange={(event) => {
             setSearchDraft(event.target.value);
             scheduleSearch(event.target.value, filters);
           }}
         />
-        {searchDraft ? (
-          <Button
-            type="button"
-            variant="quiet"
-            size="icon"
-            aria-label="Clear search"
-            className="absolute top-1/2 right-1.5 -translate-y-1/2"
-            onClick={() => clearFilters(setSearchDraft)}
-          >
-            <X aria-hidden="true" />
-          </Button>
-        ) : null}
       </div>
       <QueryBoundary loadingMessage="Gathering everyone…">
-        <DirectoryResults
-          filters={deferredFilters}
-          onClear={() => clearFilters(setSearchDraft)}
-          isStale={queryString !== deferredQueryString}
-          viewerId={viewerId}
-        />
+        <DirectoryResults filters={deferredFilters} onClear={() => clearFilters(setSearchDraft)} isStale={queryString !== deferredQueryString} />
       </QueryBoundary>
     </>
   );

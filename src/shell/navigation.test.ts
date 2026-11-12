@@ -85,7 +85,7 @@ describe("the navigation", () => {
 
     it.each([
       [ROUTES.today, MEMBER_KEYS.today, MEMBER_KEYS.today],
-      ["/members/abc", MEMBER_KEYS.directory, MEMBER_KEYS.directory],
+      ["/people/abc", MEMBER_KEYS.directory, MEMBER_KEYS.directory],
       [ROUTES.editCard, MEMBER_KEYS.me, null],
       [ROUTES.yourData, MEMBER_KEYS.me, null],
       ["/jobs/yours", MEMBER_KEYS.jobs, MEMBER_KEYS.directory],

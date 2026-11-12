@@ -150,7 +150,7 @@ export const memberPrivacy = pgTable(
       .primaryKey()
       .references(() => user.id, { onDelete: "cascade" }),
     isHidden: boolean("is_hidden").notNull().default(false),
-    messagePolicy: text("message_policy").notNull().default(MESSAGE_POLICIES.anyone),
+    messagePolicy: text("message_policy").notNull().default(MESSAGE_POLICIES.communityDefault),
     acceptsIntroAsks: boolean("accepts_intro_asks"),
     introAsksAnsweredAt: timestamp("intro_asks_answered_at", { withTimezone: true }),
     introAsksAnsweredPlace: text("intro_asks_answered_place"),
@@ -158,7 +158,7 @@ export const memberPrivacy = pgTable(
     messagePolicyChangedAt: timestamp("message_policy_changed_at", { withTimezone: true }),
   },
   (table) => [
-    check("member_privacy_message_policy", sql`${table.messagePolicy} in ('${sql.raw(MESSAGE_POLICIES.anyone)}', '${sql.raw(MESSAGE_POLICIES.introduced)}')`),
+    check("member_privacy_message_policy", sql`${table.messagePolicy} in ('${sql.raw(MESSAGE_POLICIES.communityDefault)}', '${sql.raw(MESSAGE_POLICIES.anyone)}', '${sql.raw(MESSAGE_POLICIES.introduced)}')`),
     check(
       "member_privacy_intro_asks_place",
       sql`${table.introAsksAnsweredPlace} is null or ${table.introAsksAnsweredPlace} in ('${sql.raw(CHOICE_PLACES.onboarding)}', '${sql.raw(CHOICE_PLACES.yourData)}')`,
@@ -203,6 +203,6 @@ export const memberFillIn = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.field] }),
-    check("member_fill_in_field", sql`${table.field} in ('title', 'company', 'location', 'headline', 'face', 'company_logo', 'company_domain')`),
+    check("member_fill_in_field", sql`${table.field} in ('title', 'company', 'location', 'headline', 'face', 'company_logo', 'company_domain', 'past_roles')`),
   ],
 );

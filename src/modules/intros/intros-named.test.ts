@@ -261,7 +261,7 @@ describe("an intro asked from a profile, with Village off", () => {
   describe("the member's profile", () => {
     async function renderJonasProfile() {
       session.cookie = amara.cookie;
-      const { default: MemberProfilePage } = await import("@/app/(app)/members/[memberId]/page");
+      const { default: MemberProfilePage } = await import("@/app/(app)/people/[memberId]/page");
       return renderTree(await MemberProfilePage({ params: Promise.resolve({ memberId: jonas.userId }) }));
     }
 
@@ -292,7 +292,7 @@ describe("an intro asked from a profile, with Village off", () => {
       expect(await renderJonasProfile()).not.toContain("Who Jonas can introduce you to");
 
       await saveModuleState(database, networkManifest, true);
-      expect(await renderJonasProfile()).toContain("Jonas hasn&#x27;t shared a network yet");
+      expect(await renderJonasProfile()).toContain("Jonas hasn’t shared a network, so there are no paths through them yet.");
 
       await joinMemberToGroup(database, jonas.userId, "jonas-lindqvist");
       const page = await renderJonasProfile();

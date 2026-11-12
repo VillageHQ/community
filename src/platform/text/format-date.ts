@@ -33,3 +33,10 @@ export function formatDayMonthTimeUtc(date: string | Date) {
   const time = `${String(moment.getUTCHours()).padStart(2, "0")}:${String(moment.getUTCMinutes()).padStart(2, "0")}`;
   return `${formatDayMonth(moment)} ${time} UTC`;
 }
+
+// Founderhall's day: "1 Sep", with the year when it is not this year ("1 Sep 2025").
+export function formatDay(date: string | Date, now = new Date()) {
+  const day = new Date(date);
+  const year = day.getUTCFullYear();
+  return year === now.getUTCFullYear() ? formatDayMonth(day) : `${formatDayMonth(day)} ${year}`;
+}

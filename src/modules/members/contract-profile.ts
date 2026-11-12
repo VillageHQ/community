@@ -4,8 +4,8 @@ import { nameSchema } from "../../platform/auth/member-name.ts";
 import { removeNullBytes } from "../../platform/text/safe-text.ts";
 import { parseExternalUrl } from "./rules-external-url.ts";
 
-// The directory's "updated" filter: cards saved within this many days.
-export const UPDATED_WITHIN_DAYS = [7, 30, 90] as const;
+// The directory's "Updated" filter (Founderhall's "fresh as of"): own words saved within this many days.
+export const UPDATED_WITHIN_DAYS = [30, 90, 365] as const;
 
 export const PROFILE_LIMITS = {
   title: 80,
@@ -99,6 +99,7 @@ export const directoryFiltersSchema = z.object({
   tag: z.string().overwrite(removeNullBytes).trim().max(PROFILE_LIMITS.tag).default(""),
   stage: z.string().overwrite(removeNullBytes).trim().max(PROFILE_LIMITS.stage).default(""),
   sector: z.string().overwrite(removeNullBytes).trim().max(PROFILE_LIMITS.sector).default(""),
+  city: z.string().overwrite(removeNullBytes).trim().max(PROFILE_LIMITS.location).default(""),
   cohort: z.string().overwrite(removeNullBytes).trim().max(PROFILE_LIMITS.cohort).default(""),
   // 0 is any time.
   updatedWithinDays: z.union([z.literal(0), ...UPDATED_WITHIN_DAYS.map((days) => z.literal(days))]).default(0),
@@ -114,7 +115,13 @@ export const directoryMemberSchema = z.object({
   name: z.string(),
   title: z.string().nullable(),
   company: z.string().nullable(),
+  // The city others see: the member's own, else the one public profiles found.
+  location: z.string().nullable(),
+  // "Working on now", in the member's own words.
+  bio: z.string().nullable(),
   canHelpWith: z.string().nullable(),
+  // When the member last saved their own words ("fresh as of").
+  freshAt: z.string(),
   stage: z.string().nullable(),
   sector: z.string().nullable(),
   cohort: z.string().nullable(),
@@ -134,8 +141,8 @@ export const directorySchema = z.object({
   page: z.number(),
   pageCount: z.number(),
   popularTags: z.array(z.object({ label: z.string(), value: z.string() })),
-  // The values active members use, for the stage, sector and cohort filters.
-  filterOptions: z.object({ stage: z.array(z.string()), sector: z.array(z.string()), cohort: z.array(z.string()) }),
+  // The values active members use, for the stage, sector, city and cohort filters.
+  filterOptions: z.object({ stage: z.array(z.string()), sector: z.array(z.string()), city: z.array(z.string()), cohort: z.array(z.string()) }),
   // True while the job board is on: the cards show "Hiring" and the Hiring filter is offered.
   isHiringShown: z.boolean(),
 });

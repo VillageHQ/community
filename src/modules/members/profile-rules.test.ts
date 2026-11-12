@@ -49,14 +49,14 @@ describe("the card form", () => {
 
 describe("the directory URL", () => {
   it("round-trips the filters", () => {
-    const filters = { search: "ada lovelace", tag: "fintech", stage: "Seed", sector: "Climate", cohort: "Fund II", updatedWithinDays: 30 as const, hiring: true, page: 3 };
+    const filters = { search: "ada lovelace", tag: "fintech", stage: "Seed", sector: "Climate", city: "Lagos", cohort: "Fund II", updatedWithinDays: 30 as const, hiring: true, page: 3 };
     const queryString = toDirectoryQueryString(filters);
 
     expect(parseDirectoryFilters(Object.fromEntries(new URLSearchParams(queryString)))).toEqual(filters);
   });
 
   it("stays clean with no filters", () => {
-    expect(toDirectoryQueryString({ search: "", tag: "", stage: "", sector: "", cohort: "", updatedWithinDays: 0, hiring: false, page: 1 })).toBe("");
+    expect(toDirectoryQueryString({ search: "", tag: "", stage: "", sector: "", city: "", cohort: "", updatedWithinDays: 0, hiring: false, page: 1 })).toBe("");
   });
 
   it("falls back to page one for a nonsense page", () => {
@@ -66,6 +66,11 @@ describe("the directory URL", () => {
 
   it("reads an unknown 'updated' value as any time", () => {
     expect(parseDirectoryFilters({ updated: "5" }).updatedWithinDays).toBe(0);
+  });
+
+  it("reads Founderhall's 'fresh' filter, and the older 'updated' name", () => {
+    expect(parseDirectoryFilters({ fresh: "365" }).updatedWithinDays).toBe(365);
+    expect(parseDirectoryFilters({ updated: "90" }).updatedWithinDays).toBe(90);
   });
 
   it("strips a NUL byte from the URL", () => {
