@@ -1341,3 +1341,436 @@ h2 {
     text-align: left;
   }
 }
+
+/* Prices and the sign-up form, ported from Founderhall's site (price-table, form, plan-pick, confirm) onto this
+   page's colour names, so dark mode follows. Phones get a stacked table; wide screens the full grid. */
+
+.price-line {
+  margin-top: 14px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 62ch;
+}
+
+.footnote {
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  max-width: 80ch;
+}
+
+.price-badge {
+  display: inline-flex;
+  align-items: center;
+  font: 500 12px/18px var(--mono);
+  color: var(--ink);
+  background: var(--sheet);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius-small);
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
+.price-table {
+  display: block;
+  width: 100%;
+  margin-top: 24px;
+  border-collapse: collapse;
+  background: var(--sheet);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.price-table thead,
+.price-table tbody,
+.price-table tfoot {
+  display: block;
+}
+
+.price-table tr {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--sunk);
+}
+
+.price-table th,
+.price-table td {
+  display: block;
+  padding: 0;
+  text-align: left;
+  font-weight: 400;
+  overflow-wrap: break-word;
+}
+
+.price-table thead tr {
+  align-items: end;
+  padding: 14px 12px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.price-table thead th:first-child,
+.price-table tfoot td:first-child {
+  display: none;
+}
+
+.price-table thead .by {
+  display: block;
+  font: 600 11px/15px var(--sans);
+  color: var(--ink-3);
+}
+
+.price-table thead .pn {
+  display: block;
+  font: 600 16px/21px var(--serif);
+}
+
+.price-table thead .price-badge {
+  margin-top: 6px;
+  font-size: 11px;
+  padding: 1px 5px;
+}
+
+.price-table tbody th {
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.price-table tbody tr:first-child td b {
+  display: block;
+  font: 600 15px/21px var(--sans);
+}
+
+.price-table .yes {
+  color: var(--good);
+  font-weight: 700;
+}
+
+.price-table tfoot tr {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 8px;
+  padding: 14px 12px;
+  border-bottom: 0;
+}
+
+@media (min-width: 861px) {
+  .price-table {
+    display: table;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 36px;
+    font-size: 15px;
+  }
+
+  .price-table thead {
+    display: table-header-group;
+  }
+
+  .price-table tbody {
+    display: table-row-group;
+  }
+
+  .price-table tfoot {
+    display: table-footer-group;
+  }
+
+  .price-table tr {
+    display: table-row;
+    padding: 0;
+  }
+
+  .price-table th,
+  .price-table td,
+  .price-table thead th:first-child,
+  .price-table tfoot td:first-child {
+    display: table-cell;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--sunk);
+    vertical-align: top;
+  }
+
+  .price-table tbody th {
+    width: 24%;
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .price-table thead th {
+    padding: 22px 16px 16px;
+    border-bottom: 1px solid var(--hairline);
+    vertical-align: bottom;
+  }
+
+  .price-table thead .by {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .price-table thead .pn {
+    font-size: 22px;
+    line-height: 28px;
+  }
+
+  .price-table tbody tr:first-child td b {
+    font-size: 20px;
+    line-height: 26px;
+  }
+
+  .price-table .feature {
+    background: color-mix(in srgb, var(--sunk) 45%, var(--sheet));
+  }
+
+  .price-table tfoot td {
+    padding: 16px;
+    border-bottom: 0;
+  }
+}
+
+/* The sign-up form */
+
+.closing-get {
+  border-top: 1px solid var(--hairline);
+}
+
+.get-grid {
+  display: grid;
+  gap: 32px;
+  margin-top: 28px;
+}
+
+@media (min-width: 861px) {
+  .get-grid {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.signup-form {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 600px) {
+  .signup-form {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 16px;
+  }
+
+  .signup-form .full {
+    grid-column: 1 / -1;
+  }
+}
+
+.field label,
+.plan-pick legend {
+  display: block;
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.field label i {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.field input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ink-3);
+  border-radius: var(--radius);
+  background: var(--sheet);
+  color: var(--ink);
+  font: 400 16px/24px var(--sans);
+  appearance: none;
+}
+
+.field input::placeholder {
+  color: var(--ink-3);
+}
+
+.field input:hover {
+  border-color: var(--ink);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.field-error {
+  display: none;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: var(--radius-small);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.field.is-invalid input {
+  border-color: var(--accent);
+}
+
+.field.is-invalid .field-error {
+  display: block;
+}
+
+.plan-pick {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.plan-option {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--sheet);
+  cursor: pointer;
+}
+
+.plan-option:first-of-type {
+  margin-top: 0;
+}
+
+.plan-option:hover {
+  border-color: var(--ink-3);
+}
+
+.plan-option:has(input:checked) {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.plan-option input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 3px 0 0;
+  accent-color: var(--ink);
+}
+
+.plan-option b {
+  display: block;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.plan-option small {
+  display: block;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.signup-form .button[disabled] {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.form-error {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-small);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.form-error[hidden],
+.confirm[hidden],
+.signup-form[hidden] {
+  display: none;
+}
+
+.confirm {
+  padding: 22px 20px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--sheet);
+}
+
+.confirm-ok {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--good);
+  color: var(--sheet);
+  font-weight: 700;
+}
+
+.confirm h3 {
+  margin-top: 12px;
+  font-family: var(--serif);
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.confirm p {
+  margin-top: 8px;
+  color: var(--ink-2);
+}
+
+.confirm ol {
+  margin: 12px 0 0;
+  padding-left: 20px;
+}
+
+.confirm button {
+  margin-top: 14px;
+}
+
+.self-column {
+  padding: 20px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--sheet);
+}
+
+.self-column h3 {
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.self-column p {
+  margin-top: 6px;
+  color: var(--ink-2);
+}
+
+.self-column .price-badge {
+  margin-top: 14px;
+}

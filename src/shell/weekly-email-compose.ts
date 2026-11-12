@@ -13,7 +13,15 @@ import type { TodayItems } from "./today";
 export const ITEM_ACTIONS = {
   ask: [REPLY_CODES.help, REPLY_CODES.skip],
   intro: [REPLY_CODES.yes, REPLY_CODES.no],
+  fact: [REPLY_CODES.right, REPLY_CODES.hide, REPLY_CODES.fix],
 } as const;
+
+// The answers one numbered item takes, by link or by reply code.
+export function readItemActions(item: Pick<WeeklyEmailItem, "kind">): readonly string[] {
+  if (item.kind === "intro") return ITEM_ACTIONS.intro;
+  if (item.kind === "fact") return ITEM_ACTIONS.fact;
+  return ITEM_ACTIONS.ask;
+}
 
 export type ItemLinks = ReadonlyMap<number, ReadonlyMap<string, string>>;
 
@@ -93,8 +101,10 @@ export function renderWeeklyEmail(facts: WeeklyEmailFacts) {
     const number = numberFor(numbered, intro.id);
     return number === null ? [] : [{ intro, number }];
   });
-  const lastNumber = Math.max(0, ...numbered.map(({ number }) => number));
-  const lines = items.profileLines.map((line, index) => ({ line, number: lastNumber + index + 1 }));
+  const lines = items.profileLines.flatMap((line) => {
+    const number = numberFor(numbered, line.field);
+    return number === null ? [] : [{ line, number }];
+  });
   const summary = [
     help.length ? count(help.length, "ask you could help with", "asks you could help with") : null,
     intros.length ? count(intros.length, "intro waiting for your yes", "intros waiting for your yes") : null,
@@ -127,8 +137,14 @@ export function renderWeeklyEmail(facts: WeeklyEmailFacts) {
   if (lines.length) {
     parts.push("", "IS THIS RIGHT? WE FILLED THIS IN FROM PUBLIC SOURCES");
     for (const { line, number } of lines) {
-      const link = `${appUrl}${ROUTES.today}#fact-${line.field}`;
-      parts.push("", `${number}. ${line.label}: ${line.value}`, `   Right: ${link}`, `   Hide it: ${link}`, `   Fix it: ${link}`);
+      parts.push(
+        "",
+        `${number}. ${line.label}: ${line.value}`,
+        `   Right: ${linkOf(facts, number, REPLY_CODES.right)}`,
+        `   Hide it: ${linkOf(facts, number, REPLY_CODES.hide)}`,
+        `   Fix it: ${linkOf(facts, number, REPLY_CODES.fix)}`,
+      );
+      if (canReply) parts.push(`   Or reply RIGHT ${number} · HIDE ${number} · FIX ${number} your own words`);
     }
   }
   const mine = readMineLines(facts);

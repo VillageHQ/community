@@ -28,7 +28,7 @@ import { createItemToken, createReplyAddress, readReplyDomain } from "@/platform
 
 import { readEnabledIds } from "./enabled-modules";
 import { needsMemberThisWeek, numberWeeklyItems, readTodayItems, type TodayItems } from "./today";
-import { ITEM_ACTIONS, renderWeeklyEmail, type ItemLinks } from "./weekly-email-compose";
+import { readItemActions, renderWeeklyEmail, type ItemLinks } from "./weekly-email-compose";
 import { readWeeklyEmailEnabled } from "./weekly-email-settings";
 
 const MEMBERS_PER_BATCH = 50;
@@ -44,7 +44,7 @@ type Recipient = { id: string; name: string; email: string };
 export type WeeklyRunSummary = { weekKey: string | null; queued: number; empty: number; notWanted: number; failed: number };
 
 function itemActions(item: WeeklyEmailItem) {
-  return item.kind === "intro" ? ITEM_ACTIONS.intro : ITEM_ACTIONS.ask;
+  return readItemActions(item);
 }
 
 async function buildItemLinks(database: Database, environment: Environment, weeklyEmailId: string, numbered: readonly WeeklyEmailItem[]): Promise<ItemLinks> {

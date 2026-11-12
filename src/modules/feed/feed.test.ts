@@ -89,7 +89,6 @@ describe("the feed", () => {
 
   beforeAll(async () => {
     await clearDatabase(database);
-    // The feed starts off for a new community. These tests are about a community that has it on.
     await saveModuleState(database, feedManifest, true);
     author = await createSignedInMember(database);
     other = await createSignedInMember(database);

@@ -22,3 +22,8 @@ A sign-up form for the managed plan with its confirmation email, limits, export 
 
 ## Open questions
 - Where does the form post to, given `site/` is static?
+
+## Update 2026-11-12 (fix-feed-digest-site)
+The form and the price table are on the page (the owner reversed "no prices, no form"). The form posts only to the
+address in `data-endpoint` on `#signup-form`; it is empty, so nothing is sent yet. Still open: the server that takes
+the sign-ups, the confirmation email, limits, the CSV export and the headers.
