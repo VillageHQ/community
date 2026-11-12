@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, asc, count, desc, eq, exists, gte, ilike, inArray, min, ne, or, sql, type SQL } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
@@ -176,13 +177,13 @@ export function isListedInDirectory(now = new Date()) {
   return and(isActiveMember(now), isListedMember());
 }
 
-// How many open jobs a member's company has, from a feature above members (the job board). The directory page and
+// How many open jobs a member's company has (and the ones the member linked), from a feature above members (the job board). The directory page and
 // route pass it in while that feature is on; without it the cards show no "Hiring" and the filter is ignored.
-export type HiringLookup = { jobCountColumn: (company: SQL) => SQL<number> };
+export type HiringLookup = { jobCountColumn: (company: SQL, memberId: AnyPgColumn) => SQL<number> };
 
 export async function readDirectory(database: Database, filters: Partial<DirectoryFilters>, now = new Date(), hiring: HiringLookup | null = null): Promise<Directory> {
   const { search, tag, stage, sector, city, cohort, updatedWithinDays, hiring: onlyHiring, page } = { ...EMPTY_DIRECTORY_FILTERS, ...filters };
-  const hiringJobCount = hiring ? hiring.jobCountColumn(shownCompany) : sql<number>`0`.mapWith(Number);
+  const hiringJobCount = hiring ? hiring.jobCountColumn(shownCompany, user.id) : sql<number>`0`.mapWith(Number);
   const conditions = and(
     isListedInDirectory(now),
     matchesSearch(database, search),

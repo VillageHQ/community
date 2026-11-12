@@ -212,6 +212,69 @@ describe("the feed on screen", () => {
       expect(await screen.findByText("You're posting fast.")).toBeTruthy();
       expect(box).toHaveProperty("value", "One too many");
     });
+
+    it("shows one note at a time: an empty Post after a post drops the earlier success", async () => {
+      const created = makePost({ id: "22222222-2222-4222-8222-222222222222", body: "Fresh off the press" });
+      stubApi({
+        [API_ROUTES.feedPosts]: (body) =>
+          (body as { body: string }).body.trim() ? { json: created } : { status: 422, json: { message: "Write your post first." } },
+      });
+      renderFeed(MEMBER, [makePost()]);
+
+      const box = screen.getAllByRole("textbox", { name: "Write a post" })[0];
+      if (!box) throw new Error("The composer is missing.");
+      const post = within(screen.getByRole("form", { name: "New post" })).getByRole("button", { name: "Post" });
+      fireEvent.change(box, { target: { value: "Fresh off the press" } });
+      fireEvent.click(post);
+      expect(await screen.findByText("Your post is live.")).toBeTruthy();
+
+      await waitFor(() => expect(box).toHaveProperty("value", ""));
+      fireEvent.click(post);
+
+      expect(await screen.findByText("Write your post first.")).toBeTruthy();
+      expect(screen.queryByText("Your post is live.")).toBeNull();
+    });
+
+    it("sends one post on a double click", async () => {
+      const created = makePost({ id: "44444444-4444-4444-8444-444444444444", body: "Only once" });
+      const fetchStub = stubApi({ [API_ROUTES.feedPosts]: () => ({ json: created }) });
+      renderFeed(MEMBER, [makePost()]);
+
+      const box = screen.getAllByRole("textbox", { name: "Write a post" })[0];
+      if (!box) throw new Error("The composer is missing.");
+      fireEvent.change(box, { target: { value: "Only once" } });
+      const post = within(screen.getByRole("form", { name: "New post" })).getByRole("button", { name: "Post" });
+      fireEvent.click(post);
+      fireEvent.click(post);
+
+      expect(await screen.findByText("Your post is live.")).toBeTruthy();
+      expect(fetchStub.mock.calls.filter(([path]) => path === API_ROUTES.feedPosts)).toHaveLength(1);
+    });
+
+    it("drops the error once the member posts again and it works", async () => {
+      let isFirst = true;
+      stubApi({
+        [API_ROUTES.feedPosts]: () => {
+          if (isFirst) {
+            isFirst = false;
+            return { status: 422, json: { message: "Write your post first." } };
+          }
+          return { json: makePost({ id: "33333333-3333-4333-8333-333333333333", body: "Second try" }) };
+        },
+      });
+      renderFeed(MEMBER, [makePost()]);
+
+      const box = screen.getAllByRole("textbox", { name: "Write a post" })[0];
+      if (!box) throw new Error("The composer is missing.");
+      const post = within(screen.getByRole("form", { name: "New post" })).getByRole("button", { name: "Post" });
+      fireEvent.click(post);
+      expect(await screen.findByText("Write your post first.")).toBeTruthy();
+      fireEvent.change(box, { target: { value: "Second try" } });
+      fireEvent.click(post);
+
+      expect(await screen.findByText("Your post is live.")).toBeTruthy();
+      expect(screen.queryByText("Write your post first.")).toBeNull();
+    });
   });
 
   describe("an empty feed", () => {

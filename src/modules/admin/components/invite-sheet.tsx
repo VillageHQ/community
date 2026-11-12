@@ -11,6 +11,7 @@ import { OptionCard } from "@/components/ui/checkbox-card";
 import { Note } from "@/components/ui/note";
 import { BULK_INVITE_FORMATS, MAXIMUM_LISTED_INVITES, parseInviteList, type BulkInviteResult } from "@/modules/members/contract-bulk-invites";
 import { FILL_IN_BASES, type FillInBasis } from "@/modules/members/contract-fill-in";
+import { PROFILE_LIMITS } from "@/modules/members/contract-profile";
 import { readInviteWords } from "@/modules/members/contract-invite-email";
 import { createBulkInvitesRequest } from "@/modules/members/queries-invites";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
@@ -138,12 +139,12 @@ export function InviteSheet({ community, inviterName, inviterRole, isEmailOn, is
   const signature = { community, inviterName, inviterRole };
 
   const send = useMutation({
-    mutationFn: async ({ text, basis, termsDate }: { text: string; basis: FillInBasis; termsDate: string }) => {
+    mutationFn: async ({ text, cohort, basis, termsDate }: { text: string; cohort: string; basis: FillInBasis; termsDate: string }) => {
       if (isFillInShown && (basis !== savedBasis || (basis === FILL_IN_BASES.terms && termsDate !== savedTermsDate))) {
         const body = basis === FILL_IN_BASES.terms ? { basis, termsDate } : { basis };
         await postRequest(API_ROUTES.adminFillIn, body, acknowledgedResponseSchema);
       }
-      return createBulkInvitesRequest(BULK_INVITE_FORMATS.list, text);
+      return createBulkInvitesRequest(BULK_INVITE_FORMATS.list, text, cohort);
     },
     onSuccess: (result) => {
       const next = readOutcome(result);
@@ -166,6 +167,7 @@ export function InviteSheet({ community, inviterName, inviterRole, isEmailOn, is
           setBasisError(null);
           const data = new FormData(event.currentTarget);
           const text = String(data.get("emails") ?? "");
+          const cohort = String(data.get("cohort") ?? "");
           const basis = (String(data.get("lookup_basis") ?? FILL_IN_BASES.ask) as FillInBasis) || FILL_IN_BASES.ask;
           const termsDate = String(data.get("lookup_basis_date") ?? "");
           if (isNothingToInvite(text)) {
@@ -176,7 +178,7 @@ export function InviteSheet({ community, inviterName, inviterRole, isEmailOn, is
             setBasisError(TERMS_DATE_MESSAGE);
             return;
           }
-          send.mutate({ text, basis, termsDate });
+          send.mutate({ text, cohort, basis, termsDate });
         }}
       >
         <label className="fh-label mt-2.5" htmlFor="invite-emails">
@@ -201,6 +203,14 @@ export function InviteSheet({ community, inviterName, inviterRole, isEmailOn, is
             </>
           )}
         </p>
+
+        {/* Community's cohort (group), as on Import members' CSV column and the setup step's single invite: one for
+            everyone pasted here, on their card when they join. */}
+        <label className="fh-label mt-3.5" htmlFor="invite-cohort">
+          Cohort (optional)
+        </label>
+        <input className="fh-input" id="invite-cohort" name="cohort" autoComplete="off" maxLength={PROFILE_LIMITS.cohort} placeholder="e.g. Fall 2025" />
+        <p className="fh-hint">Goes on the card of everyone in this list. They can change it later.</p>
 
         {isFillInShown ? (
           <fieldset className="fh-basis mt-4 border-0 p-0" id="basis">

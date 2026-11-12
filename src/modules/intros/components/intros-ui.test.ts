@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { FlashProvider } from "@/components/flash";
 import { INTRO_OUTCOMES, INTRO_ROLES, INTRO_STATES, type Intro, type IntroBoard } from "@/modules/intros/contract";
 import { MessagesSlotProvider } from "@/modules/messages/components/messages-slot-provider";
+import { issuedConsentQuery } from "@/modules/intros/queries";
 import { API_ROUTES } from "@/platform/http/routes";
 
 import { IntroPage } from "./intro-page";
@@ -48,8 +49,9 @@ function makeIntro(overrides: Partial<Intro> = {}): Intro {
   };
 }
 
-function renderInApp(element: ReactElement) {
+function renderInApp(element: ReactElement, seed?: (queryClient: QueryClient) => void) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  seed?.(queryClient);
   return render(createElement(QueryClientProvider, { client: queryClient }, createElement(FlashProvider, null, createElement(MessagesSlotProvider, null, element))));
 }
 
@@ -98,7 +100,7 @@ describe("the intro screens (Founderhall's)", () => {
 
       expect(screen.getByText("No asks yet")).toBeTruthy();
       expect(screen.queryByText("Waiting for your answer")).toBeNull();
-      expect(screen.getByText(/choose “Ask for an intro”\. 5 of 5 asks left this week\./)).toBeTruthy();
+      expect(screen.getByText(/choose “Ask for an intro”. 5 of 5 asks left this week./)).toBeTruthy();
     });
   });
 
@@ -220,6 +222,43 @@ describe("the intro screens (Founderhall's)", () => {
 
       expect(await screen.findByText("Pick an answer.")).toBeTruthy();
       expect(posts).toEqual([]);
+    });
+  });
+
+  describe("the connector asking the person", () => {
+    const asking = makeIntro({
+      state: INTRO_STATES.askingTarget,
+      viewerRole: INTRO_ROLES.introducer,
+      requester: { ...MARCUS },
+      introducer: { ...SAM },
+      acceptedAt: "2026-11-11T11:00:00.000Z",
+      askedTargetAt: "2026-11-11T11:00:00.000Z",
+    });
+    const issued = { link: "https://community.example/meet/abc", token: "abc", canEmailTarget: true };
+
+    it("stops saying 'Send Rosa this private link' once the connector had the app email her", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response(JSON.stringify({ ok: true, message: "We emailed Rosa." }), { headers: { "Content-Type": "application/json" } })),
+      );
+      renderInApp(createElement(IntroPage, { intro: asking, community: COMMUNITY, canEmail: true, hasThread: false }), (queryClient) =>
+        queryClient.setQueryData(issuedConsentQuery(asking.id).queryKey, issued),
+      );
+      expect(screen.getByText(/Send Rosa this private link/)).toBeTruthy();
+
+      fireEvent.change(screen.getByLabelText("Rosa's email"), { target: { value: "rosa@halcyon.example" } });
+      fireEvent.click(screen.getByRole("button", { name: "Email Rosa" }));
+
+      expect(await screen.findByText(/We emailed Rosa on /)).toBeTruthy();
+      expect(screen.queryByText(/Send Rosa this private link/)).toBeNull();
+    });
+
+    it("writes dates the app's way: day, then month", () => {
+      renderInApp(createElement(IntroPage, { intro: { ...asking, targetEmailedAt: "2026-11-12T09:00:00.000Z" }, community: COMMUNITY, canEmail: true, hasThread: false }));
+
+      expect(screen.getByText(/We emailed Rosa on 12 Nov\./)).toBeTruthy();
+      expect(screen.getByText(/this closes on 18 Nov\./)).toBeTruthy();
+      expect(screen.queryByText(/Nov 1[28]/)).toBeNull();
     });
   });
 });

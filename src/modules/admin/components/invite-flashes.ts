@@ -3,7 +3,7 @@ export const INVITE_FLASH_PARAM = "m";
 
 export const INVITE_FLASHES = {
   resent: "Invite sent again. The old link no longer works.",
-  revoked: "Invite cancelled. Its link no longer works.",
+  revoked: "Invite revoked. Its link no longer works.",
 } as const;
 
 export type InviteFlash = keyof typeof INVITE_FLASHES;

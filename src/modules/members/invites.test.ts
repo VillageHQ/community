@@ -10,6 +10,7 @@ import { INVITE_EMAIL_STATUSES, INVITE_STATES } from "@/modules/members/contract
 import { hashInviteToken } from "@/modules/members/service-invite-token";
 import { readInviteByToken } from "@/modules/members/service-invites";
 import { readListedInvites } from "@/modules/admin/reads-members";
+import { readInviteFlash } from "@/modules/admin/components/invite-flashes";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
 import { createSignedInMember } from "@/test/signed-in-member";
@@ -272,6 +273,10 @@ describe("admin invites", () => {
 
       expect(response.status).toBe(OK_STATUS);
       expect((await readInviteByToken(database, readToken(issued.link)))?.state).toBe(INVITE_STATES.revoked);
+    });
+
+    it("says revoked, the same word as the row's Revoked label", () => {
+      expect(readInviteFlash("revoked")).toBe("Invite revoked. Its link no longer works.");
     });
 
     it("answers 409 when the invite no longer exists", async () => {

@@ -66,22 +66,22 @@ export default modulePage(adminManifest, async function AdminInvitesPage({ searc
                     <Mail aria-hidden="true" className="size-3.5" strokeWidth={1.5} />
                   </span>
                   <div className="fh-who">
-                    <b>
+                    <b>{invite.name || invite.email}</b>
+                    {/* The address on one line, cut with "…" on a narrow phone, as Founderhall's: never split mid-word. The dates
+                        get their own line, so a long address can't hide when the link ended, and wrap rather than being
+                        cut where Resend and Revoke leave the row narrow (about 1034 px). */}
+                    <span title={invite.email}>{invite.email}</span>
+                    {/* The Revoked or Expired pill leads the dates, so it never takes the name's room on a narrow row. */}
+                    <span className="whitespace-normal!">
                       {invite.isRevoked ? (
-                        <Pill tone="declined" className="mr-1.5 inline-flex! align-[2px]">
+                        <Pill tone="declined" className="mr-1.5 inline-flex! align-[1px]">
                           Revoked
                         </Pill>
                       ) : invite.isExpired ? (
-                        <Pill tone="needs" className="mr-1.5 inline-flex! align-[2px]">
+                        <Pill tone="needs" className="mr-1.5 inline-flex! align-[1px]">
                           Expired
                         </Pill>
                       ) : null}
-                      {invite.name || invite.email}
-                    </b>
-                    {/* The address on one line, cut with "…" on a narrow phone, as Founderhall's: never split mid-word. The dates
-                        get their own line, so a long address can't hide when the link ended. */}
-                    <span title={invite.email}>{invite.email}</span>
-                    <span>
                       Sent {formatShortDate(invite.createdAt.toISOString())},{" "}
                       {invite.revokedAt
                         ? `revoked ${formatShortDate(invite.revokedAt.toISOString())}`

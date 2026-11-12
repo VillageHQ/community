@@ -19,8 +19,9 @@ const APP_URL = "http://localhost:3000";
 
 type Member = Awaited<ReturnType<typeof createSignedInMember>>;
 
-function bulkRequest(member: Member, format: "list" | "csv", body: string) {
-  return new Request(`${APP_URL}/api/admin/invites/bulk?format=${format}`, {
+function bulkRequest(member: Member, format: "list" | "csv", body: string, cohort?: string) {
+  const query = new URLSearchParams({ format, ...(cohort === undefined ? {} : { cohort }) });
+  return new Request(`${APP_URL}/api/admin/invites/bulk?${query}`, {
     method: "POST",
     headers: { "Content-Type": "text/plain", Origin: APP_URL, Cookie: member.cookie },
     body,
@@ -167,6 +168,32 @@ describe("inviting many people", () => {
     const [profile] = await database.select().from(memberProfile).where(eq(memberProfile.userId, accepted?.userId ?? ""));
     expect(profile?.company).toBe("Engines Ltd");
     expect(profile?.cohort).toBe("Fund II");
+  });
+
+  it("puts the cohort typed beside a pasted list on every new member's card", async () => {
+    const response = await postBulk(bulkRequest(admin, "list", "Ada Lovelace, ada@example.com\nlin@example.com", "  Fall 2025 "));
+    const result = bulkInviteResultSchema.parse(await response.json());
+    expect(result.invitedCount).toBe(2);
+
+    for (const link of result.links) {
+      const accepted = await acceptInvite(database, readInviteToken(link.link), { account: { name: "New member", password: "a-long-test-password" } });
+      const [profile] = await database.select().from(memberProfile).where(eq(memberProfile.userId, accepted?.userId ?? ""));
+      expect(profile?.cohort).toBe("Fall 2025");
+    }
+  });
+
+  it("refuses a cohort over the card's limit", async () => {
+    const response = await postBulk(bulkRequest(admin, "list", "ada@example.com", "x".repeat(81)));
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({ message: "Keep the cohort under 80 characters." });
+  });
+
+  it("ignores a list cohort sent with a CSV, which names each person's own", async () => {
+    const response = await postBulk(bulkRequest(admin, "csv", "name,email,company,cohort\nAda,ada@example.com,Engines Ltd,Fund II", "x".repeat(81)));
+
+    expect(response.status).toBe(200);
+    expect(bulkInviteResultSchema.parse(await response.json()).invitedCount).toBe(1);
   });
 
   it("is for admins only", async () => {

@@ -12,9 +12,10 @@ import { logoOfCompanyColumn } from "../members/reads-pictures";
 import type { CompanyJobs, NewJobs } from "./contract";
 import { jobPosting, jobSource } from "./schema";
 
-// A company's jobs, wherever a member or a company shows: the profile, the directory's chip and filter, Today.
-// A company's jobs are the listed jobs (source not hidden, linked by an active member) whose source company is the
-// member's company, ignoring case and outer spaces.
+// A member's jobs, wherever a member or a company shows: the profile, the directory's chip and filter, Today.
+// They are the listed jobs (source not hidden, linked by an active member) whose source company is the member's
+// company, ignoring case and outer spaces, and every job the member linked themselves, so changing the company's words
+// on their card never hides their own jobs.
 
 export const PROFILE_JOB_LIMIT = 5;
 export const NEW_JOB_LIMIT = 5;
@@ -32,12 +33,16 @@ function isSameCompany(first: SQL | AnyPgColumn, second: SQL | AnyPgColumn) {
   return sql`nullif(trim(${second}), '') is not null and lower(trim(${first})) = lower(trim(${second}))`;
 }
 
-// The open jobs at a member's company, as one subquery a directory read can add next to the member.
-export function companyJobCountColumn(company: SQL | AnyPgColumn, now = new Date()) {
+function isMembersJob(sourceCompany: AnyPgColumn, sourceMemberId: AnyPgColumn, company: SQL | AnyPgColumn, memberId: SQL | AnyPgColumn) {
+  return sql`(${isSameCompany(sourceCompany, company)} or ${sourceMemberId} = ${memberId})`;
+}
+
+// The open jobs at a member's company or linked by them, as one subquery a directory read can add next to the member.
+export function companyJobCountColumn(company: SQL | AnyPgColumn, memberId: SQL | AnyPgColumn, now = new Date()) {
   return sql<number>`(select count(*)::int from ${fromAlias(jobPosting, "hiring_posting")}
     join ${fromAlias(jobSource, "hiring_source")} on ${hiringSource.id} = ${hiringPosting.sourceId}
     join ${fromAlias(user, "hiring_owner")} on ${hiringOwner.id} = ${hiringSource.memberId}
-    where ${hiringSource.hidden} = false and ${isActiveMember(now, hiringOwner)} and ${isSameCompany(hiringSource.company, company)})`.mapWith(Number);
+    where ${hiringSource.hidden} = false and ${isActiveMember(now, hiringOwner)} and ${isMembersJob(hiringSource.company, hiringSource.memberId, company, memberId)})`.mapWith(Number);
 }
 
 function isListedSource(now: Date) {
@@ -46,11 +51,9 @@ function isListedSource(now: Date) {
 
 const NEWEST_FIRST = [sql`coalesce(${jobPosting.postedAt}, ${jobPosting.firstSeenAt}) desc`, desc(jobPosting.id)];
 
-// Up to 5 of a company's open jobs for a profile, and how many there are in all.
-export async function readCompanyJobs(database: DatabaseOrTransaction, company: string | null, now = new Date()): Promise<CompanyJobs> {
-  const name = company?.trim() ?? "";
-  if (!name) return { jobs: [], total: 0, companySlug: null };
-  const where = and(isListedSource(now), isSameCompany(jobSource.company, sql`${name}`));
+// Up to 5 of a member's open jobs for their profile (their company's, and the ones they linked), and how many in all.
+export async function readCompanyJobs(database: DatabaseOrTransaction, { company, memberId }: { company: string | null; memberId: string }, now = new Date()): Promise<CompanyJobs> {
+  const where = and(isListedSource(now), isMembersJob(jobSource.company, jobSource.memberId, sql`${company?.trim() ?? ""}`, sql`${memberId}`));
   // One query after the other: the connection may be a transaction.
   const jobs = await database
     .select({ id: jobPosting.id, title: jobPosting.title, location: jobPosting.location, url: jobPosting.url, companySlug: jobSource.companySlug })

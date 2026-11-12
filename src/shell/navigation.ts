@@ -20,12 +20,13 @@ type MenuEntry = Omit<ShellNavigationItem, "icon" | "href"> & {
 };
 
 // Founderhall's member menu, in its order: Today · Asks & updates · Search · Directory · Jobs · Intros · Inbox ·
-// [Perks] · My profile. Six of them are phone tabs.
+// [Perks] · My profile. Six of them are phone tabs, and Community's Feed while it's on.
 const MEMBER_MENU: readonly MenuEntry[] = [
   { key: MEMBER_KEYS.today, label: "Today", tabLabel: "Today", icon: CalendarCheck, href: ROUTES.today },
   { key: MEMBER_KEYS.asks, label: "Asks & updates", tabLabel: "Asks", icon: Hand, moduleId: "asks", badge: NAVIGATION_BADGES.asks },
-  // Community's switchable feed (on where no admin chose; Founderhall has none): its own page, listed only while it's on.
-  { key: MEMBER_KEYS.feed, label: "Feed", icon: Newspaper, moduleId: "feed" },
+  // Community's switchable feed (on where no admin chose; Founderhall has none): its own page and phone tab, listed
+  // only while it's on.
+  { key: MEMBER_KEYS.feed, label: "Feed", tabLabel: "Feed", icon: Newspaper, moduleId: "feed" },
   { key: MEMBER_KEYS.search, label: "Search", tabLabel: "Search", icon: Search, moduleId: "network" },
   { key: MEMBER_KEYS.directory, label: "Directory", tabLabel: "Directory", icon: BookUser, moduleId: "members" },
   { key: MEMBER_KEYS.jobs, label: "Jobs", icon: Building2, moduleId: "job-board" },

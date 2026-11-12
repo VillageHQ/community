@@ -45,6 +45,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 
 - [ ] Parity fixes: credit in partner reports, no-answer counts, Village alerts and credit view, a member answering as the person asked for, asking word helpers, faces — fix-intros-reports — open pull request — [spec](features/fix-intros-reports/SPEC.md)
 - [ ] Fixes from the Fly host test: HSTS on https, no overlapping queries in timed jobs, Deploy on Fly.io and a warning without CLIENT_IP_HEADER, revoked invites listed with Resend — fix-host-findings — open pull request, [PR #58](https://github.com/VillageHQ/community/pull/58) — [spec](features/fix-host-findings/SPEC.md)
+- [ ] Fix build, the small leftovers: cohort on Admin › Invites, Hiring follows who linked the jobs, one feed note and a Feed tab, intro page words and dates, "revoked" wording, the website plan above 2,000 members — fix-cleanup — open pull request, [PR #59](https://github.com/VillageHQ/community/pull/59) — [spec](features/fix-cleanup/SPEC.md)
 - [ ] Asks board tabs (Open, Mine, Answered, Closed), search over every ask and answer, admin pin, reopen, and an Admin › Asks page — asks-tools — open pull request, [PR #39](https://github.com/VillageHQ/community/pull/39) — [charter](features/asks-tools/CHARTER.md) · [spec](features/asks-board-tools/SPEC.md)
 
 ## Next (queued)
