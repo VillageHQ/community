@@ -2,6 +2,7 @@ import { Mail } from "lucide-react";
 import type { Metadata } from "next";
 
 import { FlashNote } from "@/components/flash";
+import { Pill } from "@/components/ui/pill";
 import { getDatabase } from "@/platform/database/client";
 import { readBranding } from "@/platform/branding/branding";
 import { readResendConfig } from "@/platform/email/resend";
@@ -23,7 +24,7 @@ import { adminManifest } from "@/modules/admin/manifest";
 export const metadata: Metadata = { title: "Invites" };
 
 // Founderhall's Invites: paste many people at once, the profile fill-in's consent, who is still waiting to sign in,
-// and the email that goes out. Community-only: Revoke.
+// and the email that goes out. Community-only: Revoke, and expired invites stay listed, marked, with Resend.
 export default modulePage(adminManifest, async function AdminInvitesPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const admin = await requireAdmin();
   const flash = readInviteFlash((await searchParams)[INVITE_FLASH_PARAM]);
@@ -64,10 +65,17 @@ export default modulePage(adminManifest, async function AdminInvitesPage({ searc
                     <Mail aria-hidden="true" className="size-3.5" strokeWidth={1.5} />
                   </span>
                   <div className="fh-who">
-                    <b>{invite.name || invite.email}</b>
+                    <b>
+                      {invite.name || invite.email}
+                      {invite.isExpired ? (
+                        <Pill tone="needs" className="ml-1.5 align-[1px]">
+                          Expired
+                        </Pill>
+                      ) : null}
+                    </b>
                     {/* One line, cut with "…" on a narrow phone, as Founderhall's: an address is never split mid-word. */}
                     <span title={invite.email}>
-                      {invite.email} · sent {formatShortDate(invite.createdAt.toISOString())}, ends {formatShortDate(invite.expiresAt.toISOString())}
+                      {invite.email} · sent {formatShortDate(invite.createdAt.toISOString())}, {invite.isExpired ? "ended" : "ends"} {formatShortDate(invite.expiresAt.toISOString())}
                     </span>
                   </div>
                   <div className="fh-end lg:flex-row! lg:items-center!">
