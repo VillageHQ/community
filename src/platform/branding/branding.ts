@@ -89,7 +89,8 @@ export async function saveLogo(database: DatabaseOrTransaction, { bytes, content
   const fields = { logoBytes: bytes, logoContentType: contentType, logoBackdrop: backdrop, logoUpdatedAt: new Date() };
   await database
     .insert(communityBranding)
-    .values(fields)
+    // A first save that is only a logo keeps the default fund colour (the column's own default is older).
+    .values({ ...fields, accentColor: DEFAULT_ACCENT_COLOR })
     .onConflictDoUpdate({ target: communityBranding.isSingleton, set: fields });
 }
 

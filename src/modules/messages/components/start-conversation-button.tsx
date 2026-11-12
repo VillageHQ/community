@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export function StartConversationButton({ memberId, accessibleName, label, shows
   return (
     <Button asChild {...buttonProps}>
       <Link href={toNewMessageHref(memberId)} aria-label={accessibleName} onClick={() => requestThreadFocus(THREAD_FOCUS_TARGETS.composer)}>
-        {showsIcon ? <MessageCircle aria-hidden="true" /> : null}
+        {showsIcon ? <MessageSquare aria-hidden="true" /> : null}
         {label}
       </Link>
     </Button>

@@ -36,7 +36,7 @@ export default modulePage(jobBoardManifest, async function JobsPage({ searchPara
         <p className="fh-lede">{describeMemberBoard({ total: jobs.length, companies, current, communityName: community.name })}</p>
         <p className="fh-small mt-2">
           {HIRING_LINE.before}
-          <Link href={JOB_BOARD_PAGES.yours}>{HIRING_LINE.link}</Link>
+          <Link href={JOB_BOARD_PAGES.ours}>{HIRING_LINE.link}</Link>
           {HIRING_LINE.after}
         </p>
       </header>

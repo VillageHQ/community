@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 
 import { PublicPage } from "@/components/public-page";
-import { Button, ButtonRow } from "@/components/ui/button";
 import { getDatabase } from "@/platform/database/client";
 import { readActiveSession } from "@/platform/auth/active-session";
 import { readBrandingForPage } from "@/platform/branding/branding";
@@ -38,7 +37,8 @@ export async function generateMetadata({ searchParams }: InvitePageProps): Promi
 }
 
 // Founderhall's badLinkPage for an invite: used, expired, withdrawn or unknown all read the same, so the page never
-// tells which invites exist. Too many tries from one place get Community's wait-a-minute line.
+// tells which invites exist. Someone who never joined needs a new invite, not a sign-in link (the owner's call), so
+// the sign-in link stays one line below. Too many tries from one place get Community's wait-a-minute line.
 function BadInviteLink({ community, isLimited }: { community: Community; isLimited: boolean }) {
   return (
     <PublicPage community={community}>
@@ -46,13 +46,11 @@ function BadInviteLink({ community, isLimited }: { community: Community; isLimit
       <p className="fh-lede">
         {isLimited
           ? INVITE_RATE_LIMITED_COPY.description
-          : `Invite links work once and last ${INVITE_LIFETIME_DAYS} days. Ask for a fresh sign-in link instead.`}
+          : `Invite links work once and last ${INVITE_LIFETIME_DAYS} days. Ask whoever invited you to ${community.name} for a new invite.`}
       </p>
-      <ButtonRow className="mt-4">
-        <Button asChild>
-          <a href={ROUTES.signIn}>Get a new sign-in link</a>
-        </Button>
-      </ButtonRow>
+      <p className="fh-small fh-muted mt-4">
+        Already joined? <a href={ROUTES.signIn}>Sign in</a>.
+      </p>
     </PublicPage>
   );
 }

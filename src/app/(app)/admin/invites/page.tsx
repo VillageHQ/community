@@ -65,7 +65,8 @@ export default modulePage(adminManifest, async function AdminInvitesPage({ searc
                   </span>
                   <div className="fh-who">
                     <b>{invite.name || invite.email}</b>
-                    <span>
+                    {/* Whole, as Founderhall's: here Resend and Revoke take room, so the line wraps instead of "…". */}
+                    <span className="whitespace-normal! wrap-anywhere">
                       {invite.email} · sent {formatShortDate(invite.createdAt.toISOString())}, ends {formatShortDate(invite.expiresAt.toISOString())}
                     </span>
                   </div>

@@ -77,8 +77,10 @@ function SendYourself({ links, signature }: { links: SentLink[]; signature: Sign
               <Mail aria-hidden="true" className="size-3.5" strokeWidth={1.5} />
             </span>
             <div className="fh-who">
-              <b>{link.name || link.email}</b>
-              <span>{link.email}</span>
+              <b className="whitespace-normal! break-words">{link.name || <BreakableEmail email={link.email} />}</b>
+              <span className="whitespace-normal! break-words">
+                <BreakableEmail email={link.email} />
+              </span>
             </div>
             <div className="fh-end">
               <Button asChild size="sm" variant="secondary">
@@ -128,6 +130,19 @@ function readToday() {
 }
 
 // Founderhall's "Invite members" sheet: one box for many people, the profile fill-in's consent, Send invites.
+// A long address on a phone breaks after the "@" rather than mid-word.
+function BreakableEmail({ email }: { email: string }) {
+  const at = email.indexOf("@");
+  if (at < 0) return email;
+  return (
+    <>
+      {email.slice(0, at + 1)}
+      <wbr />
+      {email.slice(at + 1)}
+    </>
+  );
+}
+
 export function InviteSheet({ community, inviterName, inviterRole, isEmailOn, isFillInShown, savedBasis, savedTermsDate, children }: InviteSheetProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);

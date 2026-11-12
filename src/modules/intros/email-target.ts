@@ -7,7 +7,7 @@ import { EMAIL_KINDS, type EmailKind } from "../../platform/email/kinds.ts";
 import { cancelQueuedEmail, queueEmail } from "../../platform/email/outbox.ts";
 import { sendQueuedEmailNow } from "../../platform/email/outbox-sender.ts";
 import { resolveReplySigner } from "../../platform/email/reply-address.ts";
-import { readResendConfig, sendResendEmail } from "../../platform/email/resend.ts";
+import { readResendConfig } from "../../platform/email/resend.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
 import { ROUTES } from "../../platform/http/routes.ts";
@@ -133,8 +133,8 @@ async function readMemberFacts(database: Database, memberId: string) {
 }
 
 // The introduction, as Founderhall sends it: one email each to the asker, the person and the connector, whose replies
-// run through the app's intro thread so everyone in it gets them. Without replies by email, one email goes to the
-// asker and the person, who reply all; the connector then gets the app's notice instead. Returns whether the
+// run through the app's intro thread so everyone in it gets them. Without replies by email, the asker and the person
+// each get a copy whose reply goes to the other; the connector then gets the app's notice instead. Returns whether the
 // connector was copied.
 export async function sendJoiningEmail(database: Database, environment: Environment, intro: typeof introRequest.$inferSelect, requesterName: string) {
   const config = readResendConfig(environment);
@@ -155,12 +155,25 @@ export async function sendJoiningEmail(database: Database, environment: Environm
   };
   const signer = await resolveReplySigner(database, environment);
   if (!signer) {
-    await sendResendEmail(config, {
-      to: [intro.targetEmail, requester.email],
-      // Not "intro-joined-…": that key belongs to the connector's notice for the same event, and Resend refuses a reused key.
-      idempotencyKey: `intro-joining-${intro.id}`,
-      ...renderJoiningEmail(facts, "both"),
+    // Replies by email are off: each gets their own copy through the outbox, and a reply goes straight to the other.
+    await sendThroughOutbox(database, environment, {
+      kind: EMAIL_KINDS.introThread,
+      to: intro.targetEmail,
+      memberId: null,
+      dedupeKey: `intro-joining-${intro.id}-target`,
+      replyTo: requester.email,
+      ...renderJoiningEmail(facts, "targetDirect"),
     });
+    // The person has it, so the intro is made: a failed send to the asker stays queued for the timed sender.
+    const askerCopy = await queueEmail(database, environment, {
+      kind: EMAIL_KINDS.introThread,
+      to: requester.email,
+      memberId: intro.requesterId,
+      dedupeKey: `intro-joining-${intro.id}-requester`,
+      replyTo: intro.targetEmail,
+      ...renderJoiningEmail(facts, "askerDirect"),
+    });
+    if (askerCopy) await sendQueuedEmailNow(database, environment, askerCopy);
     return { isConnectorCopied: false };
   }
   await openIntroThread(database, intro.id, intro.targetEmail);

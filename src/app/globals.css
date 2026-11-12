@@ -603,3 +603,61 @@
 .dark :is(.fh-colog, [data-slot="company-logo"]) {
   background: var(--fh-logo-tile);
 }
+
+/* Founderhall's sidebar fund mark is a 34 px tile (.side .fundmark img); the initials tile matches it. */
+.fh-side .fh-fundmark .fh-fundlogo {
+  width: 34px;
+  height: 34px;
+}
+
+/* Paper is light: a page printed from dark mode (the partner report) prints in the light colours, dark text on white.
+   The fund colours do the same in renderAccentCss(). */
+@media print {
+  .dark {
+    color-scheme: light;
+    --background: #f6f2e9;
+    --foreground: #1b2420;
+    --foreground-soft: #59625d;
+    --card: #fffdf8;
+    --popover: #fffdf8;
+    --muted: #ece6d8;
+    --muted-foreground: #59625d;
+    --border: #dad2c1;
+    --rule: #dad2c1;
+    --input: #59625d;
+    --logo-backdrop-dark: #1b2420;
+    --destructive: #9c4e22;
+    --destructive-foreground: #fffdf8;
+    --destructive-soft: #f2e2d6;
+    --destructive-text: #9c4e22;
+    --gold-soft: #f2e2d6;
+    --gold-text: #9c4e22;
+    --sage-soft: #dce7e0;
+    --sage-text: #2c4a3e;
+    --tint-a-bg: #d3e3e2;
+    --tint-a-fg: #1b2420;
+    --tint-b-bg: #d3e2d8;
+    --tint-b-fg: #1b2420;
+    --tint-c-bg: #e6d8c2;
+    --tint-c-fg: #1b2420;
+    --tint-d-bg: #dcdccf;
+    --tint-d-fg: #1b2420;
+    --tint-e-bg: #d3e2d8;
+    --tint-e-fg: #1b2420;
+    --tint-f-bg: #e6d8c2;
+    --tint-f-fg: #1b2420;
+    --ink: #1b2420;
+    --spine: #2c4a3e;
+    --graphite: #59625d;
+    --ribbon: #9c4e22;
+    --paper: #f6f2e9;
+    --leaf: #fffdf8;
+    --vellum: #ece6d8;
+    --side: #efe9dd;
+    --ribbon-tint: #f2e2d6;
+    --spine-tint: #dce7e0;
+    --shadow: 0 1px 2px rgba(27, 36, 32, 0.06), 0 6px 18px -8px rgba(27, 36, 32, 0.18);
+    --elevation-panel: 0 0 0 1px var(--rule);
+    --elevation-sheet: 0 -1px 0 var(--rule);
+  }
+}

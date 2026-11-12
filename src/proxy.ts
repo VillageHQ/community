@@ -5,6 +5,7 @@ import { JOB_BOARD_PAGES } from "@/modules/job-board/contract";
 import { getDatabase } from "@/platform/database/client";
 import { resolveAppUrl } from "@/platform/http/app-url";
 import { ROUTES } from "@/platform/http/routes";
+import { isGoneLinkPage } from "@/shell/gone-links";
 import { isModulePageOff } from "@/shell/module-off-pages";
 
 // Where a module's page would be when the admin turned it off. Nothing lives here, so the app's own
@@ -12,6 +13,8 @@ import { isModulePageOff } from "@/shell/module-off-pages";
 const MODULE_OFF_PATH = "/_module-off";
 const NOT_FOUND_STATUS = 404;
 const OK_STATUS = 200;
+const GONE_STATUS = 410;
+const GONE_MARK = "gone";
 const RSC_HEADER = "rsc";
 const IN_APP_FETCH_TIMEOUT_MS = 5000;
 // The same for a signed-in member, inside the app's frame (src/app/(app)/not-here/).
@@ -24,8 +27,8 @@ function readVisitorJobsPath(request: NextRequest) {
   return getSessionCookie(request) ? null : JOB_BOARD_PAGES.publicPage;
 }
 
-// The in-app 404 renders under the app's loading screen, which answers 200 before notFound() runs. A full page load
-// gets the page fetched here and answered with a real 404; a navigation inside the app (an RSC request) just goes there.
+// A full page load gets the in-app 404 page fetched here and answered with a real 404; a navigation inside the app (an
+// RSC request) just goes there.
 async function answerInAppNotFound(request: NextRequest) {
   const target = new URL(MODULE_OFF_IN_APP_PATH, request.url);
   if (request.headers.get(RSC_HEADER)) return NextResponse.rewrite(target);
@@ -36,9 +39,25 @@ async function answerInAppNotFound(request: NextRequest) {
   return new NextResponse(page.body, { status: NOT_FOUND_STATUS, headers: { "content-type": page.headers.get("content-type") ?? "text/html; charset=utf-8", "cache-control": "no-store" } });
 }
 
-// Each module page also guards itself, but the shared loading screen has already sent 200 by then, so a page
-// of a switched-off module is answered here, before rendering starts.
+// A rewrite can't carry a status, so the bad-link page is fetched here, marked so it isn't checked again, and
+// answered with 410. The visitor's own headers go along, so the page's rate limit counts their address.
+async function answerGoneLink(request: NextRequest) {
+  const target = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, resolveAppUrl(process.env));
+  target.searchParams.set(GONE_MARK, "1");
+  const headers = new Headers(request.headers);
+  headers.delete("host");
+  headers.set("accept", "text/html");
+  const page = await fetch(target, { headers, redirect: "manual", signal: AbortSignal.timeout(IN_APP_FETCH_TIMEOUT_MS) }).catch(() => null);
+  if (page?.status !== OK_STATUS) return NextResponse.next();
+  return new NextResponse(page.body, { status: GONE_STATUS, headers: { "content-type": page.headers.get("content-type") ?? "text/html; charset=utf-8", "cache-control": "no-store" } });
+}
+
+// Each module page also guards itself; a page of a switched-off module is answered here, before rendering starts.
 export async function proxy(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
+  if (!request.headers.get(RSC_HEADER) && !searchParams.has(GONE_MARK) && (await isGoneLinkPage(getDatabase(), pathname, searchParams.get("token")))) {
+    return answerGoneLink(request);
+  }
   if (await isModulePageOff(getDatabase(), request.nextUrl.pathname)) {
     if (!getSessionCookie(request)) return NextResponse.rewrite(new URL(MODULE_OFF_PATH, request.url));
     return answerInAppNotFound(request);

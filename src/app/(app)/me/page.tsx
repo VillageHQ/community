@@ -22,7 +22,6 @@ import { memberNetwork } from "@/modules/members/schema";
 import { readFilledLines, readLookupState } from "@/modules/members/service-fill-in";
 import { readPrivacy } from "@/modules/members/service-privacy";
 import { readMemberProfile } from "@/modules/members/service-profile";
-import { readReportCredit } from "@/modules/members/service-report-credit";
 import { FilledLinesSheet } from "@/modules/members/components/filled-lines-sheet";
 import { LookupQuestionCard } from "@/modules/members/components/lookup-question-card";
 import { OWN_FIELD_KEYS } from "@/modules/members/contract-own-words";
@@ -30,11 +29,10 @@ import { OwnWordsSheet, type OwnField } from "@/modules/members/components/own-w
 import { PasswordCard } from "@/modules/members/components/password-card";
 import { PrivacySheet } from "@/modules/members/components/privacy-sheet";
 import { ProfileHead } from "@/modules/members/components/profile-head";
-import { ReportCreditCard } from "@/modules/members/components/report-credit-card";
 import { introsManifest } from "@/modules/intros/manifest";
-import { CardJobsSection } from "@/modules/job-board/components/card-jobs-section";
+import { OurJobsSection } from "@/modules/job-board/components/our-jobs-section";
 import { jobBoardManifest } from "@/modules/job-board/manifest";
-import { readMemberSources } from "@/modules/job-board/reads";
+import { isPublicBoardOn, readMemberSources, readSourceJobs } from "@/modules/job-board/reads";
 import { LeaveGroupCard } from "@/modules/network/components/leave-group-card";
 import { networkManifest } from "@/modules/network/manifest";
 import { readIsInVillageGroup } from "@/modules/network/reads-progress";
@@ -99,7 +97,7 @@ export default modulePage(membersManifest, async function MyProfilePage() {
   const profile = await readMemberProfile(database, member.id);
   if (!profile) notFound();
 
-  const [community, lookup, lines, privacy, isIntrosOn, isNetworkOn, isJobBoardOn, isReportCreditOn, memberHasPassword] = await Promise.all([
+  const [community, lookup, lines, privacy, isIntrosOn, isNetworkOn, isJobBoardOn, memberHasPassword] = await Promise.all([
     readBrandingForPage(),
     readLookupState(database, member.id),
     readFilledLines(database, member.id),
@@ -107,14 +105,15 @@ export default modulePage(membersManifest, async function MyProfilePage() {
     isModuleEnabled(database, introsManifest),
     isModuleEnabled(database, networkManifest),
     isModuleEnabled(database, jobBoardManifest),
-    readReportCredit(database, member.id),
     hasPassword(database, member.id),
   ]);
-  const [networkState, showsLeaveCard, jobSources] = await Promise.all([
+  const [networkState, showsLeaveCard, jobSources, isBoardPublic] = await Promise.all([
     readNetworkState(database, member.id, isNetworkOn),
     isNetworkOn ? false : readIsInVillageGroup(database, member.id),
     isJobBoardOn ? readMemberSources(database, member.id) : null,
+    isJobBoardOn ? isPublicBoardOn(database) : false,
   ]);
+  const jobsBySource = jobSources ? await readSourceJobs(database, jobSources.map(({ id }) => id)) : null;
   const isRefused = lookup.refusedAt !== null;
   const ownWordsFields = OWN_OVER_FILLED.filter(({ own }) => Boolean(own(profile))).map(({ field }) => field);
 
@@ -164,16 +163,20 @@ export default modulePage(membersManifest, async function MyProfilePage() {
         <div className="fh-stack">
           <PrivacySheet communityName={community.name} isHidden={privacy.isHidden} acceptsIntroAsks={isIntrosOn ? privacy.acceptsIntroAsks !== false : null} />
           <MyNetworkSheet state={networkState} communityName={community.name} />
-          {isIntrosOn ? <ReportCreditCard isOn={isReportCreditOn} /> : null}
           <PasswordCard hasPassword={memberHasPassword} isLinkOn={readResendConfig(process.env) !== null} />
           {showsLeaveCard ? <LeaveGroupCard /> : null}
         </div>
       </div>
 
-      {jobSources ? (
-        <div className="fh-section">
-          <CardJobsSection sources={jobSources} company={profile.company ?? ""} isCompanyFixed={!isAdminMember(member)} />
-        </div>
+      {jobSources && jobsBySource ? (
+        <OurJobsSection
+          sources={jobSources}
+          jobsBySource={jobsBySource}
+          company={profile.company ?? ""}
+          isCompanyFixed={!isAdminMember(member)}
+          communityName={community.name}
+          isPublicBoardOn={isBoardPublic}
+        />
       ) : null}
     </>
   );

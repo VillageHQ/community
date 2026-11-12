@@ -47,7 +47,8 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
   const { memberId } = await params;
   const database = getDatabase();
   const profile = await readMemberProfile(database, memberId);
-  if (!profile || (await isHiddenMember(database, profile.id))) return { title: PAGE_TITLES.profile };
+  // The page answers 404 for both, so the tab says so too.
+  if (!profile || (await isHiddenMember(database, profile.id))) return { title: PAGE_TITLES.notFound };
   return { title: profile.name };
 }
 

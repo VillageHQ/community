@@ -15,6 +15,8 @@ import { readSettings } from "../../platform/settings/store.ts";
 export type MemberPrivacy = {
   isHidden: boolean;
   messagePolicy: MessagePolicy;
+  // The member never chose who can message them, so they follow the community's default (`messagePolicy` is it).
+  followsCommunityDefault: boolean;
   acceptsIntroAsks: boolean | null;
   introAsksAnsweredAt: Date | null;
   introAsksAnsweredPlace: ChoicePlace | null;
@@ -25,6 +27,7 @@ export type MemberPrivacy = {
 const DEFAULT_PRIVACY: MemberPrivacy = {
   isHidden: false,
   messagePolicy: MESSAGE_POLICIES.communityDefault,
+  followsCommunityDefault: true,
   acceptsIntroAsks: null,
   introAsksAnsweredAt: null,
   introAsksAnsweredPlace: null,
@@ -41,14 +44,13 @@ export async function readCommunityMessagePolicy(database: DatabaseOrTransaction
 export async function readPrivacy(database: DatabaseOrTransaction, memberId: string): Promise<MemberPrivacy> {
   const [row] = await database.select().from(memberPrivacy).where(eq(memberPrivacy.userId, memberId));
   if (!row) return { ...DEFAULT_PRIVACY, messagePolicy: await readCommunityMessagePolicy(database) };
+  // A member who never chose (no change time and the column's default) follows the community's default; a stored
+  // "introduced" is always a choice, also one made before the change time was kept.
+  const followsCommunityDefault = row.messagePolicyChangedAt === null && row.messagePolicy === MESSAGE_POLICIES.anyone;
   return {
     isHidden: row.isHidden,
-    // A member who never chose (no change time and the column's default) follows the community's default; a stored
-    // "introduced" is always a choice, also one made before the change time was kept.
-    messagePolicy:
-      row.messagePolicyChangedAt === null && row.messagePolicy === MESSAGE_POLICIES.anyone
-        ? await readCommunityMessagePolicy(database)
-        : (row.messagePolicy as MessagePolicy),
+    messagePolicy: followsCommunityDefault ? await readCommunityMessagePolicy(database) : (row.messagePolicy as MessagePolicy),
+    followsCommunityDefault,
     acceptsIntroAsks: row.acceptsIntroAsks,
     introAsksAnsweredAt: row.introAsksAnsweredAt,
     introAsksAnsweredPlace: row.introAsksAnsweredPlace as ChoicePlace | null,

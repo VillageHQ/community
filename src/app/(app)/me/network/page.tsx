@@ -42,7 +42,7 @@ export default modulePage(networkManifest, async function MyNetworkPage() {
       communityName={community}
       processedLine={<>{where} You can stop sharing any time: you leave the community’s group in Village.</>}
       connectedAtLabel={connectedAt ? DAY_MONTH.format(connectedAt) : null}
-      myProfileHref={ROUTES.editCard}
+      myProfileHref={`${ROUTES.editCard}#network`}
       emailConfirmation={<EmailConfirmationNotice welcome={welcome} />}
       villageLine={ownVillage ? <OwnVillageLine isConnected={ownVillage.state === OWN_VILLAGE_STATES.connected} checkedAt={ownVillage.checkedAt} /> : null}
       needsFullName={welcome.needsFullName ?? false}

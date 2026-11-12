@@ -6,6 +6,7 @@ import { saveModuleState } from "@/platform/modules/enablement";
 import { MODULE_KINDS, type ToggleableManifest } from "@/platform/modules/manifest";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 
+import { isGoneLinkPage } from "./shell/gone-links";
 import { proxy } from "./proxy";
 
 const APP_URL = "http://localhost:3000";
@@ -65,5 +66,14 @@ describe("a page of a switched-off module, before it renders", () => {
     for (const manifest of toggleable) await saveModuleState(database, manifest, false);
     expect(await rewriteOf("/members")).toBeNull();
     expect(await rewriteOf("/")).toBeNull();
+  });
+
+  it("finds the bad sign-in and invite links Founderhall answers with 410, and nothing else", async () => {
+    for (const path of ["/auth", "/invite"]) {
+      expect(await isGoneLinkPage(database, path, null), path).toBe(true);
+      expect(await isGoneLinkPage(database, path, "not-a-real-token"), path).toBe(true);
+    }
+    expect(await isGoneLinkPage(database, "/signin", "not-a-real-token")).toBe(false);
+    expect(await isGoneLinkPage(database, "/today", null)).toBe(false);
   });
 });

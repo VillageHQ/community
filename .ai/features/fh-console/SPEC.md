@@ -26,7 +26,6 @@ Kept from Community on purpose (Community-only functions): Revoke on invites, "F
 Members, "A made-up member" in the digest picker, "Pull now" on linked job boards, the Set up count bubble (reports
 and approvals waiting). Pin shows only on open asks: Community's engine pins open asks only.
 
-Open, for the orchestrator or the owner: the one line "the fund's admins can see who asked whom" on the intro-ask page
-(the search-and-ask area's file); the "Credit me in reports" switch on the member card no longer changes the report
-(the profile area's file); a fresh install's public job board starts off (Founderhall's starts on) and the default
-fund colour comes from the foundation. Side by side: `reports/pairs/` and `reports/pairs.md`.
+Round 4 (fh-final-pass) added the "admins see names" line on the intro-ask pages, removed the old "Credit me in
+reports" switch and made Founderhall's spine green the default fund colour. Still a kept call: a fresh install's
+public job board starts off (Founderhall's starts on). Side by side: `reports/pairs/` and `reports/pairs.md`.

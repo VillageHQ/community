@@ -8,8 +8,7 @@ The owner decided on 2026-11-11 that admins see who asked whom, like Founderhall
 "Latest in the intro log" name the asker, the person asked for and the connector; the digest preview of another
 member names them too. No console read selects an intro's note or reason (the preview blanks them). The partner
 report names every connector in Top connectors and never the asker or the person asked for. Members are told on
-Your data ("admins see names, states and dates"). The "Credit me in reports" switch on the member card no longer
-changes the report (that card belongs to the profile area).
+Your data ("admins see names, states and dates"). The old "Credit me in reports" switch is gone (round 4).
 
 ## Pages and where their code is
 | Page | Route | Code |
