@@ -14,7 +14,7 @@ Village search, sync, the community group and intro paths. Toggleable. The only 
 - `*-village-check.ts`: the admin's Village check and the member's line on My network. Free calls only, once a minute.
 - `slots.tsx`: `ConnectorAskSlot` and `ConnectorPromiseSlot`. Intros fills them, so network never imports intros.
 
-The Village client, credentials, credit ledger and error mapping live in `src/platform/village`. `health.ts` there records Village's last answer and any trouble since; admins see it, members see "Search is unavailable right now".
+The Village client, credentials, credit ledger, error mapping and trouble emails live in `src/platform/village`. `health.ts` there records Village's last answer and trouble; admins see it, members see "Search is unavailable right now".
 
 Rules:
 

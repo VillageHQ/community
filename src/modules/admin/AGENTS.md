@@ -18,5 +18,5 @@ Rules:
 - Every admin change writes the audit log in the same transaction, through `withAdminTransaction`.
 - Removing a member always tries the Village departure, after the removal commits. Village being down must not stop a removal.
 - Reports stay visible and resolvable whatever modules are on. Moderation can't disappear because a switch was flipped.
-- The partner report names connectors, never the asker, the person asked for or a note. Every number comes from the one read, so the page, CSV and email can't disagree.
+- The partner report names connectors (to partners, only credited ones), never the asker, the person asked for or a note. One read makes every number: page, CSV and email agree.
 - Console home and the other console screens: `.ai/features/fh-console/NOTES.md`.
