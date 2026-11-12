@@ -15,6 +15,6 @@ export const membersManifest = {
   adminTabs: [],
   paths: {
     pages: [ROUTES.feed, ROUTES.today, ROUTES.landing, ROUTES.welcome, ROUTES.members, ROUTES.people, ROUTES.editCard, ROUTES.join, ROUTES.confirmEmail],
-    api: [API_ROUTES.members, API_ROUTES.profile, API_ROUTES.onboarding, API_ROUTES.invites, API_ROUTES.inviteAccept],
+    api: [API_ROUTES.members, API_ROUTES.profile, API_ROUTES.onboarding, API_ROUTES.invites, API_ROUTES.inviteAccept, API_ROUTES.inviteNotMe],
   },
 } satisfies CoreManifest;

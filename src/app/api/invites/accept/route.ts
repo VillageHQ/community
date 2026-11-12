@@ -9,6 +9,8 @@ import { INVITE_STATES, type InviteState } from "@/modules/members/contract-invi
 import { INVITE_UNUSABLE_COPY, INVITE_INVALID_COPY } from "@/modules/members/copy-invites";
 import { acceptInvite, readInviteByToken } from "@/modules/members/service-invites";
 import { isEmailedInvite } from "@/modules/members/service-invite-emailed";
+import { readEmailBranding } from "@/platform/email/outbox";
+import { sendQueuedEmailNow } from "@/platform/email/outbox-sender";
 import { readJsonBody } from "@/platform/http/read-json-body";
 import { logError } from "@/platform/observability/route-logging";
 import { hasTrustedOrigin, readSessionMember } from "@/platform/http/member-route";
@@ -121,7 +123,8 @@ export const POST = membersRoutes.open(
     // Opened from the email that went to this address (the link's mark matches): the address is confirmed, so no second
     // "Confirm your email". A copied link has no mark and still asks (the owner's call, 2026-11-12).
     const isFromEmail = await isEmailedInvite(database, process.env, submitted.data.token, submitted.data.emailed);
-    const accepted = await acceptInvite(database, submitted.data.token, { account: fields?.data ?? null, isFromEmail });
+    const notice = { environment: process.env, branding: await readEmailBranding(database, process.env) };
+    const accepted = await acceptInvite(database, submitted.data.token, { account: fields?.data ?? null, isFromEmail, notice });
     if (!accepted) return respondToUnusableLink(request, () => respondUnusableInvite(INVITE_STATES.accepted));
 
     const cookies = fields?.data
@@ -134,6 +137,8 @@ export const POST = membersRoutes.open(
         email: accepted.email,
       });
     }
+    // "Your invite was used. Wasn't you?" goes out now; the timed sender retries it if this try fails.
+    await sendQueuedEmailNow(database, process.env, accepted.noticeEmailId);
     return respondAccepted(cookies);
   }),
 );

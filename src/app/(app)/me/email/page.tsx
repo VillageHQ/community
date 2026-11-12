@@ -23,7 +23,7 @@ export default modulePage(membersManifest, async function EmailSettingsPage() {
       <BackLink href={ROUTES.editCard}>My profile</BackLink>
       <header data-slot="page-header" className="fh-pagehead">
         <h1 className="fh-h1">Email</h1>
-        <p className="fh-lede">What {community.name} emails you. Intro asks and introductions always come by email: they are how intros work.</p>
+        <p className="fh-lede">What {community.name} emails you. Sign-in links and invites always come.</p>
       </header>
       <div className="max-w-[720px]">
         {rows ? <EmailSettingsForm rows={rows} /> : <p className="fh-small fh-muted">{community.name} hasn’t set up email yet, so nothing is sent.</p>}
