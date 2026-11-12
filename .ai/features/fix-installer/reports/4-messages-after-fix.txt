@@ -1,0 +1,150 @@
+
+######## Item 4: DNS advice behind NAT (the domain already points somewhere, the server goes out from another address)
+Step 3 of 12: Checking that community.example.test points at this server
+
+community.example.test doesn't point at this server yet.
+
+Log in to the company where you bought your domain, open its DNS settings and create this record:
+
+  Type:   A
+  Name:   community
+  Value:  203.0.113.20
+
+If community.example.test is your main domain, with nothing in front of it, use @ as the name.
+
+This server goes out to the internet from 203.0.113.20, but none of its own network cards has that address.
+It may sit behind NAT or a load balancer (as on Fly.io), where visitors reach it on another address.
+Right now community.example.test points at 2001:db8::99. If that's where visitors reach this server, the record is right.
+Keep it instead of creating the one above, and run the command again with that address:
+
+  curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh | sudo COMMUNITY_DOMAIN=community.example.test COMMUNITY_SERVER_IP=2001:db8::99 bash
+
+If not, change or delete the record that points at 2001:db8::99, and create the one above.
+On Cloudflare, set the record to "DNS only" (the grey cloud).
+Changes usually show up within a few minutes, and sometimes take up to an hour.
+
+Create that record, wait a few minutes, then run the same command again.
+
+######## Item 4: COMMUNITY_SERVER_IP with an IPv4 and an IPv6 address
+Step 3 of 12: Checking that community.example.test points at this server
+community.example.test points at this server.
+
+Step 4 of 12: Checking that the web ports are free
+
+######## Items 1 and 5: no ready-made image on a first install, and the build fails on DNS
+Step 9 of 12: Downloading the app
+Warning: We couldn't download the ready-made app, so we're building it on this server instead.
+That takes a long time on a small server: 30 minutes or more with 2 GB of memory and a shared processor,
+and about 3 minutes with 4 GB and 2 dedicated processors. It needs about 2.5 GB of memory and swap together.
+If you can, use a bigger server for the first install: press Ctrl+C now and run the same command there.
+Building. To follow along, run this in another window: sudo tail -f /opt/community/install.log
+
+The build failed. Its last lines:
+  #12 building
+  npm error request to https://registry.npmjs.org/ failed, reason: getaddrinfo EAI_AGAIN registry.npmjs.org
+
+The build couldn't look up internet addresses (DNS). Check this server's DNS settings and internet connection, then run the same command again.
+The whole build is in /opt/community/install.log.
+
+Nothing is running yet. Your settings are saved, so the next run picks up from here.
+16:docker build --network host -f /source/deploy/vps/Dockerfile -t ghcr.io/villagehq/community:latest /source
+
+######## Item 1: the build is killed for memory
+The build failed. Its last lines:
+  #12 building
+  ERROR: process "/bin/sh -c pnpm build" did not complete successfully: exit code: 137
+
+The server ran out of memory during the build. Use a server with more memory (4 GB builds it in minutes), then run the same command again.
+The whole build is in /opt/community/install.log.
+
+Nothing is running yet. Your settings are saved, so the next run picks up from here.
+
+######## Item 1 on an upgrade: the build fails, the running version stays
+Step 9 of 12: Downloading the app
+Backing up your data before upgrading.
+Warning: We couldn't download the ready-made app, so we're building it on this server instead.
+That takes a long time on a small server: 30 minutes or more with 2 GB of memory and a shared processor,
+and about 3 minutes with 4 GB and 2 dedicated processors. It needs about 2.5 GB of memory and swap together.
+Building. To follow along, run this in another window: sudo tail -f /opt/community/install.log
+
+The build failed. Its last lines:
+  #12 building
+  ERROR: failed to solve
+
+Run the same command again. If it fails the same way, send us those lines: https://github.com/VillageHQ/community/issues
+The whole build is in /opt/community/install.log.
+Warning: The build failed, so we're keeping the version you have. Try again later.
+Downloaded the database and the web server.
+
+Step 10 of 12: Starting your community
+Started.
+
+Step 11 of 12: Waiting for your community to be ready
+Preparing the database. This usually takes less than a minute.
+The app is running.
+Getting your security certificate. This usually takes less than a minute.
+HTTPS works.
+
+Step 12 of 12: All done
+
+Done. Your community still runs the version you had, at https://community.example.test
+Your settings and data are unchanged.
+To see your setup token: sudo community setup-token
+
+######## Item 3: re-run after a first install that stopped at step 11
+
+Step 1 of 12: Checking this server
+ubuntu 24.04 on amd64. That works.
+We found the settings from an earlier run, so this run keeps them and picks up from there.
+Step 3 of 12: Checking that community.example.test points at this server
+An earlier run checked this, so we skip it.
+
+Step 4 of 12: Checking that the web ports are free
+An earlier run checked them, so we skip this check.
+
+Step 5 of 12: Making sure Docker is installed
+Step 12 of 12: All done
+
+Your community is ready.
+
+  Address:      https://community.example.test
+  Setup token:  48e76b76ba1e1350823becc059dc7cf1f319ec51128391a119e66ecd211663a8
+
+What to do next:
+  1. Save the setup token in your password manager. You need it again if you lose your admin password.
+     You can see it later with: sudo community setup-token
+  2. Open https://community.example.test/setup in your browser.
+  3. Enter the setup token, your name, your email and a password. This creates your admin account.
+
+Backups: this server backs up your data every day and keeps the last 7.
+Those copies sit on the same disk as your data, so they're not enough if the server is lost.
+Copy one to your own computer regularly. The guide shows how:
+  https://github.com/VillageHQ/community/blob/main/docs/self-host-vps.md
+
+To see all the commands: community
+
+######## Item 2: re-run on Fly (swapon has no --show, /swapfile active)
+
+Step 1 of 12: Checking this server's memory
+This server has 512 MB of memory and already has swap, which is disk space used as spare memory.
+(the run carries on)
+
+######## Item 2: a /swapfile the installer did not mark as its own
+
+Step 1 of 12: Checking this server's memory
+Warning: There's already a file at /swapfile that isn't turned on, and we didn't mark it as ours, so we left it alone and added no swap.
+Your community may still run fine, but it could stop if memory runs out.
+(the run carries on)
+
+######## Item 2: its own swap file can't be turned on
+
+Step 1 of 12: Checking this server's memory
+This server has 512 MB of memory, so we're adding 2G of swap: disk space used as spare memory.
+Warning: We couldn't add swap here. Your community may still run fine, but it could stop if memory runs out.
+(the run carries on)
+1:swapon --show --noheadings
+2:fallocate -l 2G /swapfile
+3:mkswap /swapfile
+4:swapon /swapfile
+5:swapoff /swapfile
+ls: cannot access '/swapfile': No such file or directory

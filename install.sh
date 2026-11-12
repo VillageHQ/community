@@ -13,7 +13,8 @@
 #   COMMUNITY_REF              the branch or tag to install files from (default: main)
 #   COMMUNITY_IMAGE            the app image (default: ghcr.io/villagehq/community:latest)
 #   COMMUNITY_BIND_ADDRESS     use only this one of the server's addresses, if another program holds ports 80 or 443 on another
-#   COMMUNITY_SERVER_IP        this server's public address, if we can't detect it (for example behind NAT)
+#   COMMUNITY_SERVER_IP        this server's public addresses, separated by commas, if we can't detect them (for example
+#                              behind NAT or a load balancer): the addresses your domain should point at
 #   COMMUNITY_HEALTH_TIMEOUT_SECONDS   how long to wait for the app and for HTTPS (default: 180)
 #
 # For testing only. Browsers won't trust this site, so never use it for a real community:
@@ -33,6 +34,7 @@ readonly INSTALL_COMMAND="curl -fsSL https://raw.githubusercontent.com/VillageHQ
 readonly ISSUES_URL="https://github.com/VillageHQ/community/issues"
 readonly POSTGRES_VOLUME="community_postgres-data"
 readonly SWAP_FILE="/swapfile"
+readonly SWAP_MARK="$INSTALL_DIRECTORY/.swapfile-made-by-installer"
 readonly SWAP_SIZE="2G"
 readonly SMALL_MACHINE_MEMORY_MB=2048
 readonly DNS_RESOLVERS=("https://dns.google/resolve" "https://cloudflare-dns.com/dns-query")
@@ -50,6 +52,9 @@ temporary_directory=""
 domain=""
 app_url=""
 previous_image_id=""
+swaps_file="/proc/swaps"
+setup_finished=""
+build_failed=""
 server_addresses=()
 domain_addresses=()
 
@@ -149,8 +154,23 @@ Most hosting companies let you reinstall a server with one of those. Do that, th
   install_missing_tools
   if [ -f "$ENV_FILE" ]; then
     is_upgrade=1
-    say "Community is already installed here, so this run upgrades it."
+    if is_setup_finished; then
+      setup_finished=1
+      say "Community is already installed here, so this run upgrades it."
+    else
+      say "We found the settings from an earlier run, so this run keeps them and picks up from there."
+    fi
   fi
+}
+
+# Setup is finished once someone has created the first admin on the /setup page. Until then a re-run is
+# still a first install, even though the settings already exist, so it ends with the setup token again.
+is_setup_finished() {
+  command -v docker >/dev/null 2>&1 && [ -f "$INSTALL_DIRECTORY/compose.yml" ] || return 1
+  local answer
+  answer="$(compose exec -T postgres psql -U community -d community -tAc \
+    "SELECT 1 FROM instance_settings WHERE key = 'first_admin_user_id'" 2>/dev/null || true)"
+  [ "$(printf '%s' "$answer" | tr -d '[:space:]')" = "1" ]
 }
 
 explain_missing_domain() {
@@ -218,10 +238,32 @@ is_ipv4() { [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; }
 
 is_ipv6() { [[ "$1" =~ ^[0-9a-f:]*:[0-9a-f:]*$ ]]; }
 
+is_full_ipv4() {
+  is_ipv4 "$1" || return 1
+  local part parts
+  IFS=. read -r -a parts <<<"$1"
+  for part in "${parts[@]}"; do
+    [ "$((10#$part))" -le 255 ] || return 1
+  done
+}
+
+is_full_ipv6() { is_ipv6 "$1" && [[ "$1" =~ [0-9a-f] ]] && [[ "$1" =~ :.*: ]]; }
+
+read_server_ip_setting() {
+  local addresses address
+  read -r -a addresses <<<"$(printf '%s' "$COMMUNITY_SERVER_IP" | tr ',\n\t' '   ' | tr '[:upper:]' '[:lower:]')"
+  for address in "${addresses[@]}"; do
+    address="$(plain_address "$address")"
+    is_full_ipv4 "$address" || is_full_ipv6 "$address" || die "\"$address\" doesn't look like a server address.
+COMMUNITY_SERVER_IP takes addresses like 203.0.113.10 or 2001:db8::1, separated by commas."
+    server_addresses+=("$address")
+  done
+}
+
 detect_server_addresses() {
   server_addresses=()
   if [ -n "${COMMUNITY_SERVER_IP:-}" ]; then
-    server_addresses=("$COMMUNITY_SERVER_IP")
+    read_server_ip_setting
     return 0
   fi
   if [ -n "${COMMUNITY_BIND_ADDRESS:-}" ]; then
@@ -286,8 +328,43 @@ record_name_for_domain() {
   fi
 }
 
-explain_dns_record() {
+# The detected address is the one this server goes out from. When none of its own network cards has it, the server
+# sits behind NAT or a load balancer (Fly.io, some clouds), and visitors may reach it on another address.
+is_behind_nat() {
+  [ -z "${COMMUNITY_SERVER_IP:-}" ] && [ -z "${COMMUNITY_BIND_ADDRESS:-}" ] || return 1
   local address
+  for address in "${server_addresses[@]}"; do
+    if has_local_address "$address"; then return 1; fi
+  done
+}
+
+explain_nat() {
+  local other_addresses=("$@") listed
+  say ""
+  say "This server goes out to the internet from ${server_addresses[0]}, but none of its own network cards has that address."
+  say "It may sit behind NAT or a load balancer (as on Fly.io), where visitors reach it on another address."
+  if [ "${#other_addresses[@]}" -gt 0 ]; then
+    listed="$(IFS=,; printf '%s' "${other_addresses[*]}")"
+    say "Right now $domain points at ${other_addresses[*]}. If that's where visitors reach this server, the record is right."
+    say "Keep it instead of creating the one above, and run the command again with that address:"
+  else
+    listed="<the address visitors reach this server on>"
+    say "If visitors reach it on another address, point $domain there instead, and run the command again with it:"
+  fi
+  say ""
+  say "  curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh | sudo COMMUNITY_DOMAIN=$domain COMMUNITY_SERVER_IP=$listed bash"
+  say ""
+  if [ "${#other_addresses[@]}" -gt 0 ]; then
+    say "If not, change or delete the record that points at ${other_addresses[*]}, and create the one above."
+  fi
+}
+
+explain_dns_record() {
+  local address other_addresses=() behind_nat=""
+  for address in "${domain_addresses[@]}"; do
+    is_server_address "$address" || other_addresses+=("$address")
+  done
+  if is_behind_nat; then behind_nat=1; fi
   say ""
   say "$domain doesn't point at this server yet."
   say ""
@@ -298,9 +375,13 @@ explain_dns_record() {
   say "  Value:  ${server_addresses[0]}"
   say ""
   say "If $domain is your main domain, with nothing in front of it, use @ as the name."
-  for address in "${domain_addresses[@]}"; do
-    is_server_address "$address" || say "Right now $domain points at $address. Change or delete that old record."
-  done
+  if [ -n "$behind_nat" ]; then
+    explain_nat "${other_addresses[@]}"
+  else
+    for address in "${other_addresses[@]}"; do
+      say "Right now $domain points at $address. Change or delete that old record."
+    done
+  fi
   say "On Cloudflare, set the record to \"DNS only\" (the grey cloud)."
   say "Changes usually show up within a few minutes, and sometimes take up to an hour."
 }
@@ -319,7 +400,7 @@ wait_for_dns() {
 check_dns() {
   step "Checking that $domain points at this server"
   if [ -n "$is_upgrade" ]; then
-    say "Already set up, so we skip this check."
+    if [ -n "$setup_finished" ]; then say "Already set up, so we skip this check."; else say "An earlier run checked this, so we skip it."; fi
     return 0
   fi
   if is_test_mode; then
@@ -413,7 +494,7 @@ To fix this, $suggestion"
 check_web_ports() {
   step "Checking that the web ports are free"
   if [ -n "$is_upgrade" ]; then
-    say "Your community already uses them, so we skip this check."
+    if [ -n "$setup_finished" ]; then say "Your community already uses them, so we skip this check."; else say "An earlier run checked them, so we skip this check."; fi
     return 0
   fi
   local listeners
@@ -476,8 +557,21 @@ total_memory_mb() {
   awk '/^MemTotal:/ { print int($2 / 1024) }' /proc/meminfo
 }
 
+has_active_swap() {
+  [ -n "$(tail -n +2 "$swaps_file" 2>/dev/null)" ] || [ -n "$(swapon --show --noheadings 2>/dev/null)" ]
+}
+
+# Only ever called for a swap file this installer made (it leaves a mark next to its settings).
+remove_own_swap_file() {
+  swapoff "$SWAP_FILE" >>"$log_file" 2>&1 || true
+  rm -f "$SWAP_FILE" >>"$log_file" 2>&1 || true
+  sed -i "\#^$SWAP_FILE #d" /etc/fstab 2>>"$log_file" || true
+  rm -f "$SWAP_MARK" || true
+}
+
 create_swap_file() {
   if [ ! -e "$SWAP_FILE" ]; then
+    install -d -m 700 "$INSTALL_DIRECTORY" && : >"$SWAP_MARK" || return 1
     fallocate -l "$SWAP_SIZE" "$SWAP_FILE" 2>>"$log_file" || dd if=/dev/zero of="$SWAP_FILE" bs=1M count=2048 2>>"$log_file" || return 1
     chmod 600 "$SWAP_FILE" || return 1
     mkswap "$SWAP_FILE" >>"$log_file" 2>&1 || return 1
@@ -494,8 +588,13 @@ ensure_swap() {
     say "This server has enough memory (${memory_mb} MB)."
     return 0
   fi
-  if [ -n "$(swapon --show --noheadings 2>/dev/null)" ]; then
+  if has_active_swap; then
     say "This server has ${memory_mb} MB of memory and already has swap, which is disk space used as spare memory."
+    return 0
+  fi
+  if [ -e "$SWAP_FILE" ] && [ ! -e "$SWAP_MARK" ]; then
+    warn "There's already a file at $SWAP_FILE that isn't turned on, and we didn't mark it as ours, so we left it alone and added no swap."
+    say "Your community may still run fine, but it could stop if memory runs out."
     return 0
   fi
   say "This server has ${memory_mb} MB of memory, so we're adding $SWAP_SIZE of swap: disk space used as spare memory."
@@ -503,7 +602,7 @@ ensure_swap() {
     say "Swap is on."
     return 0
   fi
-  rm -f "$SWAP_FILE"
+  remove_own_swap_file
   warn "We couldn't add swap here. Your community may still run fine, but it could stop if memory runs out."
 }
 
@@ -615,7 +714,7 @@ is_postgres_running() {
 backup_before_upgrade() {
   [ -n "$is_upgrade" ] || return 0
   if ! is_postgres_running; then
-    warn "Your database isn't running, so we can't back it up before upgrading."
+    if [ -n "$setup_finished" ]; then warn "Your database isn't running, so we can't back it up before upgrading."; fi
     return 0
   fi
   say "Backing up your data before upgrading."
@@ -632,14 +731,49 @@ image_id() {
   docker image inspect --format '{{.Id}}' "$1" 2>/dev/null || true
 }
 
-build_from_source() {
-  local image="$1" previous_image_id="$2"
-  warn "We couldn't download the ready-made app, so we're building it on this server instead."
-  say "This needs about 2.5 GB of memory and swap together. On a small server it can take 10 minutes or more."
-  docker build -f "$source_directory/deploy/vps/Dockerfile" -t "$image" "$source_directory" && return 0
+oom_kill_count() {
+  awk '$1 == "oom_kill" { count = $2 } END { print count + 0 }' /proc/vmstat 2>/dev/null || printf '0'
+}
 
-  [ -n "$previous_image_id" ] || die "The build failed. This usually means the server ran out of memory.
-Rent a server with at least 2 GB of memory, or try again later: the ready-made app may be back."
+build_failure_advice() {
+  local build_output="$1" oom_kills_before="$2"
+  if [ "$(oom_kill_count)" -gt "$oom_kills_before" ] ||
+    grep -qE 'exit code: 137|Killed|heap out of memory|Cannot allocate memory|ENOMEM' <<<"$build_output"; then
+    say "The server ran out of memory during the build. Use a server with more memory (4 GB builds it in minutes), then run the same command again."
+  elif grep -qE 'EAI_AGAIN|ENOTFOUND|getaddrinfo|Temporary failure in name resolution|Could not resolve host' <<<"$build_output"; then
+    say "The build couldn't look up internet addresses (DNS). Check this server's DNS settings and internet connection, then run the same command again."
+  else
+    say "Run the same command again. If it fails the same way, send us those lines: $ISSUES_URL"
+  fi
+}
+
+# The build's output goes to the install log, so a failure can show its real cause instead of a guess.
+build_from_source() {
+  local image="$1" previous_image_id="$2" log_lines_before oom_kills_before build_output
+  warn "We couldn't download the ready-made app, so we're building it on this server instead."
+  say "That takes a long time on a small server: 30 minutes or more with 2 GB of memory and a shared processor,"
+  say "and about 3 minutes with 4 GB and 2 dedicated processors. It needs about 2.5 GB of memory and swap together."
+  if [ -z "$setup_finished" ]; then
+    say "If you can, use a bigger server for the first install: press Ctrl+C now and run the same command there."
+  fi
+  say "Building. To follow along, run this in another window: sudo tail -f $log_file"
+  log_lines_before="$(wc -l <"$log_file")"
+  oom_kills_before="$(oom_kill_count)"
+  # The host's network gives the build the server's own resolver, which also works when that is IPv6 only.
+  if docker build --network host -f "$source_directory/deploy/vps/Dockerfile" -t "$image" "$source_directory" >>"$log_file" 2>&1; then
+    say "Built the app."
+    return 0
+  fi
+
+  build_output="$(tail -n "+$((log_lines_before + 1))" "$log_file")"
+  say ""
+  say "The build failed. Its last lines:"
+  printf '%s\n' "$build_output" | tail -n 15 | sed 's/^/  /'
+  say ""
+  build_failure_advice "$build_output" "$oom_kills_before"
+  say "The whole build is in $log_file."
+  [ -n "$previous_image_id" ] || die "Nothing is running yet. Your settings are saved, so the next run picks up from here."
+  build_failed=1
   warn "The build failed, so we're keeping the version you have. Try again later."
 }
 
@@ -732,7 +866,11 @@ Your setup token:     sudo community setup-token"
 
 print_upgrade_summary() {
   say ""
-  say "Done. Your community is up to date at $app_url"
+  if [ -n "$build_failed" ]; then
+    say "Done. Your community still runs the version you had, at $app_url"
+  else
+    say "Done. Your community is up to date at $app_url"
+  fi
   say "Your settings and data are unchanged."
   say "To see your setup token: sudo community setup-token"
 }
@@ -761,7 +899,7 @@ print_first_install_summary() {
 print_summary() {
   step "All done"
   if is_test_mode; then warn "Test mode is on. Browsers won't trust this site. Never use test mode for a real community."; fi
-  if [ -n "$is_upgrade" ]; then
+  if [ -n "$is_upgrade" ] && is_setup_finished; then
     print_upgrade_summary
     return 0
   fi
@@ -776,7 +914,7 @@ main() {
   check_dns
   check_web_ports
   ensure_docker
-  ensure_swap
+  ensure_swap || warn "We couldn't finish the memory step. Your community may still run fine, but it could stop if memory runs out."
   open_firewall
   write_configuration
   fetch_images

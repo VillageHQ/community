@@ -1,0 +1,680 @@
+
+=== ubuntu:24.04 (stubbed) ===
+
+Checking the server
+  ok    refuses a user without administrator rights: exits 1
+  ok    refuses a user without administrator rights: says "administrator rights"
+  ok    refuses a user without administrator rights: never says "stopped unexpectedly"
+  ok    refuses a user without administrator rights: leaves nothing set up
+  ok    refuses an unsupported system: exits 1
+  ok    refuses an unsupported system: says "we only support Ubuntu 22.04, 24.04 and 26.04, and Debian 12"
+  ok    refuses an unsupported system: leaves nothing set up
+  ok    accepts Ubuntu 26.04: exits 0
+  ok    accepts Ubuntu 26.04: says "ubuntu 26.04"
+
+Having no domain
+  ok    stops and explains in non-interactive mode: exits 1
+  ok    stops and explains in non-interactive mode: says "You need a domain name to continue"
+  ok    stops and explains in non-interactive mode: says "community.yourfund.com"
+  ok    stops and explains in non-interactive mode: never says "stopped unexpectedly"
+  ok    stops and explains in non-interactive mode: leaves nothing set up
+  ok    stops and explains when someone presses Enter at the question: says "Your community's domain:"
+  ok    stops and explains when someone presses Enter at the question: says "You need a domain name to continue"
+  ok    stops and explains when someone presses Enter at the question: leaves nothing set up
+  ok    refuses a bare server number: exits 1
+  ok    refuses a bare server number: says "doesn't look like a domain name"
+  ok    refuses a bare server number: leaves nothing set up
+  ok    refuses a domain that could inject settings: exits 1
+  ok    refuses a domain that could inject settings: says "doesn't look like a domain name"
+  ok    refuses a domain that could inject settings: leaves nothing set up
+
+Having DNS that doesn't point here
+  ok    explains the record to create when no record exists: exits 1
+  ok    explains the record to create when no record exists: says "nowhere.example.test doesn't point at this server yet"
+  ok    explains the record to create when no record exists: says "Type:   A"
+  ok    explains the record to create when no record exists: says "Name:   nowhere"
+  ok    explains the record to create when no record exists: says "Value:  203.0.113.20"
+  ok    explains the record to create when no record exists: says "run the same command again"
+  ok    explains the record to create when no record exists: never says "AAAA"
+  ok    explains the record to create when no record exists: leaves nothing set up
+  ok    names the old address when the domain points elsewhere: exits 1
+  ok    names the old address when the domain points elsewhere: says "Right now community.example.test points at 203.0.113.99"
+  ok    names the old address when the domain points elsewhere: leaves nothing set up
+  ok    catches an old IPv6 record next to a correct IPv4 record: exits 1
+  ok    catches an old IPv6 record next to a correct IPv4 record: says "Right now community.example.test points at 2001:db8::99"
+  ok    catches an old IPv6 record next to a correct IPv4 record: leaves nothing set up
+  ok    suggests @ for a main domain: says "Name:   @"
+  ok    stops when someone types quit: says "Press Enter to check again"
+  ok    stops when someone types quit: says "Stopped. Nothing has been set up."
+  ok    stops when someone types quit: leaves nothing set up
+  ok    continues when the record appears and someone presses Enter: says "community.example.test points at this server"
+  ok    continues when the record appears and someone presses Enter: says "Your community is ready"
+  ok    falls back to a second DNS service: exits 0
+  ok    falls back to a second DNS service: says "community.example.test points at this server"
+  ok    stops plainly when no DNS service answers: exits 1
+  ok    stops plainly when no DNS service answers: says "We couldn't look up community.example.test"
+  ok    stops plainly when no DNS service answers: leaves nothing set up
+  ok    accepts an IPv6-only server: exits 0
+  ok    accepts an IPv6-only server: says "community.example.test points at this server"
+  FAIL  accepts several addresses in COMMUNITY_SERVER_IP: exits 0, got 1
+        | 
+        | Step 1 of 12: Checking this server
+        | ubuntu 24.04 on amd64. That works.
+        | 
+        | Step 2 of 12: Choosing your community's address
+        | Enter the address people will use to open your community, like community.yourfund.com.
+        | Your address will be https://community.example.test
+        | 
+        | Step 3 of 12: Checking that community.example.test points at this server
+        | 
+        | community.example.test doesn't point at this server yet.
+        | 
+        | Log in to the company where you bought your domain, open its DNS settings and create this record:
+        | 
+        |   Type:   AAAA
+        |   Name:   community
+        |   Value:  203.0.113.20, 2001:DB8::20
+        | 
+        | If community.example.test is your main domain, with nothing in front of it, use @ as the name.
+        | Right now community.example.test points at 203.0.113.20. Change or delete that old record.
+        | Right now community.example.test points at 2001:db8::20. Change or delete that old record.
+        | On Cloudflare, set the record to "DNS only" (the grey cloud).
+        | Changes usually show up within a few minutes, and sometimes take up to an hour.
+        | 
+        | Create that record, wait a few minutes, then run the same command again.
+  ok    accepts several addresses in COMMUNITY_SERVER_IP: says "community.example.test points at this server"
+  ok    refuses a COMMUNITY_SERVER_IP that isn't an address: exits 1
+  FAIL  refuses a COMMUNITY_SERVER_IP that isn't an address: says ""nonsense" doesn't look like a server address"
+        | 
+        | Step 1 of 12: Checking this server
+        | ubuntu 24.04 on amd64. That works.
+        | 
+        | Step 2 of 12: Choosing your community's address
+        | Enter the address people will use to open your community, like community.yourfund.com.
+        | Your address will be https://community.example.test
+        | 
+        | Step 3 of 12: Checking that community.example.test points at this server
+        | 
+        | community.example.test doesn't point at this server yet.
+        | 
+        | Log in to the company where you bought your domain, open its DNS settings and create this record:
+        | 
+        |   Type:   AAAA
+        |   Name:   community
+        |   Value:  203.0.113.20 nonsense
+        | 
+        | If community.example.test is your main domain, with nothing in front of it, use @ as the name.
+        | Right now community.example.test points at 203.0.113.20. Change or delete that old record.
+        | On Cloudflare, set the record to "DNS only" (the grey cloud).
+        | Changes usually show up within a few minutes, and sometimes take up to an hour.
+        | 
+        | Create that record, wait a few minutes, then run the same command again.
+  ok    refuses a COMMUNITY_SERVER_IP that isn't an address: leaves nothing set up
+  ok    offers COMMUNITY_SERVER_IP instead of calling the record old, behind NAT: exits 1
+  ok    offers COMMUNITY_SERVER_IP instead of calling the record old, behind NAT: says "Right now community.example.test points at 2001:db8::99"
+  FAIL  offers COMMUNITY_SERVER_IP instead of calling the record old, behind NAT: says "COMMUNITY_SERVER_IP=2001:db8::99"
+        | 
+        | Step 1 of 12: Checking this server
+        | ubuntu 24.04 on amd64. That works.
+        | 
+        | Step 2 of 12: Choosing your community's address
+        | Enter the address people will use to open your community, like community.yourfund.com.
+        | Your address will be https://community.example.test
+        | 
+        | Step 3 of 12: Checking that community.example.test points at this server
+        | 
+        | community.example.test doesn't point at this server yet.
+        | 
+        | Log in to the company where you bought your domain, open its DNS settings and create this record:
+        | 
+        |   Type:   A
+        |   Name:   community
+        |   Value:  203.0.113.20
+        | 
+        | If community.example.test is your main domain, with nothing in front of it, use @ as the name.
+        | Right now community.example.test points at 2001:db8::99. Change or delete that old record.
+        | On Cloudflare, set the record to "DNS only" (the grey cloud).
+        | Changes usually show up within a few minutes, and sometimes take up to an hour.
+        | 
+        | Create that record, wait a few minutes, then run the same command again.
+  FAIL  offers COMMUNITY_SERVER_IP instead of calling the record old, behind NAT: never says "Change or delete that old record"
+        | 
+        | Step 1 of 12: Checking this server
+        | ubuntu 24.04 on amd64. That works.
+        | 
+        | Step 2 of 12: Choosing your community's address
+        | Enter the address people will use to open your community, like community.yourfund.com.
+        | Your address will be https://community.example.test
+        | 
+        | Step 3 of 12: Checking that community.example.test points at this server
+        | 
+        | community.example.test doesn't point at this server yet.
+        | 
+        | Log in to the company where you bought your domain, open its DNS settings and create this record:
+        | 
+        |   Type:   A
+        |   Name:   community
+        |   Value:  203.0.113.20
+        | 
+        | If community.example.test is your main domain, with nothing in front of it, use @ as the name.
+        | Right now community.example.test points at 2001:db8::99. Change or delete that old record.
+        | On Cloudflare, set the record to "DNS only" (the grey cloud).
+        | Changes usually show up within a few minutes, and sometimes take up to an hour.
+        | 
+        | Create that record, wait a few minutes, then run the same command again.
+  ok    offers COMMUNITY_SERVER_IP instead of calling the record old, behind NAT: leaves nothing set up
+  ok    stops when it can't detect this server's address: exits 1
+  ok    stops when it can't detect this server's address: says "couldn't work out this server's public address"
+  ok    stops when it can't detect this server's address: leaves nothing set up
+
+Installing on a fresh server
+  ok    cleans a pasted web address: exits 0
+  ok    cleans a pasted web address: stores the clean domain
+  ok    cleans a pasted web address: calls "compose saw domain: only .env"
+  ok    leaves a running service and prints what to do next: exits 0
+  ok    leaves a running service and prints what to do next: says "Step 1 of 12"
+  ok    leaves a running service and prints what to do next: says "Step 12 of 12"
+  ok    leaves a running service and prints what to do next: says "Address:      https://community.example.test"
+  ok    leaves a running service and prints what to do next: says "Setup token:  18d288016f96be7641d95af56b34744f6e8d593d3584231df26261546ef797bf"
+  ok    leaves a running service and prints what to do next: says "https://community.example.test/setup"
+  ok    leaves a running service and prints what to do next: says "same disk"
+  ok    leaves a running service and prints what to do next: keeps .env private
+  ok    leaves a running service and prints what to do next: keeps the install folder private
+  ok    leaves a running service and prints what to do next: keeps backups private
+  ok    leaves a running service and prints what to do next: installs the helper
+  ok    leaves a running service and prints what to do next: installs the compose file
+  ok    leaves a running service and prints what to do next: installs the Caddyfile
+  ok    leaves a running service and prints what to do next: generates POSTGRES_PASSWORD
+  ok    leaves a running service and prints what to do next: generates SETUP_TOKEN
+  ok    leaves a running service and prints what to do next: generates BETTER_AUTH_SECRET
+  ok    leaves a running service and prints what to do next: sets APP_URL to HTTPS
+  ok    leaves a running service and prints what to do next: calls "systemctl enable --now community-backup.timer"
+  ok    leaves a running service and prints what to do next: calls "pull --quiet app"
+  ok    leaves a running service and prints what to do next: calls "up -d --remove-orphans"
+  ok    leaves a running service and prints what to do next: never says "/etc/apt"
+  ok    leaves a running service and prints what to do next: keeps its log in the install folder
+  ok    leaves a running service and prints what to do next: keeps its log private
+  ok    leaves a running service and prints what to do next: writes no log elsewhere
+  ok    leaves a running service and prints what to do next: doesn't call "systemctl enable --now docker"
+  ok    refuses to replace a database whose settings file is gone: exits 1
+  ok    refuses to replace a database whose settings file is gone: says "settings file (/opt/community/.env) is gone"
+  ok    refuses to replace a database whose settings file is gone: writes no new .env
+  ok    points at the logs when the app never gets healthy: exits 1
+  ok    points at the logs when the app never gets healthy: says "sudo community logs app"
+  ok    points at the logs when the app never gets healthy: never says "stopped unexpectedly"
+  ok    points at the certificate logs when HTTPS never answers: exits 1
+  ok    points at the certificate logs when HTTPS never answers: says "couldn't get a security certificate"
+  ok    points at the certificate logs when HTTPS never answers: says "sudo community logs caddy"
+  ok    points at the certificate logs when HTTPS never answers: says "sudo community setup-token"
+  ok    uses a private certificate only in test mode: exits 0
+  ok    uses a private certificate only in test mode: says "Test mode"
+  ok    uses a private certificate only in test mode: turns on the private certificate
+  ok    uses a private certificate only in test mode: keeps the port in APP_URL
+
+Sharing the server with another program
+  ok    stops before changing anything and suggests the public address: exits 1
+  ok    stops before changing anything and suggests the public address: says "already using the web ports"
+  ok    stops before changing anything and suggests the public address: says "100.64.0.1:80 tailscaled"
+  ok    stops before changing anything and suggests the public address: says "COMMUNITY_BIND_ADDRESS=203.0.113.20 bash"
+  ok    stops before changing anything and suggests the public address: never says "stopped unexpectedly"
+  ok    stops before changing anything and suggests the public address: leaves nothing set up
+  ok    doesn't suggest sharing when the other program holds every address: exits 1
+  ok    doesn't suggest sharing when the other program holds every address: says "0.0.0.0:80 nginx"
+  ok    doesn't suggest sharing when the other program holds every address: says "stop or remove that program"
+  ok    doesn't suggest sharing when the other program holds every address: never says "COMMUNITY_BIND_ADDRESS="
+  ok    doesn't suggest sharing when the other program holds every address: leaves nothing set up
+  ok    installs beside a program on another address: exits 0
+  ok    installs beside a program on another address: says "Ports 80 and 443 are free"
+  ok    installs beside a program on another address: saves the address
+  ok    installs beside a program on another address: calls "--resolve community.example.test:443:203.0.113.20"
+  ok    refuses when something already holds the chosen address: exits 1
+  ok    refuses when something already holds the chosen address: says "stop or remove that program"
+  ok    refuses when something already holds the chosen address: leaves nothing set up
+  ok    refuses when something holds every address, even with a chosen one: exits 1
+  ok    refuses when something holds every address, even with a chosen one: says "[::]:80 nginx"
+  ok    refuses when something holds every address, even with a chosen one: leaves nothing set up
+  ok    checks DNS against the chosen address: exits 0
+  ok    checks DNS against the chosen address: says "community.example.test points at this server"
+  ok    refuses an address this server doesn't have: exits 1
+  ok    refuses an address this server doesn't have: says "doesn't have the address 203.0.113.99"
+  ok    refuses an address this server doesn't have: leaves nothing set up
+  ok    refuses an address that could inject settings: exits 1
+  ok    refuses an address that could inject settings: says "doesn't look like a server address"
+  ok    refuses an address that could inject settings: leaves nothing set up
+  ok    explains a port taken after the check, instead of showing a Docker error: exits 1
+  ok    explains a port taken after the check, instead of showing a Docker error: says "using the web ports, so your community couldn't start"
+  ok    explains a port taken after the check, instead of showing a Docker error: never says "bind:"
+  ok    keeps the saved address on a re-run, even with another one passed: exits 0
+  ok    keeps the saved address on a re-run, even with another one passed: says "You passed COMMUNITY_BIND_ADDRESS=203.0.113.99"
+  ok    keeps the saved address on a re-run, even with another one passed: keeps the saved address
+
+Getting the app
+  ok    builds from source with a memory warning when the download fails: exits 0
+  ok    builds from source with a memory warning when the download fails: says "building it on this server"
+  ok    builds from source with a memory warning when the download fails: says "2.5 GB"
+  FAIL  builds from source with a memory warning when the download fails: says "bigger server"
+        | Downloaded the database and the web server.
+        | 
+        | Step 10 of 12: Starting your community
+        | Started.
+        | 
+        | Step 11 of 12: Waiting for your community to be ready
+        | Preparing the database. This usually takes less than a minute.
+        | The app is running.
+        | Getting your security certificate. This usually takes less than a minute.
+        | HTTPS works.
+        | 
+        | Step 12 of 12: All done
+        | 
+        | Your community is ready.
+        | 
+        |   Address:      https://community.example.test
+        |   Setup token:  8b265f58166ca85a713575f67ee3a184c4dda01e4f604198d7e4920b5b5f31db
+        | 
+        | What to do next:
+        |   1. Save the setup token in your password manager. You need it again if you lose your admin password.
+        |      You can see it later with: sudo community setup-token
+        |   2. Open https://community.example.test/setup in your browser.
+        |   3. Enter the setup token, your name, your email and a password. This creates your admin account.
+        | 
+        | Backups: this server backs up your data every day and keeps the last 7.
+        | Those copies sit on the same disk as your data, so they're not enough if the server is lost.
+        | Copy one to your own computer regularly. The guide shows how:
+        |   https://github.com/VillageHQ/community/blob/main/docs/self-host-vps.md
+        | 
+        | To see all the commands: community
+  FAIL  builds from source with a memory warning when the download fails: calls "docker build --network host -f /source/deploy/vps/Dockerfile -t ghcr.io/villagehq/community:latest /source"
+        | Downloaded the database and the web server.
+        | 
+        | Step 10 of 12: Starting your community
+        | Started.
+        | 
+        | Step 11 of 12: Waiting for your community to be ready
+        | Preparing the database. This usually takes less than a minute.
+        | The app is running.
+        | Getting your security certificate. This usually takes less than a minute.
+        | HTTPS works.
+        | 
+        | Step 12 of 12: All done
+        | 
+        | Your community is ready.
+        | 
+        |   Address:      https://community.example.test
+        |   Setup token:  8b265f58166ca85a713575f67ee3a184c4dda01e4f604198d7e4920b5b5f31db
+        | 
+        | What to do next:
+        |   1. Save the setup token in your password manager. You need it again if you lose your admin password.
+        |      You can see it later with: sudo community setup-token
+        |   2. Open https://community.example.test/setup in your browser.
+        |   3. Enter the setup token, your name, your email and a password. This creates your admin account.
+        | 
+        | Backups: this server backs up your data every day and keeps the last 7.
+        | Those copies sit on the same disk as your data, so they're not enough if the server is lost.
+        | Copy one to your own computer regularly. The guide shows how:
+        |   https://github.com/VillageHQ/community/blob/main/docs/self-host-vps.md
+        | 
+        | To see all the commands: community
+  FAIL  builds from source with a memory warning when the download fails: keeps the build output in its log
+        | Downloaded the database and the web server.
+        | 
+        | Step 10 of 12: Starting your community
+        | Started.
+        | 
+        | Step 11 of 12: Waiting for your community to be ready
+        | Preparing the database. This usually takes less than a minute.
+        | The app is running.
+        | Getting your security certificate. This usually takes less than a minute.
+        | HTTPS works.
+        | 
+        | Step 12 of 12: All done
+        | 
+        | Your community is ready.
+        | 
+        |   Address:      https://community.example.test
+        |   Setup token:  8b265f58166ca85a713575f67ee3a184c4dda01e4f604198d7e4920b5b5f31db
+        | 
+        | What to do next:
+        |   1. Save the setup token in your password manager. You need it again if you lose your admin password.
+        |      You can see it later with: sudo community setup-token
+        |   2. Open https://community.example.test/setup in your browser.
+        |   3. Enter the setup token, your name, your email and a password. This creates your admin account.
+        | 
+        | Backups: this server backs up your data every day and keeps the last 7.
+        | Those copies sit on the same disk as your data, so they're not enough if the server is lost.
+        | Copy one to your own computer regularly. The guide shows how:
+        |   https://github.com/VillageHQ/community/blob/main/docs/self-host-vps.md
+        | 
+        | To see all the commands: community
+  ok    doesn't build when the download works: doesn't call "docker build"
+  ok    stops and explains when the build fails on a first install: exits 1
+  ok    stops and explains when the build fails on a first install: says "The build failed"
+  ok    stops and explains when the build fails on a first install: doesn't call "up -d"
+  ok    shows the real cause of a failed build, not a memory guess: exits 1
+  ok    shows the real cause of a failed build, not a memory guess: says "getaddrinfo EAI_AGAIN registry.npmjs.org"
+  FAIL  shows the real cause of a failed build, not a memory guess: says "couldn't look up"
+        | community.example.test points at this server.
+        | 
+        | Step 4 of 12: Checking that the web ports are free
+        | Ports 80 and 443 are free.
+        | 
+        | Step 5 of 12: Making sure Docker is installed
+        | Docker runs your community in sealed boxes, so it stays separate from the rest of this server.
+        | Docker is already here.
+        | Docker is running.
+        | 
+        | Step 6 of 12: Checking this server's memory
+        | This server has enough memory (11960 MB).
+        | 
+        | Step 7 of 12: Allowing web traffic
+        | This server's firewall (ufw) isn't on, so there's nothing to change. We left it off.
+        | Some hosting companies have their own firewall in their dashboard. If yours does, allow ports 80 and 443.
+        | 
+        | Step 8 of 12: Writing your settings
+        | Creating your private secrets.
+        | Saved them in /opt/community/.env. Only the administrator can read that file.
+        | Daily backups are on. We keep the last 7 in /opt/community/backups.
+        | 
+        | Step 9 of 12: Downloading the app
+        | Warning: We couldn't download the ready-made app, so we're building it on this server instead.
+        | This needs about 2.5 GB of memory and swap together. On a small server it can take 10 minutes or more.
+        | #12 building
+        | npm error request to https://registry.npmjs.org/ failed, reason: getaddrinfo EAI_AGAIN registry.npmjs.org
+        | 
+        | The build failed. This usually means the server ran out of memory.
+        | Rent a server with at least 2 GB of memory, or try again later: the ready-made app may be back.
+  FAIL  shows the real cause of a failed build, not a memory guess: never says "out of memory"
+        | community.example.test points at this server.
+        | 
+        | Step 4 of 12: Checking that the web ports are free
+        | Ports 80 and 443 are free.
+        | 
+        | Step 5 of 12: Making sure Docker is installed
+        | Docker runs your community in sealed boxes, so it stays separate from the rest of this server.
+        | Docker is already here.
+        | Docker is running.
+        | 
+        | Step 6 of 12: Checking this server's memory
+        | This server has enough memory (11960 MB).
+        | 
+        | Step 7 of 12: Allowing web traffic
+        | This server's firewall (ufw) isn't on, so there's nothing to change. We left it off.
+        | Some hosting companies have their own firewall in their dashboard. If yours does, allow ports 80 and 443.
+        | 
+        | Step 8 of 12: Writing your settings
+        | Creating your private secrets.
+        | Saved them in /opt/community/.env. Only the administrator can read that file.
+        | Daily backups are on. We keep the last 7 in /opt/community/backups.
+        | 
+        | Step 9 of 12: Downloading the app
+        | Warning: We couldn't download the ready-made app, so we're building it on this server instead.
+        | This needs about 2.5 GB of memory and swap together. On a small server it can take 10 minutes or more.
+        | #12 building
+        | npm error request to https://registry.npmjs.org/ failed, reason: getaddrinfo EAI_AGAIN registry.npmjs.org
+        | 
+        | The build failed. This usually means the server ran out of memory.
+        | Rent a server with at least 2 GB of memory, or try again later: the ready-made app may be back.
+  ok    shows the real cause of a failed build, not a memory guess: never says "stopped unexpectedly"
+  FAIL  shows the real cause of a failed build, not a memory guess: keeps the cause in its log
+        | community.example.test points at this server.
+        | 
+        | Step 4 of 12: Checking that the web ports are free
+        | Ports 80 and 443 are free.
+        | 
+        | Step 5 of 12: Making sure Docker is installed
+        | Docker runs your community in sealed boxes, so it stays separate from the rest of this server.
+        | Docker is already here.
+        | Docker is running.
+        | 
+        | Step 6 of 12: Checking this server's memory
+        | This server has enough memory (11960 MB).
+        | 
+        | Step 7 of 12: Allowing web traffic
+        | This server's firewall (ufw) isn't on, so there's nothing to change. We left it off.
+        | Some hosting companies have their own firewall in their dashboard. If yours does, allow ports 80 and 443.
+        | 
+        | Step 8 of 12: Writing your settings
+        | Creating your private secrets.
+        | Saved them in /opt/community/.env. Only the administrator can read that file.
+        | Daily backups are on. We keep the last 7 in /opt/community/backups.
+        | 
+        | Step 9 of 12: Downloading the app
+        | Warning: We couldn't download the ready-made app, so we're building it on this server instead.
+        | This needs about 2.5 GB of memory and swap together. On a small server it can take 10 minutes or more.
+        | #12 building
+        | npm error request to https://registry.npmjs.org/ failed, reason: getaddrinfo EAI_AGAIN registry.npmjs.org
+        | 
+        | The build failed. This usually means the server ran out of memory.
+        | Rent a server with at least 2 GB of memory, or try again later: the ready-made app may be back.
+  ok    blames memory only when the build was killed for it: exits 1
+  ok    blames memory only when the build was killed for it: says "ran out of memory"
+
+Running it again
+  ok    keeps every secret and upgrades in place: exits 0
+  ok    keeps every secret and upgrades in place: says "already installed"
+  ok    keeps every secret and upgrades in place: says "Keeping your existing settings"
+  ok    keeps every secret and upgrades in place: says "You passed different.example.test"
+  ok    keeps every secret and upgrades in place: says "up to date at https://community.example.test"
+  ok    keeps every secret and upgrades in place: never says "0b1bea0044dbb11e860bdd8abb5ce46da474f2ca5064d22dbffc10d770673c84"
+  ok    keeps every secret and upgrades in place: leaves .env byte for byte the same
+  ok    keeps every secret and upgrades in place: keeps .env private
+  ok    keeps every secret and upgrades in place: calls "exec -T postgres pg_dump"
+  ok    keeps every secret and upgrades in place: calls "up -d --remove-orphans"
+  ok    keeps every secret and upgrades in place: calls "compose saw domain: only .env"
+  ok    keeps every secret and upgrades in place: doesn't call "compose saw domain: different"
+  ok    keeps every secret and upgrades in place: doesn't call "volume rm"
+  ok    keeps every secret and upgrades in place: doesn't call "down"
+  ok    still shows the setup token after a first install that stopped: exits 0
+  FAIL  still shows the setup token after a first install that stopped: says "Setup token:  2a6824eff01255a1967e8a9090936e8653f15a87dabc8fbbbf3916588e171c1a"
+        | Step 6 of 12: Checking this server's memory
+        | This server has enough memory (11960 MB).
+        | 
+        | Step 7 of 12: Allowing web traffic
+        | This server's firewall (ufw) isn't on, so there's nothing to change. We left it off.
+        | Some hosting companies have their own firewall in their dashboard. If yours does, allow ports 80 and 443.
+        | 
+        | Step 8 of 12: Writing your settings
+        | Keeping your existing settings and secrets in /opt/community/.env.
+        | Daily backups are on. We keep the last 7 in /opt/community/backups.
+        | 
+        | Step 9 of 12: Downloading the app
+        | Backing up your data before upgrading.
+        | Downloaded the app.
+        | Downloaded the database and the web server.
+        | 
+        | Step 10 of 12: Starting your community
+        | Started.
+        | 
+        | Step 11 of 12: Waiting for your community to be ready
+        | Preparing the database. This usually takes less than a minute.
+        | The app is running.
+        | Getting your security certificate. This usually takes less than a minute.
+        | HTTPS works.
+        | 
+        | Step 12 of 12: All done
+        | 
+        | Done. Your community is up to date at https://community.example.test
+        | Your settings and data are unchanged.
+        | To see your setup token: sudo community setup-token
+  FAIL  still shows the setup token after a first install that stopped: says "https://community.example.test/setup"
+        | Step 6 of 12: Checking this server's memory
+        | This server has enough memory (11960 MB).
+        | 
+        | Step 7 of 12: Allowing web traffic
+        | This server's firewall (ufw) isn't on, so there's nothing to change. We left it off.
+        | Some hosting companies have their own firewall in their dashboard. If yours does, allow ports 80 and 443.
+        | 
+        | Step 8 of 12: Writing your settings
+        | Keeping your existing settings and secrets in /opt/community/.env.
+        | Daily backups are on. We keep the last 7 in /opt/community/backups.
+        | 
+        | Step 9 of 12: Downloading the app
+        | Backing up your data before upgrading.
+        | Downloaded the app.
+        | Downloaded the database and the web server.
+        | 
+        | Step 10 of 12: Starting your community
+        | Started.
+        | 
+        | Step 11 of 12: Waiting for your community to be ready
+        | Preparing the database. This usually takes less than a minute.
+        | The app is running.
+        | Getting your security certificate. This usually takes less than a minute.
+        | HTTPS works.
+        | 
+        | Step 12 of 12: All done
+        | 
+        | Done. Your community is up to date at https://community.example.test
+        | Your settings and data are unchanged.
+        | To see your setup token: sudo community setup-token
+  ok    still shows the setup token after a first install that stopped: says "Keeping your existing settings"
+  FAIL  still shows the setup token after a first install that stopped: never says "up to date"
+        | Step 6 of 12: Checking this server's memory
+        | This server has enough memory (11960 MB).
+        | 
+        | Step 7 of 12: Allowing web traffic
+        | This server's firewall (ufw) isn't on, so there's nothing to change. We left it off.
+        | Some hosting companies have their own firewall in their dashboard. If yours does, allow ports 80 and 443.
+        | 
+        | Step 8 of 12: Writing your settings
+        | Keeping your existing settings and secrets in /opt/community/.env.
+        | Daily backups are on. We keep the last 7 in /opt/community/backups.
+        | 
+        | Step 9 of 12: Downloading the app
+        | Backing up your data before upgrading.
+        | Downloaded the app.
+        | Downloaded the database and the web server.
+        | 
+        | Step 10 of 12: Starting your community
+        | Started.
+        | 
+        | Step 11 of 12: Waiting for your community to be ready
+        | Preparing the database. This usually takes less than a minute.
+        | The app is running.
+        | Getting your security certificate. This usually takes less than a minute.
+        | HTTPS works.
+        | 
+        | Step 12 of 12: All done
+        | 
+        | Done. Your community is up to date at https://community.example.test
+        | Your settings and data are unchanged.
+        | To see your setup token: sudo community setup-token
+  FAIL  still shows the setup token after a first install that stopped: never says "already installed"
+        | Step 6 of 12: Checking this server's memory
+        | This server has enough memory (11960 MB).
+        | 
+        | Step 7 of 12: Allowing web traffic
+        | This server's firewall (ufw) isn't on, so there's nothing to change. We left it off.
+        | Some hosting companies have their own firewall in their dashboard. If yours does, allow ports 80 and 443.
+        | 
+        | Step 8 of 12: Writing your settings
+        | Keeping your existing settings and secrets in /opt/community/.env.
+        | Daily backups are on. We keep the last 7 in /opt/community/backups.
+        | 
+        | Step 9 of 12: Downloading the app
+        | Backing up your data before upgrading.
+        | Downloaded the app.
+        | Downloaded the database and the web server.
+        | 
+        | Step 10 of 12: Starting your community
+        | Started.
+        | 
+        | Step 11 of 12: Waiting for your community to be ready
+        | Preparing the database. This usually takes less than a minute.
+        | The app is running.
+        | Getting your security certificate. This usually takes less than a minute.
+        | HTTPS works.
+        | 
+        | Step 12 of 12: All done
+        | 
+        | Done. Your community is up to date at https://community.example.test
+        | Your settings and data are unchanged.
+        | To see your setup token: sudo community setup-token
+  ok    needs neither a domain nor DNS: exits 0
+  ok    needs neither a domain nor DNS: says "Already set up, so we skip this check"
+  ok    repairs .env permissions without changing its contents: sets the mode back
+  ok    keeps the current version when a rebuild fails: exits 0
+  ok    keeps the current version when a rebuild fails: says "keeping the version you have"
+  ok    stops before changing anything when the backup fails: exits 1
+  ok    stops before changing anything when the backup fails: says "stopped before changing anything"
+  ok    stops before changing anything when the backup fails: doesn't call "up -d"
+
+Handling the firewall
+  ok    allows only the web ports when ufw is on: calls "ufw allow 80/tcp"
+  ok    allows only the web ports when ufw is on: calls "ufw allow 443/tcp"
+  ok    allows only the web ports when ufw is on: doesn't call "ufw enable"
+  ok    allows only the web ports when ufw is on: doesn't call "ufw default"
+  ok    allows only the web ports when ufw is on: doesn't call "ufw deny"
+  ok    allows only the web ports when ufw is on: says "SSH works as before"
+  ok    leaves ufw off when it's off: doesn't call "ufw allow"
+  ok    leaves ufw off when it's off: doesn't call "ufw enable"
+  ok    leaves ufw off when it's off: says "We left it off"
+
+Handling memory
+  ok    adds swap once on a small machine: exits 0
+  ok    adds swap once on a small machine: calls "mkswap /swapfile"
+  ok    adds swap once on a small machine: calls "swapon /swapfile"
+  ok    adds swap once on a small machine: lists it in fstab once
+  ok    leaves a large machine alone: doesn't call "mkswap"
+  ok    leaves a small machine with swap alone: doesn't call "mkswap"
+  ok    sees active swap in /proc/swaps when swapon can't list it, and carries on: exits 0
+  FAIL  sees active swap in /proc/swaps when swapon can't list it, and carries on: says "already has swap"
+        | 
+        | Step 1 of 12: Checking this server's memory
+        | This server has 512 MB of memory, so we're adding 2G of swap: disk space used as spare memory.
+        | Warning: We couldn't add swap here. Your community may still run fine, but it could stop if memory runs out.
+        | reached-the-end
+  ok    sees active swap in /proc/swaps when swapon can't list it, and carries on: says "reached-the-end"
+  FAIL  sees active swap in /proc/swaps when swapon can't list it, and carries on: keeps /swapfile
+        | 
+        | Step 1 of 12: Checking this server's memory
+        | This server has 512 MB of memory, so we're adding 2G of swap: disk space used as spare memory.
+        | Warning: We couldn't add swap here. Your community may still run fine, but it could stop if memory runs out.
+        | reached-the-end
+  ok    leaves alone a /swapfile it didn't make: exits 0
+  ok    leaves alone a /swapfile it didn't make: says "reached-the-end"
+  FAIL  leaves alone a /swapfile it didn't make: doesn't call "swapon /swapfile"
+        | 
+        | Step 1 of 12: Checking this server's memory
+        | This server has 512 MB of memory, so we're adding 2G of swap: disk space used as spare memory.
+        | Swap is on.
+        | reached-the-end
+  ok    leaves alone a /swapfile it didn't make: doesn't call "swapoff"
+  ok    leaves alone a /swapfile it didn't make: keeps /swapfile
+  ok    turns off and removes only its own swap file when it can't turn it on: exits 0
+  ok    turns off and removes only its own swap file when it can't turn it on: says "reached-the-end"
+  ok    turns off and removes only its own swap file when it can't turn it on: says "couldn't add swap"
+  FAIL  turns off and removes only its own swap file when it can't turn it on: calls "swapoff /swapfile"
+        | 
+        | Step 1 of 12: Checking this server's memory
+        | This server has 512 MB of memory, so we're adding 2G of swap: disk space used as spare memory.
+        | Warning: We couldn't add swap here. Your community may still run fine, but it could stop if memory runs out.
+        | reached-the-end
+  ok    turns off and removes only its own swap file when it can't turn it on: removes its own /swapfile
+  ok    turns off and removes only its own swap file when it can't turn it on: leaves no fstab line
+  ok    turns its own swap file back on in a re-run: exits 0
+  ok    turns its own swap file back on in a re-run: calls "swapon /swapfile"
+  ok    turns its own swap file back on in a re-run: doesn't call "mkswap"
+
+Getting a cut-off download
+  ok    runs nothing, wherever the download stops: prints no step at any cut
+  ok    runs nothing, wherever the download stops: leaves nothing set up
+
+Using the helper
+  ok    tells a non-administrator to use sudo: exits 1
+  ok    tells a non-administrator to use sudo: says "sudo community setup-token"
+  ok    says so when Community isn't installed: exits 1
+  ok    says so when Community isn't installed: says "isn't installed"
+  ok    prints the setup token: matches .env
+  ok    keeps 7 daily backups and never prunes a safety copy: keeps 7
+  ok    keeps 7 daily backups and never prunes a safety copy: removes the oldest
+  ok    keeps 7 daily backups and never prunes a safety copy: keeps the safety copy
+  ok    keeps 7 daily backups and never prunes a safety copy: says "same disk"
+  ok    upgrades through the installer and reports success: exits 0
+  ok    upgrades through the installer and reports success: says "up to date at https://community.example.test"
+  ok    upgrades through the installer and reports success: says "Downloading Community's files (main)"
+  ok    upgrades through the installer and reports success: calls "codeload.github.com/VillageHQ/community/tar.gz/main"
+  ok    upgrades through the installer and reports success: never says "unbound variable"
+  ok    shows help with no command and rejects an unknown one: says "sudo community restore <file>"
+  ok    shows help with no command and rejects an unknown one: exits 1
+
+Failures: 18
