@@ -9,6 +9,7 @@ import {
   CostBox,
   CreditMeter,
   FillInLastRunLine,
+  CreditSpendTables,
   LatestLookups,
   LookupsPerMember,
   NetworkMeter,
@@ -22,7 +23,7 @@ import { FillInBasisForm, FillInNowButton, NudgeButton, TestConnectionButton, Vi
 import { GroupForm } from "@/modules/network/components/group-form";
 import { networkManifest } from "@/modules/network/manifest";
 import { readCreditUsage } from "@/modules/network/reads-credits";
-import { readLookupsThisMonth, readNetworkReach, readNudgeStates } from "@/modules/network/reads-village-admin";
+import { readCreditSpend, readLookupsThisMonth, readNetworkReach, readNudgeStates } from "@/modules/network/reads-village-admin";
 import { readVillageCheck } from "@/modules/network/reads-village-check";
 import { readVillageGroupReadiness } from "@/modules/network/service";
 import { readFirstAdminEmail } from "@/modules/network/service-fill-in";
@@ -90,13 +91,14 @@ export default modulePage(networkManifest, async function AdminVillagePage() {
     readFillInSettings(database),
     readFillInLastRun(database),
   ]);
-  const [month, lookups, outOfCreditsAt, reach, nudges, usage] = await Promise.all([
+  const [month, lookups, outOfCreditsAt, reach, nudges, usage, spend] = await Promise.all([
     readMonthlyCreditUsage(database),
     readLookupsThisMonth(database),
     readVillageOutOfCreditsAt(database),
     readNetworkReach(database),
     readNudgeStates(database, admin.id),
     readCreditUsage(database),
+    readCreditSpend(database),
   ]);
   const isConfigured = keyState.keys !== null;
   const hasSavedKeys = keyState.status !== VILLAGE_KEY_STATUSES.missing;
@@ -180,6 +182,7 @@ export default modulePage(networkManifest, async function AdminVillagePage() {
           <section className="fh-sheet">
             <CreditMeter lookups={lookups} used={month.credits} cap={month.cap} isConfigured={isConfigured} dailyLimit={dailyLimit} outOfCreditsAt={outOfCreditsAt} />
             <LatestLookups latest={lookups.latest} />
+            <CreditSpendTables spend={spend} />
             <LookupsPerMember members={usage.members} windowDays={usage.windowDays} />
           </section>
 
