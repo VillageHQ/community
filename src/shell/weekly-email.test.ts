@@ -12,7 +12,7 @@ import { ask, askHelper, askOffer } from "@/modules/asks/schema";
 import { askSkip } from "@/modules/asks/schema-skip";
 import { INTRO_STATES } from "@/modules/intros/contract";
 import { introRequest } from "@/modules/intros/schema";
-import { memberFillIn } from "@/modules/members/schema";
+import { memberFillIn, memberProfile } from "@/modules/members/schema";
 import { user } from "@/platform/database/auth-schema";
 import { EMAIL_TOPICS } from "@/platform/email/kinds";
 import { sendDueEmails } from "@/platform/email/outbox-sender";
@@ -395,6 +395,110 @@ ${HELP_NOTE}`;
     });
   });
 
+  // The 2026-11-12 parity audit (TODAY-06): Founderhall numbers the lines filled in from public profiles and takes
+  // RIGHT / HIDE / FIX by reply or link, as it takes HELP / SKIP / YES / NO.
+  describe("lines on the profile", () => {
+    async function seedFilledLine(memberId: string) {
+      await database.insert(memberFillIn).values({ userId: memberId, field: "location", value: "Lisbon", filledAt: new Date(now.getTime() - 2 * HOUR_MS) });
+    }
+
+    async function readLine(memberId: string) {
+      const [line] = await database.select().from(memberFillIn).where(eq(memberFillIn.userId, memberId));
+      const [profile] = await database.select({ location: memberProfile.location }).from(memberProfile).where(eq(memberProfile.userId, memberId));
+      return { confirmed: line?.confirmedAt !== null, hidden: line?.hiddenAt !== null, own: profile?.location ?? null };
+    }
+
+    async function sendTo(memberId: string) {
+      await runWeeklyEmails(database, environment(), { now });
+      await sendDueEmails(database, environment());
+      return { replyTo: await readReplyTo(memberId), from: await readEmail(memberId) };
+    }
+
+    it("numbers each line after the asks and intros, with its links and codes", async () => {
+      const { hana } = await seedCommunity();
+      await seedFilledLine(hana);
+
+      await sendTo(hana);
+
+      const text = readBodies()[0]?.text ?? "";
+      expect(text).toContain("3. City: Lisbon");
+      expect(text).toMatch(/ {3}Right: http\S+\/weekly\?token=\S+\n {3}Hide it: http\S+\/weekly\?token=\S+\n {3}Fix it: http\S+\/weekly\?token=\S+/u);
+      expect(text).toContain("   Or reply RIGHT 3 · HIDE 3 · FIX 3 your own words");
+    });
+
+    it("marks a line right, hides one, and saves the member's own words, once each", async () => {
+      const { quinn } = await seedCommunity();
+      await seedFilledLine(quinn);
+      const { replyTo, from } = await sendTo(quinn);
+
+      expect((await reply(from, replyTo, "RIGHT 1")).results).toEqual([{ code: "RIGHT 1", outcome: "done" }]);
+      expect(await readLine(quinn)).toMatchObject({ confirmed: true, hidden: false });
+      expect((await reply(from, replyTo, "HIDE 1")).results).toEqual([{ code: "HIDE 1", outcome: "already" }]);
+    });
+
+    it("hides a line from a HIDE reply", async () => {
+      const { quinn } = await seedCommunity();
+      await seedFilledLine(quinn);
+      const { replyTo, from } = await sendTo(quinn);
+
+      expect((await reply(from, replyTo, "hide 1")).results).toEqual([{ code: "HIDE 1", outcome: "done" }]);
+      expect(await readLine(quinn)).toMatchObject({ hidden: true });
+    });
+
+    it("saves FIX's words on the card, and asks for words when there are none", async () => {
+      const { quinn } = await seedCommunity();
+      await seedFilledLine(quinn);
+      const { replyTo, from } = await sendTo(quinn);
+
+      expect((await reply(from, replyTo, "FIX 1")).results).toEqual([{ code: "FIX 1", outcome: "needs_words" }]);
+      expect(await readLine(quinn)).toMatchObject({ confirmed: false, own: null });
+      expect((await reply(from, replyTo, "FIX 1 Porto\n\nThanks")).results).toEqual([{ code: "FIX 1", outcome: "done" }]);
+      expect(await readLine(quinn)).toMatchObject({ confirmed: true, own: "Porto" });
+    });
+
+    it("takes FIX's words from the link page's field", async () => {
+      const { quinn } = await seedCommunity();
+      await seedFilledLine(quinn);
+      await sendTo(quinn);
+      const [row] = await database.select({ id: weeklyEmail.id }).from(weeklyEmail).where(eq(weeklyEmail.memberId, quinn));
+      const token = await createItemToken(database, environment(), { weeklyEmailId: row?.id ?? "", itemNumber: 1, action: "fix" });
+
+      const response = await postWeeklyAnswer(
+        new Request(`${APP_URL}/api/email/weekly-answer?token=${encodeURIComponent(token)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ words: "Porto" }),
+        }),
+      );
+
+      expect(response.headers.get("location")).toContain("result=done");
+      expect(await readLine(quinn)).toMatchObject({ confirmed: true, own: "Porto" });
+    });
+  });
+
+  // The 2026-11-12 parity audit (TODAY-05): after the button, the page didn't change. The server may see itself under
+  // another address than the browser (127.0.0.1 or localhost, a proxy's inside name), and the page's form-action
+  // 'self' rule blocks a redirect to any other address, so the answer goes back to the same site by path.
+  describe("the link page's button", () => {
+    it("goes back to the page on the same site, saying it's done", async () => {
+      const { hana } = await seedCommunity();
+      await runWeeklyEmails(database, environment(), { now });
+      const [row] = await database.select({ id: weeklyEmail.id }).from(weeklyEmail).where(eq(weeklyEmail.memberId, hana));
+      const token = await createItemToken(database, environment(), { weeklyEmailId: row?.id ?? "", itemNumber: 1, action: "skip" });
+
+      const response = await postWeeklyAnswer(
+        new Request(`http://localhost:3000/api/email/weekly-answer?token=${encodeURIComponent(token)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded", Host: "community.example.com" },
+          body: "",
+        }),
+      );
+
+      expect(response.status).toBe(303);
+      expect(response.headers.get("location")).toBe(`/weekly?token=${encodeURIComponent(token)}&result=done`);
+    });
+  });
+
   describe("the admin preview", () => {
     it("shows the admin's own week or a made-up member, never another member's items", async () => {
       await seedCommunity();
@@ -452,10 +556,11 @@ ${HELP_NOTE}`;
       expect(await readFeedState()).toBe("on");
     });
 
-    it("leaves a new community with no members on the new default, off", async () => {
+    // The default turned on later (the owner's call, 2026-11-12): a community with no stored choice has the feed.
+    it("leaves a new community with no members on the default, on", async () => {
       await database.execute(sql.raw(feedRule));
       expect(await readFeedState()).toBeNull();
-      expect((await readEnabledIds(database)).has("feed")).toBe(false);
+      expect((await readEnabledIds(database)).has("feed")).toBe(true);
     });
 
     it("never changes a stored choice", async () => {

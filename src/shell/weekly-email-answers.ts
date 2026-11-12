@@ -10,6 +10,8 @@ import { skipAsk } from "@/modules/asks/service-skip";
 import { INTRO_ACTIONS, introTransitionBodySchema } from "@/modules/intros/contract";
 import { introsManifest } from "@/modules/intros/manifest";
 import { transitionIntro } from "@/modules/intros/service";
+import { FACT_FIX_LENGTH, type CheckedField } from "@/modules/members/contract-fill-in";
+import { confirmFillInLine, fixFillInLine, readLinesToCheck, setFillInHidden } from "@/modules/members/service-fill-in";
 import { isActiveMember } from "@/platform/auth/member-status";
 import { user } from "@/platform/database/auth-schema";
 import type { Database } from "@/platform/database/client";
@@ -33,7 +35,7 @@ import { readItemToken, readReplyAddress } from "@/platform/weekly-email/tokens"
 import { sendOfferAsMessage } from "./ask-offer-delivery";
 import { readEnabledIds } from "./enabled-modules";
 import { WEEKLY_ITEM_KINDS } from "./today";
-import { ITEM_ACTIONS } from "./weekly-email-compose";
+import { readItemActions } from "./weekly-email-compose";
 
 // Links and reply codes stop working three weeks after the email, by when its items are stale.
 const ANSWERS_LAST_MS = 21 * 24 * 60 * 60_000;
@@ -46,6 +48,8 @@ export const ANSWER_OUTCOMES = {
   expired: "expired",
   wrongCode: "wrong_code",
   noItem: "no_item",
+  // FIX with no words after it: nothing changed, and the item stays open.
+  needsWords: "needs_words",
 } as const;
 
 export type AnswerOutcome = (typeof ANSWER_OUTCOMES)[keyof typeof ANSWER_OUTCOMES];
@@ -55,7 +59,7 @@ export type AnswerResult = { outcome: AnswerOutcome; item: WeeklyEmailItem | nul
 const ANSWERABLE_STATUSES: readonly string[] = [WEEKLY_EMAIL_STATUSES.queued, WEEKLY_EMAIL_STATUSES.test];
 
 function actionsFor(item: WeeklyEmailItem): readonly string[] {
-  return item.kind === WEEKLY_ITEM_KINDS.intro ? ITEM_ACTIONS.intro : ITEM_ACTIONS.ask;
+  return readItemActions(item);
 }
 
 async function readRecipient(database: Database, memberId: string) {
@@ -77,11 +81,26 @@ export async function readAnswerTarget(database: Database, weeklyEmailId: string
   return { outcome: null, row, item } as const;
 }
 
-type CarriedOut = typeof ANSWER_OUTCOMES.done | typeof ANSWER_OUTCOMES.already | typeof ANSWER_OUTCOMES.gone;
+type CarriedOut = typeof ANSWER_OUTCOMES.done | typeof ANSWER_OUTCOMES.already | typeof ANSWER_OUTCOMES.gone | typeof ANSWER_OUTCOMES.needsWords;
+
+// A line on the member's profile: Right keeps it, Hide it takes it off the card, Fix it puts the member's own words
+// there (the first line of what they wrote). A line already checked in the app, or gone since, is "gone".
+async function answerProfileLine(database: Database, memberId: string, field: string, action: string, words: string): Promise<CarriedOut> {
+  const line = (await readLinesToCheck(database, memberId)).find((candidate) => candidate.field === field);
+  if (!line) return ANSWER_OUTCOMES.gone;
+  const checkedField: CheckedField = line.field;
+  if (action === REPLY_CODES.right) return (await confirmFillInLine(database, memberId, checkedField)) ? ANSWER_OUTCOMES.done : ANSWER_OUTCOMES.gone;
+  if (action === REPLY_CODES.hide) return (await setFillInHidden(database, memberId, checkedField, true)) ? ANSWER_OUTCOMES.done : ANSWER_OUTCOMES.gone;
+  const value = (words.split("\n")[0] ?? "").trim().slice(0, FACT_FIX_LENGTH);
+  if (!value) return ANSWER_OUTCOMES.needsWords;
+  await fixFillInLine(database, memberId, checkedField, value);
+  return ANSWER_OUTCOMES.done;
+}
 
 async function carryOut(database: Database, environment: Environment, memberId: string, item: WeeklyEmailItem, action: string, words: string): Promise<CarriedOut> {
   const member = await readRecipient(database, memberId);
   if (!member) return ANSWER_OUTCOMES.gone;
+  if (item.kind === WEEKLY_ITEM_KINDS.fact) return answerProfileLine(database, member.id, item.ref, action, words);
   const enabledIds = await readEnabledIds(database);
   const context = createRequestContext(database, environment, { id: member.id, email: member.email, role: member.role });
 
@@ -187,6 +206,10 @@ export async function answerFromReply(database: Database, environment: Environme
   for (const { code, itemNumber, words } of codes) {
     const { outcome } = await answerItem(database, environment, { weeklyEmailId, itemNumber, action: code, via: ACTION_SOURCES.reply, words });
     results.push({ code: `${code.toUpperCase()} ${itemNumber}`, outcome });
+  }
+  // Founderhall's hint for a FIX with nothing after it.
+  if (results.some(({ outcome }) => outcome === ANSWER_OUTCOMES.needsWords)) {
+    await sendDigestHint(database, environment, member.email, "Write your own words after FIX and its number, like FIX 3 Lisbon, so we know what to put on your profile. Nothing changed for that line.");
   }
   return { routed: true, reason: null, results };
 }

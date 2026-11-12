@@ -24,7 +24,7 @@ type MenuEntry = Omit<ShellNavigationItem, "icon" | "href"> & {
 const MEMBER_MENU: readonly MenuEntry[] = [
   { key: MEMBER_KEYS.today, label: "Today", tabLabel: "Today", icon: CalendarCheck, href: ROUTES.today },
   { key: MEMBER_KEYS.asks, label: "Asks & updates", tabLabel: "Asks", icon: Hand, moduleId: "asks", badge: NAVIGATION_BADGES.asks },
-  // Community's switchable feed (off by default; Founderhall has none): its own page, listed only while it's on.
+  // Community's switchable feed (on where no admin chose; Founderhall has none): its own page, listed only while it's on.
   { key: MEMBER_KEYS.feed, label: "Feed", icon: Newspaper, moduleId: "feed" },
   { key: MEMBER_KEYS.search, label: "Search", tabLabel: "Search", icon: Search, moduleId: "network" },
   { key: MEMBER_KEYS.directory, label: "Directory", tabLabel: "Directory", icon: BookUser, moduleId: "members" },
