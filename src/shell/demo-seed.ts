@@ -5,7 +5,9 @@ import { randomUUID } from "node:crypto";
 import { ask, askAnswer, askHelper, askOffer } from "@/modules/asks/schema";
 import { asksManifest } from "@/modules/asks/manifest";
 import { chatManifest } from "@/modules/chat/manifest";
+import { POST_TYPES, REACTIONS, type PostType } from "@/modules/feed/contract";
 import { feedManifest } from "@/modules/feed/manifest";
+import { comment, post, reaction } from "@/modules/feed/schema";
 import { introRequest } from "@/modules/intros/schema";
 import { introsManifest } from "@/modules/intros/manifest";
 import { PUBLIC_BOARD_SETTING, toCompanySlug } from "@/modules/job-board/contract";
@@ -526,6 +528,37 @@ async function seedMessages(transaction: Transaction, ids: Ids, ago: ReturnType<
   ]);
 }
 
+// The feed (on by default, the owner's call 2026-11-12): a pinned welcome from Maya, a win, an ask and an offer,
+// with a reply and a few reactions, so the demo's Feed page isn't empty. Every word is made up.
+const FEED_POSTS: readonly { author: string; type: PostType; body: string; daysAgo: number; hoursAgo?: number; isPinned?: boolean }[] = [
+  { author: "maya.ortiz", type: POST_TYPES.plain, body: "Welcome to the Northwind feed. Share news, wins and questions here; asks for an intro still go through Asks.", daysAgo: 6, isPinned: true },
+  { author: "amara.diallo", type: POST_TYPES.win, body: "Kilnworks signed its first precast customer in Lyon. Pilot pours start in March.", daysAgo: 1, hoursAgo: 3 },
+  { author: "sam.lee", type: POST_TYPES.ask, body: "Has anyone run a pricing test with hospital buyers? Looking for what worked and what didn't.", daysAgo: 0, hoursAgo: 5 },
+  { author: "priya.shah", type: POST_TYPES.offer, body: "Happy to review seed decks for fintech founders this month. Message me.", daysAgo: 2 },
+];
+const FEED_REPLY = { post: 2, author: "priya.shah", body: "We tested two tiers with clinic groups last year. Happy to share the deck.", hoursAgo: 4 } as const;
+const FEED_REACTIONS: readonly [post: number, member: string, reaction: string][] = [
+  [1, "sam.lee", REACTIONS.rocket],
+  [1, "maya.ortiz", REACTIONS.heart],
+  [1, "priya.shah", REACTIONS.thumbsUp],
+  [3, "sam.lee", REACTIONS.heart],
+];
+
+async function seedFeed(transaction: Transaction, ids: Ids, ago: ReturnType<typeof makeClock>) {
+  const postIds: string[] = [];
+  for (const seed of FEED_POSTS) {
+    const authorId = ids.get(seed.author) ?? "";
+    const createdAt = ago(seed.daysAgo, seed.hoursAgo ?? 0);
+    const [created] = await transaction
+      .insert(post)
+      .values({ authorId, type: seed.type, body: seed.body, createdAt, ...(seed.isPinned ? { pinnedAt: createdAt, pinnedByUserId: authorId } : {}) })
+      .returning({ id: post.id });
+    postIds.push(created?.id ?? "");
+  }
+  await transaction.insert(comment).values({ postId: postIds[FEED_REPLY.post] ?? "", authorId: ids.get(FEED_REPLY.author) ?? "", body: FEED_REPLY.body, createdAt: ago(0, FEED_REPLY.hoursAgo) });
+  await transaction.insert(reaction).values(FEED_REACTIONS.map(([index, member, name]) => ({ postId: postIds[index] ?? "", userId: ids.get(member) ?? "", reaction: name })));
+}
+
 // The profile fill-in has run for everyone: a portrait and a company logo each. Lena said "Don't look me up", so she
 // keeps her initials. Public profiles still list Grace at her last company, so her card (Ledgerline) shows no logo.
 const FILL_IN_REFUSED = "lena.fischer";
@@ -606,9 +639,11 @@ async function seedSettings(transaction: Transaction, environment: Environment, 
     [PUBLIC_BOARD_SETTING]: "on",
   });
   await saveVillageKeys(transaction, DEMO_VILLAGE_KEYS, environment);
-  // The features a fund buys it for are on, with made-up jobs and perks; the feed and Slack/Discord stay off.
-  for (const manifest of [networkManifest, introsManifest, asksManifest, messagesManifest, jobBoardManifest, perksManifest]) await saveModuleState(transaction, manifest, true);
-  for (const manifest of [feedManifest, chatManifest]) await saveModuleState(transaction, manifest, false);
+  // The features a fund buys it for are on, with made-up jobs, perks and feed posts; Slack/Discord stay off.
+  for (const manifest of [networkManifest, introsManifest, asksManifest, messagesManifest, jobBoardManifest, perksManifest, feedManifest]) {
+    await saveModuleState(transaction, manifest, true);
+  }
+  await saveModuleState(transaction, chatManifest, false);
 }
 
 export async function seedDemo(transaction: Transaction, environment: Environment, now = new Date()) {
@@ -621,5 +656,6 @@ export async function seedDemo(transaction: Transaction, environment: Environmen
   await seedAsks(transaction, ids, ago);
   await seedMessages(transaction, ids, ago);
   await seedJobs(transaction, ids, ago, now);
+  await seedFeed(transaction, ids, ago);
   return { members: DEMO_PEOPLE.length, invites: DEMO_INVITEES.length, intros: CURRENT_INTROS.length + HISTORY_PAIRS.length, asks: ASKS.length };
 }
