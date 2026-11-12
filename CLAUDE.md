@@ -48,7 +48,7 @@ Better Auth, Vitest, pnpm. Village is optional (network search, intro paths and 
   `.ai/features/fh-final-pass/NOTES.md` (round 4: 404 and 410, the introduction email, Our jobs on My profile, print),
   `.ai/features/fh-followup/NOTES.md` (emailed invite link confirms, job board on by default, "copied" words),
   `.ai/features/fix-accounts-privacy/NOTES.md`, `.ai/features/fix-feed-digest-site/NOTES.md`,
-  `.ai/features/fix-intros-reports/NOTES.md` (parity fixes).
+  `.ai/features/fix-intros-reports/NOTES.md` (parity fixes), `.ai/features/fix-host-findings/NOTES.md` (HSTS, overlapping queries, Fly, revoked invites).
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (guides), `drizzle/` (generated), `site/` (own README), `public/` (demo pictures),
   `vercel.json` (the daily Vercel Cron Job). Every deploy setup runs the job runner;
   `src/test/deploy-setups.test.ts` guards it.

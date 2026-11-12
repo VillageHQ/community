@@ -1,0 +1,30 @@
+== https APP_URL: GET /signin
+HTTP/1.1 200 OK
+strict-transport-security: max-age=31536000; includeSubDomains
+== job_lease after the first tick
+           name            |      last_started_at       |      last_finished_at      | last_error 
+---------------------------+----------------------------+----------------------------+------------
+ chat-posts                | 2026-11-12 20:34:33.191+00 | 2026-11-12 20:34:33.194+00 | 
+ demo-reset                | 2026-11-12 20:34:32.534+00 | 2026-11-12 20:34:32.541+00 | 
+ email-outbox              | 2026-11-12 20:34:33.196+00 | 2026-11-12 20:34:33.22+00  | 
+ email-outbox-pruning      | 2026-11-12 20:34:33.222+00 | 2026-11-12 20:34:33.225+00 | 
+ intro-connector-reminders | 2026-11-12 20:34:33.267+00 | 2026-11-12 20:34:33.272+00 | 
+ intro-expiry              | 2026-11-12 20:34:33.231+00 | 2026-11-12 20:34:33.25+00  | 
+ intro-outcome-emails      | 2026-11-12 20:34:33.252+00 | 2026-11-12 20:34:33.259+00 | 
+ intro-target-reminders    | 2026-11-12 20:34:33.261+00 | 2026-11-12 20:34:33.265+00 | 
+ job-board-pull            | 2026-11-12 20:34:33.274+00 | 2026-11-12 20:34:33.276+00 | 
+ profile-fill-in           | 2026-11-12 20:34:33.227+00 | 2026-11-12 20:34:33.23+00  | 
+ weekly-email              | 2026-11-12 20:34:32.544+00 | 2026-11-12 20:34:33.188+00 | 
+(11 rows)
+
+== server log (NODE_OPTIONS=--trace-deprecation, FLY_APP_NAME set, no CLIENT_IP_HEADER)
+▲ Next.js 16.4.5
+- Local:         http://localhost:3123
+- Network:       http://192.168.18.230:3123
+✓ Ready in 214ms
+✓ Running next.config.mjs took 20ms
+Migrations applied.
+Demo mode: filled the empty database with the made-up community.
+Running on Fly.io without CLIENT_IP_HEADER, so sign-in limits can't tell visitors apart. Set CLIENT_IP_HEADER=fly-client-ip (README: Deploy on Fly.io).
+== DeprecationWarning lines: 0
+== Fly warnings: 1

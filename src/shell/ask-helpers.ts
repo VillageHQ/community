@@ -29,12 +29,11 @@ const WEEK_MS = ASK_LIMITS.allowanceWindowDays * 24 * 60 * 60 * 1000;
 
 // One weekly allowance, shared by asks a member posts and intro asks they send. Read here because it spans both
 // modules. Each counted ask comes back a week after it was made; an intro ask also comes back when it ends unmade.
+// One query after another: the connection may be a transaction, which runs one query at a time.
 export async function readAskAllowance(connection: DatabaseOrTransaction, memberId: string, now = new Date()): Promise<AskAllowance> {
-  const [cap, posted, intros] = await Promise.all([
-    readWeeklyAllowance(connection),
-    readPostedAskTimes(connection, memberId, now),
-    readCountedIntroAskTimes(connection, memberId, now),
-  ]);
+  const cap = await readWeeklyAllowance(connection);
+  const posted = await readPostedAskTimes(connection, memberId, now);
+  const intros = await readCountedIntroAskTimes(connection, memberId, now);
   const times = [...posted, ...intros].map((time) => time.getTime()).toSorted((first, second) => first - second);
   const oldest = times[0];
   return {

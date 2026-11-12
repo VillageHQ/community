@@ -1,0 +1,27 @@
+Before the fix: same production build setup (demo, self-tick, fresh database, NODE_OPTIONS=--trace-deprecation --stack-trace-limit=80), first tick.
+The bundle frame at _0bri2ghwgsut3._.js:95 is readAskAllowance (src/shell/ask-helpers.ts), Promise.all index 2.
+
+▲ Next.js 16.4.5
+- Local:         http://localhost:3123
+- Network:       http://192.168.18.230:3123
+✓ Ready in 131ms
+✓ Running next.config.mjs took 17ms
+Migrations applied.
+Demo mode: filled the empty database with the made-up community.
+(node:65400) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+    at Client.query (C:\Users\absi\.autobuild\worktrees\community__fix-host-findings\node_modules\.pnpm\pg@8.23.1\node_modules\pg\lib\client.js:780:7)
+    at _0vctiltuwa6gf._.js:480:5648
+    at h.queryWithCache (_0vctiltuwa6gf._.js:486:21682)
+    at _0vctiltuwa6gf._.js:480:5607
+    at Object.startActiveSpan (_0vctiltuwa6gf._.js:486:42870)
+    at _0vctiltuwa6gf._.js:480:5440
+    at Object.startActiveSpan (_0vctiltuwa6gf._.js:486:42870)
+    at h.execute (_0vctiltuwa6gf._.js:480:4951)
+    at _0vctiltuwa6gf._.js:486:20457
+    at Object.startActiveSpan (_0vctiltuwa6gf._.js:486:42870)
+    at m.execute (_0vctiltuwa6gf._.js:486:20401)
+    at m.then (_0vctiltuwa6gf._.js:486:28465)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async o (_0bri2ghwgsut3._.js:59:35464)
+    at async Promise.all (index 2)
+    at async _ (_0bri2ghwgsut3._.js:95:3655)

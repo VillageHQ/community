@@ -47,7 +47,9 @@ export async function wereIntroduced(connection: DatabaseOrTransaction, firstId:
     and(eq(introRequest.requesterId, firstId), eq(introRequest.introducerId, secondId)),
     and(eq(introRequest.requesterId, secondId), eq(introRequest.introducerId, firstId)),
   );
-  const [firstSlugs, secondSlugs] = await Promise.all([readSlugs(connection, firstId), readSlugs(connection, secondId)]);
+  // One after the other: the connection may be a transaction.
+  const firstSlugs = await readSlugs(connection, firstId);
+  const secondSlugs = await readSlugs(connection, secondId);
   const reached = (requesterId: string, targetSlugs: string[]) =>
     targetSlugs.length > 0 ? and(eq(introRequest.requesterId, requesterId), inArray(introRequest.targetLinkedinSlug, targetSlugs)) : sql`false`;
   const [row] = await connection

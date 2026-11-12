@@ -1,6 +1,7 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, gt, ilike, isNotNull, isNull, or, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, ilike, isNotNull, isNull, notExists, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { memberRemoval, invite, memberAvatar, memberNetwork, memberProfile } from "../members/schema.ts";
 import { user } from "../../platform/database/auth-schema.ts";
@@ -230,18 +231,35 @@ export async function readAdminMember(database: Database, memberId: string) {
   return row ? memberPageSchema.shape.members.element.parse(toAdminMember(row)) : null;
 }
 
-// Admin › Invites: everyone invited who hasn't signed in, newest first. An expired invite stays, marked, so the admin
-// can resend it (INV-08); a revoked or used one leaves the list.
-export async function readOpenInvites(database: Database, now = new Date()) {
+const laterInvite = alias(invite, "later_invite");
+
+// Admin › Invites: everyone invited who hasn't signed in, newest first. An expired or revoked invite stays, marked, so
+// the admin can resend it (INV-08); a used one leaves the list, and so does a revoked one once the same person got a
+// newer invite (or used one), because Resend would refuse it.
+export async function readListedInvites(database: Database, now = new Date()) {
+  const supersededBy = database
+    .select({ id: laterInvite.id })
+    .from(laterInvite)
+    .where(
+      and(
+        eq(laterInvite.email, invite.email),
+        sql`${laterInvite.id} <> ${invite.id}`,
+        or(isNull(laterInvite.revokedAt), gt(laterInvite.createdAt, invite.createdAt)),
+      ),
+    );
   const rows = await database
-    .select({ id: invite.id, email: invite.email, name: invite.inviteeName, createdAt: invite.createdAt, expiresAt: invite.expiresAt })
+    .select({ id: invite.id, email: invite.email, name: invite.inviteeName, createdAt: invite.createdAt, expiresAt: invite.expiresAt, revokedAt: invite.revokedAt })
     .from(invite)
-    .where(and(isNull(invite.acceptedAt), isNull(invite.revokedAt)))
+    .where(and(isNull(invite.acceptedAt), or(isNull(invite.revokedAt), notExists(supersededBy))))
     .orderBy(desc(invite.createdAt), asc(invite.email));
-  return rows.map((row) => ({ ...row, isExpired: row.expiresAt.getTime() <= now.getTime() }));
+  return rows.map((row) => ({
+    ...row,
+    isRevoked: row.revokedAt !== null,
+    isExpired: row.revokedAt === null && row.expiresAt.getTime() <= now.getTime(),
+  }));
 }
 
-export type OpenInvite = Awaited<ReturnType<typeof readOpenInvites>>[number];
+export type ListedInvite = Awaited<ReturnType<typeof readListedInvites>>[number];
 
 // How the admin signs an invite: their name and the role on their card.
 export async function readInviterSignature(database: Database, memberId: string) {

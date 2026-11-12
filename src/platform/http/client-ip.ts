@@ -33,3 +33,14 @@ export function readRateLimitClientKey(request: Request | Headers, environment: 
   const ipAddress = { ipAddressHeaders: resolveClientIpHeaders(environment) };
   return getIP(request, { advanced: { ipAddress } }) ?? SHARED_BUCKET_KEY;
 }
+
+export const FLY_CLIENT_IP_WARNING =
+  "Running on Fly.io without CLIENT_IP_HEADER, so sign-in limits can't tell visitors apart. Set CLIENT_IP_HEADER=fly-client-ip (README: Deploy on Fly.io).";
+
+// Fly sets FLY_APP_NAME on every machine and puts the visitor's address in Fly-Client-IP, which the app trusts only
+// when told to. Said once, at boot (src/instrumentation.ts).
+export function warnWhenFlyLacksClientIpHeader(environment: Environment, warn: (message: string) => void = console.warn) {
+  if (!environment.FLY_APP_NAME || environment.CLIENT_IP_HEADER) return false;
+  warn(FLY_CLIENT_IP_WARNING);
+  return true;
+}

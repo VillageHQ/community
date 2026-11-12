@@ -40,4 +40,15 @@ describe("booting the server", () => {
     const [row] = await database.select({ value: instanceSettings.value }).from(instanceSettings).where(eq(instanceSettings.key, INSTANCE_SETTING_KEYS.villageSecretKey));
     expect(row?.value).not.toContain(PLAINTEXT_SECRET);
   });
+
+  it("warns once in the log on Fly without CLIENT_IP_HEADER", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubEnv("FLY_APP_NAME", "community");
+    vi.stubEnv("CLIENT_IP_HEADER", "");
+
+    await register();
+
+    expect(warn.mock.calls.filter(([message]) => String(message).includes("CLIENT_IP_HEADER=fly-client-ip"))).toHaveLength(1);
+    warn.mockRestore();
+  });
 });
