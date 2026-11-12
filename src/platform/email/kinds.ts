@@ -19,6 +19,7 @@ export const EMAIL_KINDS = {
   directMessage: "direct_message",
   weeklyEmail: "weekly_email",
   creditWarning: "credit_warning",
+  villageAlert: "village_alert",
   connectNudge: "connect_nudge",
   askHelper: "ask_helper",
   askHelpOffered: "ask_help_offered",
@@ -44,6 +45,8 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.directMessage]: EMAIL_TOPICS.messages,
   [EMAIL_KINDS.weeklyEmail]: EMAIL_TOPICS.weekly,
   [EMAIL_KINDS.creditWarning]: null,
+  // To admins, once per spell: Village ran out of credits, stopped answering or refused the keys.
+  [EMAIL_KINDS.villageAlert]: null,
   [EMAIL_KINDS.connectNudge]: EMAIL_TOPICS.network,
   [EMAIL_KINDS.askHelper]: EMAIL_TOPICS.asks,
   // To the asker when a member says "I can help": the answer to their own ask, like an intro update.

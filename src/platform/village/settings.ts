@@ -15,6 +15,7 @@ import { INSTANCE_SETTING_KEYS, instanceSettings } from "../settings/schema.ts";
 import { DAILY_LOOKUP_LIMITS, dailyLimitBodySchema, MONTHLY_CREDIT_CAPS, monthlyCapBodySchema, KEY_STORAGE, VILLAGE_KEY_STATUSES, type VillageKeyStatus } from "./contract.ts";
 import { VILLAGE_ERROR_CODES } from "./error-codes.ts";
 import { readSettings, saveSettings } from "../settings/store.ts";
+import { alertAdminsAboutVillageSafely, VILLAGE_ALERTS } from "./trouble-alerts.ts";
 
 export type VillageKeys = { publicKey: string; secretKey: string };
 
@@ -206,8 +207,14 @@ export async function readVillageOutOfCreditsAt(database: Database) {
   return settings.get(INSTANCE_SETTING_KEYS.villageOutOfCreditsAt) ?? null;
 }
 
-export async function recordVillageOutOfCredits(database: Database) {
-  await saveSettings(database, { [INSTANCE_SETTING_KEYS.villageOutOfCreditsAt]: new Date().toISOString() });
+// Village said the credits ran out. The first time in a spell (cleared by the next charged call) emails the admins.
+export async function recordVillageOutOfCredits(database: Database, now = new Date()) {
+  const started = await database
+    .insert(instanceSettings)
+    .values({ key: INSTANCE_SETTING_KEYS.villageOutOfCreditsAt, value: now.toISOString(), updatedAt: now })
+    .onConflictDoNothing({ target: instanceSettings.key })
+    .returning({ key: instanceSettings.key });
+  if (started.length > 0) await alertAdminsAboutVillageSafely(database, VILLAGE_ALERTS.outOfCredits);
 }
 
 export async function clearVillageOutOfCredits(database: Database) {

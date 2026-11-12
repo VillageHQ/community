@@ -38,6 +38,7 @@ const QUIET_FACTS = {
   reportsBadge: 0,
   creditsBadge: 0,
   villageTrouble: null,
+  villageOutOfCreditsAt: null,
   chatBadge: 0,
   hiddenTabHrefs: [],
 } satisfies AdminTabFacts;

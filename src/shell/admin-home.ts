@@ -19,6 +19,7 @@ import { describeLaunchSteps, readIsLaunched, readLaunchFacts } from "./console-
 export const ADMIN_HOME_ITEMS = {
   setup: "setup",
   village: "village",
+  villageCredits: "village-credits",
   reports: "reports",
   waitingMembers: "waiting-members",
   invites: "invites",
@@ -49,6 +50,9 @@ export function readAdminHomeItems(facts: AdminTabFacts, { pendingInvites, stuck
           href: readVillageHref(facts.villageTrouble.trouble, isNetworkOn),
           isUrgent: true,
         }
+      : null,
+    !facts.villageTrouble && facts.villageOutOfCreditsAt
+      ? { id: ADMIN_HOME_ITEMS.villageCredits, label: "Village is out of credits: lookups are paused", href: ROUTES.adminVillage, isUrgent: true }
       : null,
     facts.reportsBadge > 0
       ? { id: ADMIN_HOME_ITEMS.reports, label: `${plural(facts.reportsBadge, "report", "reports")} waiting`, href: ROUTES.adminReports, isUrgent: true }
