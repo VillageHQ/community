@@ -60,7 +60,8 @@ export const inviteListBodySchema = z.object({
     .default(INVITE_FILTERS.all),
 });
 
-export const acceptTokenBodySchema = z.object({ token: z.string() });
+// emailed: the emailed link's mark (service-invite-emailed.ts), absent on a copied link.
+export const acceptTokenBodySchema = z.object({ token: z.string(), emailed: z.string().max(128).optional() });
 
 export const acceptFieldsBodySchema = z.object({
   name: nameSchema,

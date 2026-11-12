@@ -120,7 +120,8 @@ export function HelpForm({ askId, authorFirstName, defaultPerson }: { askId: str
           </label>
           <Textarea id="h-note" name="note" rows={3} maxLength={ASK_LIMITS.answerLength} style={{ minHeight: 84 }} placeholder="How you know them, or what worked for you" />
         </div>
-        <div className="fh-btn-row" style={{ marginTop: 12 }}>
+        {/* 18 px, as on Founderhall: its textarea is inline-block and leaves a 6 px line gap under it; ours is block. */}
+        <div className="fh-btn-row" style={{ marginTop: 18 }}>
           <Button type="submit" disabled={isPending}>
             Offer help
           </Button>

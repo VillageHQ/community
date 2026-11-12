@@ -4,7 +4,7 @@ Status: building
 
 What it does now.
 
-- Jobs is a module, off by default. An admin turns it on under Admin › Features. Off, every jobs page and API answers 404, the nav entry and the admin tab are hidden, and the hourly pull stops; linked sources and jobs are kept.
+- Jobs is a module, on by default (the owner's call, 2026-11-12): on for new installs and for communities whose admin never chose; an admin who switched it off under Admin › Features keeps it off. Off, every jobs page and API answers 404, the nav entry and the admin tab are hidden, and the hourly pull stops; linked sources and jobs are kept.
 - A member opens Jobs › Your company's jobs, sees their company from their card and pastes the careers link of their hiring tool. The board's name is found in the link for Greenhouse, Lever, Ashby, Workable, SmartRecruiters, Recruitee, Breezy HR, Rippling, Teamtailor, BambooHR, Personio and Jobvite (its XML feed link). The jobs are pulled at once, and the answer says how many were found or what went wrong.
 - Each careers link (tool and board name, ignoring case) can be linked once in the whole community; a second try is refused with the company it's already on, so no job shows twice. A founder shares jobs only for the company on their card: the company field is fixed from the card, and a founder with no company there is asked to add it first. An admin can add any company.
 - A link that isn't one of these tools is refused with the list of tools. "Add jobs by hand instead" makes a source with no feed; the member adds a title, an optional location and an apply link.

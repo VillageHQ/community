@@ -32,6 +32,7 @@ import {
   type InviteState,
 } from "./contract-invite-state.ts";
 import { createInviteToken, hashInviteToken, isInviteTokenShape } from "./service-invite-token.ts";
+import { signEmailedInvite } from "./service-invite-emailed.ts";
 
 const CONFLICT_STATUS = 409;
 const INVITE_PAGE_SIZE = 10;
@@ -74,8 +75,8 @@ function recordInviteAction(transaction: Transaction, { member }: RequestContext
   return recordAdminAction(transaction, member.id, { action, targetName: email });
 }
 
-export function toInviteLink(environment: RequestContext["environment"], token: string) {
-  return `${resolveAppUrl(environment)}${toInvitePath(token)}`;
+export function toInviteLink(environment: RequestContext["environment"], token: string, emailedMark: string | null = null) {
+  return `${resolveAppUrl(environment)}${toInvitePath(token, emailedMark)}`;
 }
 
 // The inviter's role on their card: it signs the invite ("Maya Ortiz, Head of Platform, Northwind Founders").
@@ -89,7 +90,8 @@ async function readInviterRole(connection: DatabaseOrTransaction, inviterId: str
 // A renewed invite's older email still waiting in the queue carries a dead link, so it is stopped.
 export async function queueInviteEmail(transaction: Transaction, { environment }: RequestContext, branding: EmailBranding | null, row: InviteRow, token: string) {
   await cancelQueuedEmail(transaction, row.emailOutboxId);
-  const link = toInviteLink(environment, token);
+  // The emailed link carries its mark, so opening it from the email confirms the address (the copied link doesn't).
+  const link = branding ? toInviteLink(environment, token, await signEmailedInvite(transaction, environment, token)) : "";
   const inviterRole = branding && row.invitedByUserId ? await readInviterRole(transaction, row.invitedByUserId) : null;
   const queuedId = branding
     ? await queueEmail(transaction, environment, {
@@ -359,14 +361,17 @@ class InviteEmailTakenError extends Error {}
 
 type AcceptedAccount = { name: string; password: string };
 
+type AcceptOptions = { account?: AcceptedAccount | null; isFromEmail?: boolean };
+
 function readStartingName({ inviteeName, email }: { inviteeName: string | null; email: string }) {
   return inviteeName?.trim() || email.split("@")[0] || email;
 }
 
 // Founderhall's "Accept and sign in" passes no account: the member has no password (they sign in by emailed link, and
 // may add one on My profile) and is called by the invite's name or the start of their address until welcome step 1
-// asks. Community's older form passes a name and a password.
-export async function acceptInvite(database: Database, token: string, account: AcceptedAccount | null = null) {
+// asks. Community's older form passes a name and a password. A join from the emailed link (isFromEmail, checked by the
+// caller with isEmailedInvite) starts with the address confirmed; one from a copied link does not.
+export async function acceptInvite(database: Database, token: string, { account = null, isFromEmail = false }: AcceptOptions = {}) {
   const tokenHash = hashInviteToken(token);
   const passwordHash = account ? await hashPassword(account.password) : null;
   const userId = randomUUID();
@@ -385,7 +390,7 @@ export async function acceptInvite(database: Database, token: string, account: A
 
       const [created] = await transaction
         .insert(user)
-        .values({ id: userId, name: account?.name ?? readStartingName(claimed), email: claimed.email, emailVerified: false, role: MEMBER_ROLE })
+        .values({ id: userId, name: account?.name ?? readStartingName(claimed), email: claimed.email, emailVerified: isFromEmail, role: MEMBER_ROLE })
         .onConflictDoNothing({ target: user.email })
         .returning({ id: user.id });
       if (!created) throw new InviteEmailTakenError();
@@ -401,7 +406,7 @@ export async function acceptInvite(database: Database, token: string, account: A
       }
       await transaction.insert(memberProfile).values({ userId, company: claimed.company, cohort: claimed.cohort });
       await transaction.update(invite).set({ acceptedUserId: userId }).where(eq(invite.id, claimed.id));
-      return { userId, email: claimed.email, name: account?.name ?? readStartingName(claimed) };
+      return { userId, email: claimed.email, name: account?.name ?? readStartingName(claimed), isEmailConfirmed: isFromEmail };
     });
   } catch (error) {
     if (error instanceof InviteEmailTakenError) return null;

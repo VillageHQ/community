@@ -143,7 +143,6 @@ export function VillageLimitsForm({ values, sharingMembers, defaultServiceEmail,
       chosenIntroducerIds: introducers === INTRODUCER_RULES.chosen ? form.getAll("introducer").map(String) : [],
     });
   }
-  const serviceDefault = defaultServiceEmail ? ` (${defaultServiceEmail})` : "";
   return (
     <form onSubmit={submit} className="fh-sheet" noValidate>
       <h2 className="type-h3">Limits and switches</h2>
@@ -164,10 +163,11 @@ export function VillageLimitsForm({ values, sharingMembers, defaultServiceEmail,
       <Field
         htmlFor="v-email"
         label="Service email"
-        hint={`The community’s own Village account (it owns the members’ group and runs searches for members who haven’t connected). Default: the first admin’s address${serviceDefault}, so leave it blank unless Village asked for another.`}
+        hint="The community’s own Village account (it owns the members’ group and runs searches for members who haven’t connected). Default: the first admin’s address, so change it only if Village asked for another."
         className="fh-field"
       >
-        <Input id="v-email" name="service_email" type="email" defaultValue={values.serviceEmail} placeholder="e.g. village@fund.example" />
+        {/* Filled in with the address in use, as Founderhall shows its default: the saved one, else the first admin's. */}
+        <Input id="v-email" name="service_email" type="email" defaultValue={values.serviceEmail || defaultServiceEmail || ""} placeholder="e.g. village@fund.example" />
       </Field>
       <div className="fh-pair mt-3">
         <Field
@@ -281,9 +281,17 @@ export function FillInBasisForm({ basis, termsDate }: { basis: FillInBasis | nul
           onChange={() => setChoice(FILL_IN_BASES.terms)}
           title="Members agreed in our membership terms on"
           description={
-            choice === FILL_IN_BASES.terms ? (
-              <Input type="date" name="lookup_basis_date" defaultValue={termsDate ?? ""} aria-label="The date members agreed to the membership terms" className="mt-1.5" required />
-            ) : undefined
+            // Always shown, as on Founderhall and on Invites; needed only when this option is chosen.
+            <span className="mt-1.5 block">
+              <Input
+                type="date"
+                name="lookup_basis_date"
+                defaultValue={termsDate ?? ""}
+                max={new Date().toISOString().slice(0, 10)}
+                aria-label="The date members agreed to the membership terms"
+                required={choice === FILL_IN_BASES.terms}
+              />
+            </span>
           }
         />
         <OptionCard

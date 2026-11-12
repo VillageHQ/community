@@ -1,6 +1,6 @@
 # Job board
 
-Founders show their companies' open jobs. A member links the company's hiring tool by pasting its careers link, or adds jobs by hand; the app reads the tool's public job feed (no key) every hour. Toggleable, off by default, no Village needed. Its id is `job-board`, unlike the timed-jobs runner.
+Founders show their companies' open jobs. A member links the company's hiring tool by pasting its careers link, or adds jobs by hand; the app reads the tool's public job feed (no key) every hour. Toggleable, on where no admin chose (an admin's "off" is kept; the public board starts off), no Village needed. Its id is `job-board`, unlike the timed-jobs runner.
 
 - `manifest.ts`: identity, nav entry, the admin tab and owned paths (`/jobs`, `/admin/jobs`, `/public/board`, `/api/job-board`, `/api/admin/jobs`). `integration.ts`: the pull job.
 - `contract.ts`: paths, limits, the 12 tools, Zod schemas, shapes, `toCompanySlug`. Client-safe.

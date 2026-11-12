@@ -204,7 +204,8 @@ export function NoteAskForm({ connector, viewerName, communityName, parts: initi
               <div>
                 <b>{connector.name}</b>
                 <span>
-                  <CompanyLogo url={connector.companyLogoUrl} className="fh-colog" />
+                  {/* No top nudge: Founderhall's logo sits on the line by its own -3px, so the card stays 2 px shorter. */}
+                  <CompanyLogo url={connector.companyLogoUrl} className="fh-colog mt-0" />
                   {connector.about}
                 </span>
               </div>

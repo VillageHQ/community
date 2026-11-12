@@ -18,7 +18,7 @@ src/
     intros/     Toggle. Warm intros. Works without network; paths join in through the shell.
     asks/       Toggle, off by default. Members post what they need, others offer help.
                 The feed is a toggle too, off by default for a new community.
-    job-board/  Toggle, off by default. Founders' open jobs from their hiring tools, a public
+    job-board/  Toggle, on by default. Founders' open jobs from their hiring tools, a public
                 board and a website widget.
     admin/      Core. Roster, reports, audit view, health, the features screen.
   platform/     Infrastructure with no product opinion: auth, audit, branding, database,

@@ -153,13 +153,30 @@ describe("the intro screens (Founderhall's)", () => {
   describe("the person's page", () => {
     it("says there's nothing to do when the answer was already given in another tab", async () => {
       vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ answer: "no_thanks", isRepeat: true }), { headers: { "Content-Type": "application/json" } })));
-      const facts = { askerName: "Sam Lee", connectorName: "Marcus Webb", targetName: "Rosa Lindqvist", note: NOTE, joinsByEmail: true, asksForEmail: false };
+      const facts = { askerName: "Sam Lee", connectorName: "Marcus Webb", targetName: "Rosa Lindqvist", note: NOTE, joinsByEmail: true, asksForEmail: false, copiesConnector: true };
       render(createElement(TargetLinkQuestion, { token: "t".repeat(43), community: COMMUNITY, facts, initialChoice: "yes", optOutHref: "/intro/optout/x" }));
 
       fireEvent.click(screen.getByRole("button", { name: "Send my answer" }));
 
       expect(await screen.findByText("Nothing to do")).toBeTruthy();
       expect(screen.queryByText("You’re introduced")).toBeNull();
+    });
+
+    it("says the connector is copied only when replies by email are on", async () => {
+      const facts = { askerName: "Sam Lee", connectorName: "Marcus Webb", targetName: "Rosa Lindqvist", note: NOTE, joinsByEmail: true, asksForEmail: false, copiesConnector: true };
+      const { unmount } = render(createElement(TargetLinkQuestion, { token: "t".repeat(43), community: COMMUNITY, facts, initialChoice: null, optOutHref: "/intro/optout/x" }));
+      expect(screen.getByText("One email to you and Sam, with Marcus copied.")).toBeTruthy();
+      unmount();
+
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ answer: "yes", isRepeat: false }), { headers: { "Content-Type": "application/json" } })));
+      render(createElement(TargetLinkQuestion, { token: "t".repeat(43), community: COMMUNITY, facts: { ...facts, copiesConnector: false }, initialChoice: "yes", optOutHref: "/intro/optout/x" }));
+      expect(screen.getByText("We email you and Sam to introduce you.")).toBeTruthy();
+
+      fireEvent.click(screen.getByRole("button", { name: "Send my answer" }));
+
+      expect(await screen.findByText("You’re introduced")).toBeTruthy();
+      expect(screen.getByText("Check your email: we’ve introduced you to Sam. Reply to it to write to Sam.")).toBeTruthy();
+      expect(screen.queryByText(/copied/)).toBeNull();
     });
   });
 

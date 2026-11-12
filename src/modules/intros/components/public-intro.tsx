@@ -47,7 +47,9 @@ function Question({ title, lede, note, children }: { title: string; lede: string
   );
 }
 
-type ConnectorFacts = { askerName: string; connectorName: string; targetName: string; note: string; suggestedEmail: string | null; canEmail: boolean };
+// copiesConnector: replies by email are on, so the introduction is one thread with the connector copied. Off, each side
+// gets its own copy, and the words never say "copied".
+type ConnectorFacts = { askerName: string; connectorName: string; targetName: string; note: string; suggestedEmail: string | null; canEmail: boolean; copiesConnector: boolean };
 
 export function ConnectorLinkQuestion({ token, community, facts, initialChoice }: { token: string; community: string; facts: ConnectorFacts; initialChoice: string | null }) {
   const [done, setDone] = useState<Done | null>(null);
@@ -79,7 +81,7 @@ export function ConnectorLinkQuestion({ token, community, facts, initialChoice }
               : {
                   title: "Thank you",
                   text: facts.canEmail
-                    ? `We’ve asked ${targetFirst}, from ${community}, in your name. If ${targetFirst} says yes, one email introduces ${askerFirst} and ${targetFirst}, with you copied.`
+                    ? `We’ve asked ${targetFirst}, from ${community}, in your name. If ${targetFirst} says yes, ${facts.copiesConnector ? `one email introduces ${askerFirst} and ${targetFirst}, with you copied` : `we email ${askerFirst} and ${targetFirst} to introduce them`}.`
                     : `Next, ${targetFirst} needs to say yes too. Open the intro in the portal for the link to send them.`,
                   hasConsentLine: true,
                 },
@@ -90,7 +92,7 @@ export function ConnectorLinkQuestion({ token, community, facts, initialChoice }
   );
 }
 
-type TargetFacts = { askerName: string; connectorName: string; targetName: string; note: string; joinsByEmail: boolean; asksForEmail: boolean };
+type TargetFacts = { askerName: string; connectorName: string; targetName: string; note: string; joinsByEmail: boolean; asksForEmail: boolean; copiesConnector: boolean };
 
 export function TargetLinkQuestion({ token, community, facts, initialChoice, optOutHref }: { token: string; community: string; facts: TargetFacts; initialChoice: string | null; optOutHref: string }) {
   const [done, setDone] = useState<Done | null>(null);
@@ -105,7 +107,11 @@ export function TargetLinkQuestion({ token, community, facts, initialChoice, opt
         legend={`Would you like to meet ${askerFirst}?`}
         initialChoice={initialChoice}
         choices={[
-          { value: TARGET_CHOICES.yes, title: "Yes, introduce us", description: `One email to you and ${askerFirst}, with ${connectorFirst} copied.` },
+          {
+            value: TARGET_CHOICES.yes,
+            title: "Yes, introduce us",
+            description: facts.copiesConnector ? `One email to you and ${askerFirst}, with ${connectorFirst} copied.` : `We email you and ${askerFirst} to introduce you.`,
+          },
           { value: TARGET_CHOICES.no, title: "No thanks", description: "Nobody is told why, and nothing more is sent." },
         ]}
         submit={async ({ choice }) => {
@@ -125,7 +131,13 @@ export function TargetLinkQuestion({ token, community, facts, initialChoice, opt
             saved.answer !== CONSENT_ANSWERS.yes
               ? { title: "Thanks for answering", text: "Nobody is told why, and nothing more is sent about this.", hasConsentLine: true }
               : isJoinedByEmail
-                ? { title: "You’re introduced", text: `Check your email: one message to you and ${askerFirst}, with ${connectorFirst} copied. Reply to it to write to them.`, hasConsentLine: true }
+                ? {
+                    title: "You’re introduced",
+                    text: facts.copiesConnector
+                      ? `Check your email: one message to you and ${askerFirst}, with ${connectorFirst} copied. Reply to it to write to them.`
+                      : `Check your email: we’ve introduced you to ${askerFirst}. Reply to it to write to ${askerFirst}.`,
+                    hasConsentLine: true,
+                  }
                 : { title: "Thank you", text: `${connectorFirst} will introduce you and ${askerFirst} with one message.`, hasConsentLine: true },
           );
         }}

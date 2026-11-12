@@ -1,6 +1,6 @@
 import { getDatabase } from "@/platform/database/client";
 import { getAuth } from "@/platform/auth/auth";
-import { signInUnconfirmedMember } from "@/platform/auth/server-link-sign-in";
+import { signInUnconfirmedMember, signInWithServerLink } from "@/platform/auth/server-link-sign-in";
 import { MAXIMUM_JSON_BODY_BYTES, withBodyLimit } from "@/platform/http/body-limit";
 import { acceptFieldsBodySchema, acceptTokenBodySchema, INVITE_ERROR_CODES } from "@/modules/members/contract-invites";
 import { sendEmailConfirmation } from "@/modules/members/service-email-confirmation";
@@ -8,6 +8,7 @@ import { recordFailedInviteAttempt } from "@/modules/members/limits-invites";
 import { INVITE_STATES, type InviteState } from "@/modules/members/contract-invite-state";
 import { INVITE_UNUSABLE_COPY, INVITE_INVALID_COPY } from "@/modules/members/copy-invites";
 import { acceptInvite, readInviteByToken } from "@/modules/members/service-invites";
+import { isEmailedInvite } from "@/modules/members/service-invite-emailed";
 import { readJsonBody } from "@/platform/http/read-json-body";
 import { logError } from "@/platform/observability/route-logging";
 import { hasTrustedOrigin, readSessionMember } from "@/platform/http/member-route";
@@ -61,9 +62,12 @@ async function signInNewMember(request: Request, email: string, password: string
   }
 }
 
-async function signInWithoutPassword(request: Request, member: { id: string; email: string }) {
+// From the emailed link the address stays confirmed; from a copied link it goes back to unconfirmed.
+async function signInWithoutPassword(request: Request, member: { id: string; email: string; isEmailConfirmed: boolean }) {
   try {
-    const result = await signInUnconfirmedMember(getDatabase(), await getAuth(), request, member);
+    const result = member.isEmailConfirmed
+      ? await signInWithServerLink(getDatabase(), await getAuth(), request, member.email)
+      : await signInUnconfirmedMember(getDatabase(), await getAuth(), request, member);
     return result.isSignedIn ? result.setCookies : [];
   } catch (error) {
     logError("invite-accept-sign-in", error);
@@ -114,17 +118,22 @@ export const POST = membersRoutes.open(
       return respondMessage(FORBIDDEN_STATUS, INVITE_ERROR_CODES.unusable, "This is a demo, so only made-up example.com addresses can join.");
     }
 
-    const accepted = await acceptInvite(database, submitted.data.token, fields?.data ?? null);
+    // Opened from the email that went to this address (the link's mark matches): the address is confirmed, so no second
+    // "Confirm your email". A copied link has no mark and still asks (the owner's call, 2026-11-12).
+    const isFromEmail = await isEmailedInvite(database, process.env, submitted.data.token, submitted.data.emailed);
+    const accepted = await acceptInvite(database, submitted.data.token, { account: fields?.data ?? null, isFromEmail });
     if (!accepted) return respondToUnusableLink(request, () => respondUnusableInvite(INVITE_STATES.accepted));
 
     const cookies = fields?.data
       ? await signInNewMember(request, accepted.email, fields.data.password)
-      : await signInWithoutPassword(request, { id: accepted.userId, email: accepted.email });
-    await sendEmailConfirmation(database, process.env, {
-      id: accepted.userId,
-      name: accepted.name,
-      email: accepted.email,
-    });
+      : await signInWithoutPassword(request, { id: accepted.userId, email: accepted.email, isEmailConfirmed: accepted.isEmailConfirmed });
+    if (!accepted.isEmailConfirmed) {
+      await sendEmailConfirmation(database, process.env, {
+        id: accepted.userId,
+        name: accepted.name,
+        email: accepted.email,
+      });
+    }
     return respondAccepted(cookies);
   }),
 );

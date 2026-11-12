@@ -13,6 +13,8 @@ export const EMAIL_KINDS = {
   introAsked: "intro_asked",
   introUpdate: "intro_update",
   introDeclined: "intro_declined",
+  // The first email to the person asked (Founderhall's kind); the timed reminder is introTargetReminder.
+  introTargetAsk: "intro_target_ask",
   introTargetReminder: "intro_target_reminder",
   directMessage: "direct_message",
   weeklyEmail: "weekly_email",
@@ -37,6 +39,7 @@ const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.introUpdate]: EMAIL_TOPICS.intros,
   [EMAIL_KINDS.introDeclined]: EMAIL_TOPICS.intros,
   // To the person asked, who isn't a member and has no switch. Sent once; the page it links to has "stop all asks".
+  [EMAIL_KINDS.introTargetAsk]: null,
   [EMAIL_KINDS.introTargetReminder]: null,
   [EMAIL_KINDS.directMessage]: EMAIL_TOPICS.messages,
   [EMAIL_KINDS.weeklyEmail]: EMAIL_TOPICS.weekly,

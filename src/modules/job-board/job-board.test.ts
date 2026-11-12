@@ -33,7 +33,8 @@ import { jobPosting, jobSource } from "@/modules/job-board/schema";
 import { memberProfile } from "@/modules/members/schema";
 import { fetchBoard, pullDueSources } from "@/modules/job-board/service-pull";
 import { user } from "@/platform/database/auth-schema";
-import { saveModuleState } from "@/platform/modules/enablement";
+import { isModuleEnabled, saveModuleState } from "@/platform/modules/enablement";
+import { instanceSettings } from "@/platform/settings/schema";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createSignedInMember } from "@/test/signed-in-member";
 
@@ -462,6 +463,18 @@ describe("the job board", () => {
     expect(widget.headers.get("Content-Type")).toContain("text/javascript");
     expect(await widget.text()).toContain("/api/job-board/embed");
     expect(await frame.text()).toContain("size_updated");
+  });
+
+  // The owner's call (2026-11-12): the members' board is on wherever no admin chose, new install or not; an admin's
+  // "off" is kept; the public board still starts off.
+  it("starts on where no admin chose, keeps an admin's off, and keeps the public board off", async () => {
+    await database.delete(instanceSettings).where(eq(instanceSettings.key, "module_state:job-board"));
+    expect(await isModuleEnabled(database, jobBoardManifest)).toBe(true);
+    await linkGreenhouse();
+    expect((await visit(getEmbed, "/api/job-board/embed")).status).toBe(404);
+
+    await saveModuleState(database, jobBoardManifest, false);
+    expect(await isModuleEnabled(database, jobBoardManifest)).toBe(false);
   });
 
   it("answers 404 everywhere when the module is off", async () => {
