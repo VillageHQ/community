@@ -223,3 +223,47 @@ So a member target is reached only when the connector types the email (the API d
 - Ports 56650–56669 have no listeners.
 - The container `pg-verify-fir` is removed. `pg-fix-intros-reports` was not touched.
 - No tracked file was changed.
+
+---
+
+## Re-check (commit 6f24ac6, 2026-11-12)
+
+How I ran it:
+- Same rules as before, on a fresh build: `.next/BUILD_ID` is from 21:08:45, after the commit at 21:08:13.
+- A new container, `pg-verify-fir2` (now removed), seeded from scratch with the same made-up people. Both fakes again.
+- One foreground session: `.ai/tmp/verify/r1.mjs`.
+- Intros used: Amara→Jonas→Marcus (Jonas typed Marcus's email); Sam→Jonas→Marcus (Sam gave the email); Sam→Priya, declined by Priya; Elena→Priya and Elena→Ada (Ada said yes and typed Rita's email). The last two expired with no answer after a database date move and the expiry job.
+- Sam's sector was set to Fintech so the By sector table has two rows.
+
+| # | Verdict | What I saw | Evidence |
+|---|---|---|---|
+| F1 | **PASS** | **Server HTML:** /directory and /people/<ada> still contain `<img src="https://images.example.com/ada-okafor-x.jpg">`. **Host that refuses** (DNS failure, Chrome, 390 and 1280, zoomed ×3): the `<img>` is removed from the avatar and only the "AO" initials show, with no broken-image icon on either page. **Host that never answers** (request left hanging): the `<img>` stays but draws nothing, and the initials show. **Uploaded photo:** after Ada uploads a PNG, the page serves `/api/members/<id>/avatar` (loads, 128 px) and the outside face is gone. The company logo beside the role line still shows Chrome's broken icon (R2). | `rc-f1-fail-*-zoom.jpg`, `rc-f1-hang-*-zoom.jpg`, `rc-f1-directory-{1280,390}.jpg`, `rc-f1-profile-{1280,390}.jpg`, `rc-f1-uploaded-profile-1280.jpg` |
+| F2 | **PASS** | **Console Home** (1280 and 390): "7 asked, 1 made, 2 declined". **Ledger:** Declined 2 ("1 by connector, 1 by target"), then its own row "No answer in 7 days 2", then Still open 2. **Partner report title:** "7 asked, 1 made, 2 declined". **CSV:** Declined 1+1, No answer 2. The two match. | `rc-f2-home-1280.jpg`, `rc-f2-home-390.jpg` |
+| F3 | **PASS** | **Prefill:** "Li Wei" at 390 and 1280, with no company. **The intro:** `target_name = "Li Wei"`, company kept apart ("Shenzhen Parts Co"). **Asking again for the same person to Ada:** the UI shows "You already have an open intro request with this person for this intro." in the form, and the API returns 409 `intro_duplicate`. | `rc-f3-form-390.jpg`, `rc-f3-form-1280.jpg`, `rc-f3-second-ask-refused-1280.jpg` |
+| F4 | **PASS** (stale badge remains, R1) | **Your intros, Yes (1280):** the card goes and the flash reads "You said yes. Check your email: we'll introduce you and Amara with one message." It is still there 8 s later. **Today, No thanks (390):** the card goes and the flash reads "Thanks for answering. Nobody is told why, and nothing more is sent about this." **States:** completed and target_declined. One joining email went to Marcus. | `rc-f4-intros-after-yes-1280.jpg`, `rc-f4-today-after-no-390.jpg` |
+| F5 | **PASS** | **By sector, By need and By cohort** have a "No answer" column on the page and in print, and every row adds up: Not set 4 = 1+0+2+1; Fintech 3 = 0+2+0+1; Other and No cohort 7 = 1+2+2+2. **At 390** the tables fit. In the need table the header wraps to "No / answer", which still reads. | `rc-f5-report-tables-1280.jpg`, `rc-f5-report-tables-390.jpg`, `rc-f5-report-390-full.jpg`, `rc-f5-report-print-1280.jpg` |
+| F6 | **PASS** | **Jonas's page** for both intros (390 and 1280) now says: "We emailed Marcus on Nov 12. They answer from that email, or in the app if they're a member here. Nothing more to send…". It no longer says "Send Marcus this private link". **Not checked:** the "send it by hand" wording for a connector who gave no email. That attempt (`/api/intros/answer` yes with no email and none from the asker) returned 422, so the branch didn't come up. | `rc-f6-connector-i1-390.jpg`, `rc-f6-connector-i3-1280.jpg` |
+
+### Left over or new (all low)
+
+**R1 (low, left from F4): the sidebar and tab bar Intros badge doesn't refresh after an in-app answer.**
+1. Marcus has 2 target cards.
+2. He answers one on Your intros. The badge stays at 2.
+3. He answers the other on Today. The badge shows 1, though nothing is waiting.
+
+A full page load corrects it.
+
+**R2 (low, existing): the company logo `<img>` still shows Chrome's broken-image icon when its host fails.**
+1. Open /people/<ada> or /directory with images.example.com unreachable.
+2. The 16–20 px logo before "Founder, Gridwise Energy" shows the broken-image glyph.
+
+This is the `company-logo` component, outside the face fix.
+
+**R3 (cosmetic): two date styles on the connector's page.**
+1. Open the connector's intro page after the app emailed the person.
+2. The new line says "on Nov 12" and "closes on Nov 19"; the same page says "You answered on 12 Nov."
+
+### Re-check clean-up
+- The app and the fakes ran inside one foreground process and were stopped at its end.
+- Ports 56650–56669 have no listeners. The container `pg-verify-fir2` is removed.
+- The only files changed are new `rc-*.jpg` screenshots and this section.
