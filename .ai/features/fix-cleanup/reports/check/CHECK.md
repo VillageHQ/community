@@ -37,3 +37,19 @@ new intro Maya→Sam (declined); 3 made-up feed posts by Sam; `fill_in_basis` se
 - Server stopped: my `next start -p 3141` (PID 66776) was killed and port 3141 no longer answers. The first background shell hit its 10-minute limit, but its node child kept running. I tried a restart, which failed with EADDRINUSE, so I kept using the first server.
 - Port 3131 (unrelated absi-brain process) not touched. `cleanup-test-pg` still running.
 - `A-join-omar.jpg` shows a 404: I first tried the wrong path `/join?token=…`. The real path is `/invite?token=…`. This is not a bug.
+
+## Round 2 (commit a70edf3, same setup, port 3141)
+
+| Point | Result | What I saw |
+|---|---|---|
+| 1. One post per double press | PASS | As Sam on /feed: a double-click on Post → 1 row in `post` (the feed table is `post`, not `feed_post`). Two fast Ctrl+Enter → 1 row. Three `click()` calls in the same JS tick → 1 row. Each time a single "Your post is live.". The next post after each one went through normally, so the guard lets go. |
+| 2. Pill leads the "Sent …" line | PASS | Revoked (Lena Park) and Expired rows (to get an Expired row I backdated a80@example.com by SQL, then put it back). At 1034, 1280 and 390 px the pill sits at the start of the "Sent …" line, the name "Lena Park" is shown in full, and the line wraps ("Sent 12 / Nov, revoked 12 Nov" at 1034) and is never cut. The expired line reads "Expired · Sent 23 Oct, ended 6 Nov". |
+| 3. CSV ignores the list cohort | PASS | `format=csv&cohort=<81 chars>` with `name,email\nRound Two,round2.csv@example.com` → 200, invitedCount 1, stored with no cohort. `format=list&cohort=<81 chars>` → 422 "Keep the cohort under 80 characters." |
+
+Screenshots: round2-invites-1034.png, round2-invites-1280.png, round2-invites-390.png.
+
+New things noticed (minor, older than this build):
+- At 1034 px the e-mail lines are still cut with "…". So are the bold names of invites that have no name, where the name line is the e-mail itself (e.g. "aformula@exa…", "a80@example.c…"). The full address is in the accessible name.
+- An expired invite stays under "Waiting to sign in" with "Revoke" still offered.
+
+Cleanup: browser closed; my server (PID 40072, `next start -p 3141`) killed, and port 3141 no longer answers; the a80@example.com invite has its dates back as an open invite. `cleanup-test-pg` and port 3131 not touched.
