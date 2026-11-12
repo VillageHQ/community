@@ -24,7 +24,7 @@ import { user } from "@/platform/database/auth-schema";
 import type { Transaction } from "@/platform/database/client";
 import { communityBranding } from "@/platform/branding/schema";
 import { DEMO_JOB_SOURCES, toDemoCareersUrl, toDemoJobUrl } from "@/platform/demo/jobs";
-import { DEMO_COMMUNITY, DEMO_DATA_HOME, DEMO_INVITEES, DEMO_OUTSIDERS, DEMO_PEOPLE, toDemoEmail, toDemoSlug, type DemoPerson } from "@/platform/demo/people";
+import { DEMO_COMMUNITY, DEMO_COMMUNITY_LOGO_URL, DEMO_DATA_HOME, DEMO_INVITEES, DEMO_OUTSIDERS, DEMO_PEOPLE, toDemoEmail, toDemoSlug, type DemoPerson } from "@/platform/demo/people";
 import { DEMO_VILLAGE_GROUP, DEMO_VILLAGE_KEYS, toDemoProfile } from "@/platform/demo/village-answers";
 import { toDemoDomain, toDemoLogoUrl } from "@/platform/demo/pictures";
 import type { Environment } from "@/platform/environment";
@@ -598,6 +598,8 @@ async function seedSettings(transaction: Transaction, environment: Environment, 
     [INSTANCE_SETTING_KEYS.villageGroupId]: DEMO_VILLAGE_GROUP.id,
     [INSTANCE_SETTING_KEYS.villageGroupInviteLink]: DEMO_VILLAGE_GROUP.inviteLink,
     [INSTANCE_SETTING_KEYS.demoSeededAt]: now.toISOString(),
+    // Founderhall's demo logo (made up, public/demo/northwind-logo.svg).
+    [INSTANCE_SETTING_KEYS.logoUrl]: DEMO_COMMUNITY_LOGO_URL,
     [INSTANCE_SETTING_KEYS.demoResetAt]: now.toISOString(),
     ...toDataHomeSettings(DEMO_DATA_HOME),
     // The public job board and the website widget are on, so the demo can show them.

@@ -20,7 +20,10 @@ export function PageHeader({ title, description, action, eyebrow, back }: PageHe
     <header data-slot="page-header" className="fh-pagehead">
       {back ? <BackLink href={back.href}>{back.label}</BackLink> : null}
       {eyebrow ? <p className="fh-small fh-muted">{eyebrow}</p> : null}
-      <h1 className="fh-h1">{title}</h1>
+      {/* Founderhall puts the title 6 px under the small line (asks/views.mjs, the Today head). */}
+      <h1 className="fh-h1" style={eyebrow ? { marginTop: 6 } : undefined}>
+        {title}
+      </h1>
       {description ? <p className="fh-lede">{description}</p> : null}
       {action ? <div className="fh-btn-row mt-3.5">{action}</div> : null}
     </header>

@@ -49,7 +49,7 @@ export function VillageKeysForm({ hasSavedKeys }: { hasSavedKeys: boolean }) {
     const form = new FormData(event.currentTarget);
     save.mutate({ publicKey: String(form.get("public_key") ?? ""), secretKey: String(form.get("api_key") ?? "") });
   }
-  const placeholder = (fresh: string) => (hasSavedKeys ? "Saved. Paste a new one to replace it" : fresh);
+  const placeholder = (fresh: string) => (hasSavedKeys ? "Saved (paste to replace)" : fresh);
   return (
     <form onSubmit={submit} className="mt-3">
       <Field

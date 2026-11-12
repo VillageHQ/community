@@ -56,6 +56,8 @@ export function SwitchesSheet({ communityName, isHidden, messagePolicy, isMessag
     onSuccess: () => {
       flash("Privacy settings saved.");
       router.refresh();
+      // Founderhall comes back to the switches after a save.
+      document.getElementById("switches")?.scrollIntoView({ block: "start" });
     },
   });
 

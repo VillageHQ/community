@@ -17,10 +17,12 @@ const CONTRAST_DECIMALS = 2;
 
 const ACCENT_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
-export const DEFAULT_ACCENT_COLOR = "#0f7f86";
+// Founderhall's default fund colour, its spine green (design-system.md §1.1).
+export const DEFAULT_ACCENT_COLOR = "#2c4a3e";
 
 export const ACCENT_PRESETS = [
-  { name: "Village teal", color: DEFAULT_ACCENT_COLOR },
+  { name: "Spine green", color: DEFAULT_ACCENT_COLOR },
+  { name: "Village teal", color: "#0f7f86" },
   { name: "Sunbeam", color: "#ffc93c" },
   { name: "Midnight", color: "#14213d" },
   { name: "Coral", color: "#e8604c" },
@@ -245,7 +247,8 @@ export function renderAccentCss(storedColor: unknown) {
   const color = parseAccentColor(storedColor) ?? DEFAULT_ACCENT_COLOR;
   const light = toDeclarations(toAccentVariables(color, "light"));
   const dark = toDeclarations(toAccentVariables(color, "dark"));
-  return `:root{${light}}:root.dark{${dark}}`;
+  // Paper is light: a page printed from dark mode prints with the light fund colours (globals.css does the rest).
+  return `:root{${light}}:root.dark{${dark}}@media print{:root.dark{${light}}}`;
 }
 
 export function describeButtonContrast(brandHex: string) {

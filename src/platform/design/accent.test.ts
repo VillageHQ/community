@@ -108,7 +108,7 @@ describe("the accent style sheet", () => {
   });
 
   it("contains only variables and hex colors", () => {
-    expect(renderAccentCss("#e8604c")).toMatch(/^(:root(\.dark)?\{(--[a-z-]+:#[0-9a-f]{6};?)+\})+$/);
+    expect(renderAccentCss("#e8604c")).toMatch(/^(:root(\.dark)?\{(--[a-z-]+:#[0-9a-f]{6};?)+\})+@media print\{:root\.dark\{(--[a-z-]+:#[0-9a-f]{6};?)+\}\}$/);
   });
 });
 

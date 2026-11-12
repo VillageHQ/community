@@ -19,7 +19,6 @@ import { NETWORK_STAGES, syncTokenSchema, type NetworkStatus } from "@/modules/n
 import { networkStatusQuery } from "@/modules/network/queries";
 import { toMembersOf } from "@/modules/network/rules-search-words";
 
-import { LeaveGroup } from "./leave-group";
 import { LinkedinForm } from "./linkedin-step";
 import { NetworkFailure } from "./network-failure";
 
@@ -166,23 +165,16 @@ function SyncSheet({ status, connectedAtLabel, myProfileHref }: { status: Networ
   );
 }
 
-// Community's own settings for a connected member: the LinkedIn profile Village matches, and leaving the group.
+// Community's own setting for a connected member: the LinkedIn profile Village matches. Stop sharing and Disconnect
+// live on My profile's My network sheet, as Founderhall's.
 function NetworkSettings() {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   return (
     <details className="mt-4" open={isOpen} onToggle={(event) => setIsOpen(event.currentTarget.open)}>
-      <summary className="fh-linkbtn cursor-pointer">Change my LinkedIn or stop sharing</summary>
-      <div className="fh-sheet mt-3 grid gap-5">
-        <div className="grid gap-2">
-          <h2 className="fh-h3">Change your LinkedIn profile</h2>
-          <LinkedinForm submitLabel="Save" onSaved={() => queryClient.invalidateQueries({ queryKey: networkStatusQuery.queryKey })} />
-        </div>
-        <div className="grid gap-2">
-          <h2 className="fh-h3">Leave the group</h2>
-          <p className="fh-small fh-muted">Stops sharing your network. You can still search what others share.</p>
-          <LeaveGroup />
-        </div>
+      <summary className="fh-linkbtn cursor-pointer">Change my LinkedIn profile</summary>
+      <div className="fh-sheet mt-3 grid gap-2">
+        <LinkedinForm submitLabel="Save" onSaved={() => queryClient.invalidateQueries({ queryKey: networkStatusQuery.queryKey })} />
       </div>
     </details>
   );

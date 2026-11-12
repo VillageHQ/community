@@ -132,7 +132,12 @@ export function SettingsForm({ saved, uploadedLogo, isMailOn, serverPlan, manage
               <b>Preview</b>
               <span>The header, as members see it</span>
             </div>
-            <span className="fh-fundmark min-w-0" style={toAccentVariables(previewColor, "light")}>
+            {/* The colour as members see it in each look: the light one, or the dark one in dark mode. */}
+            <span className="fh-fundmark min-w-0 dark:hidden!" style={toAccentVariables(previewColor, "light")}>
+              <LogoTile name={previewName} logo={previewLogo} />
+              <b className="min-w-0 whitespace-normal break-words">{previewName}</b>
+            </span>
+            <span className="fh-fundmark min-w-0 hidden! dark:flex!" style={toAccentVariables(previewColor, "dark")} aria-hidden="true">
               <LogoTile name={previewName} logo={previewLogo} />
               <b className="min-w-0 whitespace-normal break-words">{previewName}</b>
             </span>

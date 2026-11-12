@@ -10,9 +10,12 @@ export const DEMO_COMMUNITY = {
   accentColor: "#24525a",
 } as const;
 
+// The community's logo: a made-up mark, the same as Founderhall's demo (public/demo/northwind-logo.svg).
+export const DEMO_COMMUNITY_LOGO_URL = "/demo/northwind-logo.svg";
+
 // Made-up answers for Settings' "Where your data is kept", so a buyer sees what members see on Your data.
 export const DEMO_DATA_HOME = {
-  location: "EU, Frankfurt, DigitalOcean",
+  location: "EU (Frankfurt)",
   contactName: "Data protection lead",
   contactEmail: "privacy@example.com",
 } as const;

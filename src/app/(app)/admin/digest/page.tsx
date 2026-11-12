@@ -82,7 +82,8 @@ export default modulePage(adminManifest, async function AdminDigestPage({ search
           <section className="fh-sheet">
             <h2 className="fh-h3">Send me a test digest</h2>
             <p className="fh-small mt-1.5">
-              To {admin.email}, with your own items this week{ownIsEmpty ? " (even when there is nothing to answer)" : ""}.
+              {/* Founderhall adds the bracket only while the preview shows the admin's own digest. */}
+              To {admin.email}, with your own items this week{ownIsEmpty && requested === admin.id ? " (even when there is nothing to answer)" : ""}.
             </p>
             <DigestTestButton />
             <p className="fh-small fh-muted mt-3">
