@@ -14,6 +14,7 @@ const MODULE_OFF_PATH = "/_module-off";
 const NOT_FOUND_STATUS = 404;
 const OK_STATUS = 200;
 const GONE_STATUS = 410;
+const GONE_MARK = "gone";
 const RSC_HEADER = "rsc";
 const IN_APP_FETCH_TIMEOUT_MS = 5000;
 // The same for a signed-in member, inside the app's frame (src/app/(app)/not-here/).
@@ -38,11 +39,24 @@ async function answerInAppNotFound(request: NextRequest) {
   return new NextResponse(page.body, { status: NOT_FOUND_STATUS, headers: { "content-type": page.headers.get("content-type") ?? "text/html; charset=utf-8", "cache-control": "no-store" } });
 }
 
+// A rewrite can't carry a status, so the bad-link page is fetched here, marked so it isn't checked again, and
+// answered with 410. The visitor's own headers go along, so the page's rate limit counts their address.
+async function answerGoneLink(request: NextRequest) {
+  const target = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, resolveAppUrl(process.env));
+  target.searchParams.set(GONE_MARK, "1");
+  const headers = new Headers(request.headers);
+  headers.delete("host");
+  headers.set("accept", "text/html");
+  const page = await fetch(target, { headers, redirect: "manual", signal: AbortSignal.timeout(IN_APP_FETCH_TIMEOUT_MS) }).catch(() => null);
+  if (page?.status !== OK_STATUS) return NextResponse.next();
+  return new NextResponse(page.body, { status: GONE_STATUS, headers: { "content-type": page.headers.get("content-type") ?? "text/html; charset=utf-8", "cache-control": "no-store" } });
+}
+
 // Each module page also guards itself; a page of a switched-off module is answered here, before rendering starts.
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
-  if (!request.headers.get(RSC_HEADER) && (await isGoneLinkPage(getDatabase(), pathname, searchParams.get("token")))) {
-    return NextResponse.rewrite(request.nextUrl, { status: GONE_STATUS });
+  if (!request.headers.get(RSC_HEADER) && !searchParams.has(GONE_MARK) && (await isGoneLinkPage(getDatabase(), pathname, searchParams.get("token")))) {
+    return answerGoneLink(request);
   }
   if (await isModulePageOff(getDatabase(), request.nextUrl.pathname)) {
     if (!getSessionCookie(request)) return NextResponse.rewrite(new URL(MODULE_OFF_PATH, request.url));
