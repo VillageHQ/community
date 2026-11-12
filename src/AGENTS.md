@@ -7,7 +7,6 @@ The app's code. Map, import rules and file roles: `docs/architecture.md`; read i
 
 - `app/`: pages and route handlers. They parse, call one thing, respond.
 - `proxy.ts`: answers 404 for a switched-off module's page, and 410 for a bad sign-in or invite link (`shell/gone-links.ts`).
-  Every page it answers carries HSTS when the app runs on https (`platform/http/strict-transport.ts`).
   The app has no shared loading screen, so `notFound()` in a page answers a real 404.
 - `shell/`: code reading several modules for one screen (navigation, Today, onboarding, weekly email, setup
   checklist, scheduled jobs).
