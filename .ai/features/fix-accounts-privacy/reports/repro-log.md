@@ -1,2 +1,3 @@
 - Item 1 (forwarded invite): before the fix, 3 new tests in src/modules/members/emailed-invite.test.ts failed (no notice email, no /api/invites/not-me); after, 8/8 pass.
 - Item 2 (consent pre-ticked): src/shell/welcome-steps.test.ts with the old rule (on unless refused) failed 1 of 3; with the fix 3/3 pass.
+- Item 3 (paused connector in search): the new test in src/modules/network/network.test.ts failed (search still listed Amara as the path); after the fix the file passes 74/74.
