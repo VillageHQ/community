@@ -21,6 +21,7 @@ import { toPossessive } from "@/modules/members/rules-words";
 import { readFilledLines, readLookupState, type LookupState } from "@/modules/members/service-fill-in";
 import { MESSAGE_POLICIES } from "@/modules/members/contract-privacy";
 import { readPrivacy, type MemberPrivacy } from "@/modules/members/service-privacy";
+import { readReportCredit } from "@/modules/members/service-report-credit";
 import { ShareNetworkSheet, SwitchesSheet, type ShareState } from "@/modules/members/components/your-data-switches";
 import { DeleteAccountSheet, ExportSheet } from "@/modules/members/components/your-data-actions";
 import { asksManifest } from "@/modules/asks/manifest";
@@ -126,7 +127,7 @@ export default modulePage(membersManifest, async function YourDataPage() {
   const [isFeedOn, isAsksOn, isIntrosOn, isMessagesOn, isNetworkOn] = [feedManifest, asksManifest, introsManifest, messagesManifest, networkManifest].map(({ id }) =>
     enabledIds.has(id),
   ) as [boolean, boolean, boolean, boolean, boolean];
-  const [privacy, lookup, lines, [network], branding, dataHome] = await Promise.all([
+  const [privacy, lookup, lines, [network], branding, dataHome, isCredited] = await Promise.all([
     readPrivacy(database, member.id),
     readLookupState(database, member.id),
     readFilledLines(database, member.id),
@@ -136,6 +137,7 @@ export default modulePage(membersManifest, async function YourDataPage() {
       .where(eq(memberNetwork.userId, member.id)),
     readBrandingForPage(),
     readDataHome(database),
+    readReportCredit(database, member.id),
   ]);
   const community = branding.name;
   const fillInRecord = readFillInRecord(lookup, community);
@@ -231,6 +233,7 @@ export default modulePage(membersManifest, async function YourDataPage() {
                 </>
               ) : null}
               {isIntrosOn ? <RecordRow term="Members can ask you for intros" detail={readIntroAsksDetail(privacy)} /> : null}
+              {isIntrosOn ? <RecordRow term="Named in partner reports" detail={isCredited ? "yes" : "no, only counted"} /> : null}
             </ul>
           </section>
         </div>
@@ -243,6 +246,7 @@ export default modulePage(membersManifest, async function YourDataPage() {
             messagePolicy={privacy.followsCommunityDefault ? MESSAGE_POLICIES.communityDefault : privacy.messagePolicy}
             isMessagesOn={isMessagesOn}
             lookup={lookup.basis ? { isAllowed: lookup.isAllowed } : null}
+            reportCredit={isIntrosOn ? { isOn: isCredited } : null}
             deviceRow={<DarkModeRow />}
           />
           {isNetworkOn ? <ShareNetworkSheet state={readShareState(network)} /> : null}

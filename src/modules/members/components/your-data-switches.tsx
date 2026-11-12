@@ -15,12 +15,14 @@ import { Switch } from "@/components/ui/switch";
 import { acknowledgedResponseSchema } from "@/platform/http/contract";
 import { postRequest } from "@/platform/http/post-request";
 import { API_ROUTES, ROUTES } from "@/platform/http/routes";
+import { reportCreditSchema } from "@/modules/members/contract-report-credit";
 import { COMMUNITY_MESSAGE_POLICY, MESSAGE_POLICIES, type MessagePolicy } from "@/modules/members/contract-privacy";
 
 import { saveLookupChoice } from "./lookup-question-card";
 
 const NO_LOOKUP_ID = "switch-no-lookup";
 const HIDDEN_ID = "switch-hidden";
+const CREDIT_ID = "switch-credit";
 
 const COMMUNITY_DEFAULT_WORDS: Record<string, string> = {
   [MESSAGE_POLICIES.anyone]: "anyone in the community",
@@ -35,22 +37,29 @@ type SwitchesSheetProps = {
   isMessagesOn: boolean;
   // Null when the community doesn't fill in profiles at all.
   lookup: { isAllowed: boolean } | null;
+  // Null while intros are off: "Credit me in reports" is not offered. Off by default.
+  reportCredit?: { isOn: boolean } | null;
   // Community's own row, kept: dark mode on this device.
   deviceRow?: ReactNode;
 };
 
-async function saveSwitches({ privacy, allowsLookup }: { privacy: { isHidden: boolean; messagePolicy?: MessagePolicy }; allowsLookup: boolean | null }) {
+type SwitchesToSave = { privacy: { isHidden: boolean; messagePolicy?: MessagePolicy }; allowsLookup: boolean | null; creditInReports: boolean | null };
+
+async function saveSwitches({ privacy, allowsLookup, creditInReports }: SwitchesToSave) {
   await postRequest(API_ROUTES.profilePrivacy, privacy, acknowledgedResponseSchema);
   if (allowsLookup !== null) await saveLookupChoice(allowsLookup);
+  if (creditInReports !== null) await postRequest(API_ROUTES.profileReportCredit, { isOn: creditInReports }, reportCreditSchema);
 }
 
-// Founderhall's "Your switches" (member-me-data): don't look me up, hide me, who can message me, one Save.
-export function SwitchesSheet({ communityName, isHidden, messagePolicy, isMessagesOn, lookup, deviceRow }: SwitchesSheetProps) {
+// Founderhall's "Your switches" (member-me-data): don't look me up, hide me, who can message me, one Save. Community
+// adds "Credit me in reports" (off by default) while intros are on.
+export function SwitchesSheet({ communityName, isHidden, messagePolicy, isMessagesOn, lookup, reportCredit = null, deviceRow }: SwitchesSheetProps) {
   const router = useRouter();
   const flash = useFlash();
   const [noLookup, setNoLookup] = useState(lookup ? !lookup.isAllowed : false);
   const [hidden, setHidden] = useState(isHidden);
   const [policy, setPolicy] = useState<MessagePolicy>(messagePolicy);
+  const [credited, setCredited] = useState(reportCredit?.isOn ?? false);
   const save = useMutation({
     mutationFn: saveSwitches,
     onSuccess: () => {
@@ -67,6 +76,7 @@ export function SwitchesSheet({ communityName, isHidden, messagePolicy, isMessag
     save.mutate({
       privacy: { isHidden: hidden, ...(isMessagesOn && policy !== messagePolicy ? { messagePolicy: policy } : {}) },
       allowsLookup: lookupChanged ? !noLookup : null,
+      creditInReports: reportCredit !== null && credited !== reportCredit.isOn ? credited : null,
     });
   }
 
@@ -101,6 +111,14 @@ export function SwitchesSheet({ communityName, isHidden, messagePolicy, isMessag
         hint="Members can’t find or open your profile. Admins still see you."
         control={<Switch id={HIDDEN_ID} checked={hidden} onCheckedChange={setHidden} />}
       />
+      {reportCredit ? (
+        <SetRow
+          htmlFor={CREDIT_ID}
+          label="Credit me in reports"
+          hint="Admins send a partner report with this community’s totals. On, you can be named among its top connectors. Off, you’re only part of a count. Who you introduced is never in it."
+          control={<Switch id={CREDIT_ID} checked={credited} onCheckedChange={setCredited} />}
+        />
+      ) : null}
       {isMessagesOn ? (
         <fieldset className="mt-3.5">
           <legend className="fh-label">Who can message me</legend>

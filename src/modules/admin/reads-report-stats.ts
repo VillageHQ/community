@@ -2,6 +2,7 @@ import "server-only";
 
 import { aliasedTable, and, eq, gte, inArray, lt, min, sql } from "drizzle-orm";
 
+import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { readBranding } from "../../platform/branding/branding.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
@@ -17,7 +18,8 @@ import { readReportOptions } from "./reads-partner-report.ts";
 import { computeReportStats, readReportTitle, readSummaryLine, type AskStats, type ReportIntroRow, type ReportStats } from "./report-stats.ts";
 
 // The partner report for one period, read once: the page, its CSV and its email all render this object.
-// No asker, target or note is read. Connectors are named in Top connectors (admins see names, the owner's decision).
+// No asker, target or note is read. Connectors are named in Top connectors: every one on the admin's page (the owner's
+// decision), only those who turned on "Credit me in reports" in what goes to partners.
 
 type Period = { from: Date | null; to: Date | null };
 
@@ -26,6 +28,7 @@ const HOUR_MS = 60 * 60 * 1000;
 
 const requesterProfile = aliasedTable(memberProfile, "report_requester_profile");
 const connector = aliasedTable(user, "report_connector");
+const connectorProfile = aliasedTable(memberProfile, "report_connector_profile");
 
 function inPeriod(column: typeof introRequest.createdAt | typeof ask.createdAt, { from, to }: Period) {
   return and(from ? gte(column, from) : undefined, to ? lt(column, to) : undefined);
@@ -44,6 +47,7 @@ async function readIntroRows(database: Database, period: Period): Promise<Report
       outcomeResults: introRequest.outcomeResults,
       connectorKey: introRequest.introducerId,
       connectorName: connector.name,
+      connectorCredited: sql<boolean>`coalesce(${connectorProfile.creditInReports} and (${isActiveMember(new Date(), connector)}), false)`,
       sector: requesterProfile.sector,
       cohort: requesterProfile.cohort,
       need: ask.category,
@@ -51,6 +55,7 @@ async function readIntroRows(database: Database, period: Period): Promise<Report
     .from(introRequest)
     .leftJoin(requesterProfile, eq(requesterProfile.userId, introRequest.requesterId))
     .leftJoin(connector, eq(connector.id, introRequest.introducerId))
+    .leftJoin(connectorProfile, eq(connectorProfile.userId, introRequest.introducerId))
     .leftJoin(ask, eq(ask.id, introRequest.askId))
     .where(and(eq(introRequest.isWithheld, false), inPeriod(introRequest.createdAt, period)));
   return rows.map(({ need, ...row }) => ({

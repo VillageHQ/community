@@ -4,7 +4,8 @@ import type { ConsolePeriod } from "./console-periods.ts";
 
 // The partner report's numbers for one period (Founderhall's report, on Community's intros). The page, the CSV and
 // the email are all drawn from one ReportStats, so a number can't differ between them. Counts only: the only names
-// are connectors who may be named (see reads-report-stats.ts).
+// are connectors. What leaves the app (the email, the CSV, the printed page) names only connectors who turned on
+// "Credit me in reports" (`connectors`); the admin's page in the app names every connector (`allConnectors`).
 
 export type ReportIntroRow = {
   state: string;
@@ -15,9 +16,11 @@ export type ReportIntroRow = {
   closedAt: Date | null;
   outcome: string | null;
   outcomeResults: readonly string[] | null;
-  // The connector: a key that groups their intros, and their name only when they may be named.
+  // The connector: a key that groups their intros, their name, and whether they may be named outside the app (an
+  // active member who turned on "Credit me in reports").
   connectorKey: string;
   connectorName: string | null;
+  connectorCredited: boolean;
   sector: string | null;
   cohort: string | null;
   // What the founder needed: the category of the ask the intro started from, if any.
@@ -26,7 +29,9 @@ export type ReportIntroRow = {
 
 export type AskStats = { posted: number; answered: number; open: number; helped: number; medianHours: number | null; intros: number; introsMade: number };
 
-export type BreakdownRow = { name: string; asked: number; yes: number; made: number; declined: number; open: number };
+// `declined` is a real no; `noAnswer` is an ask that closed after NO_ANSWER_DAYS with no answer. Every ask lands in
+// exactly one of made, declined, noAnswer, withdrawn or open, so a row adds up.
+export type BreakdownRow = { name: string; asked: number; yes: number; made: number; declined: number; noAnswer: number; open: number; isCredited?: boolean };
 
 export const RESULT_ROWS: Record<IntroResult, string> = {
   [INTRO_RESULTS.customer]: "A customer conversation started",
@@ -73,20 +78,24 @@ const percent = (part: number, whole: number) => (whole ? Math.round((part / who
 
 const saidYes = (row: ReportIntroRow) => row.acceptedAt !== null || row.askedTargetAt !== null;
 const isMade = (row: ReportIntroRow) => row.state === INTRO_STATES.completed;
-const isDeclined = (row: ReportIntroRow) => row.state === INTRO_STATES.declined || row.state === INTRO_STATES.targetDeclined || row.state === INTRO_STATES.expired;
+const isDeclined = (row: ReportIntroRow) => row.state === INTRO_STATES.declined || row.state === INTRO_STATES.targetDeclined;
+const isNoAnswer = (row: ReportIntroRow) => row.state === INTRO_STATES.expired;
 const isOpen = (row: ReportIntroRow) => OPEN_STATES.includes(row.state);
 const expiredAtTarget = (row: ReportIntroRow) => row.state === INTRO_STATES.expired && row.askedTargetAt !== null && row.targetAgreedAt === null;
+
+const emptyRow = (name: string): BreakdownRow => ({ name, asked: 0, yes: 0, made: 0, declined: 0, noAnswer: 0, open: 0 });
 
 function groupBy(rows: readonly ReportIntroRow[], keyOf: (row: ReportIntroRow) => string | null) {
   const groups = new Map<string, BreakdownRow>();
   for (const row of rows) {
     const name = keyOf(row);
     if (name === null) continue;
-    const group = groups.get(name) ?? { name, asked: 0, yes: 0, made: 0, declined: 0, open: 0 };
+    const group = groups.get(name) ?? emptyRow(name);
     group.asked += 1;
     if (saidYes(row)) group.yes += 1;
     if (isMade(row)) group.made += 1;
     if (isDeclined(row)) group.declined += 1;
+    if (isNoAnswer(row)) group.noAnswer += 1;
     if (isOpen(row)) group.open += 1;
     groups.set(name, group);
   }
@@ -95,12 +104,16 @@ function groupBy(rows: readonly ReportIntroRow[], keyOf: (row: ReportIntroRow) =
 
 const byAsked = (first: BreakdownRow, second: BreakdownRow) => second.asked - first.asked || first.name.localeCompare(second.name);
 
-// Connectors who may be named, most intros first, at most five; everyone else counted together on one line.
-function readConnectors(rows: readonly ReportIntroRow[]) {
+// Top connectors, most intros first, at most five; everyone else counted together on one line. `creditedOnly` (what
+// leaves the app) names only connectors who turned on "Credit me in reports"; the rest are only part of the count.
+function readConnectors(rows: readonly ReportIntroRow[], { creditedOnly }: { creditedOnly: boolean }) {
   const groups = groupBy(
-    rows.filter(({ connectorName }) => connectorName !== null),
+    rows.filter(({ connectorName, connectorCredited }) => connectorName !== null && (connectorCredited || !creditedOnly)),
     ({ connectorKey }) => connectorKey,
-  ).map((group) => ({ key: group.name, row: { ...group, name: rows.find(({ connectorKey }) => connectorKey === group.name)!.connectorName! } }));
+  ).map((group) => {
+    const first = rows.find(({ connectorKey }) => connectorKey === group.name)!;
+    return { key: group.name, row: { ...group, name: first.connectorName!, isCredited: first.connectorCredited } };
+  });
   groups.sort(({ row: first }, { row: second }) => second.made - first.made || second.yes - first.yes || first.name.localeCompare(second.name));
   const shown = groups.slice(0, TOP_CONNECTORS);
   const shownKeys = new Set(shown.map(({ key }) => key));
@@ -113,7 +126,7 @@ function readConnectors(rows: readonly ReportIntroRow[]) {
 
 function readNeeds(rows: readonly ReportIntroRow[]) {
   const groups = groupBy(rows, ({ need }) => NEED_LABELS[need ? NEED_OF_CATEGORY[need] : "other"]);
-  return Object.values(NEED_LABELS).map((name) => groups.find((group) => group.name === name) ?? { name, asked: 0, yes: 0, made: 0, declined: 0, open: 0 });
+  return Object.values(NEED_LABELS).map((name) => groups.find((group) => group.name === name) ?? emptyRow(name));
 }
 
 function readCohorts(rows: readonly ReportIntroRow[]) {
@@ -155,12 +168,13 @@ export function computeReportStats(rows: readonly ReportIntroRow[], { now = new 
     outcomeDays,
     pending: count((row) => isMade(row) && row.outcome === null && row.closedAt !== null && now.getTime() - row.closedAt.getTime() < outcomeDays * DAY_MS),
     medianDays: median(rows.filter((row) => isMade(row) && row.closedAt).map((row) => (row.closedAt!.getTime() - row.createdAt.getTime()) / DAY_MS)),
-    connectors: readConnectors(rows),
+    connectors: readConnectors(rows, { creditedOnly: true }),
+    allConnectors: readConnectors(rows, { creditedOnly: false }),
     sectors: groupBy(rows, ({ sector }) => sector?.trim() || NO_SECTOR).sort(byAsked),
     needs: readNeeds(rows),
     cohorts: readCohorts(rows),
   };
-  return { ...stats, declined: count(isDeclined), open: count(isOpen) };
+  return { ...stats, declined: count(isDeclined), noAnswer: count(isNoAnswer), open: count(isOpen) };
 }
 
 export type IntroStats = ReturnType<typeof computeReportStats>;
@@ -207,7 +221,8 @@ export function readSummaryLine(stats: IntroStats, period: ConsolePeriod, { firs
 
 const NAME_SUFFIX = /\s+(Founders|Network|Community)$/i;
 
-// "Northwind intros, Q4 2026 to date: 6 asked, 3 made, 0 declined" (the page's title and the email's subject).
+// "Northwind intros, Q4 2026 to date: 6 asked, 3 made, 0 declined" (the page's title and the email's subject). No-answer
+// expiries are not declines.
 export function readReportTitle(communityName: string, period: ConsolePeriod, stats: IntroStats) {
   return `${communityName.replace(NAME_SUFFIX, "")} intros, ${period.label}: ${stats.asked} asked, ${stats.made} made, ${stats.declined} declined`;
 }
@@ -215,11 +230,16 @@ export function readReportTitle(communityName: string, period: ConsolePeriod, st
 export const REPORT_FOOT = "Names, states and dates only. The notes members write stay between the people in each intro. Nobody is introduced without saying yes.";
 
 function breakdownLines(rows: readonly BreakdownRow[]) {
-  return rows.map((row) => `  ${row.name}: ${row.asked} asked, ${row.made} introduced${row.declined ? `, ${row.declined} declined` : ""}${row.open ? `, ${row.open} open` : ""}`);
+  return rows.map(
+    (row) =>
+      `  ${row.name}: ${row.asked} asked, ${row.made} introduced${row.declined ? `, ${row.declined} declined` : ""}${row.noAnswer ? `, ${row.noAnswer} no answer` : ""}${row.open ? `, ${row.open} open` : ""}`,
+  );
 }
 
-export function readConnectorRows(stats: IntroStats) {
-  return [...stats.connectors.named, ...(stats.connectors.others ? [stats.connectors.others] : [])];
+// The partner copy's connectors (credited names only), or with `everyone` the admin's own view in the app.
+export function readConnectorRows(stats: IntroStats, { everyone = false }: { everyone?: boolean } = {}) {
+  const connectors = everyone ? stats.allConnectors : stats.connectors;
+  return [...connectors.named, ...(connectors.others ? [connectors.others] : [])];
 }
 
 // The report as plain lines (the email's body), Founderhall's words.
@@ -231,7 +251,9 @@ export function readReportLines({ intros: stats, asks, summary }: ReportStats) {
     `Asked for an intro: ${stats.asked}`,
     `Connector said yes: ${stats.connectorYes}${stats.asked ? ` (${percent(stats.connectorYes, stats.asked)}%)` : ""}`,
     `Introduced (both said yes): ${stats.made}${stats.connectorYes ? ` (${percent(stats.made, stats.connectorYes)}% of the connector yeses)` : ""}`,
-    `Declined: ${stats.declined} (${stats.declinedConnector + stats.expiredConnector} at the connector, ${stats.declinedTarget + stats.expiredTarget} by the person asked for; ${stats.expiredConnector + stats.expiredTarget} of them had no answer in ${NO_ANSWER_DAYS} days)`,
+    `Declined: ${stats.declined} (${stats.declinedConnector} at the connector, ${stats.declinedTarget} by the person asked for)`,
+    `No answer in ${NO_ANSWER_DAYS} days: ${stats.noAnswer} (${stats.expiredConnector} at the connector, ${stats.expiredTarget} with the person asked for)`,
+    ...(stats.withdrawn ? [`Withdrawn by the asker: ${stats.withdrawn}`] : []),
     `Still open: ${stats.open}`,
     `Median days from ask to intro: ${stats.medianDays === null ? "–" : roundTenth(stats.medianDays)}`,
     "",
@@ -298,9 +320,9 @@ export function renderReportCsv(report: ReportStats, communityRows: readonly { l
     ["Intros", "Asked for an intro", stats.asked],
     ["Intros", "Connector said yes", stats.connectorYes],
     ["Intros", "Introduced", stats.made],
-    ["Intros", "Declined at the connector", stats.declinedConnector + stats.expiredConnector],
-    ["Intros", "Declined by the person asked for", stats.declinedTarget + stats.expiredTarget],
-    ["Intros", `No answer in ${NO_ANSWER_DAYS} days`, stats.expiredConnector + stats.expiredTarget],
+    ["Intros", "Declined at the connector", stats.declinedConnector],
+    ["Intros", "Declined by the person asked for", stats.declinedTarget],
+    ["Intros", `No answer in ${NO_ANSWER_DAYS} days`, stats.noAnswer],
     ["Intros", "Withdrawn by the asker", stats.withdrawn],
     ["Intros", "Still open", stats.open],
     ["Intros", "Median days from ask to intro", stats.medianDays === null ? null : roundTenth(stats.medianDays)],
@@ -329,8 +351,8 @@ export function renderReportCsv(report: ReportStats, communityRows: readonly { l
     toCsvLine(["section", "measure", report.period.label]),
     ...measures.map((cells) => toCsvLine(cells)),
     "",
-    toCsvLine(["breakdown", "group", "asked", "yes", "introduced", "declined", "open"]),
-    ...breakdowns.flatMap(([title, rows]) => rows.map((row) => toCsvLine([title, row.name, row.asked, row.yes, row.made, row.declined, row.open]))),
+    toCsvLine(["breakdown", "group", "asked", "yes", "introduced", "declined", "no answer", "open"]),
+    ...breakdowns.flatMap(([title, rows]) => rows.map((row) => toCsvLine([title, row.name, row.asked, row.yes, row.made, row.declined, row.noAnswer, row.open]))),
     ...(communityRows.length ? ["", toCsvLine(["section", "measure", "As of today"]), ...communityRows.map(({ label, value }) => toCsvLine(["Community", label, value]))] : []),
   ];
   return `${lines.join("\r\n")}\r\n`;

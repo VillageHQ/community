@@ -9,7 +9,7 @@ import { POST as postReportCredit } from "@/app/api/profile/report-credit/route"
 import { REPORT_PERIOD_KEYS } from "@/modules/admin/contract-partner-report";
 import { readConsolePeriod } from "@/modules/admin/console-periods";
 import { readReportStats } from "@/modules/admin/reads-report-stats";
-import { renderReportCsv, renderReportEmailText } from "@/modules/admin/report-stats";
+import { readConnectorRows, renderReportCsv, renderReportEmailText } from "@/modules/admin/report-stats";
 import { readPartnerReport, readPartnerReportSettings, readReportPeriods } from "@/modules/admin/reads-partner-report";
 import { ask } from "@/modules/asks/schema";
 import { asksManifest } from "@/modules/asks/manifest";
@@ -20,6 +20,7 @@ import { memberProfile } from "@/modules/members/schema";
 import { readReportCredit } from "@/modules/members/service-report-credit";
 import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import { adminAuditEntry } from "@/platform/audit/schema";
+import { user } from "@/platform/database/auth-schema";
 import { EMAIL_KINDS } from "@/platform/email/kinds";
 import { emailOutbox, emailSuppression } from "@/platform/email/schema";
 import { saveModuleState } from "@/platform/modules/enablement";
@@ -182,7 +183,8 @@ describe("the partner report", () => {
         asked: 12,
         connectorYes: 7,
         made: 3,
-        declined: 5,
+        declined: 2,
+        noAnswer: 3,
         declinedConnector: 1,
         declinedTarget: 1,
         expiredConnector: 2,
@@ -199,10 +201,10 @@ describe("the partner report", () => {
         medianDays: 4,
         pending: 0,
       });
-      expect(stats.asked).toBe(stats.made + stats.declined + stats.withdrawn + stats.open);
-      expect(title).toMatch(/ intros, Q\d \d{4} to date: 12 asked, 3 made, 5 declined$/);
-      expect((await readReportStats(database, "last")).intros).toMatchObject({ asked: 2, made: 1, declined: 1 });
-      expect((await readReportStats(database, "all")).intros).toMatchObject({ asked: 15, made: 4, declined: 7, withdrawn: 1, open: 3 });
+      expect(stats.asked).toBe(stats.made + stats.declined + stats.noAnswer + stats.withdrawn + stats.open);
+      expect(title).toMatch(/ intros, Q\d \d{4} to date: 12 asked, 3 made, 2 declined$/);
+      expect((await readReportStats(database, "last")).intros).toMatchObject({ asked: 2, made: 1, declined: 1, noAnswer: 0 });
+      expect((await readReportStats(database, "all")).intros).toMatchObject({ asked: 15, made: 4, declined: 3, noAnswer: 4, withdrawn: 1, open: 3 });
     });
 
     it("sums up the period in one line from the same counts", async () => {
@@ -220,7 +222,7 @@ describe("the partner report", () => {
 
       expect(text.split("\n").slice(0, 5)).toEqual(["Our quarter.", "", `${report.communityName}, partner report, ${report.period.label}`, "", report.summary]);
       expect(text).toContain("Asked for an intro: 12\nConnector said yes: 7 (58%)\nIntroduced (both said yes): 3 (43% of the connector yeses)");
-      expect(text).toContain("Declined: 5 (3 at the connector, 2 by the person asked for; 3 of them had no answer in 7 days)");
+      expect(text).toContain("Declined: 2 (1 at the connector, 1 by the person asked for)\nNo answer in 7 days: 3 (2 at the connector, 1 with the person asked for)");
       expect(text).toContain("  Found it helpful: 1 of 3 who answered (33%)");
       expect(text.endsWith(`Nobody is introduced without saying yes.\n\nSent by ${report.communityName} via its member portal.`)).toBe(true);
     });
@@ -252,8 +254,8 @@ describe("the partner report", () => {
     });
 
     it("breaks intros down by the asker's cohort and sector, and the community by cohort", async () => {
-      expect(await readCsv(database)).toContain("By cohort,No cohort,12,7,3,5,3");
-      expect(await readCsv(database)).toContain("By sector,Not set,12,7,3,5,3");
+      expect(await readCsv(database)).toContain("By cohort,No cohort,12,7,3,2,3,3");
+      expect(await readCsv(database)).toContain("By sector,Not set,12,7,3,2,3,3");
 
       await database.insert(memberProfile).values({ userId: asker.userId, cohort: "Fund II", sector: "Health" }).onConflictDoUpdate({ target: memberProfile.userId, set: { cohort: "Fund II", sector: "Health" } });
       await database.insert(memberProfile).values({ userId: credited.userId, cohort: " fund ii" }).onConflictDoUpdate({ target: memberProfile.userId, set: { cohort: " fund ii" } });
@@ -261,8 +263,8 @@ describe("the partner report", () => {
 
       expect(report.community.cohortMembers).toMatchObject([{ key: "fund ii", members: 2 }]);
       const csv = await readCsv(database);
-      expect(csv).toContain("By cohort,Fund II,12,7,3,5,3");
-      expect(csv).toContain("By sector,Health,12,7,3,5,3");
+      expect(csv).toContain("By cohort,Fund II,12,7,3,2,3,3");
+      expect(csv).toContain("By sector,Health,12,7,3,2,3,3");
       expect(await (await call(postCsv, admin, {})).text()).toMatch(/Community,Members in Fund II,2/i);
       expect(csv).not.toContain(ASKER_NAME);
     });
@@ -292,7 +294,7 @@ describe("the partner report", () => {
       return { csv, preview, report: JSON.stringify(await readReportStats(database, "all")) };
     }
 
-    it("names no asker, target or note anywhere, and names every connector (admins see names)", async () => {
+    it("names no asker, target or note anywhere; partners see only credited connectors, the admin's page sees every one", async () => {
       const { csv, preview, report } = await readEverything();
 
       for (const text of [csv, preview, report]) {
@@ -301,20 +303,34 @@ describe("the partner report", () => {
         expect(text).not.toContain(NOTE);
         expect(text).not.toContain(asker.userId);
         expect(text).toContain(CREDITED_NAME);
-        expect(text).toContain(QUIET_NAME);
       }
-      expect(await readCsv(database)).toContain(`Top connectors,${CREDITED_NAME},6,6,2,2,2`);
-      expect(await readCsv(database)).toContain(`Top connectors,${QUIET_NAME},6,1,1,3,1`);
-      expect(await readCsv(database)).not.toContain("Other connectors");
+      // PRIV-07: what leaves the app never names a connector who didn't turn on "Credit me in reports".
+      expect(csv).not.toContain(QUIET_NAME);
+      expect(preview).not.toContain(QUIET_NAME);
+      expect(await readCsv(database)).toContain(`Top connectors,${CREDITED_NAME},6,6,2,1,1,2`);
+      expect(await readCsv(database)).toContain(`Top connectors,Other connectors,6,1,1,1,2,1`);
+      // The admin's own page in the app names every connector (the owner's decision), marking who isn't credited.
+      const { intros } = await readReportStats(database, "quarter");
+      expect(readConnectorRows(intros, { everyone: true })).toMatchObject([
+        { name: CREDITED_NAME, isCredited: true },
+        { name: QUIET_NAME, isCredited: false, asked: 6, made: 1, declined: 1, noAnswer: 2, open: 1 },
+      ]);
     });
 
-    it("names a connector whatever their credit setting", async () => {
+    it("names a connector to partners only while their credit is on", async () => {
       await call(postReportCredit, credited, { isOn: false });
 
       const { csv, preview } = await readEverything();
 
-      expect(csv).toContain(CREDITED_NAME);
-      expect(preview).toContain(CREDITED_NAME);
+      expect(csv).not.toContain(CREDITED_NAME);
+      expect(preview).not.toContain(CREDITED_NAME);
+      expect(preview).toContain("Other connectors");
+    });
+
+    it("never names a banned connector to partners, even with credit on", async () => {
+      await database.update(user).set({ banned: true }).where(eq(user.id, credited.userId));
+
+      expect(await readCsv(database)).not.toContain(CREDITED_NAME);
     });
 
     it("names at most five, counts the rest, and keeps two people with one name apart", async () => {
@@ -332,7 +348,7 @@ describe("the partner report", () => {
       expect(stats.connectors.named).toHaveLength(5);
       expect(stats.connectors.named.reduce((total, { made }) => total + made, 0) + (stats.connectors.others?.made ?? 0)).toBe(stats.made);
       expect(stats.connectors.named.filter(({ name }) => name === "Same Name")).toHaveLength(2);
-      expect((await readCsv(database, "all")).match(/Top connectors,Same Name,4,4,4,0,0/g)).toHaveLength(2);
+      expect((await readCsv(database, "all")).match(/Top connectors,Same Name,4,4,4,0,0,0/g)).toHaveLength(2);
     });
 
     it("keeps credit off until a member turns it on", async () => {
@@ -343,7 +359,7 @@ describe("the partner report", () => {
     it("quotes a name that looks like a spreadsheet formula", async () => {
       await nameMember(database, credited.userId, "=HYPERLINK(1)");
 
-      expect(await readCsv(database)).toContain(`Top connectors,"'=HYPERLINK(1)",6,6,2,2,2`);
+      expect(await readCsv(database)).toContain(`Top connectors,"'=HYPERLINK(1)",6,6,2,1,1,2`);
     });
 
     it("is for admins only", async () => {
@@ -373,7 +389,7 @@ describe("the partner report", () => {
       for (const email of queued) {
         expect(email.kind).toBe(EMAIL_KINDS.partnerReport);
         expect(email.html).toContain("Our quarter.");
-        expect(email.subject).toMatch(/ intros, Q\d \d{4} to date: 12 asked, 3 made, 5 declined$/);
+        expect(email.subject).toMatch(/ intros, Q\d \d{4} to date: 12 asked, 3 made, 2 declined$/);
         expect(email.text).toContain("Sent by ");
         expect(email.text).not.toContain(ASKER_NAME);
         expect(email.text).not.toContain(TARGET_NAME);
