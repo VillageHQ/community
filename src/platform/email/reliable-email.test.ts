@@ -118,8 +118,7 @@ describe("reliable email", () => {
       const accepted = await createInvite(downContext, "accepted@example.com");
       const inFlight = await createInvite(downContext, "in-flight@example.com");
       await acceptInvite(database, readInviteToken(accepted.link), {
-        name: "Ama Mensah",
-        password: "a-long-enough-password",
+        account: { name: "Ama Mensah", password: "a-long-enough-password" },
       });
       // As if a sender had claimed it and its try was still hanging when the admin revoked.
       await database.update(emailOutbox).set({ status: OUTBOX_STATUSES.sending }).where(eq(emailOutbox.toEmail, "in-flight@example.com"));

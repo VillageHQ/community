@@ -1,98 +1,112 @@
 "use client";
 
+import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { FormError } from "@/components/form-error";
-import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Note } from "@/components/ui/note";
+import { Select } from "@/components/ui/select";
 import { ROUTES } from "@/platform/http/routes";
 
-import { FEED_TOOLS, JOB_BOARD_API_ROUTES, JOB_BOARD_LIMITS } from "../contract";
+import { FEED_TOOLS, isFeedTool, JOB_BOARD_API_ROUTES, JOB_BOARD_LIMITS } from "../contract";
 import { useJobAction } from "./use-job-action";
 
-const TOOL_NAMES = Object.values(FEED_TOOLS).map(({ label }) => label);
+// Founderhall's tool list: every tool with a public feed, then the ones without (their jobs are added by hand).
+const NO_FEED_TOOLS = { workday: "Workday", icims: "iCIMS", other: "Another tool, or none" } as const;
+const DEFAULT_TOOL = "greenhouse";
 
-// A founder shares jobs only for the company on their card, so for them the company is fixed. An admin types any.
+// Founderhall's "Our jobs" form (ourJobsSection's addForm): Company and Hiring tool side by side, the careers link, then
+// "Pull our jobs". A tool with a feed links the board (the app finds the board in the link, whichever tool it is on);
+// a tool without one starts a company whose jobs are added by hand. A founder shares jobs only for the company on
+// their card, so for them the company can't be changed.
 export function LinkSourceForm({ defaultCompany, isCompanyFixed }: { defaultCompany: string; isCompanyFixed: boolean }) {
   const [company, setCompany] = useState(defaultCompany);
+  const [tool, setTool] = useState<string>(DEFAULT_TOOL);
   const [link, setLink] = useState("");
   const linkTool = useJobAction<{ company: string; link: string }>(JOB_BOARD_API_ROUTES.link, { onDone: () => setLink("") });
   const byHand = useJobAction<{ company: string }>(JOB_BOARD_API_ROUTES.manual);
   const isBusy = linkTool.isPending || byHand.isPending;
   const done = linkTool.data ?? byHand.data ?? null;
+  const error = linkTool.error?.message ?? byHand.error?.message ?? null;
   if (isCompanyFixed && defaultCompany.trim() === "") {
     return (
-      <p className="type-body text-foreground-soft">
-        Add your company to <Link href={ROUTES.editCard} className="font-bold text-foreground underline underline-offset-4">your card</Link> first. Then you can share its jobs here.
+      <p className="fh-small mt-3">
+        Add your company to <Link href={ROUTES.editCard}>your card</Link> first. Then you can share its jobs here.
       </p>
     );
   }
+  const example = isFeedTool(tool) ? FEED_TOOLS[tool].example : FEED_TOOLS[DEFAULT_TOOL].example;
   return (
     <form
-      className="grid gap-4"
+      className="mt-3"
       onSubmit={(event) => {
         event.preventDefault();
+        linkTool.reset();
         byHand.reset();
-        linkTool.mutate({ company, link });
+        // A tool without a feed and no link: jobs by hand. Any link is tried as a board, as Founderhall does.
+        if (!isFeedTool(tool) && link.trim() === "") byHand.mutate({ company });
+        else linkTool.mutate({ company, link });
       }}
     >
-      <div className="grid gap-2">
-        <Label htmlFor="job-company">Company</Label>
-        <Input
-          id="job-company"
-          value={company}
-          maxLength={JOB_BOARD_LIMITS.companyLength}
-          onChange={(event) => setCompany(event.target.value)}
-          autoComplete="organization"
-          readOnly={isCompanyFixed}
-          aria-describedby={isCompanyFixed ? "job-company-help" : undefined}
-          required
-        />
-        {isCompanyFixed ? (
-          <p id="job-company-help" className="type-small text-foreground-soft">
-            From <Link href={ROUTES.editCard} className="underline underline-offset-4">your card</Link>. You share jobs for your own company.
-          </p>
-        ) : null}
+      {error ? (
+        <Note kind="needs" role="alert" className="mb-3">
+          {error}
+        </Note>
+      ) : null}
+      <div className="fh-pair">
+        <div>
+          <label className="fh-label fh-small" htmlFor="oj-company">
+            Company
+          </label>
+          <Input id="oj-company" value={company} maxLength={JOB_BOARD_LIMITS.companyLength} onChange={(event) => setCompany(event.target.value)} autoComplete="organization" readOnly={isCompanyFixed} required />
+        </div>
+        <div>
+          <label className="fh-label fh-small" htmlFor="oj-tool">
+            Hiring tool
+          </label>
+          <Select id="oj-tool" value={tool} onChange={(event) => setTool(event.target.value)}>
+            {Object.entries(FEED_TOOLS).map(([key, { label }]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+            {Object.entries(NO_FEED_TOOLS).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </div>
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor="job-link">Careers link</Label>
+      <div className="fh-field">
+        <label className="fh-label fh-small" htmlFor="oj-link">
+          Careers link
+        </label>
         <Input
-          id="job-link"
+          id="oj-link"
           value={link}
           maxLength={JOB_BOARD_LIMITS.linkLength}
           onChange={(event) => setLink(event.target.value)}
-          placeholder={FEED_TOOLS.greenhouse.example}
+          placeholder={`e.g. ${example}`}
           inputMode="url"
-          aria-describedby="job-link-help"
+          aria-invalid={linkTool.error ? true : undefined}
+          aria-describedby="oj-link-help"
         />
-        <p id="job-link-help" className="type-small text-foreground-soft">
-          The link to your jobs page on {TOOL_NAMES.slice(0, -1).join(", ")} or {TOOL_NAMES.at(-1)}. We read its public job list every hour. No key needed.
+        <p id="oj-link-help" className="fh-hint">
+          Paste your careers page or job board link. We find the board in it and pull your open jobs every hour. No key needed. Workday, iCIMS or another tool: add jobs by hand, or just link your careers page.
         </p>
       </div>
       {done ? (
-        <Alert variant={done.ok === false ? "info" : "success"} aria-live="polite">
+        <Note kind={done.ok === false ? "needs" : "ok"} role="status" className="mt-3">
           {done.message}
-        </Alert>
+        </Note>
       ) : null}
-      <FormError message={linkTool.error?.message ?? byHand.error?.message ?? null} />
-      <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={isBusy || link.trim() === ""} className="max-sm:w-full">
-          {linkTool.isPending ? "Linking…" : "Link our hiring tool"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={isBusy}
-          className="max-sm:w-full"
-          onClick={() => {
-            linkTool.reset();
-            byHand.mutate({ company });
-          }}
-        >
-          Add jobs by hand instead
+      <div className="fh-btn-row" style={{ marginTop: 12 }}>
+        <Button type="submit" size="sm" disabled={isBusy}>
+          <RefreshCw aria-hidden="true" className={linkTool.isPending ? "animate-spin" : undefined} />
+          {isBusy ? "Pulling…" : "Pull our jobs"}
         </Button>
       </div>
     </form>

@@ -73,9 +73,13 @@ export const ROUTES = {
   notHere: "/not-here",
 } as const;
 
-// An invite's page: Founderhall's /invite?token=…
-export function toInvitePath(token: string) {
-  return `${ROUTES.join}?token=${encodeURIComponent(token)}`;
+// The emailed invite link's mark (members' service-invite-emailed.ts): the copied link has none.
+export const INVITE_EMAILED_FIELD = "e";
+
+// An invite's page: Founderhall's /invite?token=…, plus the emailed link's mark when it has one.
+export function toInvitePath(token: string, emailedMark: string | null = null) {
+  const path = `${ROUTES.join}?token=${encodeURIComponent(token)}`;
+  return emailedMark ? `${path}&${INVITE_EMAILED_FIELD}=${encodeURIComponent(emailedMark)}` : path;
 }
 
 export const AUTH_BASE_PATH = "/api/auth";

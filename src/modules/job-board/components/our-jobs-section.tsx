@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
 import { toPossessive } from "@/platform/text/day-month";
-import { formatDateAndTimeUtc } from "@/platform/text/format-date";
+import { formatDayMonthTimeUtc } from "@/platform/text/format-date";
 
 import { JOB_BOARD_LIMITS, JOB_BOARD_PAGES, type JobSourceView, type SourceJob } from "../contract";
 import { LinkSourceForm } from "./link-source-form";
@@ -21,7 +21,7 @@ function SourceStatus({ source }: { source: JobSourceView }) {
   if (!source.slug) {
     return <p className="fh-small fh-muted mt-2">{`${source.toolLabel} has no public job feed here, so jobs here are the ones you add by hand.`}</p>;
   }
-  const when = source.lastPulledAt ? `${source.lastError ? "Last tried" : "Last pulled"} ${formatDateAndTimeUtc(source.lastPulledAt)}` : "Not pulled yet";
+  const when = source.lastPulledAt ? `${source.lastError ? "Last tried" : "Last pulled"} ${formatDayMonthTimeUtc(source.lastPulledAt)}` : "Not pulled yet";
   return (
     <>
       {source.lastError ? (

@@ -163,7 +163,7 @@ describe("inviting many people", () => {
     const response = await postBulk(bulkRequest(admin, "csv", "name,email,company,cohort\nAda,ada@example.com,Engines Ltd,Fund II"));
     const [link] = bulkInviteResultSchema.parse(await response.json()).links;
 
-    const accepted = await acceptInvite(database, readInviteToken(link?.link), { name: "Ada", password: "a-long-test-password" });
+    const accepted = await acceptInvite(database, readInviteToken(link?.link), { account: { name: "Ada", password: "a-long-test-password" } });
     const [profile] = await database.select().from(memberProfile).where(eq(memberProfile.userId, accepted?.userId ?? ""));
     expect(profile?.company).toBe("Engines Ltd");
     expect(profile?.cohort).toBe("Fund II");

@@ -105,9 +105,11 @@ type TargetAskFacts = {
   links: { yes: string; no: string };
   optOutLink: string;
   isReminder?: boolean;
+  // Replies by email are on, so the introduction copies the connector (Founderhall's words). Off, the words don't say so.
+  copiesConnector?: boolean;
 };
 
-export function renderTargetAsk({ community, connector, asker, askerAbout, target, note, links, optOutLink, isReminder = false }: TargetAskFacts) {
+export function renderTargetAsk({ community, connector, asker, askerAbout, target, note, links, optOutLink, isReminder = false, copiesConnector = true }: TargetAskFacts) {
   return email(`${isReminder ? "Reminder: " : ""}${one(connector)} would like to introduce you to ${one(asker)}`, [
     `Hi ${first(target)},`,
     "",
@@ -122,7 +124,7 @@ export function renderTargetAsk({ community, connector, asker, askerAbout, targe
     `Yes, introduce us: ${links.yes}`,
     `No thanks: ${links.no}`,
     "",
-    `Or reply YES or NO on the first line. If you say yes, we send one email to you and ${first(asker)}, with ${first(connector)} copied. If you say no, nobody is told why${isReminder ? "" : ", and this is the only email you get about it (one reminder at most)"}.`,
+    `${copiesConnector ? `Or reply YES or NO on the first line. If you say yes, we send one email to you and ${first(asker)}, with ${first(connector)} copied.` : `If you say yes, we email you and ${first(asker)} to introduce you.`} If you say no, nobody is told why${isReminder ? "" : ", and this is the only email you get about it (one reminder at most)"}.`,
     "",
     `Don't send me intro asks from ${one(community)}: ${optOutLink}`,
     "",

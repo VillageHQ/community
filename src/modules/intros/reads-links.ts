@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
+import { isReplyByEmailOn } from "../../platform/email/reply-address.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import { readAnswerLink } from "./answer-links.ts";
 import { INTRO_LINK_PURPOSES, INTRO_STATES } from "./contract.ts";
@@ -61,6 +62,7 @@ async function readConnectorView(context: LinkViewContext, introId: string) {
     note: row.intro.note,
     suggestedEmail: row.intro.suggestedTargetEmail,
     canEmail: readResendConfig(environment) !== null,
+    copiesConnector: isReplyByEmailOn(environment),
   } as const;
 }
 
@@ -95,6 +97,7 @@ export async function readIntroLinkView(context: LinkViewContext, token: string)
       note: readWhyTheyWrote(consent.note, consent.introducerName, consent.targetName),
       joinsByEmail: consent.joinsByEmail,
       asksForEmail: consent.asksForEmail,
+      copiesConnector: consent.copiesConnector,
     } as const;
   }
   // Closed or answered: say why, from the intro the link belongs to.

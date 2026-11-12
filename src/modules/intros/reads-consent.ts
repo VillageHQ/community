@@ -7,6 +7,7 @@ import { isActiveMember } from "../../platform/auth/member-status.ts";
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, DatabaseOrTransaction } from "../../platform/database/client.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
+import { isReplyByEmailOn } from "../../platform/email/reply-address.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
 import { secretsMatch } from "../../platform/secrets/secrets-match.ts";
@@ -180,5 +181,6 @@ export async function readConsentView(context: ConsentViewContext, token: string
     joinsByEmail: row.targetEmail !== null && readResendConfig(context.environment) !== null,
     // A forwarded link: the app has no address for them, so the yes asks for one and the app joins them by email.
     asksForEmail: row.targetEmail === null && readResendConfig(context.environment) !== null,
+    copiesConnector: isReplyByEmailOn(context.environment),
   };
 }

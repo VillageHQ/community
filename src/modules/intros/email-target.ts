@@ -6,7 +6,7 @@ import type { Database } from "../../platform/database/client.ts";
 import { EMAIL_KINDS, type EmailKind } from "../../platform/email/kinds.ts";
 import { cancelQueuedEmail, queueEmail } from "../../platform/email/outbox.ts";
 import { sendQueuedEmailNow } from "../../platform/email/outbox-sender.ts";
-import { resolveReplySigner } from "../../platform/email/reply-address.ts";
+import { isReplyByEmailOn, resolveReplySigner } from "../../platform/email/reply-address.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
 import type { Environment } from "../../platform/environment.ts";
 import { resolveAppUrl } from "../../platform/http/app-url.ts";
@@ -61,6 +61,7 @@ export function renderConsentAskEmail(facts: TargetAskFacts, environment: Enviro
     links: { yes: links.yes, no: links.no },
     optOutLink: links.optOut,
     isReminder,
+    copiesConnector: isReplyByEmailOn(environment),
   });
 }
 
@@ -82,7 +83,7 @@ export async function sendConsentAskEmail(database: Database, environment: Envir
     note: readWhyTheyWrote(intro.note, intro.introducer.name, intro.target.name),
   };
   await sendThroughOutbox(database, environment, {
-    kind: EMAIL_KINDS.introTargetReminder,
+    kind: EMAIL_KINDS.introTargetAsk,
     to: targetEmail,
     memberId: null,
     // One row per send: a later email to a corrected address is a new email, not a repeat of the first.

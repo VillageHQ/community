@@ -13,9 +13,10 @@ type AcceptState = { errorMessage: string | null };
 const INITIAL_STATE: AcceptState = { errorMessage: null };
 const FALLBACK_ERROR_MESSAGE = "We couldn't let you in. Try again.";
 
-async function submitAccept(token: string): Promise<AcceptState> {
+async function submitAccept(token: string, emailedMark: string | null): Promise<AcceptState> {
   try {
-    const { isSignedIn } = await postRequest(API_ROUTES.inviteAccept, { token }, acceptedInviteSchema);
+    const body = emailedMark ? { token, emailed: emailedMark } : { token };
+    const { isSignedIn } = await postRequest(API_ROUTES.inviteAccept, body, acceptedInviteSchema);
     window.location.assign(isSignedIn ? ROUTES.landing : ROUTES.signIn);
     return INITIAL_STATE;
   } catch (error) {
@@ -23,9 +24,10 @@ async function submitAccept(token: string): Promise<AcceptState> {
   }
 }
 
-// Founderhall's invite confirm form: one full-width button. The welcome steps ask the name next.
-export function AcceptForm({ token }: { token: string }) {
-  const [state, formAction, isPending] = useActionState(() => submitAccept(token), INITIAL_STATE);
+// Founderhall's invite confirm form: one full-width button. The welcome steps ask the name next. emailedMark comes from
+// the emailed link (absent on a copied one) and lets the join confirm the address.
+export function AcceptForm({ token, emailedMark }: { token: string; emailedMark: string | null }) {
+  const [state, formAction, isPending] = useActionState(() => submitAccept(token, emailedMark), INITIAL_STATE);
   return (
     <form action={formAction} className="mt-[18px]">
       {state.errorMessage ? (

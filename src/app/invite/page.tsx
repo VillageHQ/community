@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 const MAXIMUM_TOKEN_LENGTH = 256;
 
-type InvitePageProps = { searchParams: Promise<{ token?: string }> };
+type InvitePageProps = { searchParams: Promise<{ token?: string; e?: string }> };
 
 type Community = Awaited<ReturnType<typeof readBrandingForPage>>;
 
@@ -57,7 +57,7 @@ function BadInviteLink({ community, isLimited }: { community: Community; isLimit
 
 // Founderhall's /invite?token= (confirmPage, kind invite).
 export default modulePage(membersManifest, async function InvitePage({ searchParams }: InvitePageProps) {
-  const { token } = await searchParams;
+  const { token, e: emailedMark } = await searchParams;
   const requestHeaders = await headers();
   const community = await readBrandingForPage();
   const invite = await readOpenInvite(token);
@@ -74,7 +74,7 @@ export default modulePage(membersManifest, async function InvitePage({ searchPar
       <p className="fh-lede">
         You were invited as <b>{invite.email}</b>.
       </p>
-      {session ? <SignOutToAccept signedInName={session.user.name} path={toInvitePath(token)} /> : <AcceptForm token={token} />}
+      {session ? <SignOutToAccept signedInName={session.user.name} path={toInvitePath(token, emailedMark ?? null)} /> : <AcceptForm token={token} emailedMark={emailedMark ?? null} />}
       <p className="fh-small fh-muted mt-3.5">Next: two questions about you. Nobody is introduced without saying yes.</p>
     </PublicPage>
   );

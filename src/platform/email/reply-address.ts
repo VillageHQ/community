@@ -41,6 +41,12 @@ export function readReplySigner(environment: Environment, secret: string): Reply
   return domain ? { secret, domain } : null;
 }
 
+// Replies by email are on: the introduction goes out on one thread with the connector copied (sendJoiningEmail).
+// Off, each side gets its own copy and the connector isn't on it, so no page may say "with … copied".
+export function isReplyByEmailOn(environment: Environment) {
+  return readReplyDomain(environment) !== null;
+}
+
 export async function resolveReplySigner(connection: DatabaseOrTransaction, environment: Environment) {
   if (!readReplyDomain(environment)) return null;
   return readReplySigner(environment, await resolveAuthSecret(connection, environment));

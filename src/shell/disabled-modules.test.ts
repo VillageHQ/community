@@ -96,12 +96,12 @@ describe("the shell with modules off", () => {
       const enabledIds = await readEnabledIds(database);
       const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false, enabledIds).map(({ label }) => label);
 
-      expect(labels).toEqual(["Today", "Asks & updates", "Directory", "Intros", "Inbox", "My profile"]);
+      expect(labels).toEqual(["Today", "Asks & updates", "Directory", "Jobs", "Intros", "Inbox", "My profile"]);
     });
 
     it("hides the credits tab", async () => {
-      // Jobs and Slack and Discord start off, so their tabs are hidden too. Set up › Perks stays: its switch turns Perks on.
-      expect((await readAdminTabFacts(database, ENVIRONMENT)).hiddenTabHrefs).toEqual(["/admin/village", "/admin/jobs", "/admin/integrations"]);
+      // Slack and Discord start off, so their tab is hidden too; Jobs starts on. Set up › Perks stays: its switch turns Perks on.
+      expect((await readAdminTabFacts(database, ENVIRONMENT)).hiddenTabHrefs).toEqual(["/admin/village", "/admin/integrations"]);
     });
 
     it("doesn't count an out-of-credits notice", async () => {
