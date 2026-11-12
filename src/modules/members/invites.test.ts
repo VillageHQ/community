@@ -9,7 +9,7 @@ import { inviteListSchema, issuedInviteSchema } from "@/modules/members/contract
 import { INVITE_EMAIL_STATUSES, INVITE_STATES } from "@/modules/members/contract-invite-state";
 import { hashInviteToken } from "@/modules/members/service-invite-token";
 import { readInviteByToken } from "@/modules/members/service-invites";
-import { readOpenInvites } from "@/modules/admin/reads-members";
+import { readListedInvites } from "@/modules/admin/reads-members";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
 import { createSignedInMember } from "@/test/signed-in-member";
@@ -227,13 +227,40 @@ describe("admin invites", () => {
       expect(second.invite.state).toBe(INVITE_STATES.pending);
     });
 
-    it("refuses a revoked invite", async () => {
+    // A revoked invite is listed with Resend: it gets a new link and is open again; the old link stays dead.
+    it("opens a revoked invite again with a new link", async () => {
       const first = await createInviteAs(admin);
       await postRevoke(jsonRequest(admin, { inviteId: first.invite.id }));
 
       const response = await postResend(jsonRequest(admin, { inviteId: first.invite.id }));
+      const second = issuedInviteSchema.parse(await response.json());
+
+      expect(response.status).toBe(OK_STATUS);
+      expect(second.invite.state).toBe(INVITE_STATES.pending);
+      expect(await readInviteByToken(database, readToken(first.link))).toBeNull();
+      expect((await readInviteByToken(database, readToken(second.link)))?.state).toBe(INVITE_STATES.pending);
+    });
+
+    it("refuses a revoked invite once a newer one went to the same person", async () => {
+      const first = await createInviteAs(admin);
+      await postRevoke(jsonRequest(admin, { inviteId: first.invite.id }));
+      await createInviteAs(admin);
+
+      const response = await postResend(jsonRequest(admin, { inviteId: first.invite.id }));
 
       expect(response.status).toBe(CONFLICT_STATUS);
+      expect((await readRow(first.invite.id)).revokedAt).not.toBeNull();
+    });
+
+    it("refuses a revoked invite whose person already has an account", async () => {
+      const first = await createInviteAs(admin);
+      await postRevoke(jsonRequest(admin, { inviteId: first.invite.id }));
+      await database.update(user).set({ email: INVITEE }).where(eq(user.id, member.userId));
+
+      const response = await postResend(jsonRequest(admin, { inviteId: first.invite.id }));
+
+      expect(response.status).toBe(CONFLICT_STATUS);
+      expect((await readRow(first.invite.id)).revokedAt).not.toBeNull();
     });
   });
 
@@ -278,21 +305,42 @@ describe("admin invites", () => {
     });
 
     // INV-08: Admin › Invites showed only invites whose link still works, so an expired one vanished.
-    it("lists expired invites on the Invites page, marked, next to the open ones; not revoked or used ones", async () => {
+    // The Fly host findings (2026-11-12): revoked invites showed nowhere either. They stay, marked with the date.
+    it("lists expired and revoked invites on the Invites page, marked, next to the open ones; not used ones", async () => {
       await createInviteAs(admin, "pending@example.test");
       const expired = await createInviteAs(admin, "expired@example.test");
       const revoked = await createInviteAs(admin, "revoked@example.test");
       await expireInvite(expired.invite.id);
       await postRevoke(jsonRequest(admin, { inviteId: revoked.invite.id }));
 
-      const shown = await readOpenInvites(database);
+      const shown = await readListedInvites(database);
 
-      expect(new Map(shown.map(({ email, isExpired }) => [email, isExpired]))).toEqual(
+      expect(new Map(shown.map(({ email, isExpired, isRevoked }) => [email, { isExpired, isRevoked }]))).toEqual(
         new Map([
-          ["pending@example.test", false],
-          ["expired@example.test", true],
+          ["pending@example.test", { isExpired: false, isRevoked: false }],
+          ["expired@example.test", { isExpired: true, isRevoked: false }],
+          ["revoked@example.test", { isExpired: false, isRevoked: true }],
         ]),
       );
+      expect(shown.find(({ email }) => email === "revoked@example.test")?.revokedAt).toBeInstanceOf(Date);
+    });
+
+    it("leaves out a revoked invite once a newer invite went to the same person", async () => {
+      const first = await createInviteAs(admin, "again@example.test");
+      await postRevoke(jsonRequest(admin, { inviteId: first.invite.id }));
+      const second = await createInviteAs(admin, "again@example.test");
+
+      const shown = await readListedInvites(database);
+
+      expect(shown.map(({ id }) => id)).toEqual([second.invite.id]);
+    });
+
+    it("leaves out a revoked invite whose person already has an account", async () => {
+      const first = await createInviteAs(admin, "joined@example.test");
+      await postRevoke(jsonRequest(admin, { inviteId: first.invite.id }));
+      await database.update(user).set({ email: "joined@example.test" }).where(eq(user.id, member.userId));
+
+      expect(await readListedInvites(database)).toEqual([]);
     });
 
     it("pages through a long list", async () => {

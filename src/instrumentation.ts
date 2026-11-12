@@ -24,4 +24,5 @@ export async function register() {
   });
   if (isDemo && !resolveMigrationPlan(process.env).shouldRun) await bootDemo();
   startSelfTick(process.env);
+  (await import("./platform/http/client-ip")).warnWhenFlyLacksClientIpHeader(process.env);
 }

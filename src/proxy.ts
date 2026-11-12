@@ -5,6 +5,7 @@ import { JOB_BOARD_PAGES } from "@/modules/job-board/contract";
 import { getDatabase } from "@/platform/database/client";
 import { resolveAppUrl } from "@/platform/http/app-url";
 import { ROUTES } from "@/platform/http/routes";
+import { addStrictTransport } from "@/platform/http/strict-transport";
 import { isGoneLinkPage } from "@/shell/gone-links";
 import { isModulePageOff } from "@/shell/module-off-pages";
 
@@ -52,8 +53,13 @@ async function answerGoneLink(request: NextRequest) {
   return new NextResponse(page.body, { status: GONE_STATUS, headers: { "content-type": page.headers.get("content-type") ?? "text/html; charset=utf-8", "cache-control": "no-store" } });
 }
 
-// Each module page also guards itself; a page of a switched-off module is answered here, before rendering starts.
+// Every answer from here carries Strict-Transport-Security when the app runs on https (platform/http/strict-transport.ts).
 export async function proxy(request: NextRequest) {
+  return addStrictTransport(await routePage(request), process.env);
+}
+
+// Each module page also guards itself; a page of a switched-off module is answered here, before rendering starts.
+async function routePage(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   if (!request.headers.get(RSC_HEADER) && !searchParams.has(GONE_MARK) && (await isGoneLinkPage(getDatabase(), pathname, searchParams.get("token")))) {
     return answerGoneLink(request);

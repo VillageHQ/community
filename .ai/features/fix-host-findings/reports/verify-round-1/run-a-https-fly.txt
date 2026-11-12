@@ -1,0 +1,41 @@
+Run A: fresh db verify1, APP_URL=https://community.example.com, FLY_APP_NAME=fhf-verify, no CLIENT_IP_HEADER, NODE_OPTIONS=--trace-deprecation, DEMO_MODE, JOBS_SELF_TICK. Boot 22:35:44.
+== server log (full)
+▲ Next.js 16.4.5
+- Local:         http://localhost:3123
+- Network:       http://192.168.18.230:3123
+✓ Ready in 181ms
+✓ Running next.config.mjs took 24ms
+Migrations applied.
+Demo mode: filled the empty database with the made-up community.
+Running on Fly.io without CLIENT_IP_HEADER, so sign-in limits can't tell visitors apart. Set CLIENT_IP_HEADER=fly-client-ip (README: Deploy on Fly.io).
+== job_lease after first tick
+           name            |      last_finished_at      | last_error 
+---------------------------+----------------------------+------------
+ chat-posts                | 2026-11-12 20:36:47.553+00 | 
+ demo-reset                | 2026-11-12 20:36:47.053+00 | 
+ email-outbox              | 2026-11-12 20:36:47.578+00 | 
+ email-outbox-pruning      | 2026-11-12 20:36:47.582+00 | 
+ intro-connector-reminders | 2026-11-12 20:36:47.623+00 | 
+ intro-expiry              | 2026-11-12 20:36:47.604+00 | 
+ intro-outcome-emails      | 2026-11-12 20:36:47.612+00 | 
+ intro-target-reminders    | 2026-11-12 20:36:47.617+00 | 
+ job-board-pull            | 2026-11-12 20:36:47.627+00 | 
+ profile-fill-in           | 2026-11-12 20:36:47.587+00 | 
+ weekly-email              | 2026-11-12 20:36:47.548+00 | 
+(11 rows)
+
+== curl -D - localhost:3123<path> (status, Strict-Transport-Security, Location), taken right after boot
+GET /signin        200  strict-transport-security: max-age=31536000; includeSubDomains
+GET /today         307  strict-transport-security: max-age=31536000; includeSubDomains  location: /signin
+GET /              307  strict-transport-security: max-age=31536000; includeSubDomains  location: /signin
+GET /no-such-page  404  strict-transport-security: max-age=31536000; includeSubDomains
+GET /admin/invites 307  strict-transport-security: max-age=31536000; includeSubDomains  location: /signin
+GET /setup         200  strict-transport-security: max-age=31536000; includeSubDomains
+GET /public/board  200  strict-transport-security: max-age=31536000; includeSubDomains
+GET /jobs          200  strict-transport-security: max-age=31536000; includeSubDomains
+GET /invite?token=bogus 200 strict-transport-security: max-age=31536000; includeSubDomains  (200, not 410: the gone-link page is fetched from APP_URL, which does not resolve locally; same as before this change)
+GET /auth?token=bogus   200 strict-transport-security: max-age=31536000; includeSubDomains  (same reason)
+GET /api/health    200  (no HSTS: matcher skips /api/, by design)
+POST /api/health   405  (no HSTS)
+GET /icon.svg      200  (no HSTS: matcher skips it)
+GET /signin with next-router-prefetch + rsc headers: 307, no HSTS (matcher skips prefetches)

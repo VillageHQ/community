@@ -137,7 +137,22 @@ export async function issueInvite(context: RequestContext, row: InviteRow, token
   return { invite: toInviteSummary({ ...row, emailStatus, emailOutboxId: queuedEmailId }), link, message };
 }
 
+// A revoked invite that was never used can be opened again (Admin › Invites lists it with Resend), unless the person
+// got a newer invite or an account since.
+async function requireRevokedInviteCanReopen(connection: DatabaseOrTransaction, email: string) {
+  await requireNoMemberWithEmail(connection, email);
+  const [open] = await connection.select({ id: invite.id }).from(invite).where(and(eq(invite.email, email), OPEN_INVITE));
+  if (!open) return;
+  throw new RequestError(CONFLICT_STATUS, INVITE_ERROR_CODES.alreadyPending, "This person already has a newer invite. Use Resend on that one.");
+}
+
 async function rotateInvite(connection: DatabaseOrTransaction, context: RequestContext, inviteId: string) {
+  const [current] = await connection
+    .select({ email: invite.email, revokedAt: invite.revokedAt })
+    .from(invite)
+    .where(and(eq(invite.id, inviteId), isNull(invite.acceptedAt)));
+  if (!current) throw inviteChangedError();
+  if (current.revokedAt) await requireRevokedInviteCanReopen(connection, current.email);
   const inviter = await readInviter(context);
   const token = createInviteToken();
   const [rotated] = await connection
@@ -147,8 +162,9 @@ async function rotateInvite(connection: DatabaseOrTransaction, context: RequestC
       expiresAt: readInviteExpiry(),
       invitedByUserId: inviter.id,
       invitedByName: inviter.name,
+      revokedAt: null,
     })
-    .where(and(eq(invite.id, inviteId), OPEN_INVITE))
+    .where(and(eq(invite.id, inviteId), isNull(invite.acceptedAt), current.revokedAt ? isNotNull(invite.revokedAt) : isNull(invite.revokedAt)))
     .returning();
   if (!rotated) throw inviteChangedError();
   return { rotated, token };

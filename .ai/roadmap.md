@@ -44,6 +44,7 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] Parity fixes, accounts and privacy: a forwarded invite tells its owner, fill-in consent starts off, paused connectors leave search, expired invites listed, intro email switches, no sign-in lockout by strangers — fix-accounts-privacy — open pull request — [spec](features/fix-accounts-privacy/SPEC.md)
 
 - [ ] Parity fixes: credit in partner reports, no-answer counts, Village alerts and credit view, a member answering as the person asked for, asking word helpers, faces — fix-intros-reports — open pull request — [spec](features/fix-intros-reports/SPEC.md)
+- [ ] Fixes from the Fly host test: HSTS on https, no overlapping queries in timed jobs, Deploy on Fly.io and a warning without CLIENT_IP_HEADER, revoked invites listed with Resend — fix-host-findings — open pull request, [PR #58](https://github.com/VillageHQ/community/pull/58) — [spec](features/fix-host-findings/SPEC.md)
 - [ ] Asks board tabs (Open, Mine, Answered, Closed), search over every ask and answer, admin pin, reopen, and an Admin › Asks page — asks-tools — open pull request, [PR #39](https://github.com/VillageHQ/community/pull/39) — [charter](features/asks-tools/CHARTER.md) · [spec](features/asks-board-tools/SPEC.md)
 
 ## Next (queued)

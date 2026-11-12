@@ -39,6 +39,21 @@ curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh
 
 [Read the guide](docs/self-host-vps.md) for what to rent and how to point your domain.
 
+### Deploy on Fly.io
+
+There's no button, but the container image runs on Fly as it is. We tried it once on a throwaway app (2026-11-12): it built, migrated, signed in, ran its timed jobs and kept its data through a restart. You need the `fly` CLI and a Postgres database Fly's machines can reach.
+
+1. `fly launch --no-deploy`, and point the build at the image's Dockerfile in `fly.toml`: `[build]` `dockerfile = "deploy/vps/Dockerfile"`. Set the health check to `/api/health` on port 3000, and turn auto-stop off so the timed jobs keep running.
+2. Set these with `fly secrets set`:
+   - `DATABASE_URL`: your Postgres connection.
+   - `BETTER_AUTH_SECRET`: 32+ random characters. Optional (the app makes one if it's missing), but the test set it.
+   - `APP_URL`: `https://<your-app>.fly.dev`, or your own domain.
+   - `SETUP_TOKEN`: see [Setup token](#setup-token).
+   - `JOBS_SELF_TICK=true`: the app runs its own timed jobs every minute.
+   - `CLIENT_IP_HEADER=fly-client-ip`: Fly puts the visitor's address there. Without it, sign-in limits can't tell visitors apart, and the app says so in its log at start.
+3. `fly deploy` on one machine with 1 GB of memory (shared-cpu-1x).
+
+
 ## Your first 10 minutes
 
 1. **Create your admin account.** Your site opens on it. Enter the setup token and your name, email and password. Setup closes for good after this.
@@ -221,6 +236,7 @@ Next.js App Router, TypeScript, Tailwind, shadcn/ui, Better Auth (email and pass
 | Railway | `x-real-ip` | Partly confirmed: [docs](https://docs.railway.com/networking/public-networking/specs-and-limits) name it as the client IP. Only a forum reply from staff says the edge overwrites client values. Other forum threads report CDN addresses in it, which would collapse clients into one bucket. |
 | DigitalOcean | None by default | Not confirmed: [docs](https://docs.digitalocean.com/support/where-can-i-find-the-client-ip-address-of-a-request-connecting-to-my-app/) say App Platform adds `do-connecting-ip` but not that it replaces a client-sent value. |
 | Your own server, with `install.sh` | `x-real-ip` | Tested: Caddy overwrites a client-sent value, and only Caddy can reach the app. |
+| Fly.io | `fly-client-ip`, once you set `CLIENT_IP_HEADER=fly-client-ip` | Not on by default. [Fly's docs](https://fly.io/docs/networking/request-headers/) name it as the client's IP. The app warns at start when it runs on Fly without it. |
 | Anywhere else | None by default | Set `CLIENT_IP_HEADER` only if your proxy overwrites that header and clients can't reach the app directly. |
 
 With no trusted header, sign-in is limited per account instead: 5 wrong passwords in a minute pause that one account, and nobody else. Other paths, like password-reset requests, share one bucket per path, which can't be spoofed. Once a live test shows DigitalOcean replaces a client-sent `do-connecting-ip`, set `CLIENT_IP_HEADER=do-connecting-ip`.
@@ -231,7 +247,7 @@ With no trusted header, sign-in is limited per account instead: 5 wrong password
 | --- | --- | --- |
 | `DATABASE_URL` | Yes | Postgres connection for the app. |
 | `SETUP_TOKEN` | For setup | Unlocks `/setup`, and admin password recovery when email is off. Also seals your Village secret key, so keep it set. 32+ random characters. |
-| `APP_URL` | Self-hosting | Public origin. Takes priority over platform variables. |
+| `APP_URL` | Self-hosting | Public origin. Takes priority over platform variables. An `https://` address also makes pages send `Strict-Transport-Security` (a year, with subdomains). |
 | `DATABASE_URL_UNPOOLED` | No | Direct connection, preferred for migrations. |
 | `VILLAGE_API_URL` | No | Village API origin. Defaults to `https://api.village.ai`. |
 | `VILLAGE_APP_URL` | No | Where Village's sync window loads from. Defaults to `https://village.ai`. |
@@ -249,6 +265,7 @@ With no trusted header, sign-in is limited per account instead: 5 wrong password
 | `MIGRATE_ON_PREVIEW` | No | `true` runs migrations on Vercel previews. |
 | `RAILWAY_PUBLIC_DOMAIN`, `RAILWAY_PROJECT_ID` | Set by Railway | Public origin and client IP header selection. |
 | `VERCEL`, `VERCEL_ENV`, `VERCEL_URL`, `VERCEL_PROJECT_PRODUCTION_URL` | Set by Vercel | Public origin and client IP header selection. Previews trust only their own `VERCEL_URL`. |
+| `FLY_APP_NAME` | Set by Fly.io | Only to warn at start when `CLIENT_IP_HEADER` is missing. |
 
 ### Railway template (for maintainers)
 

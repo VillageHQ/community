@@ -131,13 +131,12 @@ async function eraseEverything(transaction: Transaction, facts: ErasureFacts, ac
   const namePattern = await readUniqueNamePattern(transaction, facts);
   const actorName = actor === DELETION_ACTORS.self ? DELETED_MEMBER_NAME : undefined;
 
-  const [askRows, introRows] = await Promise.all([
-    transaction.select({ id: ask.id }).from(ask).where(eq(ask.authorId, memberId)),
-    transaction
-      .select({ id: introRequest.id })
-      .from(introRequest)
-      .where(or(eq(introRequest.requesterId, memberId), eq(introRequest.introducerId, memberId))),
-  ]);
+  // A transaction runs one query at a time.
+  const askRows = await transaction.select({ id: ask.id }).from(ask).where(eq(ask.authorId, memberId));
+  const introRows = await transaction
+    .select({ id: introRequest.id })
+    .from(introRequest)
+    .where(or(eq(introRequest.requesterId, memberId), eq(introRequest.introducerId, memberId)));
   const refs = new Set([...askRows, ...introRows].map(({ id }) => id));
 
   await anonymizeMemberIntros(transaction, facts);

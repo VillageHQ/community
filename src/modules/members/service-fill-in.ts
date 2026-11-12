@@ -87,10 +87,9 @@ function lookupAllowedCondition(basis: FillInBasis | null) {
 }
 
 export async function readLookupState(database: Database, memberId: string) {
-  const [settings, [choice]] = await Promise.all([
-    readFillInSettings(database),
-    database.select().from(memberLookup).where(eq(memberLookup.userId, memberId)),
-  ]);
+  // One after the other: the connection may be a transaction.
+  const settings = await readFillInSettings(database);
+  const [choice] = await database.select().from(memberLookup).where(eq(memberLookup.userId, memberId));
   return {
     ...settings,
     consentedAt: choice?.consentedAt ?? null,

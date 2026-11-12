@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 import { MODULES } from "@/modules/registry";
@@ -75,5 +75,24 @@ describe("a page of a switched-off module, before it renders", () => {
     }
     expect(await isGoneLinkPage(database, "/signin", "not-a-real-token")).toBe(false);
     expect(await isGoneLinkPage(database, "/today", null)).toBe(false);
+  });
+});
+
+describe("Strict-Transport-Security on pages", () => {
+  const database = createTestDatabase();
+
+  afterAll(async () => {
+    vi.unstubAllEnvs();
+    await database.$client.end();
+  });
+
+  it("is sent when APP_URL is https, and never on http", async () => {
+    vi.stubEnv("APP_URL", "https://community.example.com");
+    const secure = await proxy(new NextRequest("https://community.example.com/signin"));
+    expect(secure.headers.get("strict-transport-security")).toBe("max-age=31536000; includeSubDomains");
+
+    vi.stubEnv("APP_URL", APP_URL);
+    const local = await proxy(new NextRequest(`${APP_URL}/signin`));
+    expect(local.headers.get("strict-transport-security")).toBeNull();
   });
 });

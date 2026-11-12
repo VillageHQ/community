@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { readRateLimitClientKey, resolveClientIpHeaders } from "./client-ip";
+import { FLY_CLIENT_IP_WARNING, readRateLimitClientKey, resolveClientIpHeaders, warnWhenFlyLacksClientIpHeader } from "./client-ip";
 
 describe("resolveClientIpHeaders", () => {
   it("prefers an explicit CLIENT_IP_HEADER", () => {
@@ -47,5 +47,21 @@ describe("readRateLimitClientKey", () => {
     const second = createRequest({ "x-forwarded-for": "198.51.100.2" });
 
     expect(readRateLimitClientKey(first, {})).toBe(readRateLimitClientKey(second, {}));
+  });
+});
+
+describe("warnWhenFlyLacksClientIpHeader", () => {
+  it("warns on Fly without CLIENT_IP_HEADER", () => {
+    const warn = vi.fn();
+    expect(warnWhenFlyLacksClientIpHeader({ FLY_APP_NAME: "community" }, warn)).toBe(true);
+    expect(warn).toHaveBeenCalledWith(FLY_CLIENT_IP_WARNING);
+    expect(FLY_CLIENT_IP_WARNING).toContain("CLIENT_IP_HEADER=fly-client-ip");
+  });
+
+  it("stays quiet with CLIENT_IP_HEADER set, or off Fly", () => {
+    const warn = vi.fn();
+    expect(warnWhenFlyLacksClientIpHeader({ FLY_APP_NAME: "community", CLIENT_IP_HEADER: "fly-client-ip" }, warn)).toBe(false);
+    expect(warnWhenFlyLacksClientIpHeader({}, warn)).toBe(false);
+    expect(warn).not.toHaveBeenCalled();
   });
 });

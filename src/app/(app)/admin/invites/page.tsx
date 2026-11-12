@@ -2,6 +2,7 @@ import { Mail } from "lucide-react";
 import type { Metadata } from "next";
 
 import { FlashNote } from "@/components/flash";
+import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
 import { getDatabase } from "@/platform/database/client";
 import { readBranding } from "@/platform/branding/branding";
@@ -11,7 +12,7 @@ import { requireAdmin } from "@/platform/auth/session";
 import { modulePage } from "@/platform/modules/module-page";
 
 import { formatShortDate } from "@/modules/admin/console-members";
-import { readInviterSignature, readOpenInvites } from "@/modules/admin/reads-members";
+import { readInviterSignature, readListedInvites } from "@/modules/admin/reads-members";
 import { readInviteFlash, INVITE_FLASH_PARAM } from "@/modules/admin/components/invite-flashes";
 import { InviteEmailPreview } from "@/modules/admin/components/invite-email-preview";
 import { InviteResendButton } from "@/modules/admin/components/invite-resend-button";
@@ -24,14 +25,14 @@ import { adminManifest } from "@/modules/admin/manifest";
 export const metadata: Metadata = { title: "Invites" };
 
 // Founderhall's Invites: paste many people at once, the profile fill-in's consent, who is still waiting to sign in,
-// and the email that goes out. Community-only: Revoke, and expired invites stay listed, marked, with Resend.
+// and the email that goes out. Community-only: Revoke, and expired and revoked invites stay listed, marked, with Resend.
 export default modulePage(adminManifest, async function AdminInvitesPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const admin = await requireAdmin();
   const flash = readInviteFlash((await searchParams)[INVITE_FLASH_PARAM]);
   const database = getDatabase();
   const [branding, invites, signature, fillIn, enabled] = await Promise.all([
     readBranding(database),
-    readOpenInvites(database),
+    readListedInvites(database),
     readInviterSignature(database, admin.id),
     readFillInSettings(database),
     readEnabledModuleIds(database, [networkManifest]),
@@ -66,7 +67,11 @@ export default modulePage(adminManifest, async function AdminInvitesPage({ searc
                   </span>
                   <div className="fh-who">
                     <b>
-                      {invite.isExpired ? (
+                      {invite.isRevoked ? (
+                        <Pill tone="declined" className="mr-1.5 inline-flex! align-[2px]">
+                          Revoked
+                        </Pill>
+                      ) : invite.isExpired ? (
                         <Pill tone="needs" className="mr-1.5 inline-flex! align-[2px]">
                           Expired
                         </Pill>
@@ -77,12 +82,22 @@ export default modulePage(adminManifest, async function AdminInvitesPage({ searc
                         get their own line, so a long address can't hide when the link ended. */}
                     <span title={invite.email}>{invite.email}</span>
                     <span>
-                      Sent {formatShortDate(invite.createdAt.toISOString())}, {invite.isExpired ? "ended" : "ends"} {formatShortDate(invite.expiresAt.toISOString())}
+                      Sent {formatShortDate(invite.createdAt.toISOString())},{" "}
+                      {invite.revokedAt
+                        ? `revoked ${formatShortDate(invite.revokedAt.toISOString())}`
+                        : `${invite.isExpired ? "ended" : "ends"} ${formatShortDate(invite.expiresAt.toISOString())}`}
                     </span>
                   </div>
                   <div className="fh-end lg:flex-row! lg:items-center!">
                     <InviteResendButton inviteId={invite.id} />
-                    <InviteRevokeLink inviteId={invite.id} email={invite.email} />
+                    {/* A revoked row keeps Revoke's place, so every Resend lines up. */}
+                    {invite.isRevoked ? (
+                      <Button type="button" variant="quiet" size="sm" aria-hidden="true" tabIndex={-1} className="invisible max-lg:hidden">
+                        Revoke
+                      </Button>
+                    ) : (
+                      <InviteRevokeLink inviteId={invite.id} email={invite.email} />
+                    )}
                   </div>
                 </div>
               ))}
