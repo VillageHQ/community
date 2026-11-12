@@ -13,6 +13,7 @@ import { AllowancePips } from "@/components/ui/search-box";
 import { Stepper } from "@/components/ui/stepper";
 import { readFirstName } from "@/platform/design/avatar-identity";
 import { ROUTES } from "@/platform/http/routes";
+import { readPrivacyLine } from "@/modules/intros/components/intro-words";
 import { createIntroRequest, INTRO_QUERY_KEYS } from "@/modules/intros/queries";
 
 import { joinNoteParts, NOTE_MAXIMUM, type NoteParts } from "./intro-ask-note";
@@ -86,12 +87,13 @@ type OneStepAskProps = {
   targetSlug: string;
   draftNote: string;
   cap: number;
+  communityName: string;
   // Why the ask can't go now (the week's asks are used, the member paused asks), or null.
   blockedReason: string | null;
 };
 
 // The one-step ask from a search result: one note, the allowance in one line, one Send (Founderhall's oneStepAskPage).
-export function OneStepAskForm({ connectorName, connectorSlug, targetSlug, draftNote, cap, blockedReason }: OneStepAskProps) {
+export function OneStepAskForm({ connectorName, connectorSlug, targetSlug, draftNote, cap, communityName, blockedReason }: OneStepAskProps) {
   const [note, setNote] = useState(draftNote);
   const ask = useAsk();
   const connectorFirst = readFirstName(connectorName);
@@ -112,6 +114,8 @@ export function OneStepAskForm({ connectorName, connectorSlug, targetSlug, draft
         <p className="fh-small fh-muted" style={{ marginTop: 12 }}>
           {connectorFirst} gets this by email and in the portal. Up to {cap} ask{cap === 1 ? "" : "s"} a week per founder.
         </p>
+        {/* The owner decided (2026-11-11): admins see who asked whom, and members are told where they ask. */}
+        <p className="fh-small fh-muted mt-1.5">{readPrivacyLine(communityName)}</p>
         <div className="fh-send-row">
           <Button type="submit" width="block" disabled={blockedReason !== null || ask.isPending || ask.isSuccess}>
             Send to {connectorFirst}
@@ -254,6 +258,8 @@ export function NoteAskForm({ connector, viewerName, communityName, parts: initi
           <ConsentLine>
             {`${connectorFirst} can say yes, not this time, or that they don’t know them well enough. If it’s a no, you’re told ${connectorFirst} can’t make this one, never why. ${CONSENT}`}
           </ConsentLine>
+          {/* The owner decided (2026-11-11): admins see who asked whom, and members are told where they ask. */}
+          <p className="fh-small fh-muted mt-1.5">{readPrivacyLine(communityName)}</p>
         </div>
         <div className="fh-send-row">
           <Button type="submit" width="block" disabled={blockedReason !== null || ask.isPending || ask.isSuccess}>

@@ -264,7 +264,7 @@ export function TodayPage({ today, memberName, communityName, digestDay, dateLab
               />
               <p className="fh-small">
                 {openJobCount ? `${openJobCount} ${plural(openJobCount, "open job", "open jobs")} at ${communityName} companies.` : "No open jobs yet."} Hiring?{" "}
-                <Link href={JOB_BOARD_PAGES.yours}>Add yours</Link>.
+                <Link href={JOB_BOARD_PAGES.ours}>Add yours</Link>.
               </p>
             </section>
           ) : null}

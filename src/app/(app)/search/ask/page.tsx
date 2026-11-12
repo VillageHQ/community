@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { BackLink } from "@/components/page-header";
 import { requireMember } from "@/platform/auth/session";
+import { readBrandingForPage } from "@/platform/branding/branding";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { getDatabase } from "@/platform/database/client";
 import { createRequestContext } from "@/platform/http/request-context";
@@ -42,11 +43,12 @@ export default modulePage(networkManifest, async function SearchAskPage({ search
   if (!targetSlug || !connectorId) redirect(back);
 
   const context = createRequestContext(database, process.env, member);
-  const [ask, connector, asker, allowance] = await Promise.all([
+  const [ask, connector, asker, allowance, community] = await Promise.all([
     readOneStepAsk(context, targetSlug, connectorId),
     readIntroConnectorCard(database, connectorId, member.id),
     readAskerProfile(database, member.id),
     readAskAllowance(database, member.id),
+    readBrandingForPage(),
   ]);
   if (!ask || !connector) redirect(back);
 
@@ -71,6 +73,7 @@ export default modulePage(networkManifest, async function SearchAskPage({ search
           targetSlug={targetSlug}
           draftNote={draftShortNote(asker, { targetName: ask.targetName, targetCompany: ask.targetAbout?.split(", ").slice(1).join(", ") || null })}
           cap={allowance.cap}
+          communityName={community.name}
           blockedReason={blockedReason}
         />
       </div>

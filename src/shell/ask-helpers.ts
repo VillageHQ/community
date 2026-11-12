@@ -74,13 +74,16 @@ export async function isAskIntroOn(database: Database) {
 }
 
 // Founderhall's path check: who the ask names ("Head of procurement at a US hospital", and a company) is searched in
-// the author's network first, then the first person found who isn't a member is looked up for paths. A LinkedIn
-// profile skips the search. Both go through the credit ledger.
+// the author's network first, then the first person found who isn't a member, isn't someone the author already knows
+// first-hand, and has a way in through a member, is looked up for paths. A LinkedIn profile skips the search. Both go
+// through the credit ledger.
 async function findPersonToReach(context: RequestContext, { targetSlug, targetText, targetCompany }: PathTarget) {
   if (targetSlug) return { slug: targetSlug, headline: null };
   const prompt = [targetText, targetCompany].filter(Boolean).join(" at ").slice(0, SEARCH_PROMPT_MAX_LENGTH);
   const { people } = await searchMemberNetwork(context, prompt);
-  const person = people.find(({ isMember, linkedinSlug }) => !isMember && linkedinSlug);
+  const outsiders = people.filter(({ isMember, linkedinSlug }) => !isMember && linkedinSlug);
+  const notKnown = outsiders.filter(({ direct }) => !direct);
+  const person = notKnown.find(({ paths }) => paths.length > 0) ?? notKnown[0] ?? outsiders[0];
   return person?.linkedinSlug ? { slug: person.linkedinSlug, headline: person.headline } : null;
 }
 

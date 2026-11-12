@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { PublicPage } from "@/components/public-page";
 import { introsManifest } from "@/modules/intros/manifest";
@@ -57,6 +58,8 @@ function readClosedText(view: Extract<IntroLinkView, { view: "closed" }>) {
 // A GET only reads; `?a=yes` picks the answer, and the button sends it.
 export default modulePage(introsManifest, async function IntroLinkPage(props: Props) {
   const [{ token, view }, community, { a }] = await Promise.all([readView(props), readBrandingForPage(), props.searchParams]);
+  // Founderhall answers an unknown link with a 404 (not-found.tsx beside this page has its words).
+  if (view.view === LINK_VIEWS.closed && view.reason === CLOSED_REASONS.unknown) notFound();
   const initialChoice = typeof a === "string" ? a : null;
   const card = (() => {
     switch (view.view) {
