@@ -5,6 +5,7 @@ import { getDatabase } from "@/platform/database/client";
 import { PAGE_TITLES } from "@/platform/branding/page-metadata";
 import { readBrandingForPage } from "@/platform/branding/branding";
 import { readWelcomePrivacyOptions, resolveOnboardingStep } from "@/shell/onboarding";
+import { readWelcomePrivacyStart } from "@/shell/welcome-steps";
 import { ONBOARDING_STEPS } from "@/modules/members/contract-profile";
 import { readPrivacy } from "@/modules/members/service-privacy";
 import { readLookupState } from "@/modules/members/service-fill-in";
@@ -18,8 +19,8 @@ import { WelcomeStepsHead } from "../welcome-steps-head";
 
 export const metadata: Metadata = { title: PAGE_TITLES.welcome };
 
-// Founderhall's welcome step 2 of 2, "Your privacy". Each switch starts on, as Founderhall's do; a member who
-// already chose keeps their choice.
+// Founderhall's welcome step 2 of 2, "Your privacy". Intro asks start on, as Founderhall's do; the profile fill-in
+// starts off, since it is consent (ONB-02). A member who already chose keeps their choice.
 export default modulePage(membersManifest, async function WelcomePrivacyPage() {
   const member = await requireMember();
   const database = getDatabase();
@@ -43,7 +44,7 @@ export default modulePage(membersManifest, async function WelcomePrivacyPage() {
         communityName={community.name}
         isIntrosOn={options.isIntrosOn}
         isLookupOn={options.isLookupOn}
-        initial={{ isHidden: privacy.isHidden, acceptsIntroAsks: privacy.acceptsIntroAsks !== false, allowsLookup: !lookup.refusedAt }}
+        initial={readWelcomePrivacyStart(privacy, lookup)}
       />
     </div>
   );
