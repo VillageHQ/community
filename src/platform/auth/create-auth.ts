@@ -68,7 +68,10 @@ export function createAuth(secret: string, database: Database, environment: Envi
     advanced: {
       ipAddress: { ipAddressHeaders: resolveClientIpHeaders(environment) },
     },
-    hooks: { before: createAuthGuards(database, { isEmailOn: readResendConfig(environment) !== null }), after: createAuthAfterHooks(database) },
+    hooks: {
+      before: createAuthGuards(database, { isEmailOn: readResendConfig(environment) !== null, environment }),
+      after: createAuthAfterHooks(database, environment),
+    },
     plugins: [
       admin(),
       // Members only: no sign-up, the token is stored hashed and used once. The emailed link opens our confirm

@@ -2,13 +2,18 @@ import { APIError, createAuthMiddleware } from "better-auth/api";
 import { z } from "zod";
 
 import type { Database } from "../database/client.ts";
+import type { Environment } from "../environment.ts";
+import { readTrustedClientIp } from "../http/client-ip.ts";
 import { recordFailedAttempt, releaseAttempt } from "../rate-limit/attempt-rate-limit.ts";
 import { nameSchema } from "./member-name.ts";
+import { createSignInDevice, readSignInDevice, SIGN_IN_DEVICE_COOKIE, SIGN_IN_DEVICE_MAX_AGE_SECONDS } from "./sign-in-device.ts";
 
 const UPDATE_USER_PATH = "/update-user";
 const SIGN_IN_PATH = "/sign-in/email";
 const SIGN_IN_KEY_PREFIX = "sign-in-email";
-const MAXIMUM_FAILED_SIGN_INS_PER_EMAIL_PER_MINUTE = 5;
+const MAXIMUM_FAILED_SIGN_INS_PER_REQUESTER_PER_MINUTE = 5;
+// Across every requester the account doesn't know, when each has its own IP count: guessing from many places is still capped.
+const MAXIMUM_FAILED_SIGN_INS_FROM_UNKNOWN_PLACES_PER_MINUTE = 20;
 
 const NULL_BYTE = "\0";
 const NULL_BYTE_MESSAGE = "This name has a character we can't save.";
@@ -26,7 +31,7 @@ const ALLOWED_ADMIN_PATHS: ReadonlySet<string> = new Set([
   "/admin/list-users",
 ]);
 
-type AuthGuardOptions = { isEmailOn: boolean };
+type AuthGuardOptions = { isEmailOn: boolean; environment?: Environment };
 
 function isRefusedPath(path: string, { isEmailOn }: AuthGuardOptions) {
   if (REFUSED_PATHS.has(path)) return true;
@@ -51,32 +56,59 @@ function rejectUnsafeName(path: string, body: unknown) {
 
 const signInBodySchema = z.object({ email: z.string() });
 
-function readSignInKey(path: string, body: unknown) {
+function readSignInEmail(path: string, body: unknown) {
   if (path !== SIGN_IN_PATH) return null;
   const signIn = signInBodySchema.safeParse(body);
-  return signIn.success ? `${SIGN_IN_KEY_PREFIX}|${signIn.data.email.trim().toLowerCase()}` : null;
+  return signIn.success ? signIn.data.email.trim().toLowerCase() : null;
 }
 
-// Failed sign-ins are counted per account, so one person's wrong passwords can't lock anyone
-// else out. Better Auth adds its own per-IP limit when a trusted IP header is set (see create-auth).
-// Each try takes a slot before the password is checked, and a successful one gives it back, so
-// guesses sent all at once are capped too.
+type SignInCount = { key: string; maximum: number };
+
+type SignInRequest = { headers?: Headers | null; getCookie: (name: string) => string | null | undefined; context: { secret: string } };
+
+// Failed sign-ins are counted per account AND per requester (AUTH-10), so a stranger's wrong passwords fill only their
+// own count: a browser that signed in to this account before counts alone (sign-in-device.ts); anyone else counts per
+// trusted IP, plus one count for all unknown places; with no trusted IP, everyone unknown shares one count. The email
+// link stays a way in whatever happens here. Better Auth adds its own per-IP limit when a trusted IP header is set.
+function readSignInCounts(email: string, request: SignInRequest, environment: Environment | undefined): SignInCount[] {
+  const account = `${SIGN_IN_KEY_PREFIX}|${email}`;
+  const device = readSignInDevice(request.context.secret, email, request.getCookie(SIGN_IN_DEVICE_COOKIE));
+  if (device) return [{ key: `${account}|device|${device}`, maximum: MAXIMUM_FAILED_SIGN_INS_PER_REQUESTER_PER_MINUTE }];
+  const ip = environment && request.headers ? readTrustedClientIp(request.headers, environment) : null;
+  if (!ip) return [{ key: `${account}|unknown`, maximum: MAXIMUM_FAILED_SIGN_INS_PER_REQUESTER_PER_MINUTE }];
+  return [
+    { key: `${account}|ip|${ip}`, maximum: MAXIMUM_FAILED_SIGN_INS_PER_REQUESTER_PER_MINUTE },
+    { key: `${account}|unknown-places`, maximum: MAXIMUM_FAILED_SIGN_INS_FROM_UNKNOWN_PLACES_PER_MINUTE },
+  ];
+}
+
+// Each try takes a slot before the password is checked, and a successful one gives it back, so guesses sent all at
+// once are capped too.
 export function createAuthGuards(database: Database, options: AuthGuardOptions) {
   return createAuthMiddleware(async (context) => {
     if (isRefusedPath(context.path, options)) throw new APIError("NOT_FOUND");
     rejectUnsafeName(context.path, context.body);
-    const signInKey = readSignInKey(context.path, context.body);
-    if (!signInKey) return;
-    const { isLimited } = await recordFailedAttempt(database, signInKey, MAXIMUM_FAILED_SIGN_INS_PER_EMAIL_PER_MINUTE);
+    const email = readSignInEmail(context.path, context.body);
+    if (!email) return;
+    let isLimited = false;
+    for (const { key, maximum } of readSignInCounts(email, context, options.environment)) {
+      if ((await recordFailedAttempt(database, key, maximum)).isLimited) isLimited = true;
+    }
     if (isLimited) {
       throw new APIError("TOO_MANY_REQUESTS", { message: "Too many tries for this account. Wait a minute, then try again." });
     }
   });
 }
 
-export function createAuthAfterHooks(database: Database) {
+export function createAuthAfterHooks(database: Database, environment?: Environment) {
   return createAuthMiddleware(async (context) => {
-    const signInKey = readSignInKey(context.path, context.body);
-    if (signInKey && !(context.context.returned instanceof APIError)) await releaseAttempt(database, signInKey);
+    const email = readSignInEmail(context.path, context.body);
+    if (!email || context.context.returned instanceof APIError) return;
+    for (const { key } of readSignInCounts(email, context, environment)) await releaseAttempt(database, key);
+    // This browser now knows the account: its own wrong passwords will count apart from a stranger's.
+    context.setCookie(SIGN_IN_DEVICE_COOKIE, createSignInDevice(context.context.secret, email), {
+      ...context.context.authCookies.sessionToken.attributes,
+      maxAge: SIGN_IN_DEVICE_MAX_AGE_SECONDS,
+    });
   });
 }

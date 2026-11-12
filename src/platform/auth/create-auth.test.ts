@@ -6,6 +6,7 @@ import { account, rateLimit, session, user, verification } from "@/platform/data
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { createAuth } from "./create-auth";
 import { claimFirstAdmin } from "./first-admin";
+import { SIGN_IN_DEVICE_COOKIE } from "./sign-in-device";
 
 const APP_URL = "http://localhost:3000";
 const ADMIN = { name: "Ada", email: "ada@example.com", password: "correct-horse-battery" };
@@ -127,6 +128,61 @@ describe("createAuth", () => {
       }
 
       expect((await post("/sign-in/email", member)).status).toBe(200);
+    });
+
+    // AUTH-10: wrong passwords from a stranger used to lock the member's own password sign-in for a minute.
+    describe("when a stranger tries the member's account", () => {
+      beforeEach(async () => {
+        await claimFirstAdmin(database, ADMIN);
+      });
+
+      function readCookiePair(response: Response, name: string) {
+        return response.headers.getSetCookie().map((cookie) => cookie.split(";")[0] ?? "").find((pair) => pair.startsWith(`${name}=`)) ?? "";
+      }
+
+      async function signInOnce(instance: typeof auth, headers: Record<string, string> = {}) {
+        const response = await instance.handler(createPost("/sign-in/email", { email: ADMIN.email, password: ADMIN.password }, headers));
+        expect(response.status).toBe(200);
+        return readCookiePair(response, SIGN_IN_DEVICE_COOKIE);
+      }
+
+      it("keeps the member's own browser signing in", async () => {
+        const knownBrowser = await signInOnce(auth);
+        for (let attempt = 0; attempt <= SIGN_INS_PER_EMAIL_PER_MINUTE; attempt += 1) await attemptSignIn(auth);
+        expect((await attemptSignIn(auth)).status).toBe(429);
+
+        const response = await post("/sign-in/email", { email: ADMIN.email, password: ADMIN.password }, { Cookie: knownBrowser });
+
+        expect(response.status).toBe(200);
+      });
+
+      it("still caps wrong passwords from the member's own browser", async () => {
+        const knownBrowser = await signInOnce(auth);
+        const statuses = [];
+        for (let attempt = 0; attempt <= SIGN_INS_PER_EMAIL_PER_MINUTE; attempt += 1) statuses.push((await attemptSignIn(auth, { Cookie: knownBrowser })).status);
+
+        expect(statuses.at(-1)).toBe(429);
+      });
+
+      it("doesn't take a browser cookie made for another account", async () => {
+        const knownBrowser = await signInOnce(auth);
+        const [name, value] = knownBrowser.split("=");
+        const forged = `${name}=${(value ?? "").replace(/^[^.]+/, "someone-else")}`;
+        for (let attempt = 0; attempt <= SIGN_INS_PER_EMAIL_PER_MINUTE; attempt += 1) await attemptSignIn(auth, { Cookie: forged });
+
+        expect((await attemptSignIn(auth, { Cookie: forged })).status).toBe(429);
+      });
+
+      it("on Vercel, lets the member in from their own place while strangers elsewhere guess", async () => {
+        const vercelAuth = createAuth("test-secret-with-at-least-32-characters", database, { APP_URL, VERCEL: "1" });
+        for (let attempt = 0; attempt <= SIGN_INS_PER_EMAIL_PER_MINUTE; attempt += 1) {
+          await attemptSignIn(vercelAuth, { "x-vercel-forwarded-for": `203.0.113.${attempt + 1}` });
+        }
+
+        const response = await vercelAuth.handler(createPost("/sign-in/email", { email: ADMIN.email, password: ADMIN.password }, { "x-vercel-forwarded-for": "198.51.100.7" }));
+
+        expect(response.status).toBe(200);
+      });
     });
 
     it("shares its count across instances through the database", async () => {

@@ -3,11 +3,11 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 
 import { isNetworkReady, isVillageError, linkedinUrl, personName } from "@villagehq/sdk";
-import { and, eq, isNotNull, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 
 import { user } from "../../platform/database/auth-schema.ts";
 import type { Database } from "../../platform/database/client.ts";
-import { memberNetwork } from "../members/schema.ts";
+import { memberNetwork, memberPrivacy } from "../members/schema.ts";
 import { memberPathResult } from "./schema.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
@@ -412,6 +412,24 @@ function toSearchCutOffError(error: unknown) {
 // The same search by the same member within 10 minutes answers from here: no second lookup is spent.
 const SEARCH_CACHE_TTL_MS = 10 * 60 * 1000;
 const SEARCH_CACHE_MAXIMUM = 500;
+// Members who switched off "Let members ask me for intros" (PRIV-02). Paths through them stay out of what a member is
+// offered to ask, as connectors who already said no do; the intro ask itself refuses them too.
+async function readPausedMemberIds(database: Database, memberIds: readonly string[]) {
+  if (memberIds.length === 0) return new Set<string>();
+  const rows = await database
+    .select({ userId: memberPrivacy.userId })
+    .from(memberPrivacy)
+    .where(and(inArray(memberPrivacy.userId, [...memberIds]), eq(memberPrivacy.acceptsIntroAsks, false)));
+  return new Set(rows.map(({ userId }) => userId));
+}
+
+// A saved search is up to 10 minutes old: a pause since then still counts.
+async function leaveOutPausedConnectors<Result extends CachedSearch["result"]>(database: Database, result: Result): Promise<Result> {
+  const paused = await readPausedMemberIds(database, result.people.flatMap(({ paths }) => paths.map(({ memberId }) => memberId)));
+  if (paused.size === 0) return result;
+  return { ...result, people: result.people.map((person) => ({ ...person, paths: person.paths.filter(({ memberId }) => !paused.has(memberId)) })) };
+}
+
 type CachedSearch = { savedAtMs: number; result: Omit<NetworkSearchResult, "dailyLookupsLeft" | "isCached"> };
 const searchCache = new Map<string, CachedSearch>();
 
@@ -558,7 +576,7 @@ export async function searchMemberNetwork(
   const includesOwnNetwork = !searcher.isPooled;
   const cacheKey = JSON.stringify([member.id, includesOwnNetwork, scope, prompt.trim().toLowerCase()]);
   const cached = readCachedSearch(cacheKey);
-  if (cached) return { ...cached, isCached: true, dailyLookupsLeft: await readDailyLookupsLeft(database, member.id) };
+  if (cached) return { ...(await leaveOutPausedConnectors(database, cached)), isCached: true, dailyLookupsLeft: await readDailyLookupsLeft(database, member.id) };
 
   const session = await openSearchSession(context, searcher);
   const spender = { database, environment: context.environment, memberId: member.id };
@@ -689,6 +707,25 @@ async function keepChosenIntroducers(database: Database, villagePaths: VillagePa
   return { ...villagePaths, paths };
 }
 
+// A member who paused intro asks is never named as the way in (PRIV-02): a path they introduce is dropped, and as a
+// starter they come off the path, as unchosen members do above. A path TO them (they are the person looked up) stays.
+async function leaveOutPausedIntroducers(database: Database, villagePaths: VillagePaths | null, targetSlug: string): Promise<VillagePaths | null> {
+  if (!villagePaths) return villagePaths;
+  const rows = await database
+    .select({ linkedinSlug: memberNetwork.linkedinSlug })
+    .from(memberNetwork)
+    .innerJoin(memberPrivacy, eq(memberPrivacy.userId, memberNetwork.userId))
+    .where(and(isNotNull(memberNetwork.linkedinSlug), eq(memberPrivacy.acceptsIntroAsks, false)));
+  const target = targetSlug.toLowerCase();
+  const pausedSlugs = new Set(rows.flatMap(({ linkedinSlug }) => (linkedinSlug && linkedinSlug.toLowerCase() !== target ? [linkedinSlug.toLowerCase()] : [])));
+  if (pausedSlugs.size === 0) return villagePaths;
+  const isPaused = (linkedinUrl: string | null | undefined) => pausedSlugs.has(readLinkedinSlug(linkedinUrl)?.toLowerCase() ?? "");
+  const paths = villagePaths.paths
+    .filter(({ introducer }) => !isPaused(introducer?.profile.linkedin_url))
+    .map((path) => ({ ...path, starters: path.starters.filter(({ is_current_user, profile }) => is_current_user || !isPaused(profile.linkedin_url)) }));
+  return { ...villagePaths, paths };
+}
+
 // False only when the admin limited intros to chosen members and this member isn't one of them.
 export async function canMemberIntroduce(database: Database, memberId: string) {
   const { introducers, chosenIntroducerIds } = await readVillageSearchSettings(database);
@@ -730,11 +767,13 @@ async function describePathsForViewer(
   readOpenAsks: OpenAsksReader,
 ) {
   const { network } = searcher;
-  villagePaths = await keepPathsForSearcher(context.database, searcher, villagePaths, targetSlug);
+  villagePaths = await leaveOutPausedIntroducers(context.database, await keepPathsForSearcher(context.database, searcher, villagePaths, targetSlug), targetSlug);
   const facts = await readPathsFacts(context, villagePaths, network, targetSlug, isCached);
   const { openByConnector, declinedConnectorIds } = await readOpenAsks(context.database, context.member.id, targetSlug);
-  const connectors = readConnectors(villagePaths, facts)
-    .filter(({ member }) => !member || !declinedConnectorIds.has(member.id))
+  const drafts = readConnectors(villagePaths, facts);
+  const paused = await readPausedMemberIds(context.database, drafts.flatMap(({ member }) => (member ? [member.id] : [])));
+  const connectors = drafts
+    .filter(({ member }) => !member || (!declinedConnectorIds.has(member.id) && !paused.has(member.id)))
     .map((connector) => ({
       ...connector,
       openAsk: connector.member ? (openByConnector.get(connector.member.id) ?? null) : null,

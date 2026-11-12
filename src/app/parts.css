@@ -105,6 +105,8 @@ svg.fh-i.fh-xs{width:16px;height:16px}
 .fh-pill.fh-declined{background:var(--vellum);color:var(--graphite)}
 .fh-pill.fh-declined::before{border-radius:1px;width:8px;height:1.5px}
 .fh-pill.fh-needs{background:var(--ribbon-tint);color:var(--ribbon)}
+/* The admin home's .fh-needs card grid (below) shares the class name; a "needs" pill stays a pill. */
+.fh-pill.fh-needs{display:inline-flex;gap:6px;margin-top:0;grid-template-columns:none}
 .fh-pill.fh-plain::before{display:none}
 .fh-tag{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:5px;background:var(--vellum);font-size:13px;line-height:16px;color:var(--ink)}
 .fh-tags{display:flex;flex-wrap:wrap;gap:6px}

@@ -140,6 +140,8 @@ export const waitingMemberSchema = z.object({
   email: z.string(),
   avatarUrl: z.string().nullable(),
   inviteId: z.string().nullable(),
+  // The invited address pressed "It wasn't me" in the notice its join sent (service-invite-notice.ts).
+  isReportedNotThem: z.boolean(),
 });
 
 export type WaitingMember = z.infer<typeof waitingMemberSchema>;

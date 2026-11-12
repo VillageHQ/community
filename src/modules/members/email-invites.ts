@@ -42,6 +42,29 @@ export function renderInviteEmail({ link, inviterName, inviterRole, inviteeName,
   return { subject: toSingleLine(words.subject), html, text };
 }
 
+type InviteUsedEmailFacts = { link: string; communityName: string; accentColor: string };
+
+// After a join from the emailed invite: the address hears about it, in case someone else had the email.
+export function renderInviteUsedEmail({ link, communityName, accentColor }: InviteUsedEmailFacts) {
+  const community = toSingleLine(communityName);
+  const subject = `Your invite to ${community} was used`;
+  const opening = `Someone just joined ${community} with the invite sent to this address. If that was you, welcome: there's nothing to do.`;
+  const warning = `If it wasn't you, someone else has your invite email. Open this link: we'll sign them out, and your admins will send you a new invite.`;
+  const html = [
+    `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:22px;color:#1B2420;max-width:560px;margin:0 auto;padding:24px">`,
+    `<p style="margin:0 0 16px">${escapeHtml(opening)}</p>`,
+    `<p style="margin:0 0 16px">${escapeHtml(warning)}</p>`,
+    `<p style="margin:0 0 16px"><a href="${escapeHtml(link)}" style="display:inline-block;padding:8px 14px;border-radius:6px;background:${accentColor};color:${pickOnAccent(accentColor)};font-weight:600;text-decoration:none">It wasn't me</a></p>`,
+    `</div>`,
+  ].join("");
+  const text = `${opening}
+
+${warning}
+
+It wasn't me: ${link}`;
+  return { subject, html, text };
+}
+
 type ConfirmationEmailFacts = { link: string; memberName: string; communityName: string; accentColor: string };
 
 export function renderConfirmationEmail({ link, memberName, communityName, accentColor }: ConfirmationEmailFacts) {
