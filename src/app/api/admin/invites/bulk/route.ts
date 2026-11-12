@@ -16,7 +16,8 @@ export const POST = membersRoutes.adminBinary(
     const { searchParams } = new URL(request.url);
     const format = searchParams.get(FORMAT_PARAM) === BULK_INVITE_FORMATS.csv ? BULK_INVITE_FORMATS.csv : BULK_INVITE_FORMATS.list;
     try {
-      const parsed = parseBulkInvites(format, new TextDecoder().decode(bytes), readListCohort(searchParams.get(COHORT_PARAM)));
+      const listCohort = format === BULK_INVITE_FORMATS.list ? readListCohort(searchParams.get(COHORT_PARAM)) : null;
+      const parsed = parseBulkInvites(format, new TextDecoder().decode(bytes), listCohort);
       if (parsed.people.length === 0 && parsed.skipped.length === 0 && parsed.problems.length === 0) {
         return Response.json({ message: "There's nobody to invite yet. Add at least one email." }, { status: UNPROCESSABLE_STATUS });
       }

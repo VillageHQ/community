@@ -189,6 +189,13 @@ describe("inviting many people", () => {
     expect(await response.json()).toMatchObject({ message: "Keep the cohort under 80 characters." });
   });
 
+  it("ignores a list cohort sent with a CSV, which names each person's own", async () => {
+    const response = await postBulk(bulkRequest(admin, "csv", "name,email,company,cohort\nAda,ada@example.com,Engines Ltd,Fund II", "x".repeat(81)));
+
+    expect(response.status).toBe(200);
+    expect(bulkInviteResultSchema.parse(await response.json()).invitedCount).toBe(1);
+  });
+
   it("is for admins only", async () => {
     const member = await createSignedInMember(database);
 

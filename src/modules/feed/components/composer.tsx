@@ -3,7 +3,7 @@
 import { cn } from "cn";
 import { Plus, X } from "lucide-react";
 import { Dialog } from "radix-ui";
-import { useState, type FormEvent, type KeyboardEvent } from "react";
+import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
 import { FormError } from "@/components/form-error";
 import { Avatar } from "@/components/ui/avatar";
@@ -76,17 +76,24 @@ export function Composer({ inputId, onPosted }: ComposerProps) {
   const [body, setBody] = useState("");
   const [type, setType] = useState<PostType>(POST_TYPES.plain);
   const createPost = useCreatePost();
+  // Set at once on Post, before the button re-renders as disabled, so a double click sends one post.
+  const isSendingRef = useRef(false);
 
   return (
     <form
       aria-label="New post"
       onSubmit={(event) =>
         submitWithoutReload(event, () => {
+          if (isSendingRef.current) return;
+          isSendingRef.current = true;
           // One note at a time: a new try drops the last "Your post is live." before its own answer shows.
           announce("");
           createPost.mutate(
             { body, type },
             {
+              onSettled: () => {
+                isSendingRef.current = false;
+              },
               onSuccess: () => {
                 setBody("");
                 setType(POST_TYPES.plain);
