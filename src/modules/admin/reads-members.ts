@@ -230,13 +230,15 @@ export async function readAdminMember(database: Database, memberId: string) {
   return row ? memberPageSchema.shape.members.element.parse(toAdminMember(row)) : null;
 }
 
-// Admin › Invites: everyone invited who hasn't signed in, while their link still works, newest first.
+// Admin › Invites: everyone invited who hasn't signed in, newest first. An expired invite stays, marked, so the admin
+// can resend it (INV-08); a revoked or used one leaves the list.
 export async function readOpenInvites(database: Database, now = new Date()) {
-  return database
+  const rows = await database
     .select({ id: invite.id, email: invite.email, name: invite.inviteeName, createdAt: invite.createdAt, expiresAt: invite.expiresAt })
     .from(invite)
-    .where(and(isNull(invite.acceptedAt), isNull(invite.revokedAt), gt(invite.expiresAt, now)))
+    .where(and(isNull(invite.acceptedAt), isNull(invite.revokedAt)))
     .orderBy(desc(invite.createdAt), asc(invite.email));
+  return rows.map((row) => ({ ...row, isExpired: row.expiresAt.getTime() <= now.getTime() }));
 }
 
 export type OpenInvite = Awaited<ReturnType<typeof readOpenInvites>>[number];

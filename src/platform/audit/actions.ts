@@ -14,6 +14,8 @@ export const AUDIT_ACTIONS = {
   inviteResent: "invite_resent",
   inviteRevoked: "invite_revoked",
   inviteReclaimed: "invite_reclaimed",
+  // The invited address said someone else used its emailed invite (members' service-invite-notice.ts).
+  inviteReportedNotMe: "invite_reported_not_me",
   reportDismissed: "report_dismissed",
   reportedContentDeleted: "reported_content_deleted",
   postPinned: "post_pinned",

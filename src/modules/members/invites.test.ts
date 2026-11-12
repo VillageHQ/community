@@ -9,6 +9,7 @@ import { inviteListSchema, issuedInviteSchema } from "@/modules/members/contract
 import { INVITE_EMAIL_STATUSES, INVITE_STATES } from "@/modules/members/contract-invite-state";
 import { hashInviteToken } from "@/modules/members/service-invite-token";
 import { readInviteByToken } from "@/modules/members/service-invites";
+import { readOpenInvites } from "@/modules/admin/reads-members";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
 import { createSignedInMember } from "@/test/signed-in-member";
@@ -274,6 +275,24 @@ describe("admin invites", () => {
       );
       expect(text).not.toContain(readToken(pending.link));
       expect(text).not.toContain((await readRow(pending.invite.id)).tokenHash);
+    });
+
+    // INV-08: Admin › Invites showed only invites whose link still works, so an expired one vanished.
+    it("lists expired invites on the Invites page, marked, next to the open ones; not revoked or used ones", async () => {
+      await createInviteAs(admin, "pending@example.test");
+      const expired = await createInviteAs(admin, "expired@example.test");
+      const revoked = await createInviteAs(admin, "revoked@example.test");
+      await expireInvite(expired.invite.id);
+      await postRevoke(jsonRequest(admin, { inviteId: revoked.invite.id }));
+
+      const shown = await readOpenInvites(database);
+
+      expect(new Map(shown.map(({ email, isExpired }) => [email, isExpired]))).toEqual(
+        new Map([
+          ["pending@example.test", false],
+          ["expired@example.test", true],
+        ]),
+      );
     });
 
     it("pages through a long list", async () => {

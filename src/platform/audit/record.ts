@@ -33,6 +33,6 @@ export async function recordAdminActions(connection: DatabaseOrTransaction, acto
   await connection.insert(adminAuditEntry).values(entries.map((facts) => ({ ...facts, actorId, actorName })));
 }
 
-export async function recordOutsiderAction(connection: DatabaseOrTransaction, action: AuditAction) {
-  await connection.insert(adminAuditEntry).values({ action, actorId: null, actorName: AUDIT_OUTSIDER_NAME });
+export async function recordOutsiderAction(connection: DatabaseOrTransaction, action: AuditAction, { actorName = AUDIT_OUTSIDER_NAME, ...facts }: Omit<AuditFacts, "action"> & { actorName?: string } = {}) {
+  await connection.insert(adminAuditEntry).values({ ...facts, action, actorId: null, actorName });
 }

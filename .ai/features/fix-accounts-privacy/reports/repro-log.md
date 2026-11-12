@@ -1,0 +1,6 @@
+- Item 1 (forwarded invite): before the fix, 3 new tests in src/modules/members/emailed-invite.test.ts failed (no notice email, no /api/invites/not-me); after, 8/8 pass.
+- Item 2 (consent pre-ticked): src/shell/welcome-steps.test.ts with the old rule (on unless refused) failed 1 of 3; with the fix 3/3 pass.
+- Item 3 (paused connector in search): the new test in src/modules/network/network.test.ts failed (search still listed Amara as the path); after the fix the file passes 74/74.
+- Item 4 (expired invites hidden): the new listing test in src/modules/members/invites.test.ts failed (expired invite missing); after the fix 33/33 pass.
+- Item 5 (no intro email switch): src/shell/email-settings.test.ts failed 3/3 before (no intro rows, no reminders topic); after the fix it passes, with the intros, email and replies suites (509 tests).
+- Item 6 (stranger locks password sign-in): 2 new tests in src/platform/auth/create-auth.test.ts failed (the member's own browser and a member at another IP both got 429); after the fix the auth tests pass 98/98.

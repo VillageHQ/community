@@ -80,8 +80,9 @@ const KIND_BY_EVENT: Record<IntroEmailEvent, EmailKind> = {
   [INTRO_EMAIL_EVENTS.joinNeeded]: EMAIL_KINDS.introUpdate,
   [INTRO_EMAIL_EVENTS.joined]: EMAIL_KINDS.introUpdate,
   [INTRO_EMAIL_EVENTS.outcomeAsked]: EMAIL_KINDS.introUpdate,
-  [INTRO_EMAIL_EVENTS.outcomeReminder]: EMAIL_KINDS.introUpdate,
-  [INTRO_EMAIL_EVENTS.connectorReminder]: EMAIL_KINDS.introAsked,
+  // Reminders have their own switch on Email settings (PRIV-09).
+  [INTRO_EMAIL_EVENTS.outcomeReminder]: EMAIL_KINDS.introReminder,
+  [INTRO_EMAIL_EVENTS.connectorReminder]: EMAIL_KINDS.introReminder,
   [INTRO_EMAIL_EVENTS.expired]: EMAIL_KINDS.introDeclined,
   [INTRO_EMAIL_EVENTS.withdrawn]: EMAIL_KINDS.introUpdate,
   [INTRO_EMAIL_EVENTS.closedUnanswered]: EMAIL_KINDS.introUpdate,

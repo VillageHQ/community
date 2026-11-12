@@ -117,6 +117,7 @@ export const API_ROUTES = {
   inviteRevoke: "/api/admin/invites/revoke",
   inviteReclaim: "/api/admin/invites/reclaim",
   inviteAccept: "/api/invites/accept",
+  inviteNotMe: "/api/invites/not-me",
   inviteBulk: "/api/admin/invites/bulk",
   waitingMembers: "/api/admin/members/waiting",
   memberConfirm: "/api/admin/members/confirm",

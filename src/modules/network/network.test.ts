@@ -5,7 +5,7 @@ import { forgetSavedSearches } from "@/modules/network/service";
 import { memberDailyUsage } from "@/platform/village/schema";
 import { readVillageHealth, VILLAGE_TROUBLES } from "@/platform/village/health";
 import { readAdminTabFacts } from "@/shell/admin-badges";
-import { memberNetwork } from "@/modules/members/schema";
+import { memberNetwork, memberPrivacy } from "@/modules/members/schema";
 import { memberPathResult } from "@/modules/network/schema";
 import { DAILY_LOOKUP_LIMITS } from "@/platform/village/contract";
 import {
@@ -576,6 +576,26 @@ describe("the member network API", () => {
           ["Test Member", true],
           ["Stranger", false],
         ]);
+      });
+
+      // PRIV-02: a member who paused intro asks is never offered as the one to ask, in a fresh or a saved search.
+      it("leaves out a connector who paused intro asks, also from a search saved before the pause", async () => {
+        const amara = await createJoinedMember("fellow-member");
+        village.state.searchPeople = [{ full_name: "Tom Becker", linkedin_url: TARGET_URL }];
+        village.state.pathsByUrl.set(TARGET_URL, {
+          summary: "s",
+          paths: [{ degree: 2, description: "via Amara", introducer: { first_name: "Test", last_name: "Member", linkedin_url: "https://www.linkedin.com/in/fellow-member" } }],
+        });
+        expect((await readSearch()).people[0]?.paths.map(({ memberId }) => memberId)).toEqual([amara.userId]);
+
+        await database.insert(memberPrivacy).values({ userId: amara.userId, acceptsIntroAsks: false });
+
+        expect((await readSearch()).people[0]?.paths).toEqual([]);
+        forgetSavedSearches();
+        expect((await readSearch()).people[0]?.paths).toEqual([]);
+        const paths = await readPaths();
+        expect(paths.connectors.filter(({ member }) => member !== null)).toEqual([]);
+        expect(paths.paths.map(({ description }) => description)).not.toContain("via Amara");
       });
 
       it("doesn't badge someone who hasn't joined", async () => {

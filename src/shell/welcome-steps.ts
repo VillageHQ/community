@@ -61,3 +61,12 @@ export type WelcomePrivacyBody = z.infer<typeof welcomePrivacyBodySchema>;
 export const welcomeDoneSchema = z.object({ next: z.string() });
 
 export const WELCOME_DONE_FLASH = "You’re in. This is the directory.";
+
+type PrivacyChoices = { isHidden: boolean; acceptsIntroAsks: boolean | null };
+type LookupChoice = { consentedAt: Date | null };
+
+// Where step 2's switches start. Intro asks start on, as Founderhall's do. The profile fill-in is consent to a lookup,
+// so it starts off: only the member's own yes turns it on (ONB-02, PRIV-05).
+export function readWelcomePrivacyStart(privacy: PrivacyChoices, lookup: LookupChoice) {
+  return { isHidden: privacy.isHidden, acceptsIntroAsks: privacy.acceptsIntroAsks !== false, allowsLookup: lookup.consentedAt !== null };
+}

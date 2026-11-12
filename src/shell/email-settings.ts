@@ -17,9 +17,9 @@ import { readEnabledIds } from "@/shell/enabled-modules";
 
 import type { EmailSettingRow } from "./email-preferences-card";
 
-// The rows of Founderhall's Email settings: the weekly digest, asks and messages. Community's own two stay where
-// they still mean something: intro emails only for a member who switched them off before (so they can switch them
-// back on), and the reminder to connect a network only for a member who hasn't connected one.
+// The rows of Founderhall's Email settings: the weekly digest, asks and messages. Community's own: intro emails and
+// intro reminders, each with its own switch like the others (PRIV-09), and the reminder to connect a network only for
+// a member who hasn't connected one.
 export async function readEmailSettingRows(database: Database, memberId: string): Promise<EmailSettingRow[] | null> {
   if (!readResendConfig(process.env)) return null;
   const [enabledIds, optedOut, schedule, [network]] = await Promise.all([
@@ -54,13 +54,21 @@ export async function readEmailSettingRows(database: Database, memberId: string)
       isOn: isOn(EMAIL_TOPICS.messages),
     });
   }
-  if (enabledIds.has(introsManifest.id) && !isOn(EMAIL_TOPICS.intros)) {
-    rows.push({
-      topic: EMAIL_TOPICS.intros,
-      title: "Intro asks and introductions",
-      description: "You switched these off earlier. Switch them on to get intro asks and introductions by email again.",
-      isOn: false,
-    });
+  if (enabledIds.has(introsManifest.id)) {
+    rows.push(
+      {
+        topic: EMAIL_TOPICS.intros,
+        title: "Email me about intro asks and introductions",
+        description: "When a member asks you for an intro, and each step of one you asked for. Off, you’ll still find them on Intros.",
+        isOn: isOn(EMAIL_TOPICS.intros),
+      },
+      {
+        topic: EMAIL_TOPICS.introReminders,
+        title: "Remind me about intros",
+        description: "One reminder when an intro ask waits for your answer, and one more “was it helpful?”.",
+        isOn: isOn(EMAIL_TOPICS.introReminders),
+      },
+    );
   }
   if (enabledIds.has(networkManifest.id) && !network?.villageLinkedAt) {
     rows.push({
