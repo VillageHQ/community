@@ -389,15 +389,16 @@ describe("answering by replying to the email", () => {
       expect(await reply(hanaEmail, `reply+m${conversationId.replaceAll("-", "")}-00000000000000000000@${REPLY_DOMAIN}`, "Hi")).toMatchObject({ routed: false });
     });
 
-    it("keeps the one joint introduction to both, answered by reply all", async () => {
+    it("sends the asker and the person their own introduction through the outbox, each replying to the other", async () => {
       vi.stubEnv("RESEND_REPLY_DOMAIN", "");
       const { alex, alexEmail, hana } = await seedPeople();
       const intro = await seedIntro(alex, hana, INTRO_STATES.targetAgreed, OUTSIDER_EMAIL);
       await sendJoiningEmail(database, process.env, intro, "Alex Asker");
       const sent = resend.state.emails.map(({ body }) => body as RecordedBody);
-      expect(sent).toHaveLength(1);
-      expect(sent[0]?.to).toEqual([OUTSIDER_EMAIL, alexEmail]);
-      expect(sent[0]?.text).toContain("Reply all to write to each other.");
+      expect(sent.map(({ to }) => to)).toEqual([[OUTSIDER_EMAIL], [alexEmail]]);
+      expect(sent[0]?.text).toContain("Reply to this email to write to Alex.");
+      const [askerCopy] = await readQueued(EMAIL_KINDS.introThread, alexEmail);
+      expect(askerCopy?.replyTo).toBe(OUTSIDER_EMAIL);
     });
   });
 });

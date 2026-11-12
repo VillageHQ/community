@@ -687,7 +687,7 @@ describe("double opt-in intros", () => {
         });
       });
 
-      it("joins them with one email to both, then closes as introduced", async () => {
+      it("joins them with a copy each, then closes as introduced", async () => {
         configureResend();
         const { intro, token } = await askAndReachTarget();
         await emailTarget(intro.id, token);
@@ -697,7 +697,7 @@ describe("double opt-in intros", () => {
 
         await vi.waitFor(async () => expect((await readRow(intro.id)).state).toBe(INTRO_STATES.completed), EVENTUALLY);
         const joining = resend.state.emails.filter(({ body }) => JSON.stringify(body).includes(TARGET_EMAIL));
-        expect(joining).toHaveLength(1);
+        expect(joining).toHaveLength(2);
         expect(JSON.stringify(joining)).toContain(amara.email);
         expect(JSON.stringify(joining)).toContain("freight");
       });
@@ -1286,7 +1286,7 @@ describe("double opt-in intros", () => {
       await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThanOrEqual(2), EVENTUALLY);
       await new Promise((resolve) => setTimeout(resolve, EMAIL_SETTLE_MS));
       const joining = resend.state.emails.filter(({ body }) => JSON.stringify(body).includes(FORWARDED_EMAIL));
-      expect(joining).toHaveLength(1);
+      expect(joining).toHaveLength(2);
       expect(JSON.stringify(joining)).toContain(amara.email);
       const toConnector = resend.state.emails.filter(({ body }) => JSON.stringify(body).includes(jonas.email));
       expect(JSON.stringify(toConnector)).toContain("they're connected");

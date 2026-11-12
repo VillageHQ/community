@@ -134,7 +134,7 @@ describe("an intro asked from a profile, with Village off", () => {
 
     await vi.waitFor(async () => expect((await readRow(intro.id)).state).toBe(INTRO_STATES.completed), EVENTUALLY);
     const joining = resend.state.emails.filter(({ body }) => JSON.stringify(body).includes(CLARA_EMAIL));
-    expect(joining).toHaveLength(1);
+    expect(joining).toHaveLength(2);
     expect(JSON.stringify(joining)).toContain(amara.email);
     const row = await readRow(intro.id);
     expect([row.targetEmail, row.suggestedTargetEmail]).toEqual([null, null]);

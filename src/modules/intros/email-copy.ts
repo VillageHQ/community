@@ -134,9 +134,9 @@ export function introductionSubject(asker: string, target: string, connector: st
   return `${first(asker)} ↔ ${first(target)}, via ${first(connector)}`;
 }
 
-// Who this copy of the introduction is for. "both": one email to the asker and the person, when replies by email are
-// off (they reply all).
-export type IntroductionReader = "asker" | "target" | "connector" | "both";
+// Who this copy of the introduction is for. "askerDirect" / "targetDirect": replies by email are off, so the asker
+// and the person each get their own copy, whose reply goes straight to the other.
+export type IntroductionReader = "asker" | "target" | "connector" | "askerDirect" | "targetDirect";
 
 type IntroductionFacts = {
   community: string;
@@ -152,7 +152,8 @@ type IntroductionFacts = {
 };
 
 function replyLine(reader: IntroductionReader, asker: string, target: string, connector: string) {
-  if (reader === "both") return "Reply all to write to each other.";
+  if (reader === "askerDirect") return `Reply to this email to write to ${first(target)}.`;
+  if (reader === "targetDirect") return `Reply to this email to write to ${first(asker)}.`;
   if (reader === "connector") return "Reply to this email to write to both of them; replies also show in the portal. Or write to each other directly.";
   const other = reader === "asker" ? first(target) : first(asker);
   return `Reply to this email to write to ${other} (${first(connector)} is copied); replies also show in the portal. Or write to each other directly.`;
