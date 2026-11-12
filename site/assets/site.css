@@ -1406,7 +1406,7 @@ h2 {
   padding: 0;
   text-align: left;
   font-weight: 400;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .price-table thead tr {
