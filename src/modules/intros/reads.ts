@@ -10,14 +10,15 @@ import { memberAvatar, memberProfile, memberNetwork, memberBlock } from "../memb
 import { isActiveMember, isBanActive } from "../../platform/auth/member-status.ts";
 import { filledFaceColumn, shownCompanyColumn, toShownFaceUrl } from "../members/reads-pictures.ts";
 import { removeBidiControls } from "../../platform/text/safe-text.ts";
+import { OUTCOME_WINDOW_EXTRA_DAYS } from "./contract-outcome-days.ts";
+import { outcomePromptedFromSql, outcomeWindowFromSql, readOutcomeDays } from "./reads-outcome-days.ts";
 import {
   INTRO_LIFETIME_DAYS,
   INTRO_LIMITS,
   INTRO_OUTCOMES,
   INTRO_ROLES,
   INTRO_STATES,
-  OUTCOME_PROMPT_AFTER_DAYS,
-  OUTCOME_PROMPT_WINDOW_DAYS,
+  REQUESTER_SEES_WHO_ANSWERED,
   STATES_WAITING_ON_INTRODUCER,
   TARGET_ANSWER_MINIMUM_DAYS,
   introSchema,
@@ -133,12 +134,13 @@ function toIso(date: Date | null) {
   return date ? date.toISOString() : null;
 }
 
+// The days come from the Intro log's "The outcome question" setting, read inside the query.
 function isOutcomeDueNow(now: Date) {
-  const promptedFrom = daysBefore(now, OUTCOME_PROMPT_AFTER_DAYS);
+  const promptedFrom = outcomePromptedFromSql(now);
   return and(
     eq(introRequest.state, INTRO_STATES.completed),
     lte(introRequest.closedAt, promptedFrom),
-    gt(introRequest.closedAt, daysBefore(now, OUTCOME_PROMPT_WINDOW_DAYS)),
+    gt(introRequest.closedAt, outcomeWindowFromSql(now)),
     or(isNull(introRequest.outcome), and(eq(introRequest.outcome, INTRO_OUTCOMES.notYet), lte(introRequest.outcomeAnsweredAt, promptedFrom))),
   );
 }
@@ -149,10 +151,10 @@ export function isOutcomeDueForRequester(memberId: string, now = new Date()) {
 
 type OutcomeFacts = Pick<typeof introRequest.$inferSelect, "state" | "closedAt" | "outcome" | "outcomeAnsweredAt">;
 
-function isOutcomeDue({ state, closedAt, outcome, outcomeAnsweredAt }: OutcomeFacts, now: Date) {
+function isOutcomeDue({ state, closedAt, outcome, outcomeAnsweredAt }: OutcomeFacts, now: Date, outcomeDays: number) {
   if (state !== INTRO_STATES.completed || !closedAt) return false;
-  const promptedFrom = daysBefore(now, OUTCOME_PROMPT_AFTER_DAYS);
-  if (closedAt > promptedFrom || closedAt <= daysBefore(now, OUTCOME_PROMPT_WINDOW_DAYS)) return false;
+  const promptedFrom = daysBefore(now, outcomeDays);
+  if (closedAt > promptedFrom || closedAt <= daysBefore(now, outcomeDays + OUTCOME_WINDOW_EXTRA_DAYS)) return false;
   if (outcome === null) return true;
   return outcome === INTRO_OUTCOMES.notYet && outcomeAnsweredAt !== null && outcomeAnsweredAt <= promptedFrom;
 }
@@ -161,15 +163,19 @@ function readRequesterDeadline({ createdAt, expiresAt, targetAgreedAt, acceptedA
   return targetAgreedAt || acceptedAt ? expiresAt : readIntroDeadline(createdAt);
 }
 
-function readIntroForRequester(request: typeof introRequest.$inferSelect, now: Date) {
+// Once the person said yes, the asker may know the connector said yes first; before that, only with Founderhall's rule.
+const STATES_AFTER_BOTH_YES: readonly string[] = [INTRO_STATES.targetAgreed, INTRO_STATES.completed];
+
+function readIntroForRequester(request: typeof introRequest.$inferSelect, now: Date, outcomeDays: number) {
+  const showsTargetStep = REQUESTER_SEES_WHO_ANSWERED || STATES_AFTER_BOTH_YES.includes(request.state);
   return {
-    state: readRequesterState(request.state),
+    state: REQUESTER_SEES_WHO_ANSWERED ? request.state : readRequesterState(request.state),
     declineReason: null,
     declineKind: null,
     hasUpdate: request.requesterHasUpdate,
-    askedTargetAt: null,
+    askedTargetAt: showsTargetStep ? toIso(request.askedTargetAt) : null,
     outcome: request.outcome,
-    isOutcomeDue: isOutcomeDue(request, now),
+    isOutcomeDue: isOutcomeDue(request, now, outcomeDays),
     expiresAt: readRequesterDeadline(request).toISOString(),
   };
 }
@@ -187,7 +193,7 @@ function readIntroForIntroducer(request: typeof introRequest.$inferSelect) {
   };
 }
 
-function toIntro(row: IntroRow, viewerId: string, now = new Date()): Intro {
+function toIntro(row: IntroRow, viewerId: string, outcomeDays: number, now = new Date()): Intro {
   const { request } = row;
   const isRequester = request.requesterId === viewerId;
   return introSchema.parse({
@@ -199,7 +205,7 @@ function toIntro(row: IntroRow, viewerId: string, now = new Date()): Intro {
     acceptedAt: toIso(request.acceptedAt),
     targetAgreedAt: toIso(request.targetAgreedAt),
     closedAt: toIso(request.closedAt),
-    ...(isRequester ? readIntroForRequester(request, now) : readIntroForIntroducer(request)),
+    ...(isRequester ? readIntroForRequester(request, now, outcomeDays) : readIntroForIntroducer(request)),
     target: {
       name: request.targetName,
       headline: request.targetHeadline,
@@ -228,8 +234,8 @@ function toIntro(row: IntroRow, viewerId: string, now = new Date()): Intro {
 
 export async function readIntroForViewer(database: Database, viewerId: string, introId: string) {
   await expireDueIntros(database, viewerId);
-  const [row] = await selectIntros(database).where(and(eq(introRequest.id, introId), isVisibleTo(database, viewerId)));
-  return row ? toIntro(row, viewerId) : null;
+  const [[row], outcomeDays] = await Promise.all([selectIntros(database).where(and(eq(introRequest.id, introId), isVisibleTo(database, viewerId))), readOutcomeDays(database)]);
+  return row ? toIntro(row, viewerId, outcomeDays) : null;
 }
 
 async function countUpdates(database: Database, memberId: string) {
@@ -270,7 +276,7 @@ export function readIntroBadgeCount({ waitingOnYou, updates, outcomesDue }: Intr
 
 export async function readIntroBoard(database: Database, memberId: string): Promise<IntroBoard> {
   const counts = await readIntroCounts(database, memberId);
-  const [asksForYou, yourAsks] = await Promise.all([
+  const [asksForYou, yourAsks, outcomeDays] = await Promise.all([
     selectIntros(database)
       .where(isDeliveredToIntroducer(database, memberId))
       .orderBy(desc(introRequest.createdAt))
@@ -279,10 +285,11 @@ export async function readIntroBoard(database: Database, memberId: string): Prom
       .where(eq(introRequest.requesterId, memberId))
       .orderBy(desc(introRequest.createdAt))
       .limit(INTRO_LIMITS.shownPerList),
+    readOutcomeDays(database),
   ]);
   return {
-    asksForYou: asksForYou.map((row) => toIntro(row, memberId)),
-    yourAsks: yourAsks.map((row) => toIntro(row, memberId)),
+    asksForYou: asksForYou.map((row) => toIntro(row, memberId, outcomeDays)),
+    yourAsks: yourAsks.map((row) => toIntro(row, memberId, outcomeDays)),
     counts,
   };
 }
@@ -293,7 +300,8 @@ export async function readWaitingIntros(database: Database, memberId: string) {
     .where(and(isDeliveredToIntroducer(database, memberId), inArray(introRequest.state, STATES_WAITING_ON_INTRODUCER)))
     .orderBy(introRequest.createdAt)
     .limit(INTRO_LIMITS.shownPerList);
-  const intros = rows.map((row) => toIntro(row, memberId));
+  const outcomeDays = await readOutcomeDays(database);
+  const intros = rows.map((row) => toIntro(row, memberId, outcomeDays));
   return intros.toSorted((first, second) => Number(second.state === INTRO_STATES.requested) - Number(first.state === INTRO_STATES.requested));
 }
 

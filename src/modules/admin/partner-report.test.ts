@@ -7,7 +7,9 @@ import { POST as postSend } from "@/app/api/admin/partner-report/send/route";
 import { POST as postShared } from "@/app/api/admin/partner-report/shared/route";
 import { POST as postReportCredit } from "@/app/api/profile/report-credit/route";
 import { REPORT_PERIOD_KEYS } from "@/modules/admin/contract-partner-report";
-import { readReportSummary, renderPartnerReportCsv } from "@/modules/admin/partner-report-rows";
+import { readConsolePeriod } from "@/modules/admin/console-periods";
+import { readReportStats } from "@/modules/admin/reads-report-stats";
+import { renderReportCsv, renderReportEmailText } from "@/modules/admin/report-stats";
 import { readPartnerReport, readPartnerReportSettings, readReportPeriods } from "@/modules/admin/reads-partner-report";
 import { ask } from "@/modules/asks/schema";
 import { asksManifest } from "@/modules/asks/manifest";
@@ -18,7 +20,6 @@ import { memberProfile } from "@/modules/members/schema";
 import { readReportCredit } from "@/modules/members/service-report-credit";
 import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import { adminAuditEntry } from "@/platform/audit/schema";
-import { user } from "@/platform/database/auth-schema";
 import { EMAIL_KINDS } from "@/platform/email/kinds";
 import { emailOutbox, emailSuppression } from "@/platform/email/schema";
 import { saveModuleState } from "@/platform/modules/enablement";
@@ -52,6 +53,10 @@ function call(handler: Handler, member: Member, body: unknown) {
       body: JSON.stringify(body),
     }),
   );
+}
+
+async function readCsv(database: ReturnType<typeof createTestDatabase>, period: "quarter" | "last" | "all" = "quarter") {
+  return renderReportCsv(await readReportStats(database, period));
 }
 
 function plusDays(date: Date, days: number) {
@@ -170,12 +175,54 @@ describe("the partner report", () => {
       expect(intros?.periods[REPORT_PERIOD_KEYS.sinceLaunch]).toMatchObject({ asked: 15, introduced: 4, declined: 3, expired: 4, withdrawn: 1, open: 3, helped: 2, notHelped: 1, helpedPercent: 67 });
     });
 
-    it("sums up this quarter in one line from the same counts", async () => {
-      const report = await readPartnerReport(database);
+    it("counts this quarter the Founderhall way, and every line adds up", async () => {
+      const { intros: stats, title } = await readReportStats(database, "quarter");
 
-      expect(readReportSummary(report)).toBe("12 intros asked, 3 made, 1 said it helped: a customer conversation and a hire.");
+      expect(stats).toMatchObject({
+        asked: 12,
+        connectorYes: 7,
+        made: 3,
+        declined: 5,
+        declinedConnector: 1,
+        declinedTarget: 1,
+        expiredConnector: 2,
+        expiredTarget: 1,
+        open: 3,
+        openConnector: 2,
+        openTarget: 1,
+        withdrawn: 1,
+        helpful: 1,
+        notReally: 1,
+        tooEarly: 1,
+        answered: 3,
+        results: { customer: 1, hire: 1, investor: 0 },
+        medianDays: 4,
+        pending: 0,
+      });
+      expect(stats.asked).toBe(stats.made + stats.declined + stats.withdrawn + stats.open);
+      expect(title).toMatch(/ intros, Q\d \d{4} to date: 12 asked, 3 made, 5 declined$/);
+      expect((await readReportStats(database, "last")).intros).toMatchObject({ asked: 2, made: 1, declined: 1 });
+      expect((await readReportStats(database, "all")).intros).toMatchObject({ asked: 15, made: 4, declined: 7, withdrawn: 1, open: 3 });
+    });
+
+    it("sums up the period in one line from the same counts", async () => {
+      const { summary } = await readReportStats(database, "quarter");
+      const { label } = readConsolePeriod("quarter");
+
+      expect(summary).toBe(`12 asks and 3 intros made in ${label}, median 4 days from ask to intro, 1 customer conversation started, 1 hire.`);
       await clearDatabase(database);
-      expect(readReportSummary(await readPartnerReport(database))).toBe("No intros asked yet this quarter.");
+      expect((await readReportStats(database, "quarter")).summary).toBe(`No intros asked for yet in ${label}.`);
+    });
+
+    it("writes the email the Founderhall way, from the same read", async () => {
+      const report = await readReportStats(database, "quarter");
+      const text = renderReportEmailText(report, "Our quarter.");
+
+      expect(text.split("\n").slice(0, 5)).toEqual(["Our quarter.", "", `${report.communityName}, partner report, ${report.period.label}`, "", report.summary]);
+      expect(text).toContain("Asked for an intro: 12\nConnector said yes: 7 (58%)\nIntroduced (both said yes): 3 (43% of the connector yeses)");
+      expect(text).toContain("Declined: 5 (3 at the connector, 2 by the person asked for; 3 of them had no answer in 7 days)");
+      expect(text).toContain("  Found it helpful: 1 of 3 who answered (33%)");
+      expect(text.endsWith(`Nobody is introduced without saying yes.\n\nSent by ${report.communityName} via its member portal.`)).toBe(true);
     });
 
     it("never counts an expiry as a decline, and every period adds up", async () => {
@@ -204,74 +251,70 @@ describe("the partner report", () => {
       expect(open).toHaveLength(2);
     });
 
-    it("adds intros and members by cohort only once members have a cohort", async () => {
-      expect(renderPartnerReportCsv(await readPartnerReport(database))).not.toContain("cohort");
+    it("breaks intros down by the asker's cohort and sector, and the community by cohort", async () => {
+      expect(await readCsv(database)).toContain("By cohort,No cohort,12,7,3,5,3");
+      expect(await readCsv(database)).toContain("By sector,Not set,12,7,3,5,3");
 
-      await database.insert(memberProfile).values({ userId: asker.userId, cohort: "Fund II" }).onConflictDoUpdate({ target: memberProfile.userId, set: { cohort: "Fund II" } });
+      await database.insert(memberProfile).values({ userId: asker.userId, cohort: "Fund II", sector: "Health" }).onConflictDoUpdate({ target: memberProfile.userId, set: { cohort: "Fund II", sector: "Health" } });
       await database.insert(memberProfile).values({ userId: credited.userId, cohort: " fund ii" }).onConflictDoUpdate({ target: memberProfile.userId, set: { cohort: " fund ii" } });
       const report = await readPartnerReport(database);
 
-      expect(report.intros?.periods[REPORT_PERIOD_KEYS.thisQuarter].byCohort).toEqual([{ key: "fund ii", label: expect.stringMatching(/^fund ii$/i), asked: 12, introduced: 3 }]);
-      expect(report.intros?.periods[REPORT_PERIOD_KEYS.sinceLaunch].byCohort).toMatchObject([{ asked: 15, introduced: 4 }]);
       expect(report.community.cohortMembers).toMatchObject([{ key: "fund ii", members: 2 }]);
-      const csv = renderPartnerReportCsv(report);
-      expect(csv).toMatch(/Intros by cohort,Fund II: asked for,12,2,15/i);
-      expect(csv).toMatch(/Intros by cohort,Fund II: introduced,3,1,4/i);
-      expect(csv).toMatch(/Community,Members in Fund II,2/i);
+      const csv = await readCsv(database);
+      expect(csv).toContain("By cohort,Fund II,12,7,3,5,3");
+      expect(csv).toContain("By sector,Health,12,7,3,5,3");
+      expect(await (await call(postCsv, admin, {})).text()).toMatch(/Community,Members in Fund II,2/i);
       expect(csv).not.toContain(ASKER_NAME);
     });
 
-    it("breaks asks down by need when the Asks board is on", async () => {
+    it("counts asks and what founders needed when the Asks board is on", async () => {
       await saveModuleState(database, asksManifest, true);
       await database.insert(ask).values([
         { authorId: asker.userId, title: "A designer", category: ASK_CATEGORIES.hire, closedAt: new Date(), outcome: ASK_OUTCOMES.solvedHere },
         { authorId: asker.userId, title: "A buyer", category: ASK_CATEGORIES.customer },
       ]);
 
-      const { needs } = await readPartnerReport(database);
+      const report = await readReportStats(database, "all");
 
-      expect(needs?.[REPORT_PERIOD_KEYS.sinceLaunch].find(({ category }) => category === ASK_CATEGORIES.hire)).toEqual({ category: ASK_CATEGORIES.hire, posted: 1, solvedHere: 1 });
-      expect(renderPartnerReportCsv(await readPartnerReport(database))).toContain("Asks by need,Hires: solved here,1,0,1");
-      expect(renderPartnerReportCsv(await readPartnerReport(database))).not.toContain("A designer");
+      expect(report.asks).toMatchObject({ posted: 2, answered: 1, open: 1, helped: 0, medianHours: null, intros: 0, introsMade: 0 });
+      expect(report.intros.needs.map(({ name }) => name)).toEqual(["Customer", "Hire", "Investor", "Expert", "Other"]);
+      const csv = renderReportCsv(report);
+      expect(csv).toContain("Asks & updates,Asks posted,2");
+      expect(csv).toContain("By what the founder needed,Other,15,");
+      expect(csv).not.toContain("A designer");
     });
   });
 
   describe("privacy", () => {
     async function readEverything() {
-      const csv = await (await call(postCsv, admin, {})).text();
-      const preview = await (await call(postPreview, admin, { note: "" })).text();
-      return { csv, preview, report: JSON.stringify(await readPartnerReport(database)) };
+      const csv = await (await call(postCsv, admin, { period: "all" })).text();
+      const preview = await (await call(postPreview, admin, { note: "", period: "all" })).text();
+      return { csv, preview, report: JSON.stringify(await readReportStats(database, "all")) };
     }
 
-    it("names no asker, target or note anywhere, and names the credited connector", async () => {
+    it("names no asker, target or note anywhere, and names every connector (admins see names)", async () => {
       const { csv, preview, report } = await readEverything();
 
       for (const text of [csv, preview, report]) {
         expect(text).not.toContain(ASKER_NAME);
         expect(text).not.toContain(TARGET_NAME);
         expect(text).not.toContain(NOTE);
-        expect(text).not.toContain(QUIET_NAME);
         expect(text).not.toContain(asker.userId);
         expect(text).toContain(CREDITED_NAME);
+        expect(text).toContain(QUIET_NAME);
       }
-      expect(csv).toContain(`Top connectors,${CREDITED_NAME},2,0,2`);
-      expect(csv).toContain("Top connectors,\"Other connectors, not named\",1,1,1");
+      expect(await readCsv(database)).toContain(`Top connectors,${CREDITED_NAME},6,6,2,2,2`);
+      expect(await readCsv(database)).toContain(`Top connectors,${QUIET_NAME},6,1,1,3,1`);
+      expect(await readCsv(database)).not.toContain("Other connectors");
     });
 
-    it("stops naming a connector who turns credit off", async () => {
+    it("names a connector whatever their credit setting", async () => {
       await call(postReportCredit, credited, { isOn: false });
 
       const { csv, preview } = await readEverything();
 
-      expect(csv).not.toContain(CREDITED_NAME);
-      expect(preview).not.toContain(CREDITED_NAME);
-      expect(csv).toContain("Top connectors,\"Other connectors, not named\",2,1,2");
-    });
-
-    it("doesn't name a credited connector who was removed", async () => {
-      await database.update(user).set({ banned: true }).where(eq(user.id, credited.userId));
-
-      expect(renderPartnerReportCsv(await readPartnerReport(database))).not.toContain(CREDITED_NAME);
+      expect(csv).toContain(CREDITED_NAME);
+      expect(preview).toContain(CREDITED_NAME);
     });
 
     it("names at most five, counts the rest, and keeps two people with one name apart", async () => {
@@ -284,14 +327,12 @@ describe("the partner report", () => {
         }
       }
 
-      const report = await readPartnerReport(database);
-      const connectors = report.intros!.periods[REPORT_PERIOD_KEYS.sinceLaunch].connectors;
-      const introduced = report.intros!.periods[REPORT_PERIOD_KEYS.sinceLaunch].introduced;
+      const { intros: stats } = await readReportStats(database, "all");
 
-      expect(report.intros!.namedConnectors).toHaveLength(5);
-      expect(connectors.named.reduce((total, { introduced: count }) => total + count, 0) + connectors.others.introduced).toBe(introduced);
-      expect(report.intros!.namedConnectors.filter(({ name }) => name === "Same Name")).toHaveLength(2);
-      expect(renderPartnerReportCsv(report).match(/Top connectors,Same Name,4,0,4/g)).toHaveLength(2);
+      expect(stats.connectors.named).toHaveLength(5);
+      expect(stats.connectors.named.reduce((total, { made }) => total + made, 0) + (stats.connectors.others?.made ?? 0)).toBe(stats.made);
+      expect(stats.connectors.named.filter(({ name }) => name === "Same Name")).toHaveLength(2);
+      expect((await readCsv(database, "all")).match(/Top connectors,Same Name,4,4,4,0,0/g)).toHaveLength(2);
     });
 
     it("keeps credit off until a member turns it on", async () => {
@@ -302,7 +343,7 @@ describe("the partner report", () => {
     it("quotes a name that looks like a spreadsheet formula", async () => {
       await nameMember(database, credited.userId, "=HYPERLINK(1)");
 
-      expect(renderPartnerReportCsv(await readPartnerReport(database))).toContain(`Top connectors,"'=HYPERLINK(1)",2,0,2`);
+      expect(await readCsv(database)).toContain(`Top connectors,"'=HYPERLINK(1)",6,6,2,2,2`);
     });
 
     it("is for admins only", async () => {
@@ -332,6 +373,8 @@ describe("the partner report", () => {
       for (const email of queued) {
         expect(email.kind).toBe(EMAIL_KINDS.partnerReport);
         expect(email.html).toContain("Our quarter.");
+        expect(email.subject).toMatch(/ intros, Q\d \d{4} to date: 12 asked, 3 made, 5 declined$/);
+        expect(email.text).toContain("Sent by ");
         expect(email.text).not.toContain(ASKER_NAME);
         expect(email.text).not.toContain(TARGET_NAME);
       }

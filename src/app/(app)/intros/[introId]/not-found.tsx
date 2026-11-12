@@ -1,23 +1,18 @@
-import { Handshake } from "lucide-react";
 import Link from "next/link";
 
-import { EmptyState } from "@/components/empty-state";
-import { Button } from "@/components/ui/button";
+import { BackLink } from "@/components/page-header";
 import { ROUTES } from "@/platform/http/routes";
 
 export default function IntroNotFound() {
   return (
-    <div className="rounded-panel bg-card shadow-panel">
-      <EmptyState
-        headingLevel="h1"
-        icon={Handshake}
-        title="This intro request isn't available"
-        description="It may have been removed, or it belongs to someone else."
-      >
-        <Button asChild size="lg">
-          <Link href={ROUTES.intros}>Back to your intros</Link>
-        </Button>
-      </EmptyState>
-    </div>
+    <>
+      <BackLink href={ROUTES.intros}>Your intros</BackLink>
+      <div data-slot="empty-state" className="fh-empty">
+        <h1 className="fh-h2">This intro isn’t available</h1>
+        <p>
+          It may have been removed, or it belongs to someone else. <Link href={ROUTES.intros}>Your intros</Link>.
+        </p>
+      </div>
+    </>
   );
 }

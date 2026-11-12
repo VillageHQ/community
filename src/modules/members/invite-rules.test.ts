@@ -68,9 +68,36 @@ describe("the invite email", () => {
   it("names the inviter and the community, and carries the link", () => {
     const { subject, html, text } = renderInviteEmail(FACTS);
 
-    expect(subject).toBe("Priya Raman invited you to Northwind");
+    expect(subject).toBe("Your place in Northwind");
     expect(html).toContain(FACTS.link);
     expect(text).toContain(FACTS.link);
+  });
+
+  it("reads Founderhall's invite word for word, signed by the inviter and their role", () => {
+    const { text } = renderInviteEmail({ ...FACTS, communityName: "Northwind Founders", inviterName: "Maya Ortiz", inviterRole: "Head of Platform", inviteeName: "Nadia Cole" });
+
+    expect(text).toBe(
+      [
+        "Hi Nadia,",
+        "",
+        "Maya Ortiz invited you to Northwind Founders: see who in Northwind Founders' circle can introduce you, and ask in one tap. Nobody is introduced without saying yes.",
+        "",
+        "Open this link to sign in. It answers two questions about you, then you are in:",
+        FACTS.link,
+        "",
+        "The link works once and lasts 14 days.",
+        "",
+        "Maya Ortiz, Head of Platform, Northwind Founders",
+        "",
+        "If you did not expect this, ignore this email and nothing more is sent.",
+        "",
+        "Sent by Northwind Founders via its member portal.",
+      ].join("\n"),
+    );
+  });
+
+  it('says "Hi," when the invite has no name', () => {
+    expect(renderInviteEmail(FACTS).text.startsWith("Hi,\n")).toBe(true);
   });
 
   it("escapes names in the HTML", () => {

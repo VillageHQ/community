@@ -13,7 +13,7 @@ import { POST as postBoard } from "@/app/api/intros/route";
 import { POST as postTransition } from "@/app/api/intros/transition/route";
 import { POST as postBlock } from "@/app/api/members/block/route";
 import { POST as postPaths } from "@/app/api/network/paths/route";
-import IntroConsentPage, { metadata } from "@/app/meet/[token]/page";
+import IntroLinkPage, { generateMetadata } from "@/app/i/[token]/page";
 import {
   CONSENT_ANSWERS,
   INTRO_ACTIONS,
@@ -76,7 +76,6 @@ const AMARA_SLUG = "amara-osei";
 const WHY = "We sell freight tools and I'd like twenty minutes.";
 const RELATIONSHIP_REASON = "Both worked at Corvane Logistics";
 const SAME_SHAPE_UNKNOWN_TOKEN = "A".repeat(TOKEN_LENGTH);
-const AMARA_HEADLINE = "Founder, Tidewell";
 
 type Member = Awaited<ReturnType<typeof createSignedInMember>>;
 type Handler = (request: Request) => Promise<Response>;
@@ -170,7 +169,7 @@ describe("double opt-in intros", () => {
 
   async function renderPage(token: string, viewer: Member | null = null) {
     requestCookie.value = viewer?.cookie ?? "";
-    return renderToStaticMarkup(await IntroConsentPage({ params: Promise.resolve({ token }) }));
+    return renderToStaticMarkup(await IntroLinkPage({ params: Promise.resolve({ token }), searchParams: Promise.resolve({}) }));
   }
 
   beforeAll(async () => {
@@ -239,7 +238,7 @@ describe("double opt-in intros", () => {
       const { token, link } = await askAndReachTarget();
 
       expect(token).toHaveLength(TOKEN_LENGTH);
-      expect(link).toBe(`${APP_URL}/meet/${token}`);
+      expect(link).toBe(`${APP_URL}/i/${token}`);
     });
 
     it("stores only a hash of the link", async () => {
@@ -306,7 +305,7 @@ describe("double opt-in intros", () => {
         expect(late.status).toBe(OK_STATUS);
         expect(await readAnswer(late)).toEqual({ answer: CONSENT_ANSWERS.noThanks, isRepeat: true });
         expect((await readRow(intro.id)).state).toBe(INTRO_STATES.targetDeclined);
-        expect(await renderPage(oldToken)).toContain("You already said no thanks");
+        expect(await renderPage(oldToken)).toContain("Nothing to do");
       });
 
       it.each([
@@ -378,7 +377,7 @@ describe("double opt-in intros", () => {
 
       expect(page).toContain("Would you like to meet Amara?");
       expect(page).toContain("Amara Osei");
-      expect(page).toContain(AMARA_HEADLINE);
+      // Founderhall's page shows the note, not the asker's headline.
       expect(page).toContain("Jonas Lindqvist");
       expect(page).toContain("We sell freight tools");
     });
@@ -405,8 +404,8 @@ describe("double opt-in intros", () => {
       expect(page).not.toContain('href="https://evil.test');
     });
 
-    it("tells search engines to stay away", () => {
-      expect(metadata.robots).toEqual({ index: false, follow: false });
+    it("tells search engines to stay away", async () => {
+      expect((await generateMetadata({ params: Promise.resolve({ token: "unknown" }), searchParams: Promise.resolve({}) })).robots).toEqual({ index: false, follow: false });
     });
 
     describe("signed in", () => {
@@ -460,7 +459,7 @@ describe("double opt-in intros", () => {
       const { intro } = await askAndReachTarget();
 
       expect((await answer(token)).status).toBe(GONE_STATUS);
-      expect(await renderPage(token)).toContain("This link isn&#x27;t open any more");
+      expect(await renderPage(token)).toContain("Nothing to do");
       expect((await readRow(intro.id)).state).toBe(INTRO_STATES.askingTarget);
     });
 
@@ -499,7 +498,7 @@ describe("double opt-in intros", () => {
       await makeIntroOverdue(database, intro.id);
 
       expect((await answer(token)).status).toBe(GONE_STATUS);
-      expect(await renderPage(token)).toContain("This link isn&#x27;t open any more");
+      expect(await renderPage(token)).toContain("Nothing to do");
     });
 
     it("changes the answer only once, and shows a second tap the first answer", async () => {
@@ -519,8 +518,8 @@ describe("double opt-in intros", () => {
 
       const page = await renderPage(token);
 
-      expect(page).toContain("You already said yes");
-      expect(page).not.toContain("isn&#x27;t open any more");
+      expect(page).toContain("Nothing to do");
+      expect(page).not.toContain("closed after 7 days");
       expect(page).not.toContain("Yes, introduce us");
     });
 
@@ -528,7 +527,7 @@ describe("double opt-in intros", () => {
       const { token } = await askAndReachTarget();
       await answer(token, CONSENT_ANSWERS.stopAllAsks);
 
-      expect(await renderPage(token)).toContain("You&#x27;ve stopped intro requests");
+      expect(await renderPage(token)).toContain("Nothing to do");
     });
 
     it("never counts a second tap on a real link as a failed try", async () => {
@@ -537,7 +536,7 @@ describe("double opt-in intros", () => {
 
       for (let attempt = 0; attempt <= FAILED_ATTEMPTS_ALLOWED; attempt += 1) {
         expect((await answer(token)).status).toBe(OK_STATUS);
-        expect(await renderPage(token)).toContain("You already said yes");
+        expect(await renderPage(token)).toContain("Nothing to do");
       }
       expect((await answer(SAME_SHAPE_UNKNOWN_TOKEN)).status).toBe(GONE_STATUS);
     });
@@ -622,7 +621,7 @@ describe("double opt-in intros", () => {
         return call(postEmail, jonas, { introId, token, targetEmail });
       }
 
-      it("sends the target the link, without the note", async () => {
+      it("sends the target the link, with the note as Founderhall does", async () => {
         configureResend();
         const { intro, token, link } = await askAndReachTarget();
         await vi.waitFor(() => expect(resend.state.emails.length).toBeGreaterThan(0), EVENTUALLY);
@@ -633,7 +632,8 @@ describe("double opt-in intros", () => {
         const body = JSON.stringify(resend.state.emails.map(({ body: sent }) => sent));
         expect(body).toContain(TARGET_EMAIL);
         expect(body).toContain(link);
-        expect(body).not.toContain("freight");
+        // Founderhall's ask carries the note, written to be forwarded.
+        expect(body).toContain("freight");
       });
 
       describe("the reminder on day 4", () => {
@@ -650,7 +650,7 @@ describe("double opt-in intros", () => {
 
         async function readReminders() {
           await sendDueEmails(database, process.env);
-          return resend.state.emails.filter(({ body }) => JSON.stringify(body).includes("only reminder"));
+          return resend.state.emails.filter(({ body }) => JSON.stringify(body).includes("A reminder, in case this got buried."));
         }
 
         it("sends nothing before day 4", async () => {
@@ -671,8 +671,8 @@ describe("double opt-in intros", () => {
           expect(reminders).toHaveLength(1);
           const sent = JSON.stringify(reminders[0]?.body);
           expect(sent).toContain(TARGET_EMAIL);
-          expect(sent).not.toContain("freight");
-          const newToken = sent.match(/\/meet\/([A-Za-z0-9_-]{43})/)?.[1] ?? "";
+          expect(sent).toContain("freight");
+          const newToken = sent.match(/\/i\/([A-Za-z0-9_-]{43})/)?.[1] ?? "";
           expect(await readLinkHashes(intro.id)).toHaveLength(2);
           expect((await answer(newToken)).status).toBe(OK_STATUS);
           expect((await readRow(intro.id)).state).toBe(INTRO_STATES.targetAgreed);
@@ -1182,7 +1182,7 @@ describe("double opt-in intros", () => {
         await block(jonas, amara);
 
         expect(token).not.toBeNull();
-        expect(await renderPage(token ?? "")).toContain("This link isn&#x27;t open any more");
+        expect(await renderPage(token ?? "")).toContain("Nothing to do");
         expect((await answer(token)).status).toBe(GONE_STATUS);
         expect((await readRow(intro.id)).state).toBe(INTRO_STATES.askingTarget);
       });
@@ -1360,7 +1360,7 @@ describe("double opt-in intros", () => {
       expect(runs.reduce((total, { reminded }) => total + reminded, 0)).toBe(1);
       const reminders = await readSentTo(jonas.email);
       expect(reminders).toHaveLength(1);
-      expect(JSON.stringify(reminders[0]?.body)).toContain("only reminder");
+      expect(JSON.stringify(reminders[0]?.body)).toContain("A reminder, in case this got buried.");
       expect(JSON.stringify(reminders[0]?.body)).toContain("Amara");
       expect(await readSentTo(amara.email)).toEqual([]);
     });
@@ -1434,9 +1434,9 @@ describe("double opt-in intros", () => {
 
       expect(await readAnswer(await answer(first.token))).toEqual({ answer: CONSENT_ANSWERS.noThanks, isRepeat: true });
       const page = await renderPage(first.token);
-      expect(page).toContain("You said no thanks");
-      expect(page).toContain("Later, you stopped all intro requests");
-      expect(await renderPage(later.token)).toContain("You&#x27;ve stopped intro requests");
+      expect(page).toContain("Nothing to do");
+      expect(page).toContain("This ask was already answered. Thank you.");
+      expect(await renderPage(later.token)).toContain("Nothing to do");
     });
   });
 
@@ -1453,7 +1453,7 @@ describe("double opt-in intros", () => {
       const { token } = await askAndReachTarget();
       await saveModuleState(database, introsManifest, false);
 
-      const rendering = IntroConsentPage({ params: Promise.resolve({ token }) });
+      const rendering = IntroLinkPage({ params: Promise.resolve({ token }), searchParams: Promise.resolve({}) });
 
       await expect(rendering.catch(readDigest)).resolves.toBe(NOT_FOUND_DIGEST);
     });

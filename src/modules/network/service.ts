@@ -23,6 +23,7 @@ import {
   NETWORK_SOURCE,
   readVillageAppPublicKey,
   readVillagePaths,
+  readVillagePathsBulk,
   readVillageUser,
   searchVillageNetwork,
   VillageGatewayError,
@@ -48,7 +49,9 @@ import {
   CONNECTOR_LIMITS,
   NETWORK_ERROR_CODES,
   NETWORK_STAGES,
+  SEARCH_WHERE,
   type NetworkSearchResult,
+  type SearchWhere,
   type NetworkStage,
   type NetworkStatus,
 } from "./contract.ts";
@@ -64,6 +67,8 @@ import {
 import { INTRODUCER_RULES, SEARCH_SCOPES } from "./contract-village-settings.ts";
 import { readVillageKeys, saveVillageKeys, type VillageKeys } from "../../platform/village/settings.ts";
 import { readReachableMembers } from "./reads-reachable-members.ts";
+import { readSearchMembers } from "./reads-member-matches.ts";
+import { readSafeImageUrl } from "./rules-fill-in.ts";
 import { resolveVillageApiUrl, resolveVillageAppUrl } from "../../platform/village/urls.ts";
 import { RequestError } from "../../platform/http/request-error.ts";
 import type { SessionMember, RequestContext } from "../../platform/http/request-context.ts";
@@ -404,34 +409,181 @@ function toSearchCutOffError(error: unknown) {
   );
 }
 
+// The same search by the same member within 10 minutes answers from here: no second lookup is spent.
+const SEARCH_CACHE_TTL_MS = 10 * 60 * 1000;
+const SEARCH_CACHE_MAXIMUM = 500;
+type CachedSearch = { savedAtMs: number; result: Omit<NetworkSearchResult, "dailyLookupsLeft" | "isCached"> };
+const searchCache = new Map<string, CachedSearch>();
+
+function readCachedSearch(key: string) {
+  const cached = searchCache.get(key);
+  if (!cached) return null;
+  if (Date.now() - cached.savedAtMs > SEARCH_CACHE_TTL_MS) {
+    searchCache.delete(key);
+    return null;
+  }
+  return cached.result;
+}
+
+function saveCachedSearch(key: string, result: CachedSearch["result"]) {
+  if (searchCache.size >= SEARCH_CACHE_MAXIMUM) {
+    const oldest = searchCache.keys().next().value;
+    if (oldest !== undefined) searchCache.delete(oldest);
+  }
+  searchCache.set(key, { savedAtMs: Date.now(), result });
+}
+
+// For tests: forget every saved search.
+export function forgetSavedSearches() {
+  searchCache.clear();
+}
+
+// Warmest first: Village's "Close", then "Knows", then "Met", then any other word.
+const WARMTH_ORDER = ["close", "excellent", "very good", "strong", "good", "knows", "okay", "met", "maybe"];
+
+function readWarmthRank(warmth: string | null) {
+  const rank = WARMTH_ORDER.indexOf((warmth ?? "").toLowerCase());
+  return rank === -1 ? WARMTH_ORDER.length : rank;
+}
+
+function toWarmthWord(label: string | null | undefined) {
+  const word = cleanVillageText(label ?? "", CONNECTOR_LIMITS.nameLength);
+  return word ? `${word.charAt(0).toUpperCase()}${word.slice(1)}` : null;
+}
+
+function readSearchWhere(where: SearchWhere | null, adminScope: string): SearchWhere {
+  if (where) return where;
+  return adminScope === SEARCH_SCOPES.everyone ? SEARCH_WHERE.global : SEARCH_WHERE.network;
+}
+
+type VillageSearchPerson = Awaited<ReturnType<typeof searchVillageNetwork>>["people"][number];
+
+function readSearchPersonWork(person: VillageSearchPerson) {
+  const work = person.work_relevant;
+  return {
+    title: cleanVillageText(work?.title ?? "", CONNECTOR_LIMITS.headlineLength) || null,
+    company: cleanVillageText(work?.company?.name ?? "", CONNECTOR_LIMITS.headlineLength) || null,
+    companyLogoUrl: readSafeImageUrl(work?.company?.image_url) ?? null,
+    city: cleanVillageText(person.location?.city ?? "", CONNECTOR_LIMITS.nameLength) || null,
+  };
+}
+
+// The paths for the whole page of results, in one call that is part of the search. A failure costs the page its paths,
+// never the search: each person can still be looked up alone.
+async function readPagePaths(context: RequestContext, session: VillageSession, slugs: readonly string[]) {
+  if (slugs.length === 0) return new Map<string, VillagePaths>();
+  const spender = { database: context.database, environment: context.environment, memberId: context.member.id };
+  try {
+    return await withCreditCall(spender, CREDIT_CALL_KINDS.pathsBulk, () => readVillagePathsBulk(session, slugs));
+  } catch (error) {
+    console.log(JSON.stringify({ level: "warn", scope: "village", event: "search_paths_skipped", reason: error instanceof Error ? error.name : "unknown" }));
+    return new Map<string, VillagePaths>();
+  }
+}
+
+async function savePagePaths(database: Database, userId: string, pagePaths: ReadonlyMap<string, VillagePaths>, people: readonly VillageSearchPerson[]) {
+  const fetchedAt = new Date();
+  for (const person of people) {
+    const linkedinSlug = readLinkedinSlug(person.linkedin_url);
+    const found = linkedinSlug ? pagePaths.get(linkedinSlug.toLowerCase()) : undefined;
+    if (!linkedinSlug || !found) continue;
+    // "CTO, Halcyon Health" when Village knows the role, as the ask page and the connector's email write it.
+    const { title, company } = readSearchPersonWork(person);
+    const headline = [title, company].filter(Boolean).join(", ") || (person.headline ?? null);
+    const paths = { ...found, person: { full_name: personName(person), headline, image_url: person.image_url ?? null } };
+    await database
+      .insert(memberPathResult)
+      .values({ userId, linkedinSlug, paths, fetchedAt })
+      .onConflictDoUpdate({ target: [memberPathResult.userId, memberPathResult.linkedinSlug], set: { paths, fetchedAt } });
+  }
+}
+
+async function describeSearchPaths(
+  context: RequestContext,
+  searcher: Searcher,
+  villagePaths: VillagePaths | undefined,
+  linkedinSlug: string | null,
+  readOpenAsks: OpenAsksReader,
+) {
+  if (!villagePaths || !linkedinSlug) return { direct: null, paths: [] };
+  const described = await describePathsForViewer(context, villagePaths, searcher, linkedinSlug, true, readOpenAsks);
+  const directPath = described.paths.find(({ degree }) => degree === 1);
+  const direct = described.isDirectConnection && !searcher.isPooled && directPath
+    ? { how: directPath.description, warmth: toWarmthWord(directPath.scoreLabel) }
+    : null;
+  const warmthBySlug = new Map(
+    villagePaths.paths.flatMap(({ introducer, summary }) => {
+      const slug = readLinkedinSlug(introducer?.profile.linkedin_url);
+      return slug ? [[slug, toWarmthWord(summary.score_label)] as const] : [];
+    }),
+  );
+  const paths = described.connectors.flatMap((connector) => {
+    if (!connector.member || connector.throughName) return [];
+    return [{
+      memberId: connector.member.id,
+      name: connector.name,
+      about: connector.headline,
+      imageUrl: connector.imageUrl,
+      linkedinSlug: connector.linkedinSlug,
+      warmth: (connector.linkedinSlug ? warmthBySlug.get(connector.linkedinSlug) : null) ?? null,
+    }];
+  });
+  return { direct, paths: paths.toSorted((first, second) => readWarmthRank(first.warmth) - readWarmthRank(second.warmth)) };
+}
+
 export async function searchMemberNetwork(
   context: RequestContext,
   prompt: string,
+  where: SearchWhere | null = null,
+  readOpenAsks: OpenAsksReader = NO_OPEN_ASKS,
 ): Promise<NetworkSearchResult> {
   const { database, member } = context;
-  const searcher = await readSearcher(context);
-  const session = await openSearchSession(context, searcher);
-  const includesOwnNetwork = !searcher.isPooled;
-
-  const spender = { database, environment: context.environment, memberId: member.id };
-  // "Everyone" shows people beyond the members' networks too. They name no path: paths come only from the paths
-  // lookup, which keeps to members who share.
   const { searchScope } = await readVillageSearchSettings(database);
-  const scope = searchScope === SEARCH_SCOPES.everyone ? GLOBAL_SOURCE : NETWORK_SOURCE;
-  const { people, source } = await withCreditCall(spender, CREDIT_CALL_KINDS.search, () =>
-    searchVillageNetwork(session, prompt, scope),
+  const scope = readSearchWhere(where, searchScope);
+  // Without Village, search finds members by their profiles only (Founderhall's "no key" search).
+  if (!(await readVillageKeys(database))) {
+    return {
+      query: prompt,
+      scope,
+      people: [],
+      members: await readSearchMembers(database, prompt, member.id, []),
+      discardedOffNetworkResults: false,
+      dailyLookupsLeft: 0,
+      includesOwnNetwork: false,
+      isCached: false,
+      isProfilesOnly: true,
+    };
+  }
+  const searcher = await readSearcher(context);
+  const includesOwnNetwork = !searcher.isPooled;
+  const cacheKey = JSON.stringify([member.id, includesOwnNetwork, scope, prompt.trim().toLowerCase()]);
+  const cached = readCachedSearch(cacheKey);
+  if (cached) return { ...cached, isCached: true, dailyLookupsLeft: await readDailyLookupsLeft(database, member.id) };
+
+  const session = await openSearchSession(context, searcher);
+  const spender = { database, environment: context.environment, memberId: member.id };
+  // "Everywhere" shows people beyond the members' networks too. They name no path: paths come only from the paths
+  // lookup, which keeps to members who share.
+  const source = scope === SEARCH_WHERE.global ? GLOBAL_SOURCE : NETWORK_SOURCE;
+  const { people, source: answeredSource } = await withCreditCall(spender, CREDIT_CALL_KINDS.search, () =>
+    searchVillageNetwork(session, prompt, source),
   ).catch((error: unknown) => {
     throw searcher.isPooled ? toPooledSearchRefusal(toSearchCutOffError(error)) : toSearchCutOffError(error);
   });
-  if (source !== NETWORK_SOURCE && scope === NETWORK_SOURCE) {
+  if (answeredSource !== NETWORK_SOURCE && source === NETWORK_SOURCE) {
     console.log(
       JSON.stringify({ level: "info", scope: "village", event: "off_network_results_discarded" }),
     );
     return {
+      query: prompt,
+      scope,
       people: [],
+      members: await readSearchMembers(database, prompt, member.id, []),
       discardedOffNetworkResults: true,
       dailyLookupsLeft: await readDailyLookupsLeft(database, member.id),
       includesOwnNetwork,
+      isCached: false,
+      isProfilesOnly: false,
     };
   }
 
@@ -440,28 +592,50 @@ export async function searchMemberNetwork(
     return slug ? [slug] : [];
   });
   const reachableMembers = await readReachableMembers(database, peopleSlugs, member.id);
-  const describedPeople = people.map((person) => {
-    const linkedinSlug = readLinkedinSlug(person.linkedin_url);
-    const fullName = personName(person);
-    const member = readTrustedMember(fullName, linkedinSlug, reachableMembers);
-    return {
-      fullName,
-      headline: person.headline ?? null,
-      linkedinSlug,
-      isMember: member !== null,
-      memberId: member?.id ?? null,
-      imageUrl: readPersonImageUrl(member, person.image_url),
-    };
+  const isFoundMember = (person: VillageSearchPerson) =>
+    readTrustedMember(personName(person), readLinkedinSlug(person.linkedin_url), reachableMembers) !== null;
+  const outsideSlugs = people.filter((person) => !isFoundMember(person)).flatMap(({ linkedin_url }) => {
+    const slug = readLinkedinSlug(linkedin_url);
+    return slug ? [slug] : [];
   });
+  const pagePaths = await readPagePaths(context, session, outsideSlugs);
+  await savePagePaths(database, member.id, pagePaths, people);
 
-  return {
+  const describedPeople = await Promise.all(
+    people.map(async (person) => {
+      const linkedinSlug = readLinkedinSlug(person.linkedin_url);
+      const fullName = personName(person);
+      const found = readTrustedMember(fullName, linkedinSlug, reachableMembers);
+      const ways = found
+        ? { direct: null, paths: [] }
+        : await describeSearchPaths(context, searcher, linkedinSlug ? pagePaths.get(linkedinSlug.toLowerCase()) : undefined, linkedinSlug, readOpenAsks);
+      return {
+        fullName,
+        headline: person.headline ?? null,
+        linkedinSlug,
+        isMember: found !== null,
+        memberId: found?.id ?? null,
+        imageUrl: readPersonImageUrl(found, person.image_url),
+        ...readSearchPersonWork(person),
+        ...ways,
+      };
+    }),
+  );
+  const foundMemberIds = describedPeople.flatMap(({ memberId }) => (memberId ? [memberId] : []));
+
+  const result = {
+    query: prompt,
+    scope,
     people: describedPeople.toSorted(
       (first, second) => Number(second.isMember) - Number(first.isMember),
     ),
+    members: await readSearchMembers(database, prompt, member.id, foundMemberIds),
     discardedOffNetworkResults: false,
-    dailyLookupsLeft: await readDailyLookupsLeft(database, member.id),
     includesOwnNetwork,
+    isProfilesOnly: false,
   };
+  saveCachedSearch(cacheKey, result);
+  return { ...result, isCached: false, dailyLookupsLeft: await readDailyLookupsLeft(database, member.id) };
 }
 
 async function readCachedPaths(database: Database, userId: string, linkedinSlug: string) {

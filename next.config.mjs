@@ -66,6 +66,8 @@ export const nextConfig = {
   ],
   redirects: async () => [
     { source: "/feed", destination: "/", permanent: false },
+    // The weekly email moved into Asks & digest; its preview is the digest preview. A real 308, before the page streams.
+    { source: "/admin/weekly-email", destination: "/admin/digest", permanent: true },
     // Set up's pages took Founderhall's addresses; old links and bookmarks land on the new ones.
     { source: "/admin/email", destination: "/admin/mail", permanent: true },
     { source: "/admin/audit-log", destination: "/admin/audit", permanent: true },
@@ -88,6 +90,8 @@ export const nextConfig = {
     { source: "/messages", destination: "/inbox", permanent: true },
     { source: "/messages/:conversationId((?!new$)[^/]+)", destination: "/inbox/:conversationId", permanent: true },
     { source: "/public/jobs", destination: "/jobs", permanent: true },
+    // Search took Founderhall's address; old links and bookmarks (and their ?q=) land on it.
+    { source: "/network", destination: "/search", permanent: true },
   ],
 };
 

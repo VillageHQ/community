@@ -41,6 +41,8 @@ describe("the navigation", () => {
     expect(MEMBER_ITEMS.map(({ label }) => label)).toEqual([
       "Today",
       "Asks & updates",
+      // Community's feed, while it's on (Founderhall has none).
+      "Feed",
       "Search",
       "Directory",
       "Jobs",
@@ -82,7 +84,7 @@ describe("the navigation", () => {
     });
 
     it.each([
-      [ROUTES.feed, MEMBER_KEYS.today, MEMBER_KEYS.today],
+      [ROUTES.today, MEMBER_KEYS.today, MEMBER_KEYS.today],
       ["/people/abc", MEMBER_KEYS.directory, MEMBER_KEYS.directory],
       [ROUTES.editCard, MEMBER_KEYS.me, null],
       [ROUTES.yourData, MEMBER_KEYS.me, null],

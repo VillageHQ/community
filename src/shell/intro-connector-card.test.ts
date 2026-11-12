@@ -1,11 +1,10 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { createElement, type ReactElement } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { INTRO_STATES } from "@/modules/intros/contract";
-import { API_ROUTES } from "@/platform/http/routes";
 import type { Connector } from "@/modules/network/contract";
 
 import { IntrosConnectorProvider } from "./intros-network-provider";
@@ -13,7 +12,11 @@ import { MessagesSlotProvider } from "@/modules/messages/components/messages-slo
 
 import { ConnectorCard, OUTSIDE_COMMUNITY_LABEL } from "@/modules/network/components/connector-card";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/intros/22222222-2222-4222-8222-222222222222",
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 const INTRO_ID = "11111111-1111-4111-8111-111111111111";
 const VIEWER = { id: "amara", name: "Amara Osei" };
@@ -58,7 +61,10 @@ describe("a connector", () => {
       expect(screen.getByRole("heading", { name: "Jonas Lindqvist" })).toBeTruthy();
       expect(screen.getByText("Community member")).toBeTruthy();
       expect(screen.getByText(REASON)).toBeTruthy();
-      expect(screen.getByRole("button", { name: "Ask Jonas for an intro to Clara" }).textContent).toContain("Ask Jonas for an intro");
+      // The ask is its own page now (Founderhall's one-step ask), back to here after.
+      const ask = new URL(screen.getByRole("link", { name: "Ask Jonas for an intro" }).getAttribute("href") ?? "", "https://example.com");
+      expect(ask.pathname).toBe("/search/ask");
+      expect(Object.fromEntries(ask.searchParams)).toEqual({ target: "clara-bergstrom", via: "jonas", back: "/intros/22222222-2222-4222-8222-222222222222" });
     });
 
     it("links to their profile and offers a message", () => {
@@ -71,7 +77,7 @@ describe("a connector", () => {
     it("replaces the ask with a link once one is open", () => {
       renderCard({ ...MEMBER_CONNECTOR, openAsk: { id: INTRO_ID, state: INTRO_STATES.requested } });
 
-      expect(screen.queryByRole("button", { name: /Ask Jonas/ })).toBeNull();
+      expect(screen.queryByRole("link", { name: /Ask Jonas/ })).toBeNull();
       expect(screen.getByText("You asked. Waiting on Jonas.")).toBeTruthy();
       expect(screen.getByRole("link", { name: /See your intro request/ }).getAttribute("href")).toBe(`/intros/${INTRO_ID}`);
     });
@@ -92,92 +98,6 @@ describe("a connector", () => {
       renderCard(OUTSIDE_CONNECTOR);
 
       expect(screen.getByText(REASON)).toBeTruthy();
-    });
-  });
-
-  describe("the ask dialog", () => {
-    let posts: { path: string; body: unknown }[];
-
-    beforeEach(() => {
-      posts = [];
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async (path: string, init?: RequestInit) => {
-          posts.push({ path, body: JSON.parse(String(init?.body ?? "{}")) });
-          return new Response(
-            JSON.stringify({
-              id: INTRO_ID,
-              state: INTRO_STATES.requested,
-              viewerRole: "requester",
-              note: "note",
-              reason: REASON,
-              declineReason: null,
-              declineKind: null,
-              hasUpdate: false,
-              createdAt: "2026-11-05T10:00:00.000Z",
-              acceptedAt: null,
-              askedTargetAt: null,
-              targetAgreedAt: null,
-              outcome: null,
-              isOutcomeDue: false,
-              closedAt: null,
-              expiresAt: "2026-11-19T10:00:00.000Z",
-              target: { name: "Clara Bergström", headline: null, linkedinSlug: "clara-bergstrom", isNamed: false },
-              suggestedTargetEmail: null,
-              requester: { id: "amara", name: "Amara Osei", headline: null, linkedinSlug: null, avatarUrl: null, isAvailable: true },
-              introducer: { id: "jonas", name: "Jonas Lindqvist", headline: null, linkedinSlug: "jonas-lindqvist", avatarUrl: null, isAvailable: true },
-            }),
-            { headers: { "Content-Type": "application/json" } },
-          );
-        }),
-      );
-    });
-
-    function openDialog() {
-      renderCard(MEMBER_CONNECTOR);
-      fireEvent.click(screen.getByRole("button", { name: "Ask Jonas for an intro to Clara" }));
-      return screen.getByRole("dialog");
-    }
-
-    it("starts the note, shows what the introducer sees and makes the promise", () => {
-      const dialog = openDialog();
-
-      expect(within(dialog).getByRole<HTMLTextAreaElement>("textbox").value).toContain("Hi Jonas,");
-      expect(within(dialog).getByText("You")).toBeTruthy();
-      expect(within(dialog).getAllByText(REASON).length).toBeGreaterThan(0);
-      expect(within(dialog).getByText("See exactly what Jonas gets")).toBeTruthy();
-      expect(within(dialog).getByText(/Jonas reads your note first. Clara hears nothing unless they say yes./)).toBeTruthy();
-    });
-
-    it("says what the target sees, and that they decide too", () => {
-      const dialog = openDialog();
-
-      expect(within(dialog).getByText(/If Jonas says yes, Clara sees your name, your role and your note, then decides/)).toBeTruthy();
-    });
-
-    it("asks for a reason when the starter is left untouched", () => {
-      const dialog = openDialog();
-
-      fireEvent.click(within(dialog).getByRole("button", { name: /Send to Jonas/ }));
-
-      expect(within(dialog).getByText(/Add a line about why/)).toBeTruthy();
-      expect(posts).toEqual([]);
-    });
-
-    it("sends only the target, connector and note", async () => {
-      const dialog = openDialog();
-      const note = within(dialog).getByRole<HTMLTextAreaElement>("textbox");
-
-      fireEvent.change(note, { target: { value: "We sell freight tools." } });
-      fireEvent.click(within(dialog).getByRole("button", { name: /Send to Jonas/ }));
-
-      await waitFor(() => expect(posts.some(({ path }) => path === API_ROUTES.introCreate)).toBe(true));
-      expect(posts.find(({ path }) => path === API_ROUTES.introCreate)?.body).toEqual({
-        targetSlug: "clara-bergstrom",
-        connectorSlug: "jonas-lindqvist",
-        note: "We sell freight tools.",
-      });
-      await waitFor(() => expect(screen.getByRole("heading", { name: "Your intro request is on its way" })).toBeTruthy());
     });
   });
 });

@@ -513,14 +513,14 @@
 
 /* Founderhall's plain links: the fund colour, underlined (its pages rely on the browser's default, which Tailwind
    resets). Only inside Founderhall's parts, so screens not yet transplanted keep their own links. */
-:where(.fh-credit, .fh-pub-foot, .fh-section-head, .fh-sheet-head, .fh-preview-strip, .fh-pub-card, .fh-note, .fh-hint, .fh-lede, .fh-small, .fh-strip, .fh-empty, .fh-sheet, .fh-mail, .fh-report) a:not([class]) {
+:where(.fh-credit, .fh-pub-foot, .fh-section-head, .fh-sheet-head, .fh-preview-strip, .fh-pub-card, .fh-note, .fh-hint, .fh-lede, .fh-small, .fh-strip, .fh-empty, .fh-sheet, .fh-mail, .fh-report, .fh-pathtext, .fh-gsteps, p.fh-btn-row) a:not([class]) {
   color: var(--fund);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
 
-:where(.fh-credit, .fh-pub-foot, .fh-section-head, .fh-sheet-head, .fh-preview-strip, .fh-pub-card, .fh-note, .fh-hint, .fh-lede, .fh-small, .fh-strip, .fh-empty, .fh-sheet, .fh-mail, .fh-report) a:not([class]):hover {
+:where(.fh-credit, .fh-pub-foot, .fh-section-head, .fh-sheet-head, .fh-preview-strip, .fh-pub-card, .fh-note, .fh-hint, .fh-lede, .fh-small, .fh-strip, .fh-empty, .fh-sheet, .fh-mail, .fh-report, .fh-pathtext, .fh-gsteps, p.fh-btn-row) a:not([class]):hover {
   color: var(--fund-deep);
 }
 

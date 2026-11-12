@@ -19,6 +19,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export const LOOKUP_LABELS: Record<CreditCallKind, string> = {
   [CREDIT_CALL_KINDS.search]: "People search",
   [CREDIT_CALL_KINDS.path]: "Paths to one person",
+  [CREDIT_CALL_KINDS.pathsBulk]: "Paths for a page of results",
   [CREDIT_CALL_KINDS.fillIn]: "Profile fill-in",
 };
 

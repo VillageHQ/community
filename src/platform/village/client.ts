@@ -186,6 +186,36 @@ export async function readVillagePaths(session: VillageSession, linkedinUrl: str
   throw new VillageError({ code: "invalid_response", status: 200, message: "Village's paths weren't in the expected shape." });
 }
 
+// Up to this many people per bulk call (Village's own limit is 100).
+export const PATHS_BULK_MAXIMUM = 100;
+
+const bulkTargetSchema = z.object({ linkedin_identifier: z.string().nullish(), linkedin_url: z.string().nullish() }).passthrough();
+const bulkPathsSchema = z.array(villagePathsSchema.omit({ person: true }).extend({ target: bulkTargetSchema.nullish() }));
+
+// TODO(@villagehq/sdk): the SDK has no call for POST /v2/people/paths/bulk, so this goes through its typed client.
+// The paths for one page of search results in one call, keyed by the LinkedIn slug Village answered for.
+export async function readVillagePathsBulk(session: VillageSession, linkedinSlugs: readonly string[]) {
+  const answered = new Map<string, VillagePaths>();
+  if (linkedinSlugs.length === 0) return answered;
+  const signal = AbortSignal.timeout(withinDeadline(session, VILLAGE_TIMEOUTS_MS.paths).timeoutMs ?? VILLAGE_TIMEOUTS_MS.paths);
+  const { data, response } = await session.village.api
+    .POST("/v2/people/paths/bulk", { body: { linkedin_ids: linkedinSlugs.slice(0, PATHS_BULK_MAXIMUM) }, signal })
+    .catch((cause: unknown) => {
+      if (isVillageError(cause)) throw cause;
+      const isTimeout = cause instanceof Error && cause.name === TIMEOUT_ERROR_NAME;
+      throw new VillageError({ code: isTimeout ? "timeout" : "network", message: isTimeout ? "Village took too long to answer." : "Couldn't reach Village.", cause });
+    });
+  if (response.status === NOT_FOUND_STATUS) return answered;
+  if (!response.ok || !data) throw toLookupError(response.status);
+  const parsed = bulkPathsSchema.safeParse(data.data);
+  if (!parsed.success) throw new VillageError({ code: "invalid_response", status: 200, message: "Village's bulk paths weren't in the expected shape." });
+  for (const { target, ...paths } of parsed.data) {
+    const slug = (target?.linkedin_identifier ?? target?.linkedin_url?.replace(/\/+$/, "").split("/in/")[1] ?? "").toLowerCase();
+    if (slug) answered.set(slug, { ...paths, person: null });
+  }
+  return answered;
+}
+
 // Profile fill-in runs as one "public" identity of the app, never as a member, so a lookup can't
 // create a Village user or touch anyone's network.
 const LOOKUP_IDENTITY_ID = "community-profile-fill-in";

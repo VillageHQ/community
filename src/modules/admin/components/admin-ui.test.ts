@@ -8,12 +8,10 @@ import { AUDIT_ACTIONS } from "@/platform/audit/actions";
 import {
   AUDIT_KINDS,
   CONTENT_CHOICES,
-  MEMBER_FILTERS,
   REPORT_FILTERS,
   REPORT_TARGETS,
   type AdminMember,
   type AuditEntry,
-  type MemberPage,
   type Report,
 } from "@/modules/admin/contract";
 import { GROUP_DEPARTURE_OUTCOMES, VILLAGE_STATUSES } from "@/modules/network/contract";
@@ -23,13 +21,13 @@ import { EnabledModulesProvider } from "@/platform/modules/enabled-modules";
 
 import { AuditLog } from "./audit-log";
 import { auditPageQuery } from "@/modules/admin/queries-audit";
-import { memberPageQuery } from "@/modules/admin/queries-members";
-import { MemberManager } from "./member-manager";
+import { FlashProvider, FlashSlot } from "@/components/flash";
+import { MemberManage } from "./member-manage";
 import { RemoveMemberDialog } from "./remove-member-dialog";
 import { reportPageQuery } from "@/modules/admin/queries-reports";
 import { ReportQueue } from "./report-queue";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }), usePathname: () => "/admin/members/mo" }));
 
 const TIMESTAMP = "2026-11-05T12:00:00.000Z";
 const VIEWER_ID = "viewer";
@@ -206,22 +204,16 @@ describe("the admin screens", () => {
     });
   });
 
-  describe("a member row", () => {
+  describe("a member's Manage page", () => {
+    // Each member's tools sit on their own page now (Founderhall's Members table opens it); a result flashes at the top.
     function renderMembers(members: AdminMember[]) {
       const queryClient = createQueryClient();
-      const page: MemberPage = {
-        members,
-        page: 1,
-        pageCount: 1,
-        matchCount: members.length,
-        counts: { all: members.length, admins: 0, attention: 0, removed: 0 },
-      };
-      queryClient.setQueryData(memberPageQuery({ search: "", filter: MEMBER_FILTERS.all, page: 1 }).queryKey, page);
-      render(wrap(queryClient, createElement(MemberManager, { viewerId: VIEWER_ID, initialSearch: "" })));
-    }
-
-    function openRow(name: string) {
-      fireEvent.click(screen.getByRole("button", { name: new RegExp(`^Manage\\s*${name}`) }));
+      render(
+        wrap(
+          queryClient,
+          createElement(FlashProvider, null, createElement(FlashSlot), ...members.map((member) => createElement(MemberManage, { key: member.id, member, viewerId: VIEWER_ID }))),
+        ),
+      );
     }
 
     it.each([
@@ -238,7 +230,6 @@ describe("the admin screens", () => {
 
     it("offers a member promotion and removal", () => {
       renderMembers([makeMember()]);
-      openRow("Mo Member");
 
       expect(screen.getByRole("button", { name: "Make admin" })).toBeTruthy();
       expect(screen.getByRole("button", { name: "Remove member" })).toBeTruthy();
@@ -247,7 +238,6 @@ describe("the admin screens", () => {
 
     it("holds promotion back until the email is confirmed", () => {
       renderMembers([makeMember({ isEmailConfirmed: false })]);
-      openRow("Mo Member");
 
       expect(screen.queryByRole("button", { name: "Make admin" })).toBeNull();
       expect(screen.getByRole("button", { name: "Confirm their email" })).toBeTruthy();
@@ -255,7 +245,6 @@ describe("the admin screens", () => {
 
     it("offers an admin only the role they have to give up", () => {
       renderMembers([makeMember({ isAdmin: true })]);
-      openRow("Mo Member");
 
       expect(screen.getByRole("button", { name: "Remove admin role" })).toBeTruthy();
       expect(screen.queryByRole("button", { name: "Make admin" })).toBeNull();
@@ -263,7 +252,6 @@ describe("the admin screens", () => {
 
     it("offers you no way to change or remove yourself", () => {
       renderMembers([makeMember({ id: VIEWER_ID, isAdmin: true })]);
-      openRow("Mo Member");
 
       expect(screen.queryByRole("button", { name: "Remove admin role" })).toBeNull();
       expect(screen.queryByRole("button", { name: "Remove member" })).toBeNull();
@@ -272,7 +260,6 @@ describe("the admin screens", () => {
 
     it("offers a removed member only Unban, and warns about a joined one", () => {
       renderMembers([makeMember({ isRemoved: true, isInVillageGroup: true, hasVillageLink: true, villageStatus: VILLAGE_STATUSES.ready })]);
-      openRow("Mo Member");
 
       expect(screen.getByRole("button", { name: "Unban" })).toBeTruthy();
       expect(screen.queryByRole("button", { name: "Remove member" })).toBeNull();
@@ -281,7 +268,6 @@ describe("the admin screens", () => {
 
     it("treats a stale membership after a link reset as still in the group", () => {
       renderMembers([makeMember({ hasVillageLink: true, hasStaleVillageMembership: true })]);
-      openRow("Mo Member");
 
       expect(screen.getByText(/left their old Village account in the group/)).toBeTruthy();
       fireEvent.click(screen.getByRole("button", { name: "Remove member" }));
@@ -290,7 +276,6 @@ describe("the admin screens", () => {
 
     it("says Village refused for a group creator, and offers a retry", () => {
       renderMembers([makeMember({ isRemoved: true, isInVillageGroup: true, hasVillageLink: true, villageLeaveOutcome: GROUP_DEPARTURE_OUTCOMES.creatorRefused })]);
-      openRow("Mo Member");
 
       expect(screen.getByText(/Village refused to take them out, because they created it/)).toBeTruthy();
       expect(screen.getByRole("button", { name: "Try leaving the Village group again" })).toBeTruthy();
@@ -298,7 +283,6 @@ describe("the admin screens", () => {
 
     it("says they left, and offers no retry, after a successful leave", () => {
       renderMembers([makeMember({ isRemoved: true, villageLeaveOutcome: GROUP_DEPARTURE_OUTCOMES.left })]);
-      openRow("Mo Member");
 
       expect(screen.getByText(/Village took Mo out of the group/)).toBeTruthy();
       expect(screen.queryByRole("button", { name: "Try leaving the Village group again" })).toBeNull();
@@ -306,7 +290,6 @@ describe("the admin screens", () => {
 
     it("offers to invite a removed member back as a new account, spelling out what's lost", () => {
       renderMembers([makeMember({ isRemoved: true })]);
-      openRow("Mo Member");
 
       fireEvent.click(screen.getByRole("button", { name: "Invite them back as a new account" }));
 
@@ -318,33 +301,28 @@ describe("the admin screens", () => {
     it("doesn't show a failed group leave as a success", async () => {
       renderMembers([makeMember({ isInVillageGroup: true, hasVillageLink: true })]);
       vi.stubGlobal("fetch", respondWith({ message: "We couldn't take Mo out.", isGroupLeaveIncomplete: true }));
-      openRow("Mo Member");
 
       fireEvent.click(screen.getByRole("button", { name: "Remove member" }));
       fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Remove Mo" }));
 
       const notice = await screen.findByText("We couldn't take Mo out.");
-      expect(notice.closest("[data-slot=alert]")?.className).not.toContain("sage");
+      expect(notice.closest("[data-slot=flash]")?.className).toContain("fh-needs");
     });
 
     it("offers no reset link, ever", () => {
       renderMembers([makeMember({ isRemoved: true }), makeMember({ id: "bea", name: "Bea Bystander" })]);
-      openRow("Mo Member");
-      openRow("Bea Bystander");
 
       expect(screen.queryByRole("button", { name: /password/i })).toBeNull();
     });
 
     it("doesn't offer Unban for a reclaimed account", () => {
       renderMembers([makeMember({ isRemoved: true, isReclaimed: true, email: null })]);
-      openRow("Mo Member");
 
       expect(screen.queryByRole("button", { name: "Unban" })).toBeNull();
     });
 
     it("shows the two emails before approving a Village account", () => {
       renderMembers([makeMember({ hasVillageLink: true, pendingVillageEmail: "other@example.test", villageStatus: VILLAGE_STATUSES.blocked })]);
-      openRow("Mo Member");
 
       fireEvent.click(screen.getByRole("button", { name: "Approve this Village account" }));
 
@@ -353,7 +331,6 @@ describe("the admin screens", () => {
 
     it("confirms before making an admin, and only then calls the server", async () => {
       renderMembers([makeMember()]);
-      openRow("Mo Member");
 
       fireEvent.click(screen.getByRole("button", { name: "Make admin" }));
       expect(fetch).not.toHaveBeenCalled();

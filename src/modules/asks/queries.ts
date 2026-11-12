@@ -5,6 +5,7 @@ import { INBOX_POLL_MS, isRouteGone, readInboxPollMs } from "../../platform/http
 import { postRequest } from "../../platform/http/post-request.ts";
 import {
   ASK_API_ROUTES,
+  ASK_STATUS_ACTIONS,
   allowanceSettingSchema,
   askBoardPageSchema,
   askCountsSchema,
@@ -115,6 +116,11 @@ export function saveAllowanceRequest(weeklyAllowance: number) {
 
 export function pinAskRequest(body: PinAskBody) {
   return postRequest(ASK_API_ROUTES.pin, body, acknowledgedResponseSchema);
+}
+
+// Asks & digest › Close: an admin ends an ask for everyone (the ask page's status route).
+export function closeAskAsAdminRequest(askId: string) {
+  return postRequest(ASK_API_ROUTES.status, { askId, action: ASK_STATUS_ACTIONS.close }, acknowledgedResponseSchema);
 }
 
 export function reopenAskRequest(askId: string) {

@@ -14,6 +14,7 @@ export type NavigationBadgeCounts = Partial<Record<string, number>>;
 export const MEMBER_KEYS = {
   today: "today",
   asks: "asks",
+  feed: "feed",
   search: "search",
   directory: "directory",
   jobs: "jobs",
@@ -72,9 +73,10 @@ const CONSOLE_PATHS: readonly (readonly [string, string])[] = [
   [ROUTES.adminHealth, CONSOLE_KEYS.report],
   [ROUTES.adminIntroLog, CONSOLE_KEYS.introLog],
   [ROUTES.adminMembers, CONSOLE_KEYS.members],
-  [ROUTES.adminInvites, CONSOLE_KEYS.members],
+  [ROUTES.adminInvites, CONSOLE_KEYS.invites],
   [ASKS_ADMIN_PAGE, CONSOLE_KEYS.asks],
   [ROUTES.adminWeeklyEmail, CONSOLE_KEYS.asks],
+  [ROUTES.adminDigest, CONSOLE_KEYS.asks],
   [JOB_BOARD_PAGES.admin, CONSOLE_KEYS.jobs],
 ];
 
@@ -104,10 +106,12 @@ export function readConsoleTabKey(pathname: string) {
 // Which member item a page lights: the longest menu address the page sits under. My profile and Your data light
 // My profile, never Directory; a member's profile lights Directory.
 export function readMemberKey(pathname: string, items: readonly MenuPlace[]) {
-  if (isUnder(pathname, ROUTES.editCard) || isUnder(pathname, ROUTES.yourData)) return MEMBER_KEYS.me;
+  if (isUnder(pathname, ROUTES.editCard) || isUnder(pathname, ROUTES.yourData) || isUnder(pathname, ROUTES.myNetwork)) return MEMBER_KEYS.me;
   if (isUnder(pathname, ROUTES.people)) return MEMBER_KEYS.directory;
   // A first message (/messages/new) belongs to the Inbox, as in Founderhall.
   if (isUnder(pathname, ROUTES.newMessage)) return MEMBER_KEYS.inbox;
+  // The guided ask is an intro being made (Founderhall lights Intros).
+  if (isUnder(pathname, ROUTES.guidedAsk) && items.some(({ key }) => key === MEMBER_KEYS.intros)) return MEMBER_KEYS.intros;
   const matches = items.filter(({ href }) => isUnder(pathname, href));
   return matches.sort((first, second) => second.href.length - first.href.length)[0]?.key ?? null;
 }

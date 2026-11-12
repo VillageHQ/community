@@ -1,12 +1,9 @@
+import { Building2, Copy, Link2 } from "lucide-react";
 import type { Metadata } from "next";
 
-import { CopyButton } from "@/components/copy-button";
-import { CardDescription } from "@/components/ui/card";
-import { Tag } from "@/components/ui/tag";
-import { SettingCard } from "@/modules/admin/components/setting-card";
-import { PublicBoardSwitch } from "@/modules/job-board/components/public-switch";
-import { SourceCard } from "@/modules/job-board/components/source-card";
-import { COMPANY_PARAM, JOB_BOARD_PAGE_TITLES, JOB_BOARD_PAGES } from "@/modules/job-board/contract";
+import { EmptyState } from "@/components/empty-state";
+import { PageHeader } from "@/components/page-header";
+import { COMPANY_PARAM, isFeedTool, JOB_BOARD_API_ROUTES, JOB_BOARD_PAGES, type JobSourceView } from "@/modules/job-board/contract";
 import { jobBoardManifest } from "@/modules/job-board/manifest";
 import { isPublicBoardOn, readAllSources } from "@/modules/job-board/reads";
 import { readEmbedSnippets } from "@/modules/job-board/rules-widget";
@@ -15,65 +12,132 @@ import { readBrandingForPage } from "@/platform/branding/branding";
 import { getDatabase } from "@/platform/database/client";
 import { resolveAppUrl } from "@/platform/http/app-url";
 import { modulePage } from "@/platform/modules/module-page";
-import { AdminSection } from "@/shell/admin-section";
+import { CopyRow, PublicBoardForm, SourceRowActions } from "@/shell/admin-jobs-parts";
 
-export const metadata: Metadata = { title: JOB_BOARD_PAGE_TITLES.admin };
+export const metadata: Metadata = { title: "Job board" };
 
-function Snippet({ label, code }: { label: string; code: string }) {
-  return (
-    <div className="grid gap-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="type-small font-bold">{label}</p>
-        <CopyButton text={code} label="Copy" />
-      </div>
-      <pre className="type-small rounded-field bg-muted p-3 whitespace-pre-wrap wrap-anywhere">{code}</pre>
-    </div>
-  );
+const DATE_TIME = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" });
+
+function plural(count: number, one: string, many = `${one}s`) {
+  return `${count} ${count === 1 ? one : many}`;
 }
 
+function describeSource(source: JobSourceView) {
+  const isFeed = isFeedTool(source.tool) && source.slug !== null;
+  const state = !isFeed ? "jobs added by hand" : source.lastError ? source.lastError : source.lastPulledAt ? `pulled ${DATE_TIME.format(new Date(source.lastPulledAt))}` : "not pulled yet";
+  return [plural(source.jobCount, "job"), source.hidden ? "hidden" : null, isFeed ? `${source.toolLabel} “${source.slug}”` : null, state, `added by ${source.memberName}`]
+    .filter((part) => part !== null)
+    .join(" · ");
+}
+
+const ICON = { "aria-hidden": true, className: "fh-i fh-s", strokeWidth: 1.5 } as const;
+
+// Console › Job board (Founderhall's): the public board's switch and link, every linked board with Hide, and
+// Community's website widget lines.
 export default modulePage(jobBoardManifest, async function AdminJobsPage() {
   await requireAdmin();
   const database = getDatabase();
   const [isPublic, sources, community] = await Promise.all([isPublicBoardOn(database), readAllSources(database), readBrandingForPage()]);
   const appUrl = resolveAppUrl(process.env);
   const publicLink = `${appUrl}${JOB_BOARD_PAGES.public}`;
+  const companyLink = `${publicLink}?${COMPANY_PARAM}=<company>`;
   const snippets = readEmbedSnippets(appUrl, community.name);
-  const failing = sources.filter(({ lastError }) => lastError !== null).length;
+  const shown = sources.filter(({ hidden }) => !hidden);
+  const openJobs = shown.reduce((total, { jobCount }) => total + jobCount, 0);
+  const companies = new Set(shown.map(({ companySlug }) => companySlug)).size;
+  const exampleCompany = sources[0]?.companySlug ?? "ledgerline";
 
   return (
-    <AdminSection title="Jobs" description="The companies' open jobs, the public board and the widget for your website.">
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="grid gap-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="type-h3">Linked sources</h2>
-            <Tag>{sources.length}</Tag>
-            {failing > 0 ? <Tag tone="destructive">{failing} not pulling</Tag> : null}
+    <>
+      <PageHeader
+        title="Job board"
+        description={`${plural(openJobs, "open job")} at ${plural(companies, "company", "companies")}. Founders link their hiring tool on My profile; the portal pulls their open jobs every hour. Applications go to each company’s own page.`}
+      />
+      <div className="fh-grid">
+        <section className="fh-sheet fh-c5" id="public">
+          <h2 className="fh-h3">Public job board</h2>
+          <PublicBoardForm isPublic={isPublic} />
+          {isPublic ? (
+            <>
+              <p className="fh-label fh-small mt-4">The public link</p>
+              <div className="fh-rows">
+                <CopyRow value={publicLink} label="The public job board link" icon={<Link2 {...ICON} />} />
+              </div>
+              <p className="fh-small fh-muted mt-2">
+                Each company also has its own page: {companyLink}.{" "}
+                <a href={JOB_BOARD_PAGES.public} target="_blank" rel="noopener">
+                  Open the public board
+                </a>{" "}
+                in a private window to see it as outsiders do.
+              </p>
+            </>
+          ) : (
+            <p className="fh-small fh-muted mt-3">Off: only signed-in members see the board. The public link shows “This board is not public”.</p>
+          )}
+        </section>
+        <section className="fh-sheet fh-c7">
+          <div className="fh-sheet-head">
+            <h2 className="fh-h3">Linked boards</h2>
           </div>
-          {sources.length === 0 ? (
-            <CardDescription>No company has linked its hiring tool yet. Members do it from Jobs › Your company&apos;s jobs.</CardDescription>
-          ) : null}
-          {sources.map((source) => (
-            <SourceCard key={source.id} source={source} isAdminView />
-          ))}
-        </div>
-        <div className="grid gap-5">
-          <SettingCard title="Public board" tag={<Tag tone={isPublic ? "sage" : "neutral"}>{isPublic ? "On" : "Off"}</Tag>}>
-            <CardDescription>
-              Shows only each job&apos;s company, title, location and apply link. Never members&apos; names. The website widget works only while this is on.
-            </CardDescription>
-            <PublicBoardSwitch isPublic={isPublic} />
-            {isPublic ? <Snippet label="Link to the public board" code={publicLink} /> : null}
-          </SettingCard>
-          <SettingCard title="Put it on your website" tag={null}>
-            <CardDescription>
-              Paste this line where the board should appear. It adds a frame that sizes itself. No cookies, no tracking.
-            </CardDescription>
-            <Snippet label="Every company" code={snippets.script} />
-            <Snippet label={`One company (use the name in ?${COMPANY_PARAM}= on the board)`} code={snippets.companyScript} />
-            <Snippet label="If your site blocks scripts" code={snippets.frame} />
-          </SettingCard>
-        </div>
+          {sources.length > 0 ? (
+            <>
+              <div className="fh-rows fh-modrows fh-jobrows">
+                {sources.map((source) => (
+                  <div key={source.id} className="fh-r">
+                    <span>
+                      <Building2 {...ICON} />
+                    </span>
+                    <div className="fh-who">
+                      <b>{source.company}</b>
+                      <span className={source.lastError ? "fh-errtext" : undefined}>{describeSource(source)}</span>
+                    </div>
+                    <div className="fh-end">
+                      <SourceRowActions sourceId={source.id} company={source.company} hidden={source.hidden} canPull={isFeedTool(source.tool) && source.slug !== null} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="fh-small fh-muted mt-2.5">Hide takes a company off the board for members and the public; its founder sees it hidden on My profile.</p>
+            </>
+          ) : (
+            <EmptyState title="No boards linked yet" description="Founders add their company’s jobs on My profile › Our jobs: they pick the hiring tool and paste the careers link." />
+          )}
+        </section>
+        <section className="fh-sheet fh-c12" id="embed">
+          <h2 className="fh-h3 flex items-center gap-1.5">
+            <Link2 {...ICON} /> Embed on your site
+          </h2>
+          {isPublic ? (
+            <>
+              <p className="fh-small mt-1.5">
+                Put the job board on your own website, in your name and colour. Paste one line where the board should show; it fits its height to the jobs. No cookies, no tracking.
+              </p>
+              <p className="fh-label fh-small mt-3.5">The script line</p>
+              <div className="fh-rows">
+                <CopyRow value={snippets.script} label="The script line for your website" icon={<Copy {...ICON} />} />
+              </div>
+              <p className="fh-small fh-muted mt-1.5">
+                One company only: add <code>data-company=&quot;{exampleCompany}&quot;</code> (the end of its page’s link, {companyLink}).
+              </p>
+              <p className="fh-label fh-small mt-3.5">For sites that block scripts: the frame</p>
+              <div className="fh-rows">
+                <CopyRow value={snippets.frame} label="The frame for your website" icon={<Copy {...ICON} />} />
+              </div>
+              <p className="fh-small fh-muted mt-1.5">
+                The frame keeps a fixed height (900 px); change it in the line if your board is shorter or longer.{" "}
+                <a href={JOB_BOARD_API_ROUTES.embed} target="_blank" rel="noopener">
+                  See what it shows
+                </a>
+                .
+              </p>
+            </>
+          ) : (
+            <p className="fh-small fh-muted mt-1.5">
+              The public job board is off, so an embedded board shows only “This board is not public”. Switch it on above to put the board on your site.
+            </p>
+          )}
+        </section>
       </div>
-    </AdminSection>
+    </>
   );
 });

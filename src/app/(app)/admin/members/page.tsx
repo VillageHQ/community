@@ -1,64 +1,126 @@
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
-import { MailPlus } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/empty-state";
+import { ChipCount, ChipRow, CHIP_CLASSES } from "@/components/ui/chip";
+import { Button, ButtonRow } from "@/components/ui/button";
+import { SearchBox } from "@/components/ui/search-box";
 import { getDatabase } from "@/platform/database/client";
-import { INVITE_SECTION_ID, MAXIMUM_SEARCH_LENGTH, MEMBER_FILTERS } from "@/modules/admin/contract";
-import { readAdminMembers } from "@/modules/admin/reads-members";
-import { PAGE_TITLES } from "@/platform/branding/page-metadata";
+import { readBranding } from "@/platform/branding/branding";
 import { readResendConfig } from "@/platform/email/resend";
-import { INVITE_FILTERS } from "@/modules/members/contract-invites";
-import { readInvites } from "@/modules/members/service-invites";
-import { readWaitingMemberCount, readWaitingMembers } from "@/modules/members/service-admin";
+import { ROUTES } from "@/platform/http/routes";
 import { requireAdmin } from "@/platform/auth/session";
-
-import { AdminSection } from "@/shell/admin-section";
-import { InviteManager } from "@/modules/admin/components/invite-manager";
-import { inviteListQuery, waitingMembersQuery } from "@/modules/members/queries-invites";
-import { memberPageQuery } from "@/modules/admin/queries-members";
-import { adminManifest } from "@/modules/admin/manifest";
 import { modulePage } from "@/platform/modules/module-page";
 
-const FIRST_PAGE = 1;
+import { MAXIMUM_SEARCH_LENGTH } from "@/modules/admin/contract";
+import {
+  ALWAYS_SHOWN_FILTERS,
+  CONSOLE_MEMBER_FILTER_LABELS,
+  countConsoleMembers,
+  matchesConsoleFilter,
+  matchesConsoleSearch,
+  MEMBERS_LEGEND,
+  parseConsoleMemberFilter,
+  SHOWN_WHEN_FULL_FILTERS,
+  sortConsoleMembers,
+  type ConsoleMemberFilter,
+} from "@/modules/admin/console-members";
+import { readConsoleMembers } from "@/modules/admin/reads-members";
+import { MemberTable } from "@/modules/admin/components/member-table";
+import { WaitingMembers } from "@/modules/admin/components/waiting-members";
+import { readWaitingMemberCount, readWaitingMembers } from "@/modules/members/service-admin";
+import { waitingMembersQuery } from "@/modules/members/queries-invites";
+import { LinkedinClaimCard } from "@/modules/members/components/shared/linkedin-claim-card";
+import { adminManifest } from "@/modules/admin/manifest";
 
-export const metadata: Metadata = { title: PAGE_TITLES.adminMembers };
+// Founderhall's Import members page (Set up). Built by the Set up pages; Members only links to it.
+const IMPORT_PAGE = "/admin/import";
 
-export default modulePage(adminManifest, async function AdminMembersPage({ searchParams }: { searchParams: Promise<{ search?: string }> }) {
-  const admin = await requireAdmin();
-  const { search: requestedSearch } = await searchParams;
-  const search = (requestedSearch ?? "").trim().slice(0, MAXIMUM_SEARCH_LENGTH);
-  const isEmailConfigured = readResendConfig(process.env) !== null;
+export const metadata: Metadata = { title: "Members" };
+
+function filterHref(filter: ConsoleMemberFilter, search: string) {
+  const query = new URLSearchParams({ f: filter, ...(search ? { q: search } : {}) });
+  return `${ROUTES.adminMembers}?${query}`;
+}
+
+type MembersSearch = { f?: string; q?: string };
+
+// Founderhall's Members: everyone in one table, members and the people invited, with filters and a search.
+// Community-only tools stay: each member's Manage page (role, Village, LinkedIn, remove, delete), the people waiting
+// for an OK, and freeing up a LinkedIn profile.
+export default modulePage(adminManifest, async function AdminMembersPage({ searchParams }: { searchParams: Promise<MembersSearch> }) {
+  await requireAdmin();
+  const { f, q } = await searchParams;
+  const filter = parseConsoleMemberFilter(f);
+  const search = (q ?? "").trim().slice(0, MAXIMUM_SEARCH_LENGTH);
 
   const database = getDatabase();
-  const [invites, members, waitingCount, memberPage] = await Promise.all([
-    readInvites(database, FIRST_PAGE, INVITE_FILTERS.all),
+  const [everyone, branding, waiting, waitingCount] = await Promise.all([
+    readConsoleMembers(database),
+    readBranding(database),
     readWaitingMembers(database),
     readWaitingMemberCount(database),
-    readAdminMembers(database, { search, filter: MEMBER_FILTERS.all, page: FIRST_PAGE }),
   ]);
+  const counts = countConsoleMembers(everyone);
+  const shown = sortConsoleMembers(everyone.filter((member) => matchesConsoleFilter(member, filter) && matchesConsoleSearch(member, search)));
+  const filters = [...ALWAYS_SHOWN_FILTERS, ...SHOWN_WHEN_FULL_FILTERS.filter((extra) => counts[extra] > 0 || extra === filter)];
 
   const queryClient = new QueryClient();
-  queryClient.setQueryData(inviteListQuery(FIRST_PAGE, INVITE_FILTERS.all).queryKey, invites);
-  queryClient.setQueryData(waitingMembersQuery.queryKey, { members, waitingCount });
-  queryClient.setQueryData(memberPageQuery({ search, filter: MEMBER_FILTERS.all, page: FIRST_PAGE }).queryKey, memberPage);
+  queryClient.setQueryData(waitingMembersQuery.queryKey, { members: waiting, waitingCount });
 
   return (
-    <AdminSection
-      title="Members"
-      description="Everything about your people, in one place."
-      action={
-        <Button asChild size="lg" className="max-sm:w-full">
-          <a href={`#${INVITE_SECTION_ID}`}>
-            <MailPlus aria-hidden="true" />
-            Invite someone
-          </a>
-        </Button>
-      }
-    >
+    <>
+      <div className="fh-pagehead">
+        <div className="fh-row">
+          <div className="min-w-60 flex-1">
+            <h1 className="fh-h1">Members</h1>
+            <p className="fh-lede">
+              {counts.all} people in {branding.name}. Members write their own profiles; only admins see email addresses.
+            </p>
+          </div>
+          <ButtonRow>
+            <Button asChild size="sm">
+              <Link href={ROUTES.adminInvites}>
+                <Plus aria-hidden="true" strokeWidth={1.5} />
+                Add members
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="secondary">
+              <Link href={IMPORT_PAGE}>Import a CSV</Link>
+            </Button>
+          </ButtonRow>
+        </div>
+      </div>
+
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <InviteManager isEmailConfigured={isEmailConfigured} viewerId={admin.id} initialSearch={search} />
+        <WaitingMembers isEmailConfigured={readResendConfig(process.env) !== null} />
       </HydrationBoundary>
-    </AdminSection>
+
+      <ChipRow role="group" aria-label="Filter members">
+        {filters.map((key) => (
+          <Link key={key} href={filterHref(key, search)} className={CHIP_CLASSES} aria-pressed={filter === key}>
+            {CONSOLE_MEMBER_FILTER_LABELS[key]} <ChipCount>{counts[key]}</ChipCount>
+          </Link>
+        ))}
+      </ChipRow>
+
+      <form method="get" action={ROUTES.adminMembers} role="search" className="mt-3.5 mb-1.5">
+        <input type="hidden" name="f" value={filter} />
+        <SearchBox name="q" placeholder="Name, email, company or city" defaultValue={search} aria-label="Search members" maxLength={MAXIMUM_SEARCH_LENGTH} className="[&_.fh-input]:h-11" />
+      </form>
+
+      <MemberTable members={shown} empty={<EmptyState title="Nobody here" description="Try another filter." />} />
+
+      <p className="fh-small fh-muted mt-3">{MEMBERS_LEGEND}</p>
+
+      <details className="fh-copybox mt-7">
+        <summary>Free up a LinkedIn profile</summary>
+        <div className="mt-3">
+          <LinkedinClaimCard />
+        </div>
+      </details>
+    </>
   );
 });

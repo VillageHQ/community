@@ -8,7 +8,7 @@ import { POST as postResendWebhook } from "@/app/api/email/resend-webhook/route"
 import { POST as postUnsubscribe } from "@/app/api/email/unsubscribe/route";
 import { POST as postWeeklyAnswer } from "@/app/api/email/weekly-answer/route";
 import { asksManifest } from "@/modules/asks/manifest";
-import { ask, askOffer } from "@/modules/asks/schema";
+import { ask, askHelper, askOffer } from "@/modules/asks/schema";
 import { askSkip } from "@/modules/asks/schema-skip";
 import { INTRO_STATES } from "@/modules/intros/contract";
 import { introRequest } from "@/modules/intros/schema";
@@ -32,7 +32,8 @@ import { seedMember } from "@/test/members";
 
 import { readEnabledIds } from "./enabled-modules";
 import { isTodayEmpty, readTodayItems } from "./today";
-import { previewWeeklyEmail, runWeeklyEmails, WEEKLY_PREVIEW_SOURCES } from "./weekly-email";
+import { previewMemberDigest, previewWeeklyEmail, runWeeklyEmails, WEEKLY_PREVIEW_SOURCES } from "./weekly-email";
+import { saveWeeklyEmailEnabled } from "./weekly-email-settings";
 
 const APP_URL = "http://localhost:3000";
 const REPLY_DOMAIN = "reply.example.com";
@@ -42,7 +43,7 @@ const DAY_MS = 24 * HOUR_MS;
 const ASK_TITLE = "Looking for a fintech investor for our seed round";
 const HELP_NOTE = "Happy to introduce you to two fintech investors.";
 
-type RecordedBody = { to: string[]; subject: string; text: string; reply_to?: string; headers?: Record<string, string> };
+type RecordedBody = { to: string[]; subject: string; text: string; html: string; reply_to?: string; headers?: Record<string, string> };
 
 describe("the Today home and the weekly email", () => {
   const database = createTestDatabase();
@@ -56,9 +57,13 @@ describe("the Today home and the weekly email", () => {
     return resend.state.emails.map(({ body }) => body as RecordedBody);
   }
 
-  async function seedAsk(authorId: string, title = ASK_TITLE) {
+  // An ask routed to its helpers, as posting one does: Today and the weekly email show the asks a member was routed to.
+  async function seedAsk(authorId: string, title = ASK_TITLE, helperIds: readonly string[] = []) {
     const [created] = await database.insert(ask).values({ authorId, title, detail: null, category: "intro" }).returning({ id: ask.id });
     if (!created) throw new Error("Expected an ask.");
+    for (const helperId of helperIds) {
+      await database.insert(askHelper).values({ askId: created.id, helperId, reason: "words", why: "can help with “Fintech, hiring and fundraising”" });
+    }
     return created.id;
   }
 
@@ -94,7 +99,7 @@ describe("the Today home and the weekly email", () => {
     const quinn = await seedMember(database, { name: "Quinn Quiet", canHelpWith: "Gardening" });
     await joinMemberToGroup(database, hana, `hana-${hana}`);
     await joinMemberToGroup(database, rae, `rae-${rae}`);
-    const askId = await seedAsk(alex);
+    const askId = await seedAsk(alex, ASK_TITLE, [hana]);
     const introId = await seedIntroAsk(rae, hana);
     return { hana, alex, rae, quinn, askId, introId };
   }
@@ -173,7 +178,7 @@ describe("the Today home and the weekly email", () => {
 
       const today = await readTodayItems(database, quinn, await readEnabledIds(database), now);
 
-      expect(today.profileLines).toEqual([{ field: "title", label: "Role", value: "Head of Growth" }]);
+      expect(today.profileLines).toEqual([{ field: "title", label: "Role", value: "Head of Growth", filledAt: hour(2).toISOString() }]);
       expect(isTodayEmpty(today)).toBe(false);
     });
 
@@ -225,10 +230,17 @@ describe("the Today home and the weekly email", () => {
       const bodies = readBodies();
       expect(bodies).toHaveLength(1);
       expect(bodies[0]?.to).toEqual([await readEmail(hana)]);
-      expect(bodies[0]?.subject).toBe("This week in Your community: 2 things for you");
-      expect(bodies[0]?.text).toContain(`1. “${ASK_TITLE}” from Alex Asker.`);
+      expect(bodies[0]?.subject).toBe("Hana, you could help with this one");
+      expect(bodies[0]?.text).toContain(`1. Alex Asker asks: ${ASK_TITLE}`);
+      expect(bodies[0]?.text).toContain("   Why you: Your profile says you can help with “Fintech, hiring and fundraising”.");
+      expect(bodies[0]?.text).toContain("   Or reply HELP 1 with a line for Alex · SKIP 1");
       expect(bodies[0]?.text).toContain("2. Rae Requester asks you to introduce them to Jo Rivera.");
-      expect(bodies[0]?.text).toContain("That's everything this week.");
+      expect(bodies[0]?.text).toContain("That’s everything this week. Open the portal:");
+      // One ending: the member's own unsubscribe link on the stop line, then the foot, and no generic footer.
+      expect(bodies[0]?.text).toMatch(/Nobody is introduced without saying yes\.\n\nStop the weekly digest: http\S+\/unsubscribe\?token=\S+\n\nSent by Your community via its member portal\.$/u);
+      expect(bodies[0]?.text).not.toContain("[[");
+      expect(bodies[0]?.text).not.toContain("Turn them off");
+      expect(bodies[0]?.html).toMatch(/Stop the weekly digest: http[^<\s]+\/unsubscribe\?token=/u);
       expect(bodies[0]?.reply_to).toMatch(new RegExp(`^reply\\+[0-9a-f]{32}-[0-9a-f]{20}@${REPLY_DOMAIN.replaceAll(".", "\\.")}$`));
       expect(bodies[0]?.headers?.["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
     });
@@ -247,6 +259,7 @@ describe("the Today home and the weekly email", () => {
       const { askId } = await seedCommunity();
       const second = await seedMember(database, { name: "Sam Second", canHelpWith: "fintech" });
       const third = await seedMember(database, { name: "Tess Third", canHelpWith: "investor intros" });
+      await database.insert(askHelper).values([second, third].map((helperId) => ({ askId, helperId, reason: "words", why: "can help with “fintech”" })));
 
       const stopped = await runWeeklyEmails(database, environment(), { now, maximumMembers: 2 });
       const resumed = await runWeeklyEmails(database, environment(), { now });
@@ -400,6 +413,27 @@ ${HELP_NOTE}`;
       expect(mine.isEmpty).toBe(true);
       expect(sample.text).toContain("Priya Shah");
       expect(sample.text).not.toContain("token=");
+    });
+
+    it("previews another member's digest with who asked whom, and never the note", async () => {
+      const { hana } = await seedCommunity();
+      const admin = await seedMember(database, { name: "Ada Admin" });
+      await database.update(user).set({ role: "admin" }).where(eq(user.id, admin));
+      const session = { id: admin, email: await readEmail(admin), role: "admin" };
+
+      const preview = await previewMemberDigest(database, environment(), session, hana);
+
+      expect(preview?.text).toContain(`1. Alex Asker asks: ${ASK_TITLE}`);
+      expect(preview?.text).toContain("2. Rae Requester asks you to introduce them to Jo Rivera.");
+      expect(preview?.text).not.toContain("Jo built the design team I want to build.");
+      expect(preview?.text).not.toContain("token=");
+    });
+
+    it("stays quiet while an admin has switched the weekly digest off", async () => {
+      await seedCommunity();
+      await saveWeeklyEmailEnabled(database, false);
+
+      expect((await runWeeklyEmails(database, environment(), { now })).queued).toBe(0);
     });
   });
 

@@ -10,6 +10,7 @@ import { isActiveMember } from "@/platform/auth/member-status";
 import { user } from "@/platform/database/auth-schema";
 import type { Database } from "@/platform/database/client";
 import { EMAIL_KINDS, EMAIL_TOPICS } from "@/platform/email/kinds";
+import { UNSUBSCRIBE_URL_MARK } from "@/platform/email/unsubscribe";
 import { isEmailWanted, queueEmail } from "@/platform/email/outbox";
 import { sendQueuedEmailNow } from "@/platform/email/outbox-sender";
 import { readResendConfig } from "@/platform/email/resend";
@@ -28,6 +29,7 @@ import { createItemToken, createReplyAddress, readReplyDomain } from "@/platform
 import { readEnabledIds } from "./enabled-modules";
 import { needsMemberThisWeek, numberWeeklyItems, readTodayItems, type TodayItems } from "./today";
 import { ITEM_ACTIONS, renderWeeklyEmail, type ItemLinks } from "./weekly-email-compose";
+import { readWeeklyEmailEnabled } from "./weekly-email-settings";
 
 const MEMBERS_PER_BATCH = 50;
 const DAY_MS = 24 * 60 * 60_000;
@@ -65,10 +67,12 @@ function placeholderLinks(environment: Environment, numbered: readonly WeeklyEma
   return new Map(numbered.map((item) => [item.number, new Map(itemActions(item).map((action) => [action, appUrl]))]));
 }
 
-type ComposeInput = { recipient: Recipient; items: TodayItems; numbered: WeeklyEmailItem[]; links: ItemLinks; branding: Branding; canReply: boolean; isTest: boolean };
+type ComposeInput = { recipient: Recipient; items: TodayItems; numbered: WeeklyEmailItem[]; links: ItemLinks; branding: Branding; canReply: boolean; isTest: boolean; isSent: boolean };
 
-function compose(environment: Environment, { recipient, items, numbered, links, branding, canReply, isTest }: ComposeInput) {
+function compose(environment: Environment, { recipient, items, numbered, links, branding, canReply, isTest, isSent }: ComposeInput) {
+  // A sent email's stop line carries the member's unsubscribe link (the outbox fills it in); a preview's opens the app.
   return renderWeeklyEmail({
+    stopUrl: isSent ? UNSUBSCRIBE_URL_MARK : resolveAppUrl(environment),
     memberName: recipient.name,
     communityName: branding.name,
     accentColor: branding.accentColor,
@@ -99,7 +103,7 @@ async function queueWeeklyEmailFor(database: Database, environment: Environment,
   const id = randomUUID();
   const numbered = numberWeeklyItems(items);
   const [links, replyTo] = await Promise.all([buildItemLinks(database, environment, id, numbered), createReplyAddress(database, environment, id)]);
-  const rendered = compose(environment, { recipient, items, numbered, links, branding, canReply: replyTo !== null, isTest: false });
+  const rendered = compose(environment, { recipient, items, numbered, links, branding, canReply: replyTo !== null, isTest: false, isSent: true });
   await database.transaction(async (transaction) => {
     const claimed = await claimWeeklyEmail(transaction, { ...base, id, status: WEEKLY_EMAIL_STATUSES.queued, items: numbered });
     if (!claimed) return;
@@ -153,6 +157,7 @@ export type WeeklyRunOptions = { now?: Date; maximumMembers?: number };
 export async function runWeeklyEmails(database: Database, environment: Environment, { now = new Date(), maximumMembers = Number.POSITIVE_INFINITY }: WeeklyRunOptions = {}) {
   const summary: WeeklyRunSummary = { weekKey: null, queued: 0, empty: 0, notWanted: 0, failed: 0 };
   if (!readResendConfig(environment)) return summary;
+  if (!(await readWeeklyEmailEnabled(database))) return summary;
   const week = readCurrentWeek(now, await readWeeklySchedule(database));
   if (!week) return summary;
   summary.weekKey = week.weekKey;
@@ -220,13 +225,18 @@ export function buildSampleItems(now = new Date()): TodayItems {
         title: "Who knows a good fractional CFO for a seed-stage startup?",
         author: { id: "sample-asker", name: "Priya Shah", avatarUrl: null },
         listedAt: at,
+        createdAt: at,
         matchedWords: ["finance"],
         why: null,
+        who: "a fractional CFO",
+        whyYou: "Your profile says you can help with “finance for seed-stage startups.”",
       },
     ],
     introsToAnswer: [intro],
     introsToFinish: [],
     profileLines: [],
+    ownPosts: [],
+    introsInMotion: [],
     ownAsks: [
       {
         id: "00000000-0000-4000-8000-000000000003",
@@ -262,8 +272,38 @@ export async function previewWeeklyEmail(database: Database, environment: Enviro
   const items = isSample ? buildSampleItems() : await readTodayItems(database, admin.id, enabledIds);
   const numbered = numberWeeklyItems(items);
   const recipient = isSample ? SAMPLE_MEMBER : await readAdminRecipient(database, admin);
-  const rendered = compose(environment, { recipient, items, numbered, links: placeholderLinks(environment, numbered), branding, canReply: readReplyDomain(environment) !== null, isTest: false });
+  const rendered = compose(environment, { recipient, items, numbered, links: placeholderLinks(environment, numbered), branding, canReply: readReplyDomain(environment) !== null, isTest: false, isSent: false });
   return { ...rendered, isEmpty: !needsMemberThisWeek(items), recipientName: recipient.name };
+}
+
+// What an admin's preview shows of a member's intros: who asked whom (admins see names), never the note or reason.
+function hideIntroNotes(items: TodayItems): TodayItems {
+  const hide = (intro: TodayItems["introsToAnswer"][number]) => ({ ...intro, note: "", reason: "" });
+  return { ...items, introsToAnswer: items.introsToAnswer.map(hide), introsToFinish: items.introsToFinish.map(hide) };
+}
+
+export const SAMPLE_PREVIEW = "sample";
+
+// The digest preview (Asks & digest › Preview): any active member's digest as it would go out this week, or the
+// made-up member's. Buttons go nowhere that acts; intro notes stay private.
+export async function previewMemberDigest(database: Database, environment: Environment, admin: SessionMember, memberId: string) {
+  if (memberId === SAMPLE_PREVIEW) return previewWeeklyEmail(database, environment, admin, WEEKLY_PREVIEW_SOURCES.sample);
+  const [branding, enabledIds, [row]] = await Promise.all([
+    readBranding(database),
+    readEnabledIds(database),
+    database.select({ id: user.id, name: user.name, email: user.email }).from(user).where(and(eq(user.id, memberId), isActiveMember())),
+  ]);
+  if (!row) return null;
+  const read = await readTodayItems(database, row.id, enabledIds);
+  const items = row.id === admin.id ? read : hideIntroNotes(read);
+  const numbered = numberWeeklyItems(items);
+  const rendered = compose(environment, { recipient: row, items, numbered, links: placeholderLinks(environment, numbered), branding, canReply: readReplyDomain(environment) !== null, isTest: false, isSent: false });
+  return { ...rendered, isEmpty: !needsMemberThisWeek(items), recipientName: row.name };
+}
+
+// The members an admin can preview, by name.
+export function readDigestMembers(database: Database) {
+  return database.select({ id: user.id, name: user.name }).from(user).where(isActiveMember()).orderBy(asc(user.name));
 }
 
 export const TEST_SEND_OUTCOMES = { sent: "sent", queued: "queued", emailOff: "email_off", switchedOff: "switched_off" } as const;
@@ -280,7 +320,7 @@ export async function sendWeeklyTest(database: Database, environment: Environmen
   const numbered = numberWeeklyItems(items);
   const id = randomUUID();
   const [links, replyTo] = await Promise.all([buildItemLinks(database, environment, id, numbered), createReplyAddress(database, environment, id)]);
-  const rendered = compose(environment, { recipient, items, numbered, links, branding, canReply: replyTo !== null, isTest: true });
+  const rendered = compose(environment, { recipient, items, numbered, links, branding, canReply: replyTo !== null, isTest: true, isSent: true });
   const outboxId = await database.transaction(async (transaction) => {
     await claimWeeklyEmail(transaction, { id, memberId: recipient.id, weekKey: `${TEST_WEEK_PREFIX}${id}`, status: WEEKLY_EMAIL_STATUSES.test, items: numbered });
     const queued = await queueEmail(transaction, environment, { ...email, ...rendered, replyTo });

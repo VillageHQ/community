@@ -1,4 +1,5 @@
 import { queryOptions, skipToken } from "@tanstack/react-query";
+import { z } from "zod";
 
 import { readInboxPollMs, INBOX_POLL_MS, isRouteGone } from "../../platform/http/polling.ts";
 import { API_ROUTES } from "../../platform/http/routes.ts";
@@ -10,6 +11,8 @@ import {
   introCountsSchema,
   introSchema,
   introWithConsentIssueSchema,
+  type ConnectorAnswerRequest,
+  type LinkAnswerRequest,
   type ConsentAnswerBody,
   type ConsentEmailBody,
   type ConsentIssue,
@@ -98,4 +101,14 @@ export function emailConsentLinkRequest(body: ConsentEmailBody) {
 
 export function answerConsentRequest(body: ConsentAnswerBody) {
   return postRequest(API_ROUTES.introConsentAnswer, body, consentAnswerResponseSchema);
+}
+
+export function answerAsConnectorRequest(body: ConnectorAnswerRequest) {
+  return postRequest(API_ROUTES.introConnectorAnswer, body, introWithConsentIssueSchema);
+}
+
+const linkAnswerResponseSchema = z.object({ result: z.enum(["asked_target", "declined", "noted"]) });
+
+export function answerByLinkRequest(body: LinkAnswerRequest) {
+  return postRequest(API_ROUTES.introLinkAnswer, body, linkAnswerResponseSchema);
 }

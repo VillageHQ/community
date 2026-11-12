@@ -202,10 +202,21 @@ describe("asks", () => {
       expect(response.status).toBe(UNPROCESSABLE_STATUS);
     });
 
-    it("explains a missing category in plain words", async () => {
-      const response = await call(postCreate, asker, { title: CFO_ASK, category: null });
+    it("needs no category: one that names who it's trying to reach is an intro, any other ask is advice", async () => {
+      expect((await call(postCreate, asker, { title: CFO_ASK, category: null, targetText: "a former CFO" })).status).toBe(OK_STATUS);
+      expect((await call(postCreate, asker, { title: "Any advice on pricing an API?" })).status).toBe(OK_STATUS);
 
-      expect(await response.json()).toMatchObject({ message: "Choose what kind of help you need." });
+      const rows = await database.select({ category: ask.category, targetText: ask.targetText }).from(ask).orderBy(ask.createdAt);
+      expect(rows).toEqual([
+        { category: ASK_CATEGORIES.intro, targetText: "a former CFO" },
+        { category: ASK_CATEGORIES.advice, targetText: null },
+      ]);
+    });
+
+    it("says how long an ask is when it runs past Founderhall's one line", async () => {
+      const response = await call(postCreate, asker, { title: "x".repeat(ASK_LIMITS.titleLength + 3) });
+
+      expect(await response.json()).toMatchObject({ message: `That is ${ASK_LIMITS.titleLength + 3} characters; keep it to ${ASK_LIMITS.titleLength}.` });
     });
 
     it.each([
@@ -1150,7 +1161,7 @@ describe("asks", () => {
 
       expect((await call(postPin, admin, { askId: fourthId, isPinned: true })).status).toBe(CONFLICT_STATUS);
       expect((await call(postPin, admin, { askId: ids[0], isPinned: true })).status).toBe(CONFLICT_STATUS);
-      expect((await readAdminAsks(database)).pinned.find(({ id }) => id === ids[0])).toMatchObject({ isPinned: true, isExpired: true });
+      expect((await readAdminAsks(database)).rows.find(({ id }) => id === ids[0])).toMatchObject({ isPinned: true, status: "expired" });
 
       expect((await call(postRenew, asker, { askId: ids[0] })).status).toBe(OK_STATUS);
       const board = await readBoard(bystander);
@@ -1200,7 +1211,7 @@ describe("asks", () => {
   });
 
   describe("the admin asks page", () => {
-    it("counts this quarter's asks the way the data says, deleted accounts included", async () => {
+    it("counts every ask the way the data says, and lists every ask and update", async () => {
       const answeredId = await createAsk(asker, { title: "Answered one" });
       await call(postAnswer, helper, { askId: answeredId, body: "Done it." });
       const solvedId = await createAsk(asker, { title: "Solved one" });
@@ -1214,7 +1225,10 @@ describe("asks", () => {
 
       const page = await readAdminAsks(database);
 
-      expect(page.counts).toEqual({ asked: 5, answered: 1, closed: 3, solvedHere: 1, solvedElsewhere: 1, noLongerNeeded: 1 });
+      expect(page.figures).toMatchObject({ posted: 4, open: 2, answered: 2, updates: 1 });
+      expect(page.rows.map(({ title }) => title)).toEqual(expect.arrayContaining(["Answered one", "Solved one", "Elsewhere one", "Waiting longest", "An update"]));
+      expect(page.rows.find(({ title }) => title === "Solved one")).toMatchObject({ status: "answered", canClose: false });
+      expect(page.rows.find(({ title }) => title === "An update")).toMatchObject({ status: "update" });
       expect(page.oldest.map(({ title }) => title)).toEqual(["Waiting longest"]);
       expect(page.weeklyAllowance).toBe(ASK_ALLOWANCE.maximum);
     });
@@ -1226,7 +1240,7 @@ describe("asks", () => {
 
       const page = await readAdminAsks(database);
 
-      expect(page.counts.answered).toBe(0);
+      expect(page.rows.find(({ id }) => id === askId)?.answerCount).toBe(0);
       expect(page.oldest.map(({ id }) => id)).toEqual([askId]);
     });
 
@@ -1240,7 +1254,7 @@ describe("asks", () => {
 
       expect(page.reported).toHaveLength(1);
       expect(page.reported[0]).toMatchObject({ targetType: REPORT_TARGETS.ask, reportCount: 2 });
-      expect(page.pinned.map(({ id }) => id)).toEqual([askId]);
+      expect(page.rows.filter(({ isPinned }) => isPinned).map(({ id }) => id)).toEqual([askId]);
     });
   });
 });

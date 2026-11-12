@@ -3,6 +3,10 @@ export const ACCOUNT_DELETED_PARAM = "accountDeleted";
 
 export const ROUTES = {
   feed: "/",
+  // Founderhall's Today. "/" sends a member here.
+  today: "/today",
+  // The switchable feed's own page (Community-only).
+  feedPage: "/feed",
   // Founderhall's paths. The old ones (/sign-in, /sign-in/link, /join/<token>) redirect here (next.config.mjs).
   signIn: "/signin",
   signInLink: "/auth",
@@ -25,7 +29,10 @@ export const ROUTES = {
   // A first message to a member: the empty thread page; the first Send starts the conversation.
   newMessage: "/messages/new",
   intros: "/intros",
-  introConsent: "/meet",
+  // Founderhall's public intro pages: a yes or no without signing in, and "stop intro asks". `/meet` redirects here.
+  introConsent: "/i",
+  introOptOut: "/intro/optout",
+  introConsentOld: "/meet",
   // Founderhall's addresses. The old ones (/members, /members/<id>, /members/card, /members/data) answer with
   // permanent redirects (next.config.mjs).
   members: "/directory",
@@ -33,8 +40,13 @@ export const ROUTES = {
   editCard: "/me",
   yourData: "/me/data",
   emailSettings: "/me/email",
+  // Search (Founderhall's "/search"; the old "/network" redirects here), the guided ask, the intro ask page and My network.
+  network: "/search",
+  guidedAsk: "/ask",
+  introAsk: "/intros/new",
+  // The one-step ask from a search result (Founderhall keeps Search lit for it).
+  searchAsk: "/search/ask",
   myNetwork: "/me/network",
-  network: "/network",
   admin: "/admin",
   adminSetup: "/admin/setup",
   adminMembers: "/admin/members",
@@ -49,10 +61,12 @@ export const ROUTES = {
   adminMail: "/admin/mail",
   adminImport: "/admin/import",
   adminLinks: "/admin/links",
-  // The console's Intro log and Invites (Founderhall's menu). Until their pages are built they forward to where
-  // that work lives today: the partner report and Members.
+  // The console (Founderhall's menu): the Intro log, Invites, sending the partner report, and the weekly digest's
+  // preview (Asks & digest; the old /admin/weekly-email forwards here).
   adminIntroLog: "/admin/intros",
   adminInvites: "/admin/invites",
+  adminReportSend: "/admin/report/send",
+  adminDigest: "/admin/digest",
   // The parts review page: off unless SHOW_PARTS_PAGE=true (development and review copies only).
   parts: "/parts",
   // A switched-off module's page, for a signed-in member: a 404 inside the app (src/proxy.ts).
@@ -129,6 +143,7 @@ export const API_ROUTES = {
   networkFillIn: "/api/network/fill-in",
   profileLookupChoice: "/api/profile/lookup-choice",
   profileFillIn: "/api/profile/fill-in",
+  profileFillInCheck: "/api/profile/fill-in/check",
   feedReport: "/api/feed/report",
   introReport: "/api/intros/report",
   networkConfirmation: "/api/members/confirmation",
@@ -164,6 +179,8 @@ export const API_ROUTES = {
   introConsentAnswer: "/api/intros/consent/answer",
   introConsentLink: "/api/intros/consent/link",
   introConsentEmail: "/api/intros/consent/email",
+  introConnectorAnswer: "/api/intros/answer",
+  introLinkAnswer: "/api/intros/link/answer",
   memberDirectory: "/api/members/directory",
   members: "/api/members",
   profile: "/api/profile",

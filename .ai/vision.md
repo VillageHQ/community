@@ -27,7 +27,7 @@ More detail: `.ai/personas.md`.
 ## Non-goals
 - A public social network. The feed exists but is a switch, off by default.
 - Showing members each other's contacts: search shows paths through members who agreed to share, never an address
-  book. Admins see intro counts and outcomes, never who asked whom.
+  book. Admins see who asked whom, with states and dates (the owner decided, 2026-11-11), never an intro's note or reason.
 - Doing the introduction for people: the connector always decides, and the person asked always says yes first.
 
 ## How success shows
