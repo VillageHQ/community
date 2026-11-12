@@ -5,7 +5,7 @@ Core. Always on. Others build on it; it never imports them.
 - `schema.ts`: profiles, tags, avatars, invites and `member_network`. It also holds Village columns: LinkedIn lives on it, and splitting needs a data migration.
 - `service-profile.ts`, `reads-directory.ts`: the member card and the directory. Stage, sector and cohort are free text, filtered as whole values ignoring case; the cohort starts from the invite.
 - `service-invites.ts`, `service-email-confirmation.ts`: issuing and accepting invites, and confirming an email.
-  `service-invite-emailed.ts`: the emailed link's mark; joining confirms the address (`-notice.ts` warns it).
+  `service-invite-emailed.ts`: the emailed link's mark; joining from it confirms the address.
 - `*-bulk-invites.ts`: inviting from a pasted list or a CSV. Parsing drops leading formula characters; a downloaded CSV goes through `toCsv`.
 - `service-admin.ts`: what an admin does to one member: confirm an email, confirm or clear a LinkedIn claim.
 - `service-blocks.ts`, `contract-blocks.ts`: blocks. Whoever calls `setMemberBlocked` passes the effects that run in the same transaction.

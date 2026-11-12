@@ -1,5 +1,7 @@
 # Accounts, invites and privacy fixes (`fix-accounts-privacy`)
 
+Status: building
+
 Six fixes from the parity audit of 2026-11-12. Charter: [CHARTER.md](CHARTER.md). How it works: [NOTES.md](NOTES.md).
 
 What it does now:
