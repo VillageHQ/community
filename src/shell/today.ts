@@ -5,9 +5,10 @@ import { readOwnAsks } from "@/modules/asks/reads";
 import { readAsksYouCouldHelp } from "@/modules/asks/reads-could-help";
 import { ASK_STATES, type OwnAsk } from "@/modules/asks/contract";
 import type { HelpableAsk } from "@/modules/asks/contract-today";
-import { INTRO_STATES, type Intro } from "@/modules/intros/contract";
+import { INTRO_STATES, type Intro, type IntroForTarget } from "@/modules/intros/contract";
 import { introsManifest } from "@/modules/intros/manifest";
 import { readIntroBoard, readWaitingIntros } from "@/modules/intros/reads";
+import { readIntrosForTarget } from "@/modules/intros/reads-target-member";
 import { readOpenOwnPosts, type BoardPost } from "@/modules/asks/reads-board";
 import type { LineToCheck } from "@/modules/members/contract-fill-in";
 import { readNewMembers } from "@/modules/members/reads-directory";
@@ -22,6 +23,8 @@ export type TodayItems = {
   helpableAsks: HelpableAsk[];
   introsToAnswer: Intro[];
   introsToFinish: Intro[];
+  // Intros where this member is the person asked for: they answer yes or no thanks here too (INTRO-06).
+  introsForYou?: IntroForTarget[];
   // Words public profiles put on the member's card this past week, to check on Today.
   profileLines: LineToCheck[];
   ownAsks: OwnAsk[];
@@ -46,7 +49,7 @@ async function readOwnAsksForToday(database: Database, memberId: string, now: Da
 export async function readTodayItems(database: Database, memberId: string, enabledIds: ReadonlySet<string>, now = new Date()): Promise<TodayItems> {
   const isAsksOn = enabledIds.has(asksManifest.id);
   const isIntrosOn = enabledIds.has(introsManifest.id);
-  const [helpableAsks, ownAsks, waitingIntros, { newCount, newMembers }, profileLines, ownPosts, introBoard] = await Promise.all([
+  const [helpableAsks, ownAsks, waitingIntros, { newCount, newMembers }, profileLines, ownPosts, introBoard, introsForYou] = await Promise.all([
     isAsksOn ? readAsksYouCouldHelp(database, memberId, now) : [],
     isAsksOn ? readOwnAsksForToday(database, memberId, now) : null,
     isIntrosOn ? readWaitingIntros(database, memberId) : [],
@@ -54,11 +57,13 @@ export async function readTodayItems(database: Database, memberId: string, enabl
     readLinesToCheck(database, memberId),
     isAsksOn ? readOpenOwnPosts(database, memberId, now) : [],
     isIntrosOn ? readIntroBoard(database, memberId) : null,
+    isIntrosOn ? readIntrosForTarget(database, memberId, now) : [],
   ]);
   return {
     helpableAsks,
     introsToAnswer: waitingIntros.filter(({ state }) => state === INTRO_STATES.requested),
     introsToFinish: waitingIntros.filter(({ state }) => state !== INTRO_STATES.requested),
+    introsForYou,
     profileLines,
     ownAsks: ownAsks?.asks.filter(({ state }) => state === ASK_STATES.open) ?? [],
     ownPosts,
@@ -88,5 +93,5 @@ export function needsMemberThisWeek(items: TodayItems) {
 }
 
 export function isTodayEmpty(items: TodayItems) {
-  return !needsMemberThisWeek(items) && items.ownAsks.length === 0 && items.profileLines.length === 0;
+  return !needsMemberThisWeek(items) && items.ownAsks.length === 0 && items.profileLines.length === 0 && (items.introsForYou?.length ?? 0) === 0;
 }

@@ -8,7 +8,8 @@ import { AllowancePips } from "@/components/ui/search-box";
 import { ROUTES } from "@/platform/http/routes";
 import { formatDayMonth } from "@/platform/text/format-date";
 
-import { STATES_WAITING_ON_INTRODUCER, type Intro, type IntroBoard } from "../contract";
+import { STATES_WAITING_ON_INTRODUCER, type Intro, type IntroBoard, type IntroForTarget } from "../contract";
+import { TargetMemberAsk } from "./target-member-ask";
 import { CONSENT_LINE, readPartOfPill, readStatusPill, readTargetCompany } from "./intro-words";
 
 export type IntroAllowance = { left: number; cap: number };
@@ -85,7 +86,15 @@ function PartOfRow({ intro }: { intro: Intro }) {
 
 // Founderhall's "Your intros" (introsPage()): the page head, the allowance line, "Waiting for your answer", "Your
 // asks" and "Asks you were part of", as ruled rows that open each intro.
-export function IntrosList({ board, allowance }: { board: IntroBoard; allowance: IntroAllowance }) {
+const AGO = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+function describeAskedAgo(at: string, now: Date) {
+  const days = Math.round((now.getTime() - new Date(at).getTime()) / 86_400_000);
+  return AGO.format(-Math.max(0, days), "day");
+}
+
+// `forYou`: intros where this member is the person asked for (INTRO-06); they answer here too.
+export function IntrosList({ board, allowance, forYou = [], now = new Date() }: { board: IntroBoard; allowance: IntroAllowance; forYou?: IntroForTarget[]; now?: Date }) {
   const toAnswer = board.asksForYou.filter(isWaitingOnYou);
   const partOf = board.asksForYou.filter((intro) => !isWaitingOnYou(intro));
   return (
@@ -95,13 +104,18 @@ export function IntrosList({ board, allowance }: { board: IntroBoard; allowance:
         <p className="fh-lede">Ask a member for an intro from their profile. {CONSENT_LINE}</p>
       </div>
       <AllowanceLine allowance={allowance} />
-      {toAnswer.length > 0 ? (
+      {toAnswer.length + forYou.length > 0 ? (
         <Section title="Waiting for your answer">
-          <Rows>
-            {toAnswer.map((intro) => (
-              <WaitingRow key={intro.id} intro={intro} />
-            ))}
-          </Rows>
+          {forYou.map((intro) => (
+            <TargetMemberAsk key={intro.id} intro={intro} ago={describeAskedAgo(intro.createdAt, now)} />
+          ))}
+          {toAnswer.length > 0 ? (
+            <Rows>
+              {toAnswer.map((intro) => (
+                <WaitingRow key={intro.id} intro={intro} />
+              ))}
+            </Rows>
+          ) : null}
         </Section>
       ) : null}
       <Section title="Your asks">

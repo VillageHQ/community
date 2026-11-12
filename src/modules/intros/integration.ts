@@ -5,13 +5,15 @@ import type { ModuleIntegration } from "@/platform/modules/integration";
 import { introsManifest } from "./manifest";
 import { expireDueIntros, readIntroBadgeCount, readIntroCounts } from "./reads";
 import { sendDueOutcomeEmails } from "./outcome-email";
+import { countIntrosForTarget } from "./reads-target-member";
 import { sendDueConnectorReminders, sendDueExpiryEmails } from "./quiet-intro-emails";
 import { sendDueTargetReminders } from "./target-reminder";
 import { stopOpenAsksOnBlock } from "./service-blocks";
 
 export const introsModule: ModuleIntegration = {
   manifest: introsManifest,
-  readNavigationBadge: async (database, memberId) => readIntroBadgeCount(await readIntroCounts(database, memberId)),
+  // Also counts intros where the member is the person asked for and hasn't answered (INTRO-06).
+  readNavigationBadge: async (database, memberId) => readIntroBadgeCount(await readIntroCounts(database, memberId)) + (await countIntrosForTarget(database, memberId)),
   onMemberBlocked: stopOpenAsksOnBlock,
   jobs: [
     {

@@ -12,6 +12,7 @@ import { AllowancePips } from "@/components/ui/search-box";
 import { ASKS_PAGE, describeAgo, describeAllowance, describeAnswerCount, describeCanHelp, toAskPage, type AskAllowance } from "@/modules/asks/contract";
 import { TargetLine } from "@/modules/asks/components/post-parts";
 import { INTRO_STATES, type Intro } from "@/modules/intros/contract";
+import { TargetMemberAsk } from "@/modules/intros/components/target-member-ask";
 import { JOB_BOARD_PAGES } from "@/modules/job-board/contract";
 import { NewThisWeekCard } from "@/modules/members/components/new-this-week-card";
 import { PERKS_PAGE } from "@/modules/perks/contract";
@@ -76,20 +77,22 @@ type TodayPageProps = {
 export function TodayPage({ today, memberName, communityName, digestDay, dateLabel, allowance, perksCommunityName, openJobCount, nextSteps, lookupQuestion, flash, now, askIntroHref }: TodayPageProps) {
   const first = firstWord(memberName);
   const help = today.helpableAsks;
+  const forYou = today.introsForYou ?? [];
   const intros = [...today.introsToAnswer, ...today.introsToFinish];
   const facts = today.profileLines;
+  const waitingCount = intros.length + forYou.length;
   const lead = help.length
     ? `You could help with ${help.length === 1 ? "this one" : `these ${help.length}`}`
-    : intros.length
-      ? `${first}, ${intros.length === 1 ? "one intro is" : `${intros.length} intros are`} waiting for your yes`
+    : waitingCount
+      ? `${first}, ${waitingCount === 1 ? "one intro is" : `${waitingCount} intros are`} waiting for your yes`
       : facts.length
         ? `${first}, is this right?`
         : "That’s everything this week";
   const plus = [
-    help.length && intros.length ? `${intros.length === 1 ? "one intro" : `${intros.length} intros`} waiting for your yes` : null,
-    (help.length || intros.length) && facts.length ? `${facts.length === 1 ? "one line" : `${facts.length} lines`} on your profile` : null,
+    help.length && waitingCount ? `${waitingCount === 1 ? "one intro" : `${waitingCount} intros`} waiting for your yes` : null,
+    (help.length || waitingCount) && facts.length ? `${facts.length === 1 ? "one line" : `${facts.length} lines`} on your profile` : null,
   ].filter(Boolean);
-  const isNothing = !help.length && !intros.length && !facts.length;
+  const isNothing = !help.length && !waitingCount && !facts.length;
   const digest = possessive(digestDay);
   const mineCount = today.ownPosts.length + today.introsInMotion.length;
 
@@ -147,9 +150,12 @@ export function TodayPage({ today, memberName, communityName, digestDay, dateLab
               ))}
             </section>
           ) : null}
-          {intros.length ? (
+          {waitingCount ? (
             <section className="fh-tsec">
               <SectionHead title="Waiting for your yes" link={<Link href={ROUTES.intros}>Your intros</Link>} />
+              {forYou.map((intro) => (
+                <TargetMemberAsk key={intro.id} intro={intro} ago={describeAgo(intro.createdAt, now)} />
+              ))}
               {intros.map((intro) => (
                 <article key={intro.id} className="fh-titem">
                   <div className="fh-ph">
