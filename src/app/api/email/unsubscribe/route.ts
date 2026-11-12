@@ -24,7 +24,8 @@ export const POST = platformRoutes.open("email-unsubscribe", async (request: Req
   await setEmailTopic(database, target, false);
   if (!(await isFromUnsubscribePage(request))) return Response.json({ unsubscribed: true });
 
-  const page = new URL(ROUTES.unsubscribe, url.origin);
-  page.searchParams.set("token", token);
-  return Response.redirect(page, SEE_OTHER_STATUS);
+  // Back by path: the server may see another address than the browser (127.0.0.1 against localhost, a proxy), and the
+  // page's form-action 'self' rule would block a redirect there, so the page would seem to do nothing.
+  const query = new URLSearchParams({ token });
+  return new Response(null, { status: SEE_OTHER_STATUS, headers: { Location: `${ROUTES.unsubscribe}?${query}`, "Cache-Control": "no-store" } });
 });

@@ -85,7 +85,8 @@ export default modulePage(PLATFORM_MANIFEST, async function WeeklyAnswerPage({ s
       ) : page.earlier ? (
         <>
           <h1 className="fh-h2">{result === ANSWER_OUTCOMES.done ? "Done" : "Already answered"}</h1>
-          <p className="fh-lede">{page.item.title}</p>
+          {/* A fixed line's old words would read as if nothing changed, so a profile line shows only the answer. */}
+          {page.item.kind === WEEKLY_ITEM_KINDS.fact ? null : <p className="fh-lede">{page.item.title}</p>}
           <Alert variant="success" className="mt-4">
             {result === ANSWER_OUTCOMES.done || (!result && page.earlier.action === page.link.action)
               ? (QUESTIONS[page.earlier.action]?.done ?? "Done.")

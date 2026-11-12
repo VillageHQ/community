@@ -290,6 +290,12 @@ describe("the Today home and the weekly email", () => {
       expect(await database.select().from(emailOutbox)).toEqual([]);
       await setEmailTopic(database, { memberId: hana, topic: EMAIL_TOPICS.weekly }, true);
       expect((await runWeeklyEmails(database, environment(), { now })).queued).toBe(1);
+      // The page's own button goes back to the page by path, whatever address the server sees itself under.
+      const fromPage = await postUnsubscribe(
+        new Request(unsubscribeUrl.replace(APP_URL, "http://localhost:9999"), { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "fromPage=1" }),
+      );
+      expect(fromPage.status).toBe(303);
+      expect(fromPage.headers.get("location")).toMatch(/^\/unsubscribe\?token=/u);
     });
 
     it("never sends twice in six days when the admin moves the day, then keeps to the new day", async () => {
