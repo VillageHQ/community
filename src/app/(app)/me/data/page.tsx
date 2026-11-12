@@ -19,6 +19,7 @@ import { memberNetwork } from "@/modules/members/schema";
 import { membersManifest } from "@/modules/members/manifest";
 import { toPossessive } from "@/modules/members/rules-words";
 import { readFilledLines, readLookupState, type LookupState } from "@/modules/members/service-fill-in";
+import { MESSAGE_POLICIES } from "@/modules/members/contract-privacy";
 import { readPrivacy, type MemberPrivacy } from "@/modules/members/service-privacy";
 import { ShareNetworkSheet, SwitchesSheet, type ShareState } from "@/modules/members/components/your-data-switches";
 import { DeleteAccountSheet, ExportSheet } from "@/modules/members/components/your-data-actions";
@@ -238,7 +239,8 @@ export default modulePage(membersManifest, async function YourDataPage() {
           <SwitchesSheet
             communityName={community}
             isHidden={privacy.isHidden}
-            messagePolicy={privacy.messagePolicy}
+            // Founderhall selects "The community’s default" for a member who never chose.
+            messagePolicy={privacy.followsCommunityDefault ? MESSAGE_POLICIES.communityDefault : privacy.messagePolicy}
             isMessagesOn={isMessagesOn}
             lookup={lookup.basis ? { isAllowed: lookup.isAllowed } : null}
             deviceRow={<DarkModeRow />}
