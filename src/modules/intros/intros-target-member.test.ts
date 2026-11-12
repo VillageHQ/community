@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST as postCreate } from "@/app/api/intros/create/route";
+import { FlashProvider } from "@/components/flash";
 import { POST as postMemberAnswer } from "@/app/api/intros/consent/member-answer/route";
 import { POST as postTransition } from "@/app/api/intros/transition/route";
 import { IntrosList } from "@/modules/intros/components/intros-list";
@@ -110,7 +111,7 @@ describe("a member who is the person asked for", () => {
     expect(JSON.stringify(forMarcus)).not.toContain(amara.email);
     expect(await introsModule.readNavigationBadge?.(database, marcus.userId)).toBe(1);
     const list = createElement(IntrosList, { board: await readIntroBoard(database, marcus.userId), allowance: { left: 5, cap: 5 }, forYou: [forMarcus!] });
-    const html = renderToStaticMarkup(createElement(QueryClientProvider, { client: new QueryClient() }, list as ReactNode));
+    const html = renderToStaticMarkup(createElement(QueryClientProvider, { client: new QueryClient() }, createElement(FlashProvider, null, list as ReactNode)));
     expect(html).toContain("Jonas Lindqvist would like to introduce you to Amara Osei");
     expect(html).toContain("Yes, introduce us");
 

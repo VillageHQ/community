@@ -73,6 +73,8 @@ export type BoardPost = {
   author: AskMember;
   createdAt: string;
   who: string;
+  // The person the ask names, without their company (prefills "Who would you like … to introduce you to?").
+  targetName: string | null;
   targetText: string | null;
   targetCompany: string | null;
   helperCount: number;
@@ -178,6 +180,7 @@ function toPost(row: PostRow, viewerId: string, helpers: PostHelper[], answers: 
     author: toMember(row.author),
     createdAt: row.createdAt.toISOString(),
     who: describeAskWho(row),
+    targetName: row.targetName ?? row.targetText ?? null,
     targetText: row.targetText,
     targetCompany: row.targetCompany ?? null,
     helperCount: isAsk ? helpers.length : 0,

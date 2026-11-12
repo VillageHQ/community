@@ -160,17 +160,20 @@ describe("the admin home", () => {
     await seedIntro({ state: INTRO_STATES.declined, closedAt: now });
     await seedIntro({ state: INTRO_STATES.targetDeclined, askedTargetAt: now, closedAt: now });
     await seedIntro({ state: INTRO_STATES.withdrawn, closedAt: now });
+    await seedIntro({ state: INTRO_STATES.expired, closedAt: now });
     await seedIntro({ isWithheld: true });
 
     const log = await readIntroLog(database);
 
+    // A no-answer expiry is its own line, never a decline (ADM-04).
     expect(countIntroLedger(log)).toEqual({
-      asked: 5,
+      asked: 6,
       connectorYes: 3,
       made: 1,
       declinedByConnector: 1,
       declinedByTarget: 1,
       declined: 2,
+      noAnswer: 1,
       openWithConnector: 1,
       openWithTarget: 1,
       open: 2,

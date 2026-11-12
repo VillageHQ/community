@@ -417,6 +417,8 @@ export const introSchema = z.object({
   target: z.object({ name: z.string(), headline: z.string().nullable(), linkedinSlug: z.string().nullable(), isNamed: z.boolean() }),
   // The address the asker typed for the person, while the ask is open: it fills in the connector's consent email.
   suggestedTargetEmail: z.string().nullable(),
+  // For the connector only: when the app last emailed the person their link (never the address itself).
+  targetEmailedAt: timestampSchema.nullable().optional(),
   requester: introPersonSchema,
   introducer: introPersonSchema,
 });

@@ -19,6 +19,7 @@ const BREAKDOWN_COLUMNS: Column[] = [
   { label: "Asked", key: "asked" },
   { label: "Made", key: "made" },
   { label: "Declined", key: "declined" },
+  { label: "No answer", key: "noAnswer" },
   { label: "Open", key: "open" },
 ];
 

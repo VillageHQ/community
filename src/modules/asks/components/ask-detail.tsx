@@ -37,10 +37,10 @@ function Warmth({ warmth }: { warmth: string | null }) {
   );
 }
 
-type HelperRowProps = { helper: PostHelper; viewer: AskMember; viewerId: string; isOwn: boolean; isOpen: boolean; askId: string; who: string; offeredKind: string | null };
+type HelperRowProps = { helper: PostHelper; viewer: AskMember; viewerId: string; isOwn: boolean; isOpen: boolean; askId: string; askTarget: string; offeredKind: string | null };
 
 // Founderhall's helperRow: the member, how they could help, and on your own open ask the intro and message buttons.
-function HelperRow({ helper, viewer, viewerId, isOwn, isOpen, askId, who, offeredKind }: HelperRowProps) {
+function HelperRow({ helper, viewer, viewerId, isOwn, isOpen, askId, askTarget, offeredKind }: HelperRowProps) {
   const { member } = helper;
   const line = describeHelperLine(helper);
   const offeredLabel = offeredKind ? ANSWER_KIND_LABELS[offeredKind] : null;
@@ -88,7 +88,7 @@ function HelperRow({ helper, viewer, viewerId, isOwn, isOpen, askId, who, offere
             helper={{ id: member.id, firstName: firstName(member.name) }}
             canAsk={helper.canAskForIntro}
             // A helper found by profile words has no path: the author says whom they'd like to meet.
-            targetName={isPath ? null : who}
+            targetName={isPath ? null : askTarget}
           />
           <Link className="fh-btn fh-btn-quiet fh-btn-sm" href={`/messages/new?to=${member.id}`}>
             Message
@@ -183,7 +183,7 @@ export function AskDetail({ detail, viewer, isViewerAdmin, flash, now }: AskDeta
                     isOwn={isOwn}
                     isOpen={isOpen}
                     askId={post.id}
-                    who={who ?? ""}
+                    askTarget={post.targetName ?? ""}
                     offeredKind={offeredBy.get(helper.member.id) ?? null}
                   />
                 ))

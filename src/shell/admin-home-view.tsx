@@ -54,6 +54,7 @@ function IntroLedgerSheet({ ledger }: { ledger: IntroLedger }) {
           { label: "Target said yes", value: formatNumber(ledger.made), share: ledger.connectorYes ? `${percentOf(ledger.made, ledger.connectorYes)}%` : undefined, percent: bar(ledger.made), tone: "yes" },
           { label: <b>Introduced</b>, value: formatNumber(ledger.made), percent: bar(ledger.made), tone: "made", hasBookmark: true },
           { label: "Declined", note: `${ledger.declinedByConnector} by connector, ${ledger.declinedByTarget} by target`, value: formatNumber(ledger.declined), percent: bar(ledger.declined), tone: "declined" },
+          ...(ledger.noAnswer ? [{ label: "No answer in 7 days", value: formatNumber(ledger.noAnswer), percent: bar(ledger.noAnswer), tone: "declined" as const }] : []),
           { label: "Still open", note: `${ledger.openWithConnector} with connector, ${ledger.openWithTarget} with target`, value: formatNumber(ledger.open), percent: bar(ledger.open), tone: "open" },
           {
             label: "Found it helpful",

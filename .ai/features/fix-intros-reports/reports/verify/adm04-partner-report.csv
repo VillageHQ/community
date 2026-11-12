@@ -1,0 +1,45 @@
+section,measure,Q4 2026 to date
+Intros,Asked for an intro,8
+Intros,Connector said yes,4
+Intros,Introduced,1
+Intros,Declined at the connector,1
+Intros,Declined by the person asked for,1
+Intros,No answer in 7 days,2
+Intros,Withdrawn by the asker,0
+Intros,Still open,3
+Intros,Median days from ask to intro,0
+What came of the intros,A customer conversation started,0
+What came of the intros,A hire,0
+What came of the intros,An investor meeting,0
+What came of the intros,Found it helpful,0
+What came of the intros,Answered,0
+What came of the intros,Pending,1
+Asks & updates,Asks posted,1
+Asks & updates,Answered,0
+Asks & updates,Still open,1
+Asks & updates,Median hours to first help,
+Asks & updates,Intros started from asks,2
+Asks & updates,Intros made from asks,0
+
+breakdown,group,asked,yes,introduced,declined,no answer,open
+Top connectors,Jonas Berg,3,3,1,1,0,1
+Top connectors,Other connectors,5,1,0,1,2,2
+By sector,Not set,8,4,1,2,2,3
+By what the founder needed,Customer,0,0,0,0,0,0
+By what the founder needed,Hire,0,0,0,0,0,0
+By what the founder needed,Investor,0,0,0,0,0,0
+By what the founder needed,Expert,0,0,0,0,0,0
+By what the founder needed,Other,8,4,1,2,2,3
+By cohort,No cohort,8,4,1,2,2,3
+
+section,measure,As of today
+Community,Members,9
+Community,Agreed to share their network,0
+Community,Network synced,0
+Community,Invites accepted,8
+Community,Invites still waiting,0
+Community,Invites expired,0
+Community,"Active members, last 7 days",3
+Community,"Active members, last 30 days",3
+Community,"Posts, last 7 days",0
+Community,"Posts, last 30 days",0

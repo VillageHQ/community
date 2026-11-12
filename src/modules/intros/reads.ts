@@ -213,6 +213,7 @@ function toIntro(row: IntroRow, viewerId: string, outcomeDays: number, now = new
       isNamed: request.isNamedTarget,
     },
     suggestedTargetEmail: request.suggestedTargetEmail,
+    targetEmailedAt: isRequester ? null : toIso(request.consentEmailAt),
     requester: {
       id: request.requesterId,
       name: removeBidiControls(row.requesterName),

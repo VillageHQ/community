@@ -1,0 +1,3 @@
+ Test Files  1 failed | 157 passed (158)
+      Tests  1 failed | 3319 passed (3320)
+Only failure: src/test/deploy-setups.test.ts (the known Windows line-ending check on .do/deploy.template.yaml).
