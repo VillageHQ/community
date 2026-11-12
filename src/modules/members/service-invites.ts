@@ -33,6 +33,8 @@ import {
 } from "./contract-invite-state.ts";
 import { createInviteToken, hashInviteToken, isInviteTokenShape } from "./service-invite-token.ts";
 import { signEmailedInvite } from "./service-invite-emailed.ts";
+import { queueInviteUsedNotice } from "./service-invite-notice.ts";
+import type { Environment } from "../../platform/environment.ts";
 
 const CONFLICT_STATUS = 409;
 const INVITE_PAGE_SIZE = 10;
@@ -361,7 +363,8 @@ class InviteEmailTakenError extends Error {}
 
 type AcceptedAccount = { name: string; password: string };
 
-type AcceptOptions = { account?: AcceptedAccount | null; isFromEmail?: boolean };
+// notice: from the emailed link, the address hears that its invite was used (service-invite-notice.ts).
+type AcceptOptions = { account?: AcceptedAccount | null; isFromEmail?: boolean; notice?: { environment: Environment; branding: EmailBranding | null } };
 
 function readStartingName({ inviteeName, email }: { inviteeName: string | null; email: string }) {
   return inviteeName?.trim() || email.split("@")[0] || email;
@@ -371,7 +374,7 @@ function readStartingName({ inviteeName, email }: { inviteeName: string | null; 
 // may add one on My profile) and is called by the invite's name or the start of their address until welcome step 1
 // asks. Community's older form passes a name and a password. A join from the emailed link (isFromEmail, checked by the
 // caller with isEmailedInvite) starts with the address confirmed; one from a copied link does not.
-export async function acceptInvite(database: Database, token: string, { account = null, isFromEmail = false }: AcceptOptions = {}) {
+export async function acceptInvite(database: Database, token: string, { account = null, isFromEmail = false, notice }: AcceptOptions = {}) {
   const tokenHash = hashInviteToken(token);
   const passwordHash = account ? await hashPassword(account.password) : null;
   const userId = randomUUID();
@@ -406,7 +409,9 @@ export async function acceptInvite(database: Database, token: string, { account 
       }
       await transaction.insert(memberProfile).values({ userId, company: claimed.company, cohort: claimed.cohort });
       await transaction.update(invite).set({ acceptedUserId: userId }).where(eq(invite.id, claimed.id));
-      return { userId, email: claimed.email, name: account?.name ?? readStartingName(claimed), isEmailConfirmed: isFromEmail };
+      const name = account?.name ?? readStartingName(claimed);
+      const noticeEmailId = isFromEmail && notice ? await queueInviteUsedNotice(transaction, notice.environment, notice.branding, { id: userId, email: claimed.email, name }) : null;
+      return { userId, email: claimed.email, name, isEmailConfirmed: isFromEmail, noticeEmailId };
     });
   } catch (error) {
     if (error instanceof InviteEmailTakenError) return null;

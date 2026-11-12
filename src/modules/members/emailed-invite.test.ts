@@ -4,8 +4,10 @@ import { z } from "zod";
 
 import { POST as postCreate } from "@/app/api/admin/invites/route";
 import { POST as postAccept } from "@/app/api/invites/accept/route";
+import { POST as postNotMe } from "@/app/api/invites/not-me/route";
+import { readWaitingMembers } from "@/modules/members/service-admin";
 import { issuedInviteSchema } from "@/modules/members/contract-invites";
-import { user } from "@/platform/database/auth-schema";
+import { account, session, user } from "@/platform/database/auth-schema";
 import { EMAIL_KINDS } from "@/platform/email/kinds";
 import { emailOutbox } from "@/platform/email/schema";
 import { clearDatabase, createTestDatabase } from "@/test/database";
@@ -18,6 +20,7 @@ import { createSignedInMember } from "@/test/signed-in-member";
 const APP_URL = "http://localhost:3000";
 const INVITEE = "nadia.cole@example.com";
 const CREATED_STATUS = 201;
+const NOT_ME_PATTERN = /(http:\/\/localhost:3000\/invite\/not-me\?m=[A-Za-z0-9_-]+&s=[A-Za-z0-9_-]+)/;
 const LINK_PATTERN = /(http:\/\/localhost:3000\/invite\?token=[A-Za-z0-9_-]+&e=[A-Za-z0-9_-]+)/;
 
 describe("joining from the emailed invite link", () => {
@@ -106,5 +109,75 @@ describe("joining from the emailed invite link", () => {
     expect(response.status).toBe(CREATED_STATUS);
     expect((await readJoined())?.emailVerified).toBe(false);
     expect(await countConfirmationEmails()).toBe(1);
+  });
+
+  // INV-09: someone else holding the forwarded email could join as this address. The real owner hears about it.
+  describe("when the emailed link is used", () => {
+    async function joinFromEmail() {
+      const emailed = readEmailedLink();
+      await accept({ token: z.string().parse(emailed.searchParams.get("token")), emailed: z.string().parse(emailed.searchParams.get("e")) });
+    }
+
+    async function readNotice() {
+      const [notice] = await database.select().from(emailOutbox).where(eq(emailOutbox.kind, EMAIL_KINDS.inviteUsed));
+      return notice;
+    }
+
+    function notMe(link: URL) {
+      return postNotMe(
+        new Request(`${APP_URL}/api/invites/not-me`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Origin: APP_URL },
+          body: JSON.stringify({ member: link.searchParams.get("m"), signature: link.searchParams.get("s") }),
+        }),
+      );
+    }
+
+    // A sent email's words leave the outbox, so the link is read from what the fake Resend received.
+    function readNotMeLink() {
+      const sent = resend.state.emails.find((email) => JSON.stringify(email.body).includes("/invite/not-me"));
+      return new URL(z.string().parse(JSON.stringify(sent?.body).match(NOT_ME_PATTERN)?.[1]));
+    }
+
+    it("tells the invited address, with a link for when it wasn't them", async () => {
+      await joinFromEmail();
+
+      const notice = await readNotice();
+      expect(notice?.toEmail).toBe(INVITEE);
+      expect(readNotMeLink().pathname).toBe("/invite/not-me");
+    });
+
+    it("sends no notice for a copied link, which asks for confirmation instead", async () => {
+      await accept({ token: readInviteToken(copiedLink) });
+
+      expect(await readNotice()).toBeUndefined();
+    });
+
+    it("signs out whoever joined and puts them on the admin's waiting list when the owner says it wasn't them", async () => {
+      await joinFromEmail();
+      const [joined] = await database.select({ id: user.id }).from(user).where(eq(user.email, INVITEE));
+      const joinedId = z.string().parse(joined?.id);
+      await database.insert(account).values({ id: crypto.randomUUID(), userId: joinedId, accountId: joinedId, providerId: "credential", password: "x" });
+
+      const response = await notMe(readNotMeLink());
+
+      expect(response.status).toBe(200);
+      expect((await readJoined())?.emailVerified).toBe(false);
+      expect(await database.select().from(session).where(eq(session.userId, joinedId))).toHaveLength(0);
+      expect(await database.select().from(account).where(eq(account.userId, joinedId))).toHaveLength(0);
+      const waiting = await readWaitingMembers(database);
+      expect(waiting.find(({ id }) => id === joinedId)?.isReportedNotThem).toBe(true);
+    });
+
+    it("refuses a changed signature", async () => {
+      await joinFromEmail();
+      const link = readNotMeLink();
+      link.searchParams.set("s", "A".repeat(43));
+
+      const response = await notMe(link);
+
+      expect(response.status).toBe(404);
+      expect((await readJoined())?.emailVerified).toBe(true);
+    });
   });
 });

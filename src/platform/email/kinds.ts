@@ -7,6 +7,8 @@ export type EmailTopic = (typeof EMAIL_TOPICS)[keyof typeof EMAIL_TOPICS];
 
 export const EMAIL_KINDS = {
   invite: "invite",
+  // To the invited address after a join from its emailed link: "Wasn't you?" (members' service-invite-notice.ts).
+  inviteUsed: "invite_used",
   emailConfirmation: "email_confirmation",
   passwordReset: "password_reset",
   signInLink: "sign_in_link",
@@ -32,6 +34,8 @@ export type EmailKind = (typeof EMAIL_KINDS)[keyof typeof EMAIL_KINDS];
 
 const TOPIC_BY_KIND: Record<EmailKind, EmailTopic | null> = {
   [EMAIL_KINDS.invite]: null,
+  // The address's only warning that someone else holds its invite, so no switch turns it off.
+  [EMAIL_KINDS.inviteUsed]: null,
   [EMAIL_KINDS.emailConfirmation]: null,
   [EMAIL_KINDS.passwordReset]: null,
   [EMAIL_KINDS.signInLink]: null,

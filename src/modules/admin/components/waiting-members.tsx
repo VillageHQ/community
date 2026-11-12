@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { QueryBoundary } from "@/components/query-boundary";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Pill } from "@/components/ui/pill";
 import { networkManifest } from "@/modules/network/manifest";
 import { useIsModuleEnabled } from "@/platform/modules/enabled-modules";
 import type { WaitingMember } from "@/modules/members/contract-invites";
@@ -30,7 +31,7 @@ function useRefreshAfterConfirming() {
 
 function WaitingRow({ member }: { member: WaitingMember }) {
   const refresh = useRefreshAfterConfirming();
-  const { id, name, email, avatarUrl, inviteId } = member;
+  const { id, name, email, avatarUrl, inviteId, isReportedNotThem } = member;
 
   return (
     <div className="fh-r">
@@ -38,6 +39,11 @@ function WaitingRow({ member }: { member: WaitingMember }) {
       <div className="fh-who">
         <b>{name}</b>
         <span>{email}</span>
+        {isReportedNotThem ? (
+          <span className="mt-1">
+            <Pill tone="needs">Not them</Pill> The owner of {email} says someone else used this invite. We signed this person out.
+          </span>
+        ) : null}
       </div>
       <div className="fh-end flex-row! flex-wrap items-center! justify-end">
         <ConfirmDialog

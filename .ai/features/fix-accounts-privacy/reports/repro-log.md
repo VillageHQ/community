@@ -1,0 +1,1 @@
+- Item 1 (forwarded invite): before the fix, 3 new tests in src/modules/members/emailed-invite.test.ts failed (no notice email, no /api/invites/not-me); after, 8/8 pass.

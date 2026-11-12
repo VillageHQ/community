@@ -56,6 +56,7 @@ const ACTION_LINES: Partial<Record<AuditAction, (facts: ActionFacts) => ActionLi
   [AUDIT_ACTIONS.inviteResent]: ({ target }) => ({ words: "Invite resent", target }),
   [AUDIT_ACTIONS.inviteRevoked]: ({ target }) => ({ words: "Invite revoked", target }),
   [AUDIT_ACTIONS.inviteReclaimed]: ({ target, detail }) => ({ words: `Account locked and a new invite made for ${detail}`, target }),
+  [AUDIT_ACTIONS.inviteReportedNotMe]: ({ target }) => ({ words: "Said someone else used their invite; that person was signed out", target }),
   [AUDIT_ACTIONS.reportDismissed]: ({ target, detail }) => ({ words: `Dismissed a report on a ${reportedThing(detail)}`, target }),
   [AUDIT_ACTIONS.reportedContentDeleted]: ({ target, detail }) => ({ words: `Deleted a reported ${reportedThing(detail)}`, target }),
   [AUDIT_ACTIONS.postPinned]: ({ target }) => ({ words: "Pinned a post", target }),

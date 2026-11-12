@@ -6,6 +6,7 @@ import { user } from "../../platform/database/auth-schema.ts";
 import type { Database, Transaction } from "../../platform/database/client.ts";
 import { invite, memberAvatar, memberNetwork } from "./schema.ts";
 import { AUDIT_ACTIONS } from "../../platform/audit/actions.ts";
+import { adminAuditEntry } from "../../platform/audit/schema.ts";
 import { withAdminTransaction } from "../../platform/audit/admin-transaction.ts";
 import { recordAdminAction } from "../../platform/audit/record.ts";
 import { readResendConfig } from "../../platform/email/resend.ts";
@@ -32,7 +33,13 @@ function isWaitingForConfirmation() {
   );
 }
 
+// "It wasn't me" from the invited address puts the member first on the list, flagged.
+function isReportedNotThemColumn() {
+  return sql<boolean>`exists (select 1 from ${adminAuditEntry} where ${adminAuditEntry.targetMemberId} = ${user.id} and ${adminAuditEntry.action} = ${AUDIT_ACTIONS.inviteReportedNotMe})`;
+}
+
 export async function readWaitingMembers(database: Database) {
+  const isReportedNotThem = isReportedNotThemColumn();
   const rows = await database
     .select({
       id: user.id,
@@ -41,12 +48,13 @@ export async function readWaitingMembers(database: Database) {
       avatarUpdatedAt: memberAvatar.updatedAt,
       filledFace: filledFaceColumn(user.id),
       inviteId: invite.id,
+      isReportedNotThem,
     })
     .from(user)
     .leftJoin(memberAvatar, eq(memberAvatar.userId, user.id))
     .leftJoin(invite, and(eq(invite.acceptedUserId, user.id), isNull(invite.revokedAt)))
     .where(isWaitingForConfirmation())
-    .orderBy(user.createdAt, user.id)
+    .orderBy(sql`${isReportedNotThem} desc`, user.createdAt, user.id)
     .limit(MAXIMUM_WAITING_MEMBERS_SHOWN);
   return rows.map(({ avatarUpdatedAt, filledFace, ...member }) => ({
     ...member,
