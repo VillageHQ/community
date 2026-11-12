@@ -73,9 +73,11 @@ export default modulePage(adminManifest, async function AdminInvitesPage({ searc
                       ) : null}
                       {invite.name || invite.email}
                     </b>
-                    {/* One line, cut with "…" on a narrow phone, as Founderhall's: an address is never split mid-word. */}
-                    <span title={invite.email}>
-                      {invite.email} · sent {formatShortDate(invite.createdAt.toISOString())}, {invite.isExpired ? "ended" : "ends"} {formatShortDate(invite.expiresAt.toISOString())}
+                    {/* The address on one line, cut with "…" on a narrow phone, as Founderhall's: never split mid-word. The dates
+                        get their own line, so a long address can't hide when the link ended. */}
+                    <span title={invite.email}>{invite.email}</span>
+                    <span>
+                      Sent {formatShortDate(invite.createdAt.toISOString())}, {invite.isExpired ? "ended" : "ends"} {formatShortDate(invite.expiresAt.toISOString())}
                     </span>
                   </div>
                   <div className="fh-end lg:flex-row! lg:items-center!">
