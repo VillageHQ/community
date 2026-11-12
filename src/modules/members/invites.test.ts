@@ -335,6 +335,14 @@ describe("admin invites", () => {
       expect(shown.map(({ id }) => id)).toEqual([second.invite.id]);
     });
 
+    it("leaves out a revoked invite whose person already has an account", async () => {
+      const first = await createInviteAs(admin, "joined@example.test");
+      await postRevoke(jsonRequest(admin, { inviteId: first.invite.id }));
+      await database.update(user).set({ email: "joined@example.test" }).where(eq(user.id, member.userId));
+
+      expect(await readListedInvites(database)).toEqual([]);
+    });
+
     it("pages through a long list", async () => {
       for (let position = 0; position < 11; position += 1) await createInviteAs(admin, `person-${position}@example.test`);
 

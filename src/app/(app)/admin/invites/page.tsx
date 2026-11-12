@@ -2,6 +2,7 @@ import { Mail } from "lucide-react";
 import type { Metadata } from "next";
 
 import { FlashNote } from "@/components/flash";
+import { Button } from "@/components/ui/button";
 import { Pill } from "@/components/ui/pill";
 import { getDatabase } from "@/platform/database/client";
 import { readBranding } from "@/platform/branding/branding";
@@ -89,7 +90,14 @@ export default modulePage(adminManifest, async function AdminInvitesPage({ searc
                   </div>
                   <div className="fh-end lg:flex-row! lg:items-center!">
                     <InviteResendButton inviteId={invite.id} />
-                    {invite.isRevoked ? null : <InviteRevokeLink inviteId={invite.id} email={invite.email} />}
+                    {/* A revoked row keeps Revoke's place, so every Resend lines up. */}
+                    {invite.isRevoked ? (
+                      <Button type="button" variant="quiet" size="sm" aria-hidden="true" tabIndex={-1} className="invisible max-lg:hidden">
+                        Revoke
+                      </Button>
+                    ) : (
+                      <InviteRevokeLink inviteId={invite.id} email={invite.email} />
+                    )}
                   </div>
                 </div>
               ))}

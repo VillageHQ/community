@@ -18,6 +18,7 @@
 - **Fly.** `warnWhenFlyLacksClientIpHeader` (`platform/http/client-ip.ts`), called at the end of `register()` in
   `src/instrumentation.ts`. The README's "Deploy on Fly.io" section and a row in the client IP table.
 - **Revoked invites.** `readListedInvites` (`admin/reads-members.ts`, was `readOpenInvites`) adds never-used revoked
-  invites unless another invite to the same email is open, used, or newer (`notExists` over an alias). `rotateInvite`
+  invites unless another invite to the same email is open, used, or newer (`notExists` over an alias), or a member
+  has that email. A revoked row keeps an invisible Revoke button in its place on wide screens, so Resend lines up. `rotateInvite`
   (`members/service-invites.ts`) reads the row first; a revoked one goes through `requireRevokedInviteCanReopen` (no
   account, no open invite for that email), and the update clears `revoked_at`. Audit: `invite_resent`.

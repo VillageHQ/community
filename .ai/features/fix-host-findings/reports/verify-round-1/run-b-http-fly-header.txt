@@ -1,0 +1,44 @@
+Run B: fresh db verify2, APP_URL=http://localhost:3123, FLY_APP_NAME=fhf-verify, CLIENT_IP_HEADER=fly-client-ip, NODE_OPTIONS=--trace-deprecation, DEMO_MODE, JOBS_SELF_TICK. Boot 22:37:16. Sam posted an ask (20:37:41Z) and an intro ask via Amara (20:38:10Z); Maya invite/revoke/resend actions 20:38-20:42Z.
+== curl headers (no Strict-Transport-Security expected)
+== GET /signin
+HTTP/1.1 200 OK
+== GET /today
+HTTP/1.1 307 Temporary Redirect
+location: /signin
+== GET /
+HTTP/1.1 307 Temporary Redirect
+location: /signin
+== GET /no-such-page
+HTTP/1.1 404 Not Found
+== GET /admin/invites
+HTTP/1.1 307 Temporary Redirect
+location: /signin
+== GET /invite?token=bogus
+HTTP/1.1 410 Gone
+== GET /api/health
+HTTP/1.1 200 OK
+== server log (full, at 20:42Z)
+▲ Next.js 16.4.5
+- Local:         http://localhost:3123
+- Network:       http://192.168.18.230:3123
+✓ Ready in 129ms
+✓ Running next.config.mjs took 18ms
+Migrations applied.
+Demo mode: filled the empty database with the made-up community.
+[2m2026-11-12T20:38:27.010Z[0m [33mWARN[0m [1m[Better Auth]:[0m Rate limiting could not determine a client IP and is falling back to a single shared per-path bucket. Ensure your runtime forwards a trusted client IP header, then set `advanced.ipAddress.ipAddressHeaders` or `advanced.ipAddress.trustedProxies` so the address can be resolved.
+== job_lease (first tick 20:38:19Z, later ticks for chat-posts/email-outbox)
+           name            |      last_finished_at      | last_error 
+---------------------------+----------------------------+------------
+ chat-posts                | 2026-11-12 20:42:18.743+00 | 
+ demo-reset                | 2026-11-12 20:38:18.72+00  | 
+ email-outbox              | 2026-11-12 20:42:18.762+00 | 
+ email-outbox-pruning      | 2026-11-12 20:38:19.188+00 | 
+ intro-connector-reminders | 2026-11-12 20:38:19.227+00 | 
+ intro-expiry              | 2026-11-12 20:38:19.209+00 | 
+ intro-outcome-emails      | 2026-11-12 20:38:19.215+00 | 
+ intro-target-reminders    | 2026-11-12 20:38:19.221+00 | 
+ job-board-pull            | 2026-11-12 20:38:19.231+00 | 
+ profile-fill-in           | 2026-11-12 20:38:19.192+00 | 
+ weekly-email              | 2026-11-12 20:38:19.148+00 | 
+(11 rows)
+

@@ -235,7 +235,7 @@ const laterInvite = alias(invite, "later_invite");
 
 // Admin › Invites: everyone invited who hasn't signed in, newest first. An expired or revoked invite stays, marked, so
 // the admin can resend it (INV-08); a used one leaves the list, and so does a revoked one once the same person got a
-// newer invite (or used one), because Resend would refuse it.
+// newer invite (or used one) or has an account, because Resend would refuse it.
 export async function readListedInvites(database: Database, now = new Date()) {
   const supersededBy = database
     .select({ id: laterInvite.id })
@@ -247,10 +247,11 @@ export async function readListedInvites(database: Database, now = new Date()) {
         or(isNull(laterInvite.revokedAt), gt(laterInvite.createdAt, invite.createdAt)),
       ),
     );
+  const hasAccount = database.select({ id: user.id }).from(user).where(eq(user.email, invite.email));
   const rows = await database
     .select({ id: invite.id, email: invite.email, name: invite.inviteeName, createdAt: invite.createdAt, expiresAt: invite.expiresAt, revokedAt: invite.revokedAt })
     .from(invite)
-    .where(and(isNull(invite.acceptedAt), or(isNull(invite.revokedAt), notExists(supersededBy))))
+    .where(and(isNull(invite.acceptedAt), or(isNull(invite.revokedAt), and(notExists(supersededBy), notExists(hasAccount)))))
     .orderBy(desc(invite.createdAt), asc(invite.email));
   return rows.map((row) => ({
     ...row,

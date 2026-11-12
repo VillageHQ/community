@@ -46,7 +46,7 @@ There's no button, but the container image runs on Fly as it is. We tried it onc
 1. `fly launch --no-deploy`, and point the build at the image's Dockerfile in `fly.toml`: `[build]` `dockerfile = "deploy/vps/Dockerfile"`. Set the health check to `/api/health` on port 3000, and turn auto-stop off so the timed jobs keep running.
 2. Set these with `fly secrets set`:
    - `DATABASE_URL`: your Postgres connection.
-   - `BETTER_AUTH_SECRET`: 32+ random characters.
+   - `BETTER_AUTH_SECRET`: 32+ random characters. Optional (the app makes one if it's missing), but the test set it.
    - `APP_URL`: `https://<your-app>.fly.dev`, or your own domain.
    - `SETUP_TOKEN`: see [Setup token](#setup-token).
    - `JOBS_SELF_TICK=true`: the app runs its own timed jobs every minute.

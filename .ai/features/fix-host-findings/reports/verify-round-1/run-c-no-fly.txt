@@ -1,0 +1,8 @@
+Run C: fresh db verify3, no FLY_APP_NAME, no CLIENT_IP_HEADER, APP_URL=http://localhost:3123, demo. Expect no Fly warning.
+▲ Next.js 16.4.5
+- Local:         http://localhost:3123
+- Network:       http://192.168.18.230:3123
+✓ Ready in 136ms
+✓ Running next.config.mjs took 17ms
+Migrations applied.
+Demo mode: filled the empty database with the made-up community.
