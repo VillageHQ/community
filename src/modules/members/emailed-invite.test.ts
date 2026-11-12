@@ -10,6 +10,9 @@ import { issuedInviteSchema } from "@/modules/members/contract-invites";
 import { account, session, user } from "@/platform/database/auth-schema";
 import { EMAIL_KINDS } from "@/platform/email/kinds";
 import { emailOutbox } from "@/platform/email/schema";
+import { adminAuditEntry } from "@/platform/audit/schema";
+import { AUDIT_ACTIONS } from "@/platform/audit/actions";
+import { invite } from "@/modules/members/schema";
 import { clearDatabase, createTestDatabase } from "@/test/database";
 import { FAKE_RESEND_API_KEY, startFakeResendServer } from "@/test/fake-resend-server";
 import { readInviteToken } from "@/test/invite-link";
@@ -167,6 +170,22 @@ describe("joining from the emailed invite link", () => {
       expect(await database.select().from(account).where(eq(account.userId, joinedId))).toHaveLength(0);
       const waiting = await readWaitingMembers(database);
       expect(waiting.find(({ id }) => id === joinedId)?.isReportedNotThem).toBe(true);
+    });
+
+    it("does the same once when pressed twice", async () => {
+      await joinFromEmail();
+      const link = readNotMeLink();
+
+      expect((await notMe(link)).status).toBe(200);
+      expect((await notMe(link)).status).toBe(200);
+      expect(await database.select().from(adminAuditEntry).where(eq(adminAuditEntry.action, AUDIT_ACTIONS.inviteReportedNotMe))).toHaveLength(1);
+    });
+
+    it("stops working once an invite's lifetime has passed since the join", async () => {
+      await joinFromEmail();
+      await database.update(invite).set({ acceptedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) }).where(eq(invite.email, INVITEE));
+
+      expect((await notMe(readNotMeLink())).status).toBe(404);
     });
 
     it("refuses a changed signature", async () => {

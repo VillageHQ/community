@@ -66,12 +66,12 @@ export default modulePage(adminManifest, async function AdminInvitesPage({ searc
                   </span>
                   <div className="fh-who">
                     <b>
-                      {invite.name || invite.email}
                       {invite.isExpired ? (
-                        <Pill tone="needs" className="ml-1.5 align-[1px]">
+                        <Pill tone="needs" className="mr-1.5 inline-flex! align-[2px]">
                           Expired
                         </Pill>
                       ) : null}
+                      {invite.name || invite.email}
                     </b>
                     {/* One line, cut with "…" on a narrow phone, as Founderhall's: an address is never split mid-word. */}
                     <span title={invite.email}>

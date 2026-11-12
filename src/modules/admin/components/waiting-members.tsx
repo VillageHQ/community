@@ -39,14 +39,11 @@ function WaitingRow({ member }: { member: WaitingMember }) {
       <div className="fh-who">
         <b>{name}</b>
         <span>{email}</span>
-        {isReportedNotThem ? (
-          <span className="mt-1">
-            <Pill tone="needs">Not them</Pill> The owner of {email} says someone else used this invite. We signed this person out.
-          </span>
-        ) : null}
       </div>
-      <div className="fh-end flex-row! flex-wrap items-center! justify-end">
-        <ConfirmDialog
+      {/* On a phone the two buttons take their own line, so the name and email keep the width. */}
+      <div className="fh-end flex-row! flex-wrap items-center! justify-end max-sm:col-span-full max-sm:justify-start max-sm:pl-10">
+        {/* A member the invited address disowned is never confirmed from here: "Wrong person?" is the way on. */}
+        {isReportedNotThem ? null : <ConfirmDialog
           trigger={
             <Button type="button" size="sm">
               Yes, this is them
@@ -63,9 +60,17 @@ function WaitingRow({ member }: { member: WaitingMember }) {
           <p className="wrap-anywhere">
             Anyone holding an invite link could have used it. Confirm only if you recognize this person and {email} is theirs. This turns on network search for them.
           </p>
-        </ConfirmDialog>
+        </ConfirmDialog>}
         {inviteId ? <ReclaimAction inviteId={inviteId} email={email} fallbackFocusId={WAITING_TITLE_ID} onReclaimed={refresh} /> : null}
       </div>
+      {isReportedNotThem ? (
+        <p className="fh-small col-span-full mt-1 wrap-anywhere">
+          <Pill tone="needs" className="mr-1.5 align-[1px]">
+            Not them
+          </Pill>
+          The owner of {email} says someone else used this invite. We signed this person out. Wrong person? locks the account and sends {email} a new invite.
+        </p>
+      ) : null}
     </div>
   );
 }

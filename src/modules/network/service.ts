@@ -707,6 +707,25 @@ async function keepChosenIntroducers(database: Database, villagePaths: VillagePa
   return { ...villagePaths, paths };
 }
 
+// A member who paused intro asks is never named as the way in (PRIV-02): a path they introduce is dropped, and as a
+// starter they come off the path, as unchosen members do above. A path TO them (they are the person looked up) stays.
+async function leaveOutPausedIntroducers(database: Database, villagePaths: VillagePaths | null, targetSlug: string): Promise<VillagePaths | null> {
+  if (!villagePaths) return villagePaths;
+  const rows = await database
+    .select({ linkedinSlug: memberNetwork.linkedinSlug })
+    .from(memberNetwork)
+    .innerJoin(memberPrivacy, eq(memberPrivacy.userId, memberNetwork.userId))
+    .where(and(isNotNull(memberNetwork.linkedinSlug), eq(memberPrivacy.acceptsIntroAsks, false)));
+  const target = targetSlug.toLowerCase();
+  const pausedSlugs = new Set(rows.flatMap(({ linkedinSlug }) => (linkedinSlug && linkedinSlug.toLowerCase() !== target ? [linkedinSlug.toLowerCase()] : [])));
+  if (pausedSlugs.size === 0) return villagePaths;
+  const isPaused = (linkedinUrl: string | null | undefined) => pausedSlugs.has(readLinkedinSlug(linkedinUrl)?.toLowerCase() ?? "");
+  const paths = villagePaths.paths
+    .filter(({ introducer }) => !isPaused(introducer?.profile.linkedin_url))
+    .map((path) => ({ ...path, starters: path.starters.filter(({ is_current_user, profile }) => is_current_user || !isPaused(profile.linkedin_url)) }));
+  return { ...villagePaths, paths };
+}
+
 // False only when the admin limited intros to chosen members and this member isn't one of them.
 export async function canMemberIntroduce(database: Database, memberId: string) {
   const { introducers, chosenIntroducerIds } = await readVillageSearchSettings(database);
@@ -748,7 +767,7 @@ async function describePathsForViewer(
   readOpenAsks: OpenAsksReader,
 ) {
   const { network } = searcher;
-  villagePaths = await keepPathsForSearcher(context.database, searcher, villagePaths, targetSlug);
+  villagePaths = await leaveOutPausedIntroducers(context.database, await keepPathsForSearcher(context.database, searcher, villagePaths, targetSlug), targetSlug);
   const facts = await readPathsFacts(context, villagePaths, network, targetSlug, isCached);
   const { openByConnector, declinedConnectorIds } = await readOpenAsks(context.database, context.member.id, targetSlug);
   const drafts = readConnectors(villagePaths, facts);

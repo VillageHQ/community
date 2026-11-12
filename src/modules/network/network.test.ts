@@ -593,7 +593,9 @@ describe("the member network API", () => {
         expect((await readSearch()).people[0]?.paths).toEqual([]);
         forgetSavedSearches();
         expect((await readSearch()).people[0]?.paths).toEqual([]);
-        expect((await readPaths()).connectors.filter(({ member }) => member !== null)).toEqual([]);
+        const paths = await readPaths();
+        expect(paths.connectors.filter(({ member }) => member !== null)).toEqual([]);
+        expect(paths.paths.map(({ description }) => description)).not.toContain("via Amara");
       });
 
       it("doesn't badge someone who hasn't joined", async () => {

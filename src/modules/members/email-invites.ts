@@ -47,7 +47,7 @@ type InviteUsedEmailFacts = { link: string; communityName: string; accentColor: 
 // After a join from the emailed invite: the address hears about it, in case someone else had the email.
 export function renderInviteUsedEmail({ link, communityName, accentColor }: InviteUsedEmailFacts) {
   const community = toSingleLine(communityName);
-  const subject = `Your ${community} invite was used`;
+  const subject = `Your invite to ${community} was used`;
   const opening = `Someone just joined ${community} with the invite sent to this address. If that was you, welcome: there's nothing to do.`;
   const warning = `If it wasn't you, someone else has your invite email. Open this link: we'll sign them out, and your admins will send you a new invite.`;
   const html = [

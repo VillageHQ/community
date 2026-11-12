@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHmac } from "node:crypto";
 
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, gt, isNotNull, isNull } from "drizzle-orm";
 
 import { resolveAuthSecret } from "../../platform/auth/auth-secret.ts";
 import { account, session, user } from "../../platform/database/auth-schema.ts";
@@ -18,6 +18,12 @@ import { recordOutsiderAction } from "../../platform/audit/record.ts";
 import { isReclaimedEmail } from "../../platform/auth/reclaimed-email.ts";
 import { renderInviteUsedEmail } from "./email-invites.ts";
 import { invite } from "./schema.ts";
+import { adminAuditEntry } from "../../platform/audit/schema.ts";
+import { INVITE_LIFETIME_DAYS } from "./contract-invite-state.ts";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+// As long as an invite lasts: past that, a member who joined normally can't sign themselves out from an old email.
+const NOT_ME_LINK_LIFETIME_MS = INVITE_LIFETIME_DAYS * DAY_MS;
 
 const PURPOSE = "invite-not-me";
 export const NOT_ME_MEMBER_FIELD = "m";
@@ -64,9 +70,15 @@ export async function reportNotMe(database: Database, environment: Environment, 
       .select({ id: user.id, name: user.name, email: user.email })
       .from(user)
       .innerJoin(invite, and(eq(invite.acceptedUserId, user.id), isNotNull(invite.acceptedAt), isNull(invite.revokedAt)))
-      .where(eq(user.id, memberId))
+      .where(and(eq(user.id, memberId), gt(invite.acceptedAt, new Date(Date.now() - NOT_ME_LINK_LIFETIME_MS))))
       .for("update", { of: user });
     if (!joined || isReclaimedEmail(joined.email)) return false;
+    // A second press finds it done already.
+    const [reported] = await transaction
+      .select({ id: adminAuditEntry.id })
+      .from(adminAuditEntry)
+      .where(and(eq(adminAuditEntry.targetMemberId, memberId), eq(adminAuditEntry.action, AUDIT_ACTIONS.inviteReportedNotMe)));
+    if (reported) return true;
     await transaction.update(user).set({ emailVerified: false }).where(eq(user.id, memberId));
     await transaction.delete(session).where(eq(session.userId, memberId));
     await transaction.delete(account).where(eq(account.userId, memberId));
