@@ -96,7 +96,8 @@ describe("the shell with modules off", () => {
       const enabledIds = await readEnabledIds(database);
       const labels = selectNavigationItems(NAVIGATION_SECTIONS.primary, false, enabledIds).map(({ label }) => label);
 
-      expect(labels).toEqual(["Today", "Asks & updates", "Directory", "Jobs", "Intros", "Inbox", "My profile"]);
+      // The feed is on where no admin chose (the owner's call, 2026-11-12).
+      expect(labels).toEqual(["Today", "Asks & updates", "Feed", "Directory", "Jobs", "Intros", "Inbox", "My profile"]);
     });
 
     it("hides the credits tab", async () => {

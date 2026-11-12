@@ -1,10 +1,10 @@
-export const REPLY_CODES = { help: "help", skip: "skip", yes: "yes", no: "no" } as const;
+export const REPLY_CODES = { help: "help", skip: "skip", yes: "yes", no: "no", right: "right", hide: "hide", fix: "fix" } as const;
 
 export type ReplyCode = (typeof REPLY_CODES)[keyof typeof REPLY_CODES];
 
 export type ParsedCode = { code: ReplyCode; itemNumber: number; words: string };
 
-const CODE_PATTERN = /^\s*(help|skip|yes|no)\s*#?\s*(\d{1,3})\b[\s:.,!-]*(.*)$/i;
+const CODE_PATTERN = /^\s*(help|skip|yes|no|right|hide|fix)\s*#?\s*(\d{1,3})\b[\s:.,!-]*(.*)$/i;
 const MAXIMUM_CODES = 20;
 
 // Where the quoted history starts in common mail apps. Everything from there on is the old email.
@@ -31,7 +31,7 @@ function isReplyCode(value: string): value is ReplyCode {
   return Object.values<string>(REPLY_CODES).includes(value);
 }
 
-// Reads the codes at the top of a reply, one per line, like "HELP 1" or "NO 2". The first line that
+// Reads the codes at the top of a reply, one per line, like "HELP 1", "NO 2" or "FIX 3 Lisbon". The first line that
 // isn't a code ends the list. Words after a code on its line, or below the codes, go with it.
 export function parseReplyCodes(text: string): ParsedCode[] {
   const lines = stripQuotedReply(text).split("\n");

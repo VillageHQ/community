@@ -56,8 +56,15 @@ function goToPage(page: number, filters: DirectoryFilters) {
   document.getElementById(RESULTS_ID)?.focus();
 }
 
-function MemberRow({ member }: { member: DirectoryMember }) {
+// A hiring founder's card says so (the profile lists the jobs themselves). The count is 0 while the job board is off.
+function readHiringLabel(jobCount: number) {
+  if (jobCount <= 0) return null;
+  return `Hiring · ${jobCount} open ${jobCount === 1 ? "job" : "jobs"}`;
+}
+
+export function MemberRow({ member }: { member: DirectoryMember }) {
   const { id, name, title, company, location, companyLogoUrl, bio, avatarUrl, freshAt } = member;
+  const hiringLabel = readHiringLabel(member.hiringJobCount);
   const roleLine = toRoleLine({ title, company, location });
   const chips = [member.stage, member.sector, member.cohort].filter((chip): chip is string => Boolean(chip));
   return (
@@ -75,6 +82,7 @@ function MemberRow({ member }: { member: DirectoryMember }) {
         {chips.map((chip) => (
           <Tag key={chip}>{chip}</Tag>
         ))}
+        {hiringLabel ? <Tag tone="sage">{hiringLabel}</Tag> : null}
         <span className="fh-fresh">fresh as of {formatDayMonth(freshAt)}</span>
       </div>
     </Link>

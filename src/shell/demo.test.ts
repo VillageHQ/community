@@ -9,6 +9,7 @@ import { jobPosting, jobSource } from "@/modules/job-board/schema";
 import { DEMO_PULL_NOTE, pullDueSources, pullSource } from "@/modules/job-board/service-pull";
 import { chatManifest } from "@/modules/chat/manifest";
 import { feedManifest } from "@/modules/feed/manifest";
+import { post } from "@/modules/feed/schema";
 import { perksManifest } from "@/modules/perks/manifest";
 import { INTRO_STATES } from "@/modules/intros/contract";
 import { invite, memberProfile } from "@/modules/members/schema";
@@ -48,7 +49,7 @@ describe("demo mode", () => {
     );
   }
 
-  async function countRows(table: typeof user | typeof introRequest | typeof ask | typeof invite | typeof jobSource | typeof jobPosting) {
+  async function countRows(table: typeof user | typeof introRequest | typeof ask | typeof invite | typeof jobSource | typeof jobPosting | typeof post) {
     const [row] = await database.select({ total: count() }).from(table);
     return row?.total ?? 0;
   }
@@ -89,10 +90,11 @@ describe("demo mode", () => {
     });
   });
 
-  // The job board (public board on) and perks are on with made-up content; the feed and Slack/Discord stay off.
+  // The job board (public board on), perks and the feed are on with made-up content; Slack/Discord stay off.
   async function expectJobsAndPerks() {
     const enabled = await readEnabledModuleIds(database, [jobBoardManifest, perksManifest, feedManifest, chatManifest]);
-    expect([...enabled].sort()).toEqual([jobBoardManifest.id, perksManifest.id].sort());
+    expect([...enabled].sort()).toEqual([jobBoardManifest.id, perksManifest.id, feedManifest.id].sort());
+    expect(await countRows(post)).toBeGreaterThan(0);
     expect((await readSettings(database, [PUBLIC_BOARD_SETTING])).get(PUBLIC_BOARD_SETTING)).toBe("on");
     expect(await countRows(jobSource)).toBe(DEMO_JOB_SOURCES.length);
     expect(await countRows(jobPosting)).toBe(DEMO_JOB_SOURCES.reduce((total, source) => total + source.jobs.length, 0));

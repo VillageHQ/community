@@ -37,7 +37,8 @@ export type TodayItems = {
 
 const INTROS_IN_MOTION: ReadonlySet<string> = new Set([INTRO_STATES.requested, INTRO_STATES.accepted, INTRO_STATES.askingTarget, INTRO_STATES.targetAgreed]);
 
-export const WEEKLY_ITEM_KINDS = { ask: "ask", intro: "intro" } as const;
+// A "fact" is a line filled in from public profiles; its ref is the field (title, company, location).
+export const WEEKLY_ITEM_KINDS = { ask: "ask", intro: "intro", fact: "fact" } as const;
 
 export type WeeklyItemKind = (typeof WEEKLY_ITEM_KINDS)[keyof typeof WEEKLY_ITEM_KINDS];
 
@@ -77,11 +78,17 @@ export function describeIntroAsk(intro: Intro) {
   return `${intro.requester.name} asks you to introduce them to ${intro.target.name}`;
 }
 
-// The numbers a member answers by: asks first, then intros. Only things with a yes or no get one.
-export function numberWeeklyItems({ helpableAsks, introsToAnswer }: TodayItems): WeeklyEmailItem[] {
+export function describeProfileLine({ label, value }: Pick<LineToCheck, "label" | "value">) {
+  return `${label}: ${value}`;
+}
+
+// The numbers a member answers by: asks first, then intros, then lines on their profile (Founderhall's order). Only
+// things with an answer get one.
+export function numberWeeklyItems({ helpableAsks, introsToAnswer, profileLines }: TodayItems): WeeklyEmailItem[] {
   const unnumbered = [
     ...helpableAsks.map(({ id, title }) => ({ kind: WEEKLY_ITEM_KINDS.ask, ref: id, title })),
     ...introsToAnswer.map((intro) => ({ kind: WEEKLY_ITEM_KINDS.intro, ref: intro.id, title: describeIntroAsk(intro) })),
+    ...profileLines.map((line) => ({ kind: WEEKLY_ITEM_KINDS.fact, ref: line.field, title: describeProfileLine(line) })),
   ];
   return unnumbered.map((item, index) => ({ ...item, number: index + 1 }));
 }

@@ -7,9 +7,10 @@ export const feedManifest = {
   kind: MODULE_KINDS.toggleable,
   id: HOME_FEED_MODULE_ID,
   label: "Feed",
-  description: "Members post updates, reply and react on the home page.",
+  description: "Members post updates, reply and react on the Feed page.",
   icon: House,
-  isOnByDefault: false,
+  // On where no admin chose (the owner's call, 2026-11-12); a community whose admin switched it off stays off.
+  isOnByDefault: true,
   needsVillage: false,
   requires: [],
   navigation: [{ label: "Feed", href: ROUTES.feedPage, icon: House, section: NAVIGATION_SECTIONS.primary }],

@@ -17,7 +17,7 @@ src/
     network/    Toggle. Village search, sync, group, paths, credits.
     intros/     Toggle. Warm intros. Works without network; paths join in through the shell.
     asks/       Toggle, off by default. Members post what they need, others offer help.
-                The feed is a toggle too, off by default for a new community.
+                The feed is a toggle too, on where no admin chose.
     job-board/  Toggle, on by default. Founders' open jobs from their hiring tools, a public
                 board and a website widget.
     admin/      Core. Roster, reports, audit view, health, the features screen.

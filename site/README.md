@@ -21,15 +21,22 @@ Point any static host at this repo with **root directory `site`**. There's no bu
 - Confirm `install.sh` is on `main`. The page shows it as the third deploy path.
 - Recheck the status note under the deploy options. It says the one-click buttons haven't run end to end on a live host, which is what the root README says today.
 - The GitHub links point at `VillageHQ/community`. Change them if the repository is renamed.
+- The sign-up form sends nothing until `data-endpoint` on `#signup-form` is set to a server that takes the JSON
+  (`name`, `email`, `community`, `members`, `plan`, `website` as a robot trap) and answers 201 `{ ok, emailSent, next }`
+  or 400 `{ errors: { field: message } }`, as Founderhall's site server does. Empty, the page says nothing was sent.
+- The prices and plan rows are Founderhall's offer, word for word (except sign-in, which says what this app has).
+  Confirm them with Village before publishing.
 
 ## Keeping it in step with the app
 
 - Every product claim must be true of the app on `main`. Claims come from `src/` first, then the root `README.md` and `SECURITY.md`. Change the page when they change.
-- No prices, no competitor prices, and no sign-in methods the app doesn't have (it signs in by email link or password).
+- Prices only as Village sets them (the Pricing section, from Founderhall's offer); no competitor prices, and no sign-in
+  methods the app doesn't have (it signs in by email link or password).
 - The deploy button URLs match the root README exactly. Change both together.
 - The look is the quiet one: Source Serif 4 headings, Figtree body text, hairline edges, no shadows. Light and dark follow the visitor's system setting.
 - The product sketches are HTML, not screenshots. Their wording copies the app's own (email subjects, the consent page, the consent text). The people and the fund are made up.
-- No forms. A waitlist or contact form needs a server, which this folder doesn't have.
+- One form, the sign-up form at the end. This folder has no server, so it posts only to the address in `data-endpoint`
+  and shows only when the script runs.
 
 ## How it stays out of the app
 

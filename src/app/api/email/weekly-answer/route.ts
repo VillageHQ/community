@@ -21,8 +21,8 @@ export const POST = platformRoutes.open("weekly-answer", async (request: Request
   if (!result) return Response.json({ message: "This link isn't valid." }, { status: BAD_REQUEST_STATUS });
   if (!isForm) return Response.json(result);
 
-  const page = new URL(ROUTES.weeklyAnswer, url.origin);
-  page.searchParams.set("token", token);
-  page.searchParams.set("result", result.outcome);
-  return Response.redirect(page, SEE_OTHER_STATUS);
+  // Back by path, never by this request's own address: behind a proxy, or on 127.0.0.1 against localhost, the server
+  // may see another address than the browser, and the page's form-action 'self' rule would block that redirect.
+  const query = new URLSearchParams({ token, result: result.outcome });
+  return new Response(null, { status: SEE_OTHER_STATUS, headers: { Location: `${ROUTES.weeklyAnswer}?${query}`, "Cache-Control": "no-store" } });
 });
