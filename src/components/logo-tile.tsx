@@ -74,7 +74,8 @@ export function FundMark({ name, logo, sub, href, size = "default", className }:
         <b>{name}</b>
       ) : (
         <span className="min-w-0">
-          <b title={name} className="block truncate">
+          {/* Founderhall's name is inline in a 22 px line (body 15/22), so the line box is 22 px, not the name's 20. */}
+          <b title={name} className="block truncate py-px">
             {name}
           </b>
           {sub ? <small>{sub}</small> : null}

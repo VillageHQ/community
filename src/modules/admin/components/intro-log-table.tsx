@@ -33,8 +33,10 @@ function LogRow({ row }: { row: IntroLogRow }) {
       <span className="fh-cell">{readTarget(row)}</span>
       <span className="fh-cell">{row.connector}</span>
       {/* Founderhall's one-line pill: a long state word ("no answer from connector") ends in "…", whole on hover. */}
-      <span className="fh-cell [&_.fh-pill]:inline-block [&_.fh-pill]:max-w-full [&_.fh-pill]:overflow-hidden [&_.fh-pill]:text-ellipsis [&_.fh-pill]:leading-6" title={row.stateWord}>
-        {pill}
+      <span className="fh-cell" title={row.stateWord}>
+        <Pill tone={row.tone} className="max-w-full">
+          <span className="min-w-0 truncate">{row.stateWord}</span>
+        </Pill>
       </span>
       <span className="fh-cell fh-then fh-muted">{then || "–"}</span>
       <div className="fh-m-line">

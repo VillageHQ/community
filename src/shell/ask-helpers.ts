@@ -78,13 +78,13 @@ export async function isAskIntroOn(database: Database) {
 // first-hand, and has a way in through a member, is looked up for paths. A LinkedIn profile skips the search. Both go
 // through the credit ledger.
 async function findPersonToReach(context: RequestContext, { targetSlug, targetText, targetCompany }: PathTarget) {
-  if (targetSlug) return { slug: targetSlug, headline: null };
+  if (targetSlug) return { slug: targetSlug, headline: null, paths: [] };
   const prompt = [targetText, targetCompany].filter(Boolean).join(" at ").slice(0, SEARCH_PROMPT_MAX_LENGTH);
   const { people } = await searchMemberNetwork(context, prompt);
   const outsiders = people.filter(({ isMember, linkedinSlug }) => !isMember && linkedinSlug);
   const notKnown = outsiders.filter(({ direct }) => !direct);
   const person = notKnown.find(({ paths }) => paths.length > 0) ?? notKnown[0] ?? outsiders[0];
-  return person?.linkedinSlug ? { slug: person.linkedinSlug, headline: person.headline } : null;
+  return person?.linkedinSlug ? { slug: person.linkedinSlug, headline: person.headline, paths: person.paths } : null;
 }
 
 // The author's own path lookup. Only members who joined the group, so only members who agreed to share, come back
@@ -96,8 +96,11 @@ export const findAskPaths: PathFinder = async (context, target) => {
   const paths = await readMemberPaths(context, person.slug, NO_OPEN_ASKS);
   return {
     targetName: paths.targetName,
+    // How well each member knows the person ("Close", "Met") comes with the search result's ways in.
     helpers: paths.connectors.flatMap(({ member, linkedinSlug, reason }) =>
-      member ? [{ memberId: member.id, connectorSlug: linkedinSlug, reason, personTitle: person.headline }] : [],
+      member
+        ? [{ memberId: member.id, connectorSlug: linkedinSlug, reason, personTitle: person.headline, warmth: person.paths.find(({ memberId }) => memberId === member.id)?.warmth?.toLowerCase() ?? null }]
+        : [],
     ),
   };
 };

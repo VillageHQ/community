@@ -77,8 +77,8 @@ function SendYourself({ links, signature }: { links: SentLink[]; signature: Sign
               <Mail aria-hidden="true" className="size-3.5" strokeWidth={1.5} />
             </span>
             <div className="fh-who">
-              <b>{link.name || link.email}</b>
-              <span className="whitespace-normal! wrap-anywhere">{link.email}</span>
+              <b className="whitespace-normal! break-words">{link.name || link.email}</b>
+              <span className="whitespace-normal! break-words">{link.email}</span>
             </div>
             <div className="fh-end">
               <Button asChild size="sm" variant="secondary">
