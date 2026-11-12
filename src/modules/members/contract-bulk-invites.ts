@@ -227,8 +227,18 @@ export function parseInvitesCsv(text: string): ParsedBulkInvites {
   return collector.result;
 }
 
-export function parseBulkInvites(format: BulkInviteFormat, text: string) {
-  return format === BULK_INVITE_FORMATS.csv ? parseInvitesCsv(text) : parseInviteList(text);
+// The cohort an admin types beside a pasted list: the single invite's rule (trimmed, at most the card's length).
+export function readListCohort(value: string | null) {
+  const parsed = createInviteBodySchema.shape.cohort.safeParse(value ?? undefined);
+  if (!parsed.success) throw new BulkInviteLimitError(parsed.error.issues[0]?.message ?? "Check the cohort.");
+  return parsed.data === null ? null : toOptionalCell(parsed.data);
+}
+
+// A pasted list may carry one cohort for everyone on it; a CSV names each person's in its own column.
+export function parseBulkInvites(format: BulkInviteFormat, text: string, listCohort: string | null = null) {
+  if (format === BULK_INVITE_FORMATS.csv) return parseInvitesCsv(text);
+  const parsed = parseInviteList(text);
+  return listCohort ? { ...parsed, people: parsed.people.map((person) => ({ ...person, cohort: listCohort })) } : parsed;
 }
 
 const bulkProblemSchema = z.object({ line: z.number(), text: z.string(), why: z.string() });

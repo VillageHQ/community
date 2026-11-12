@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Tag } from "@/components/ui/tag";
 import { readFirstName } from "@/platform/design/avatar-identity";
-import { formatShortDate } from "@/platform/text/format-date";
+import { formatDayMonth } from "@/platform/text/format-date";
 import { INTRO_ROLES, INTRO_STATES, type Intro, type IntroPerson, type IntroState } from "@/modules/intros/contract";
 import { ROUTES } from "@/platform/http/routes";
 
@@ -139,7 +139,7 @@ export function IntroTimeline({ intro }: { intro: Intro }) {
           </span>
           <span className="min-w-0">
             <span className={isDone ? "type-label wrap-anywhere" : "type-note wrap-anywhere text-foreground-soft"}>{label}</span>
-            {date ? <span className="type-small block text-muted-foreground">{formatShortDate(date)}</span> : null}
+            {date ? <span className="type-small block text-muted-foreground">{formatDayMonth(date)}</span> : null}
             {isDone ? null : <span className="sr-only"> (not yet)</span>}
           </span>
         </li>
@@ -165,7 +165,7 @@ export function ClosedIntroRow({ intro }: { intro: Intro }) {
       <Avatar stableId={person.id} name={person.name} imageUrl={person.avatarUrl} sizePx={CLOSED_ROW_AVATAR_SIZE_PX} />
       <span className="min-w-0 flex-[1_1_180px]">
         <span className="type-label block wrap-anywhere">{readIntroLinkLabel(intro)}</span>
-        {closedAt ? <span className="type-small block text-muted-foreground">{formatShortDate(closedAt)}</span> : null}
+        {closedAt ? <span className="type-small block text-muted-foreground">{formatDayMonth(closedAt)}</span> : null}
       </span>
       {hasUpdate ? <Tag tone="accent">New</Tag> : null}
       <IntroStateTag state={state} />

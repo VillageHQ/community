@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { readFirstName } from "@/platform/design/avatar-identity";
-import { formatShortDate } from "@/platform/text/format-date";
+import { formatDayMonth } from "@/platform/text/format-date";
 import { INTRO_ACTIONS, INTRO_DECLINE_KINDS, INTRO_LIMITS, INTRO_STATES, type Intro, type IntroDeclineKind } from "@/modules/intros/contract";
 import { composeForwardableBlurb, composeJoiningMessage } from "@/modules/intros/copy";
 import { reportIntroNoteRequest } from "@/modules/intros/queries";
@@ -73,7 +73,7 @@ function AskingTargetActions({ intro }: { intro: Intro }) {
     <div className="grid gap-3">
       <ConsentLinkPanel intro={intro} />
       <p className="type-small text-muted-foreground">
-        We&apos;ll show {targetFirst}&apos;s answer here. If {targetFirst} doesn&apos;t answer, this closes on {formatShortDate(intro.expiresAt)}.
+        We&apos;ll show {targetFirst}&apos;s answer here. If {targetFirst} doesn&apos;t answer, this closes on {formatDayMonth(intro.expiresAt)}.
       </p>
       {isBackingOut ? (
         <DeclineForm intro={intro} kind={INTRO_DECLINE_KINDS.notThisTime} submitLabel="Close this intro request" onCancel={() => setIsBackingOut(false)} />
@@ -116,7 +116,7 @@ function TargetAgreedActions({ intro }: { intro: Intro }) {
         {transition.isPending ? "Saving…" : "Mark as introduced"}
       </Button>
       <p className="type-small text-muted-foreground">
-        Tap this once you&apos;ve sent it. If you don&apos;t get to it by {formatShortDate(intro.expiresAt)}, this closes on its own and {requesterFirst} sees that it closed.
+        Tap this once you&apos;ve sent it. If you don&apos;t get to it by {formatDayMonth(intro.expiresAt)}, this closes on its own and {requesterFirst} sees that it closed.
       </p>
     </div>
   );
@@ -157,7 +157,7 @@ function AcceptedActions({ intro }: { intro: Intro }) {
         {transition.isPending ? "Saving…" : "Mark as introduced"}
       </Button>
       <p className="type-small text-muted-foreground">
-        Tap this once you&apos;ve made the intro. No rush. If you don&apos;t get to it by {formatShortDate(intro.expiresAt)}, the intro request closes on its own and {readFirstName(intro.requester.name)} sees that it closed.
+        Tap this once you&apos;ve made the intro. No rush. If you don&apos;t get to it by {formatDayMonth(intro.expiresAt)}, the intro request closes on its own and {readFirstName(intro.requester.name)} sees that it closed.
       </p>
     </div>
   );

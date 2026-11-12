@@ -14,15 +14,20 @@ import type { ConsentIssue, Intro } from "@/modules/intros/contract";
 import { composeConsentNote } from "@/modules/intros/copy";
 import { emailConsentLinkRequest, issuedConsentQuery, makeNewConsentLinkRequest } from "@/modules/intros/queries";
 import { readFirstName } from "@/platform/design/avatar-identity";
-import { formatShortDate } from "@/platform/text/format-date";
+import { formatDayMonth } from "@/platform/text/format-date";
 
-function EmailLinkForm({ intro, consentIssue }: { intro: Intro; consentIssue: ConsentIssue }) {
+type EmailLinkFormProps = { intro: Intro; consentIssue: ConsentIssue; onSent: (sentAt: string) => void };
+
+function EmailLinkForm({ intro, consentIssue, onSent }: EmailLinkFormProps) {
   const emailId = useId();
   const hintId = useId();
   const [targetEmail, setTargetEmail] = useState(intro.suggestedTargetEmail ?? "");
   const targetFirst = readFirstName(intro.target.name);
   const requesterFirst = readFirstName(intro.requester.name);
-  const send = useMutation({ mutationFn: () => emailConsentLinkRequest({ introId: intro.id, token: consentIssue.token, targetEmail }) });
+  const send = useMutation({
+    mutationFn: () => emailConsentLinkRequest({ introId: intro.id, token: consentIssue.token, targetEmail }),
+    onSuccess: () => onSent(new Date().toISOString()),
+  });
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -57,7 +62,7 @@ function EmailLinkForm({ intro, consentIssue }: { intro: Intro; consentIssue: Co
   );
 }
 
-function IssuedConsent({ intro, consentIssue }: { intro: Intro; consentIssue: ConsentIssue }) {
+function IssuedConsent({ intro, consentIssue, onSent }: EmailLinkFormProps) {
   const consentNote = composeConsentNote(intro, consentIssue.link);
   return (
     <>
@@ -67,7 +72,7 @@ function IssuedConsent({ intro, consentIssue }: { intro: Intro; consentIssue: Co
         <CopyButton text={consentIssue.link} label="Copy just the link" />
       </div>
       <p className="type-small text-foreground-soft">This link is only for them. We only show it now, because we keep a scrambled copy.</p>
-      {consentIssue.canEmailTarget ? <EmailLinkForm intro={intro} consentIssue={consentIssue} /> : null}
+      {consentIssue.canEmailTarget ? <EmailLinkForm intro={intro} consentIssue={consentIssue} onSent={onSent} /> : null}
     </>
   );
 }
@@ -96,6 +101,9 @@ export function ConsentLinkPanel({ intro }: { intro: Intro }) {
   const { data: consentIssue } = useQuery(issuedConsentQuery(intro.id));
   const targetFirst = readFirstName(intro.target.name);
   const requesterFirst = readFirstName(intro.requester.name);
+  // Set the moment the connector has the app email the person here, so the words above stop asking them to send a link.
+  const [sentAt, setSentAt] = useState<string | null>(null);
+  const emailedAt = sentAt ?? intro.targetEmailedAt ?? null;
 
   return (
     <div className="grid gap-3 rounded-field bg-accent p-4">
@@ -103,10 +111,10 @@ export function ConsentLinkPanel({ intro }: { intro: Intro }) {
         <Send aria-hidden="true" className="size-5 shrink-0 text-brand-emphasis" />
         Now ask {targetFirst}
       </h3>
-      {intro.targetEmailedAt ? (
+      {emailedAt ? (
         // The app already emailed the person (INTRO-06): no need to send anything by hand.
         <p className="type-note text-foreground-soft">
-          We emailed {targetFirst} on {formatShortDate(intro.targetEmailedAt)}. They answer from that email, or in the app if they&apos;re a member here. Nothing more to send; if
+          We emailed {targetFirst} on {formatDayMonth(emailedAt)}. They answer from that email, or in the app if they&apos;re a member here. Nothing more to send; if
           you also reach them another way, a new link below works too. {requesterFirst} hears nothing until then.
         </p>
       ) : (
@@ -115,7 +123,7 @@ export function ConsentLinkPanel({ intro }: { intro: Intro }) {
           nothing until then.
         </p>
       )}
-      {consentIssue ? <IssuedConsent intro={intro} consentIssue={consentIssue} /> : <MakeNewLink intro={intro} />}
+      {consentIssue ? <IssuedConsent intro={intro} consentIssue={consentIssue} onSent={setSentAt} /> : <MakeNewLink intro={intro} />}
     </div>
   );
 }

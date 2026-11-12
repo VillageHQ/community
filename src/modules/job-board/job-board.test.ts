@@ -487,15 +487,25 @@ describe("the job board", () => {
     expect(await readDigest(PublicJobsPage({ searchParams: Promise.resolve({}) }))).toBe(NOT_FOUND_DIGEST);
   });
 
+  it("keeps a founder's own jobs on her card and profile after she changes her company's words", async () => {
+    await linkGreenhouse();
+    await database.update(memberProfile).set({ company: "Stripe Example Labs" }).where(eq(memberProfile.userId, founder.userId));
+
+    expect(await readCompanyJobs(database, { company: "Stripe Example Labs", memberId: founder.userId })).toMatchObject({ total: 3, companySlug: "stripe-example" });
+    expect(await readCompanyJobs(database, { company: "Ledgerline", memberId: other.userId })).toMatchObject({ total: 0 });
+    const directory = (await (await call(postDirectory, other, { hiring: true })).json()) as Directory;
+    expect(directory.members.map(({ id, hiringJobCount }) => [id, hiringJobCount])).toEqual([[founder.userId, 3]]);
+  });
+
   it("shows a company's jobs on its members' profiles, as a Hiring chip and filter in the directory, and nothing when off", async () => {
     await linkGreenhouse();
     const colleague = await createSignedInMember(database);
     await database.insert(memberProfile).values({ userId: colleague.userId, company: " STRIPE example " });
 
-    const profileJobs = await readCompanyJobs(database, "stripe example");
+    const profileJobs = await readCompanyJobs(database, { company: "stripe example", memberId: colleague.userId });
     expect(profileJobs).toMatchObject({ total: 3, companySlug: "stripe-example" });
     expect(profileJobs.jobs[0]?.url).toMatch(/^https:\/\//);
-    expect(await readCompanyJobs(database, "Ledgerline")).toEqual({ jobs: [], total: 0, companySlug: null });
+    expect(await readCompanyJobs(database, { company: "Ledgerline", memberId: other.userId })).toEqual({ jobs: [], total: 0, companySlug: null });
 
     const hiring = (await (await call(postDirectory, other, { hiring: true })).json()) as Directory;
     expect(hiring.isHiringShown).toBe(true);

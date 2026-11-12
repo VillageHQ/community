@@ -55,10 +55,11 @@ export function clearLinkedinRequest(linkedinUrl: string) {
 
 const BULK_FAILURE_MESSAGE = "We couldn't read that list. Try again.";
 
-export async function createBulkInvitesRequest(format: BulkInviteFormat, body: string | Blob) {
+export async function createBulkInvitesRequest(format: BulkInviteFormat, body: string | Blob, cohort = "") {
   let response: Response;
+  const query = new URLSearchParams({ format, ...(cohort.trim() ? { cohort } : {}) });
   try {
-    response = await fetch(`${API_ROUTES.inviteBulk}?format=${format}`, { method: "POST", headers: { "Content-Type": "text/plain; charset=utf-8" }, body });
+    response = await fetch(`${API_ROUTES.inviteBulk}?${query}`, { method: "POST", headers: { "Content-Type": "text/plain; charset=utf-8" }, body });
   } catch {
     throw new Error("We couldn't reach the server. Check your connection and try again.");
   }

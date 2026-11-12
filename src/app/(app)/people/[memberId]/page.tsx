@@ -99,7 +99,7 @@ export default modulePage(membersManifest, async function MemberProfilePage({ pa
   ].filter((field) => field.value);
   const isRefused = lookup.refusedAt !== null;
   const visibleLines = lines.filter((line) => !line.isHidden);
-  const companyJobs = shown.company && isJobBoardOn ? await readCompanyJobs(database, shown.company) : null;
+  const companyJobs = isJobBoardOn ? await readCompanyJobs(database, { company: shown.company, memberId: profile.id }) : null;
 
   return (
     <>

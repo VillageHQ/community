@@ -128,14 +128,14 @@ function orderTabs(tabs: readonly ShellNavigationItem[], mode: ShellMode) {
 
 // The phone's bottom bar (crops shell-tabbar-member-phone.png, shell-tabbar-admin-phone.png): equal columns, an icon
 // over an 11 px label; the current tab takes the fund colour and a 2 px bar on its top edge. An admin's last tab
-// switches mode, in Ink.
+// switches mode, in Ink. With the feed on there can be eight; they still share the width equally (parts.css).
 export function TabBar({ navigation, isAdmin, badges, pathname }: ShellNavigationProps) {
   const { mode, items, currentTabKey } = useCurrentItems({ navigation, isAdmin, pathname });
   const tabs = orderTabs(items.filter((item) => item.tabLabel), mode);
   const liveBadges = useLiveBadges(tabs, badges);
   const columns = tabs.length + (isAdmin ? 1 : 0);
   return (
-    <nav aria-label="Sections" data-slot="tab-bar" className="fh-tabbar" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+    <nav aria-label="Sections" data-slot="tab-bar" data-count={columns} className="fh-tabbar" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
       {tabs.map((item) => (
         <NavigationLink
           key={item.key}

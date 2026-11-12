@@ -1,0 +1,78 @@
+$ vitest run
+
+ RUN  v5.1.0 C:/Users/absi/.autobuild/worktrees/community__fix-cleanup
+
+ ❯ src/test/deploy-setups.test.ts (5 tests | 1 failed) 11ms
+   ❯ every deploy setup runs the timed jobs (5)
+     × DigitalOcean: the template switches on the self-tick on the port the app listens on 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/deploy-setups.test.ts > every deploy setup runs the timed jobs > DigitalOcean: the template switches on the self-tick on the port the app listens on
+AssertionError: expected 'spec:\r\n  name: village-community\r\…' to match /- key: JOBS_SELF_TICK\n\s+scope: RUN_…/
+
+- Expected:
+/- key: JOBS_SELF_TICK\n\s+scope: RUN_TIME\n\s+value: "true"/
+
++ Received:
+"spec:
+  name: village-community
+  databases:
+    - name: db
+      engine: PG
+      version: \"17\"
+      production: false
+  services:
+    - name: web
+      git:
+        repo_clone_url: https://github.com/VillageHQ/community.git
+        branch: main
+      environment_slug: node-js
+      instance_size_slug: apps-s-1vcpu-0.5gb
+      instance_count: 1
+      http_port: 8080
+      envs:
+        - key: APP_URL
+          scope: RUN_TIME
+          value: ${APP_URL}
+        - key: DATABASE_URL
+          scope: RUN_TIME
+          value: ${db.DATABASE_URL}
+        - key: DATABASE_CA_CERT
+          scope: RUN_TIME
+          value: ${db.CA_CERT}
+        - key: SETUP_TOKEN
+          scope: RUN_TIME
+          type: SECRET
+          value: change-me
+        # One long-running server: it calls its own jobs endpoint every minute (the weekly email,
+        # reminders, email retries and the nightly tasks). PORT matches http_port, so the call finds the app.
+        - key: PORT
+          scope: RUN_TIME
+          value: \"8080\"
+        - key: JOBS_SELF_TICK
+          scope: RUN_TIME
+          value: \"true\"
+"
+
+ ❯ src/test/deploy-setups.test.ts:42:22
+     40|   it("DigitalOcean: the template switches on the self-tick on the port…
+     41|     const template = readRepositoryFile(".do/deploy.template.yaml");
+     42|     expect(template).toMatch(/- key: JOBS_SELF_TICK\n\s+scope: RUN_TIM…
+       |                      ^
+     43|     expect(template).toMatch(/http_port: 8080/);
+     44|     expect(template).toMatch(/- key: PORT\n\s+scope: RUN_TIME\n\s+valu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 164 passed (165)
+      Tests  1 failed | 3374 passed (3375)
+   Start at  23:51:11
+   Duration  780.59s (tests 50%, import 38%, transform 5%, setup 4%, environment 3%)
+
+     Import  1284 modules were evaluated 15357 times · 281.58s total, 38% of tracked time
+             ~258.04s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+             learn more: https://vitest.dev/guide/improving-performance#test-isolation
+
+[ELIFECYCLE] Test failed. See above for more details.

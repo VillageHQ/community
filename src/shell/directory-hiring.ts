@@ -11,7 +11,7 @@ import { isModuleEnabled } from "@/platform/modules/enablement";
 // directory's page and route pass this in.
 export async function readHiringLookup(database: Database): Promise<HiringLookup | null> {
   if (!(await isModuleEnabled(database, jobBoardManifest))) return null;
-  return { jobCountColumn: (company) => companyJobCountColumn(company) };
+  return { jobCountColumn: (company, memberId) => companyJobCountColumn(company, memberId) };
 }
 
 // "Jobs at member companies (5)" under the directory's title, while the job board is on: open jobs on the board.

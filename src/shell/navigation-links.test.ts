@@ -65,16 +65,24 @@ afterEach(() => {
 });
 
 describe("the phone tab bar", () => {
-  it("shows a member Founderhall's six tabs", () => {
+  it("shows a member Founderhall's six tabs, and Feed while the feed is on", () => {
     renderShellPart(TabBar);
 
-    expect(readNames("Sections")).toEqual(["Today", "Asks", "Search", "Directory", "Intros", "Inbox"]);
+    expect(readNames("Sections")).toEqual(["Today", "Asks", "Feed", "Search", "Directory", "Intros", "Inbox"]);
+  });
+
+  it("fits every tab in equal columns, as Founderhall's bar does", () => {
+    renderShellPart(TabBar, { isAdmin: true });
+
+    const bar = screen.getByRole("navigation", { name: "Sections" });
+    expect(bar.style.gridTemplateColumns).toBe("repeat(8, 1fr)");
+    expect(bar.dataset.count).toBe("8");
   });
 
   it("leaves out the tab of a module that is off", () => {
     renderShellPart(TabBar, { enabledIds: ["feed", messagesManifest.id, "members", introsManifest.id, "admin"] });
 
-    expect(readNames("Sections")).toEqual(["Today", "Directory", "Intros", "Inbox"]);
+    expect(readNames("Sections")).toEqual(["Today", "Feed", "Directory", "Intros", "Inbox"]);
   });
 
   it("adds a Console tab for an admin on member pages", () => {

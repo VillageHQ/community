@@ -81,7 +81,9 @@ export function Composer({ inputId, onPosted }: ComposerProps) {
     <form
       aria-label="New post"
       onSubmit={(event) =>
-        submitWithoutReload(event, () =>
+        submitWithoutReload(event, () => {
+          // One note at a time: a new try drops the last "Your post is live." before its own answer shows.
+          announce("");
           createPost.mutate(
             { body, type },
             {
@@ -92,8 +94,8 @@ export function Composer({ inputId, onPosted }: ComposerProps) {
                 onPosted?.();
               },
             },
-          ),
-        )
+          );
+        })
       }
     >
       <div className="flex items-start gap-3.5">

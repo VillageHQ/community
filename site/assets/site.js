@@ -65,6 +65,7 @@ function setUpPrint() {
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const MAXIMUM_MEMBERS = 1000000;
 const GROWTH_FROM_MEMBERS = 500;
+const QUOTE_FROM_MEMBERS = 2000;
 const REPLY_LINE = "Village replies from a person within 1 business day.";
 const NEXT_STEPS = {
   managed: [
@@ -134,10 +135,15 @@ function setUpSignup() {
   function syncPlan() {
     submitLabel.textContent = readValues().plan === "self-host" ? "Send me the install guide" : "Get Founderhall managed";
   }
-  // Above 500 members the managed choice names the plan that fits: Managed Growth.
+  // The managed choice names the plan that fits: Managed up to 500 members, Managed Growth up to 2,000, and above that
+  // a plan Village prices for the size (the pricing table stops at 2,000).
+  function readPlanPrice(members) {
+    if (members > QUOTE_FROM_MEMBERS) return "Priced for your size: above 2,000 members, Village quotes a plan with you";
+    if (members > GROWTH_FROM_MEMBERS) return "From $2,500/mo (Managed Growth, up to 2,000 members)";
+    return "From $1,000/mo";
+  }
   function syncPrice() {
-    planPrice.textContent =
-      Number(input(FIELDS.members).value) > GROWTH_FROM_MEMBERS ? "From $2,500/mo (Managed Growth, up to 2,000 members)" : "From $1,000/mo";
+    planPrice.textContent = readPlanPrice(Number(input(FIELDS.members).value));
   }
   form.querySelectorAll('input[name="plan"]').forEach((radio) => radio.addEventListener("change", syncPlan));
   input(FIELDS.members).addEventListener("input", syncPrice);

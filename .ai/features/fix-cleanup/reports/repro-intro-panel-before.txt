@@ -1,0 +1,664 @@
+
+ RUN  v5.1.0 C:/Users/absi/.autobuild/worktrees/community__fix-cleanup
+
+ ❯ src/modules/intros/components/intros-ui.test.ts (13 tests | 2 failed) 10976ms
+   ❯ the intro screens (Founderhall's) (13)
+     ❯ the connector asking the person (2)
+       × stops saying 'Send Rosa this private link' once the connector had the app email her 10060ms
+       × writes dates the app's way: day, then month 44ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/modules/intros/components/intros-ui.test.ts > the intro screens (Founderhall's) > the connector asking the person > stops saying 'Send Rosa this private link' once the connector had the app email her
+TestingLibraryElementError: Unable to find an element with the text: /We emailed Rosa on /. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<a[39m
+      [33mclass[39m=[32m"fh-back"[39m
+      [33mhref[39m=[32m"/intros"[39m
+    [36m>[39m
+      [36m<svg[39m
+        [33maria-hidden[39m=[32m"true"[39m
+        [33mclass[39m=[32m"lucide lucide-chevron-left fh-i fh-xs"[39m
+        [33mfill[39m=[32m"none"[39m
+        [33mheight[39m=[32m"24"[39m
+        [33mstroke[39m=[32m"currentColor"[39m
+        [33mstroke-linecap[39m=[32m"round"[39m
+        [33mstroke-linejoin[39m=[32m"round"[39m
+        [33mstroke-width[39m=[32m"1.5"[39m
+        [33mviewBox[39m=[32m"0 0 24 24"[39m
+        [33mwidth[39m=[32m"24"[39m
+        [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+      [36m>[39m
+        [36m<path[39m
+          [33md[39m=[32m"m15 18-6-6 6-6"[39m
+        [36m/>[39m
+      [36m</svg>[39m
+      [0mYour intros[0m
+    [36m</a>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"fh-pagehead"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-x-[11.9px] gap-y-3"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"fh-h1"[39m
+        [36m>[39m
+          [0mMarcus ↔ Rosa, via Sam[0m
+        [36m</h1>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"fh-pill fh-open"[39m
+          [33mdata-slot[39m=[32m"pill"[39m
+        [36m>[39m
+          [0mWith Rosa[0m
+        [36m</span>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"fh-lede"[39m
+      [36m>[39m
+        [0mCTO, Halcyon Health. Nobody is introduced without saying yes.[0m
+      [36m</p>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"fh-flow"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<p>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"fh-pill fh-open"[39m
+            [33mdata-slot[39m=[32m"pill"[39m
+          [36m>[39m
+            [0mWith Rosa[0m
+          [36m</span>[39m
+        [36m</p>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"fh-small fh-muted mt-2"[39m
+        [36m>[39m
+          [0mYou answered on 11 Nov.[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"fh-section empty:hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid gap-3"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid gap-3 rounded-field bg-accent p-4"[39m
+            [36m>[39m
+              [36m<h3[39m
+                [33mclass[39m=[32m"type-h3 flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-send size-5 shrink-0 text-brand-emphasis"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21.854 2.147-10.94 10.939"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mNow ask [0m
+                [0mRosa[0m
+              [36m</h3>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"type-note text-foreground-soft"[39m
+              [36m>[39m
+                [0mSend [0m
+                [0mRosa[0m
+                [0m this private link, however you normally reach them. They read [0m
+                [0mMarcus[0m
+                [0m's note and say yes or no thanks, with no account. [0m
+                [0mMarcus[0m
+                [0m hears nothing until then.[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"type-body rounded-field bg-card p-4 wrap-anywhere whitespace-pre-wrap text-foreground"[39m
+              [36m>[39m
+                [0mHi Rosa,
+
+Marcus Webb (CTO, Brightwater Logistics) asked me for an intro to you, and I wanted to check with you first.
+
+Here's what they wrote:
+
+I’m Marcus, CTO of Brightwater Logistics.
+
+You can say yes or no thanks here. It takes a few seconds, and you don't need an account:
+https://community.example/meet/abc
+
+Either answer is fine. If it's a no, Marcus won't hear who said it.[0m
+              [36m</p>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-wrap gap-2"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"fh-btn h-auto text-center whitespace-normal disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-icon-small fh-btn-secondary fh-btn-sm min-h-8 py-[5px]"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mdata-slot[39m=[32m"button"[39m
+                  [33mdata-variant[39m=[32m"outline"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-copy"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<rect[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mrx[39m=[32m"2"[39m
+                      [33mry[39m=[32m"2"[39m
+                      [33mwidth[39m=[32m"14"[39m
+                      [33mx[39m=[32m"8"[39m
+                      [33my[39m=[32m"8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+          ...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<a[39m
+      [33mclass[39m=[32m"fh-back"[39m
+      [33mhref[39m=[32m"/intros"[39m
+    [36m>[39m
+      [36m<svg[39m
+        [33maria-hidden[39m=[32m"true"[39m
+        [33mclass[39m=[32m"lucide lucide-chevron-left fh-i fh-xs"[39m
+        [33mfill[39m=[32m"none"[39m
+        [33mheight[39m=[32m"24"[39m
+        [33mstroke[39m=[32m"currentColor"[39m
+        [33mstroke-linecap[39m=[32m"round"[39m
+        [33mstroke-linejoin[39m=[32m"round"[39m
+        [33mstroke-width[39m=[32m"1.5"[39m
+        [33mviewBox[39m=[32m"0 0 24 24"[39m
+        [33mwidth[39m=[32m"24"[39m
+        [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+      [36m>[39m
+        [36m<path[39m
+          [33md[39m=[32m"m15 18-6-6 6-6"[39m
+        [36m/>[39m
+      [36m</svg>[39m
+      [0mYour intros[0m
+    [36m</a>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"fh-pagehead"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-x-[11.9px] gap-y-3"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"fh-h1"[39m
+        [36m>[39m
+          [0mMarcus ↔ Rosa, via Sam[0m
+        [36m</h1>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"fh-pill fh-open"[39m
+          [33mdata-slot[39m=[32m"pill"[39m
+        [36m>[39m
+          [0mWith Rosa[0m
+        [36m</span>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"fh-lede"[39m
+      [36m>[39m
+        [0mCTO, Halcyon Health. Nobody is introduced without saying yes.[0m
+      [36m</p>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"fh-flow"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<p>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"fh-pill fh-open"[39m
+            [33mdata-slot[39m=[32m"pill"[39m
+          [36m>[39m
+            [0mWith Rosa[0m
+          [36m</span>[39m
+        [36m</p>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"fh-small fh-muted mt-2"[39m
+        [36m>[39m
+          [0mYou answered on 11 Nov.[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"fh-section empty:hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid gap-3"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid gap-3 rounded-field bg-accent p-4"[39m
+            [36m>[39m
+              [36m<h3[39m
+                [33mclass[39m=[32m"type-h3 flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-send size-5 shrink-0 text-brand-emphasis"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21.854 2.147-10.94 10.939"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mNow ask [0m
+                [0mRosa[0m
+              [36m</h3>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"type-note text-foreground-soft"[39m
+              [36m>[39m
+                [0mSend [0m
+                [0mRosa[0m
+                [0m this private link, however you normally reach them. They read [0m
+                [0mMarcus[0m
+                [0m's note and say yes or no thanks, with no account. [0m
+                [0mMarcus[0m
+                [0m hears nothing until then.[0m
+              [36m</p>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"type-body rounded-field bg-card p-4 wrap-anywhere whitespace-pre-wrap text-foreground"[39m
+              [36m>[39m
+                [0mHi Rosa,
+
+Marcus Webb (CTO, Brightwater Logistics) asked me for an intro to you, and I wanted to check with you first.
+
+Here's what they wrote:
+
+I’m Marcus, CTO of Brightwater Logistics.
+
+You can say yes or no thanks here. It takes a few seconds, and you don't need an account:
+https://community.example/meet/abc
+
+Either answer is fine. If it's a no, Marcus won't hear who said it.[0m
+              [36m</p>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-wrap gap-2"[39m
+              [36m>[39m
+                [36m<button[39m
+                  [33mclass[39m=[32m"fh-btn h-auto text-center whitespace-normal disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-icon-small fh-btn-secondary fh-btn-sm min-h-8 py-[5px]"[39m
+                  [33mdata-size[39m=[32m"sm"[39m
+                  [33mdata-slot[39m=[32m"button"[39m
+                  [33mdata-variant[39m=[32m"outline"[39m
+                  [33mtype[39m=[32m"button"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-copy"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [33mwidth[39m=[32m"24"[39m
+                    [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                  [36m>[39m
+                    [36m<rect[39m
+                      [33mheight[39m=[32m"14"[39m
+                      [33mrx[39m=[32m"2"[39m
+                      [33mry[39m=[32m"2"[39m
+                      [33mwidth[39m=[32m"14"[39m
+                      [33mx[39m=[32m"8"[39m
+                      [33my[39m=[32m"8"[39m
+                    [36m/>[39m
+                    [36m<path[39m
+                      [33md[39m=[32m"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"[39m
+                    [36m/>[39m
+                  [36m</svg>[39m
+          ...
+ ❯ waitForWrapper node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/modules/intros/components/intros-ui.test.ts:252:27
+    250|       fireEvent.click(screen.getByRole("button", { name: "Email Rosa" …
+    251|
+    252|       expect(await screen.findByText(/We emailed Rosa on /)).toBeTruth…
+       |                           ^
+    253|       expect(screen.queryByText(/Send Rosa this private link/)).toBeNu…
+    254|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/modules/intros/components/intros-ui.test.ts > the intro screens (Founderhall's) > the connector asking the person > writes dates the app's way: day, then month
+TestingLibraryElementError: Unable to find an element with the text: /We emailed Rosa on 12 Nov\./. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<a[39m
+      [33mclass[39m=[32m"fh-back"[39m
+      [33mhref[39m=[32m"/intros"[39m
+    [36m>[39m
+      [36m<svg[39m
+        [33maria-hidden[39m=[32m"true"[39m
+        [33mclass[39m=[32m"lucide lucide-chevron-left fh-i fh-xs"[39m
+        [33mfill[39m=[32m"none"[39m
+        [33mheight[39m=[32m"24"[39m
+        [33mstroke[39m=[32m"currentColor"[39m
+        [33mstroke-linecap[39m=[32m"round"[39m
+        [33mstroke-linejoin[39m=[32m"round"[39m
+        [33mstroke-width[39m=[32m"1.5"[39m
+        [33mviewBox[39m=[32m"0 0 24 24"[39m
+        [33mwidth[39m=[32m"24"[39m
+        [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+      [36m>[39m
+        [36m<path[39m
+          [33md[39m=[32m"m15 18-6-6 6-6"[39m
+        [36m/>[39m
+      [36m</svg>[39m
+      [0mYour intros[0m
+    [36m</a>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"fh-pagehead"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-x-[11.9px] gap-y-3"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"fh-h1"[39m
+        [36m>[39m
+          [0mMarcus ↔ Rosa, via Sam[0m
+        [36m</h1>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"fh-pill fh-open"[39m
+          [33mdata-slot[39m=[32m"pill"[39m
+        [36m>[39m
+          [0mWith Rosa[0m
+        [36m</span>[39m
+      [36m</div>[39m
+      [36m<p[39m
+        [33mclass[39m=[32m"fh-lede"[39m
+      [36m>[39m
+        [0mCTO, Halcyon Health. Nobody is introduced without saying yes.[0m
+      [36m</p>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"fh-flow"[39m
+    [36m>[39m
+      [36m<div>[39m
+        [36m<p>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"fh-pill fh-open"[39m
+            [33mdata-slot[39m=[32m"pill"[39m
+          [36m>[39m
+            [0mWith Rosa[0m
+          [36m</span>[39m
+        [36m</p>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"fh-small fh-muted mt-2"[39m
+        [36m>[39m
+          [0mYou answered on 11 Nov.[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"fh-section empty:hidden"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"grid gap-3"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"grid gap-3 rounded-field bg-accent p-4"[39m
+            [36m>[39m
+              [36m<h3[39m
+                [33mclass[39m=[32m"type-h3 flex items-center gap-2"[39m
+              [36m>[39m
+                [36m<svg[39m
+                  [33maria-hidden[39m=[32m"true"[39m
+                  [33mclass[39m=[32m"lucide lucide-send size-5 shrink-0 text-brand-emphasis"[39m
+                  [33mfill[39m=[32m"none"[39m
+                  [33mheight[39m=[32m"24"[39m
+                  [33mstroke[39m=[32m"currentColor"[39m
+                  [33mstroke-linecap[39m=[32m"round"[39m
+                  [33mstroke-linejoin[39m=[32m"round"[39m
+                  [33mstroke-width[39m=[32m"2"[39m
+                  [33mviewBox[39m=[32m"0 0 24 24"[39m
+                  [33mwidth[39m=[32m"24"[39m
+                  [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                [36m>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"[39m
+                  [36m/>[39m
+                  [36m<path[39m
+                    [33md[39m=[32m"m21.854 2.147-10.94 10.939"[39m
+                  [36m/>[39m
+                [36m</svg>[39m
+                [0mNow ask [0m
+                [0mRosa[0m
+              [36m</h3>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"type-note text-foreground-soft"[39m
+              [36m>[39m
+                [0mWe emailed [0m
+                [0mRosa[0m
+                [0m on [0m
+                [0mNov 12[0m
+                [0m. They answer from that email, or in the app if they're a member here. Nothing more to send; if you also reach them another way, a new link below works too. [0m
+                [0mMarcus[0m
+                [0m hears nothing until then.[0m
+              [36m</p>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"grid gap-2"[39m
+              [36m>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"type-note text-foreground-soft"[39m
+                [36m>[39m
+                  [0mLost the link? Make a new one. Any link you already sent keeps working until they answer.[0m
+                [36m</p>[39m
+                [36m<div>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"fh-btn h-auto text-center whitespace-normal disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-icon-small fh-btn-secondary min-h-10 py-[9px]"[39m
+                    [33mdata-size[39m=[32m"default"[39m
+                    [33mdata-slot[39m=[32m"button"[39m
+                    [33mdata-variant[39m=[32m"outline"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-link-2"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"24"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"24"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M9 17H7A5 5 0 0 1 7 7h2"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M15 7h2a5 5 0 1 1 0 10h-2"[39m
+                      [36m/>[39m
+                      [36m<line[39m
+                        [33mx1[39m=[32m"8"[39m
+                        [33mx2[39m=[32m"16"[39m
+                        [33my1[39m=[32m"12"[39m
+                        [33my2[39m=[32m"12"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                    [0mMake a new link[0m
+                  [36m</button>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"type-small text-muted-foreground"[39m
+            [36m>[39m
+              [0mWe'll show [0m
+              [0mRosa[0m
+              [0m's answer here. If [0m
+              [0mRosa[0m
+              [0m doesn't answer, this closes on [0m
+              [0mNov 18[0m
+              [0m.[0m
+            [36m</p>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"fh-btn h-auto text-center whitespace-normal disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-icon-small fh-btn-quiet min-h-10 py-[9px]"[39m
+              [33mdata-size[39m=[32m"default"[39m
+              [33mdata-slot[39m=[32m"button"[39m
+              [33mdata-variant[39m=[32m"quiet"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mI can't make this intro after all[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<section[39m
+        [33mclass[39m=[32m"fh-sheet"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"fh-source"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-pencil fh-i fh-xs"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"1.5"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m15 5 4 4"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0mMarcus’ note[0m
+        [36m</div>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"fh-notetext"[39m
+        [36m>[39m
+          [0mI’m Marcus, CTO of Brightwater Logistics.[0m
+        [36m</p>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"fh-small fh-muted mt-2.5"[39m
+        [36m>[39m
+          [0mOnly the people in this intro see the note. Northwind Founders’ admins see names, states and dates.[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"fh-btn-row mt-2.5"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"fh-btn h-auto text-center whitespace-normal disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-icon-small fh-btn-quiet fh-btn-sm min-h-8 py-[5px]"[39m
+              [33mdata-size[39m=[32m"sm"[39m
+              [33mdata-slot[39m=[32m"button"[39m
+              [33mdata-variant[39m=[32m"quiet"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-flag"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+              [0mReport this note[0m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<a[39m
+            [33maria-label[39m=[32m"Message Marcus Webb"[39m
+            [33mclass[39m=[32m"fh-btn h-auto text-center whitespace-normal disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-icon-small fh-btn-quiet fh-btn-sm min-h-8 py-[5px]"[39m
+            [33mdata-size[39m=[32m"sm"[39m
+            [33mdata-slot[39m=[32m"button"[39m
+            [33mdata-variant[39m=[32m"quiet"[39m
+            [33mhref[39m=[32m"/messages/new?to=marcus"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-message-square"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [0mMessage Marcus[0m
+          [36m</a>[39m
+        [36m</div>[39m
+      [36m</section>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.2/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ src/modules/intros/components/intros-ui.test.ts:259:21
+    257|       renderInApp(createElement(IntroPage, { intro: { ...asking, targe…
+    258|
+    259|       expect(screen.getByText(/We emailed Rosa on 12 Nov\./)).toBeTrut…
+       |                     ^
+    260|       expect(screen.getByText(/this closes on 18 Nov\./)).toBeTruthy();
+    261|       expect(screen.queryByText(/Nov 1[28]/)).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 11 passed (13)
+   Start at  23:42:55
+   Duration  16.55s (tests 79%, import 8%, environment 7%, transform 4%, setup 1%)
+

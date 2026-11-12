@@ -53,8 +53,8 @@ describe("the navigation", () => {
     ]);
   });
 
-  it("gives six of them a phone tab", () => {
-    expect(MEMBER_ITEMS.flatMap(({ tabLabel }) => (tabLabel ? [tabLabel] : []))).toEqual(["Today", "Asks", "Search", "Directory", "Intros", "Inbox"]);
+  it("gives Founderhall's six a phone tab, and Feed", () => {
+    expect(MEMBER_ITEMS.flatMap(({ tabLabel }) => (tabLabel ? [tabLabel] : []))).toEqual(["Today", "Asks", "Feed", "Search", "Directory", "Intros", "Inbox"]);
   });
 
   it("hides the console from members", () => {
