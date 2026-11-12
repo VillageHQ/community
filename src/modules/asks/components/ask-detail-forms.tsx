@@ -189,14 +189,20 @@ export function StatusButtons({ askId, isOwn, isAsk, isOpen, isAdmin, isPinned }
 
 // "Ask Marcus for an intro": the note opens in place (Founderhall has no dialogs), and the ask goes to Marcus as an
 // intro ask, using one of this week's asks.
-export function AskViaButton({ askId, helper, canAsk }: { askId: string; helper: { id: string; firstName: string }; canAsk: boolean }) {
+type AskViaProps = { askId: string; helper: { id: string; firstName: string }; canAsk: boolean; targetName?: string | null };
+
+// The author asks a listed helper for the intro. A path helper is asked along the path; a helper found by profile words
+// (`targetName` not null) is asked for the person the author names, prefilled from the ask.
+export function AskViaButton({ askId, helper, canAsk, targetName = null }: AskViaProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { error, isPending, run } = useAction();
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const note = String(new FormData(event.currentTarget).get("note") ?? "");
+    const form = new FormData(event.currentTarget);
+    const note = String(form.get("note") ?? "");
+    const named = targetName === null ? {} : { targetName: String(form.get("targetName") ?? "") };
     void run(async () => {
-      const { introId } = await postRequest(ASK_API_ROUTES.askHelper, { askId, helperId: helper.id, note }, createdIntroSchema);
+      const { introId } = await postRequest(ASK_API_ROUTES.askHelper, { askId, helperId: helper.id, note, ...named }, createdIntroSchema);
       return `/intros/${introId}`;
     });
   }
@@ -207,6 +213,14 @@ export function AskViaButton({ askId, helper, canAsk }: { askId: string; helper:
       </Button>
       {isOpen ? (
         <form className="w-full" onSubmit={submit}>
+          {targetName === null ? null : (
+            <>
+              <label className="fh-label fh-small" htmlFor={`via-who-${helper.id}`}>
+                Who would you like {helper.firstName} to introduce you to?
+              </label>
+              <Input id={`via-who-${helper.id}`} name="targetName" defaultValue={targetName} required maxLength={200} placeholder="Their name" className="mb-2" />
+            </>
+          )}
           <label className="fh-label fh-small" htmlFor={`via-${helper.id}`}>
             A note {helper.firstName} can forward
           </label>

@@ -18,6 +18,7 @@ import {
   ASK_ANSWER_KINDS,
   ASK_CATEGORIES,
   ASK_ERROR_CODES,
+  ASK_HELPER_REASONS,
   ASK_KINDS,
   ASK_LIMITS,
   ASK_STATES,
@@ -161,19 +162,31 @@ export async function readAskForHelper(connection: DatabaseOrTransaction, askId:
   return target;
 }
 
-// A path helper on the author's own open ask, so the author can ask them for the intro.
-export async function readPathHelperForAuthor(connection: DatabaseOrTransaction, authorId: string, askId: string, helperId: string) {
+// A helper on the author's own open ask, so the author can ask them for the intro: a path helper (with the slugs of
+// the path) or a helper found by profile words (asked as a named intro, like an ask from a profile).
+export async function readHelperForAuthor(connection: DatabaseOrTransaction, authorId: string, askId: string, helperId: string) {
   const [target] = await connection
-    .select({ targetSlug: ask.targetSlug, connectorSlug: askHelper.connectorSlug, listedAt: ask.listedAt, closedAt: ask.closedAt })
+    .select({
+      reason: askHelper.reason,
+      targetSlug: ask.targetSlug,
+      targetName: ask.targetName,
+      targetCompany: ask.targetCompany,
+      connectorSlug: askHelper.connectorSlug,
+      listedAt: ask.listedAt,
+      closedAt: ask.closedAt,
+    })
     .from(askHelper)
     .innerJoin(ask, eq(ask.id, askHelper.askId))
     .innerJoin(user, eq(user.id, askHelper.helperId))
     .where(and(eq(askHelper.askId, askId), eq(askHelper.helperId, helperId), eq(ask.authorId, authorId), isActiveMember(), hasNoBlockBetween(authorId, askHelper.helperId)));
-  if (!target?.targetSlug || !target.connectorSlug) {
-    throw new RequestError(NOT_FOUND_STATUS, ASK_ERROR_CODES.notHelper, "This member isn't on a path to the person you named. Message them instead.");
+  const isPath = target?.reason === ASK_HELPER_REASONS.path;
+  if (!target || (isPath && (!target.targetSlug || !target.connectorSlug))) {
+    throw new RequestError(NOT_FOUND_STATUS, ASK_ERROR_CODES.notHelper, "This member isn't listed as able to help with this ask. Message them instead.");
   }
   if (readAskState(target, new Date()) !== ASK_STATES.open) throw askClosedError();
-  return { targetSlug: target.targetSlug, connectorSlug: target.connectorSlug };
+  return isPath
+    ? { kind: "path" as const, targetSlug: target.targetSlug!, connectorSlug: target.connectorSlug! }
+    : { kind: "words" as const, targetName: target.targetName, targetCompany: target.targetCompany };
 }
 
 export type DeliverableOffer = { id: string; askerId: string; askTitle: string; note: string };

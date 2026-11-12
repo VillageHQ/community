@@ -4,8 +4,9 @@ import { eq } from "drizzle-orm";
 
 import { ASK_ERROR_CODES, ASK_LIMITS, type AskAllowance, type AskHelperBody, type KnowSomeoneBody } from "@/modules/asks/contract";
 import { readPostedAskTimes, readWeeklyAllowance } from "@/modules/asks/reads";
-import { offerHelp, readAskForHelper, readPathHelperForAuthor, type AllowanceCheck } from "@/modules/asks/service";
+import { offerHelp, readAskForHelper, readHelperForAuthor, type AllowanceCheck } from "@/modules/asks/service";
 import type { PathFinder, PathTarget } from "@/modules/asks/service-helpers";
+import { namedIntroBodySchema } from "@/modules/intros/contract";
 import { introsManifest } from "@/modules/intros/manifest";
 import { readCountedIntroAskTimes } from "@/modules/intros/reads-allowance";
 import { createIntroRequest, createOfferedIntro } from "@/modules/intros/service";
@@ -125,12 +126,22 @@ export async function knowSomeone(context: RequestContext, body: KnowSomeoneBody
   return { introId };
 }
 
-// The author asks a path helper for the intro. It is an intro ask like any other, so it uses the allowance and
-// counts toward the connector's weekly cap.
-export async function askHelperForIntro(context: RequestContext, { askId, helperId, note }: AskHelperBody) {
+// The author asks a helper on their ask for the intro. It is an intro ask like any other, so it uses the allowance and
+// counts toward the connector's weekly cap. A path helper is asked along the path; a helper found by profile words is
+// asked as a named intro (Founderhall lets the author ask any listed helper), for the person the author names.
+export async function askHelperForIntro(context: RequestContext, { askId, helperId, note, targetName }: AskHelperBody) {
   if (!(await isAskIntroOn(context.database))) throw introOffError();
-  const { targetSlug, connectorSlug } = await readPathHelperForAuthor(context.database, context.member.id, askId, helperId);
-  await readMemberPaths(context, targetSlug, NO_OPEN_ASKS);
-  const intro = await createIntroRequest(context, { targetSlug, connectorSlug, note }, { assertAllowance: assertAskAllowance, askId, network: await readIntroNetwork(context.database) });
+  const helper = await readHelperForAuthor(context.database, context.member.id, askId, helperId);
+  const network = await readIntroNetwork(context.database);
+  if (helper.kind === "path") {
+    await readMemberPaths(context, helper.targetSlug, NO_OPEN_ASKS);
+    const intro = await createIntroRequest(context, { targetSlug: helper.targetSlug, connectorSlug: helper.connectorSlug, note }, { assertAllowance: assertAskAllowance, askId, network });
+    return { introId: intro.id };
+  }
+  const named = namedIntroBodySchema.safeParse({ connectorId: helperId, target: { name: targetName || helper.targetName || "", company: helper.targetCompany ?? "" }, note });
+  if (!named.success) {
+    throw new RequestError(UNPROCESSABLE_STATUS, ASK_ERROR_CODES.introUnavailable, named.error.issues[0]?.message ?? "Name the person you'd like to meet.");
+  }
+  const intro = await createIntroRequest(context, named.data, { assertAllowance: assertAskAllowance, askId, network });
   return { introId: intro.id };
 }

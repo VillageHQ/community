@@ -297,7 +297,14 @@ export const knowSomeoneBodySchema = z.object({
   targetLinkedin: linkedinTargetSchema,
   targetName: z.string().overwrite(removeNullBytes).overwrite(removeBidiControls).trim().max(ASK_LIMITS.personNameLength).nullable().default(null),
 });
-export const askHelperBodySchema = z.object({ askId: z.uuid(), helperId: z.string().min(1).max(200), note: offerNoteSchema });
+// `targetName`: for a helper found by profile words (no path), who the author would like to meet; it defaults to the
+// person the ask names.
+export const askHelperBodySchema = z.object({
+  askId: z.uuid(),
+  helperId: z.string().min(1).max(200),
+  note: offerNoteSchema,
+  targetName: z.string().trim().max(200).optional(),
+});
 export const allowanceBodySchema = z.object({
   weeklyAllowance: z
     .number()

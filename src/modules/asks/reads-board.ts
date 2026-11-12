@@ -136,7 +136,8 @@ async function readHelpers(database: Database, askIds: string[], viewerId: strin
       personName: row.personName,
       personTitle: row.personTitle,
       warmth: row.warmth,
-      canAskForIntro: row.reason === ASK_HELPER_REASONS.path && row.connectorSlug !== null,
+      // A path helper along the path; a helper found by profile words as a named intro (ASK-06).
+      canAskForIntro: row.reason === ASK_HELPER_REASONS.words || row.connectorSlug !== null,
     });
     helpers.set(row.askId, list);
   }
