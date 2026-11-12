@@ -30,7 +30,8 @@ is Founderhall's public page: `PublicPage` (fund mark, one card, a 12 px footer)
   (`acceptInvite(…, null)`, name = the invite's name or the start of the address) and signs it in through a one-minute
   server-made link (`signInUnconfirmedMember` in `src/platform/auth/server-link-sign-in.ts`, the demo's pattern). The
   link sign-in would mark the email confirmed; it is set back to unconfirmed, because a copied invite link proves
-  nothing, and the confirmation email is sent as before. A name and a password in the body still work.
+  nothing, and the confirmation email is sent as before. A join from the EMAILED link (its `e=` mark) stays confirmed
+  and gets no confirmation email (the owner's call, 2026-11-12; `.ai/features/fh-followup/NOTES.md`). A name and a password in the body still work.
 - Every unusable invite (used, expired, withdrawn, unknown) reads the same, as Founderhall's bad-link page; too many
   tries from one place get the wait-a-minute line.
 

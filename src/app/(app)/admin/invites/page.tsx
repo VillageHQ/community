@@ -65,8 +65,8 @@ export default modulePage(adminManifest, async function AdminInvitesPage({ searc
                   </span>
                   <div className="fh-who">
                     <b>{invite.name || invite.email}</b>
-                    {/* Whole, as Founderhall's: here Resend and Revoke take room, so the line wraps instead of "…". */}
-                    <span className="whitespace-normal! wrap-anywhere">
+                    {/* One line, cut with "…" on a narrow phone, as Founderhall's: an address is never split mid-word. */}
+                    <span title={invite.email}>
                       {invite.email} · sent {formatShortDate(invite.createdAt.toISOString())}, ends {formatShortDate(invite.expiresAt.toISOString())}
                     </span>
                   </div>
