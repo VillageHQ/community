@@ -13,6 +13,7 @@ import { POST as postBoard } from "@/app/api/intros/route";
 import { POST as postTransition } from "@/app/api/intros/transition/route";
 import { POST as postBlock } from "@/app/api/members/block/route";
 import { POST as postPaths } from "@/app/api/network/paths/route";
+import IntroLinkNotFound from "@/app/i/[token]/not-found";
 import IntroLinkPage, { generateMetadata } from "@/app/i/[token]/page";
 import {
   CONSENT_ANSWERS,
@@ -459,7 +460,9 @@ describe("double opt-in intros", () => {
       const { intro } = await askAndReachTarget();
 
       expect((await answer(token)).status).toBe(GONE_STATUS);
-      expect(await renderPage(token)).toContain("Nothing to do");
+      // Founderhall answers an unknown link with a 404 and the closed card's words.
+      await expect(renderPage(token)).rejects.toMatchObject({ digest: NOT_FOUND_DIGEST });
+      expect(renderToStaticMarkup(await IntroLinkNotFound())).toContain("Nothing to do");
       expect((await readRow(intro.id)).state).toBe(INTRO_STATES.askingTarget);
     });
 
