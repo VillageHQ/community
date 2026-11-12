@@ -1,12 +1,15 @@
 "use client";
 
 import { cn } from "cn";
-import { Avatar as AvatarPrimitive } from "radix-ui";
+import { useState } from "react";
 
 import { pickAvatarTint, readInitials } from "@/platform/design/avatar-identity";
 
 // Founderhall's avatar (design-system.md §3.4): round; a photo when there is one, else two serif initials on one of
 // four muted tints picked by the member's id. Sizes: 28 (sm), 36 (default), 64 (lg), 80 (xl); any other size scales.
+// The photo is a plain <img> in the page, over the initials (as on Founderhall): it shows on first paint, in print and
+// without scripts. A picture that fails to load is hidden, also one that failed before the page's scripts ran, so the
+// initials show instead of the browser's broken-image icon.
 const DEFAULT_AVATAR_SIZE_PX = 36;
 const FOUNDERHALL_FONT_SIZES: Record<number, number> = { 28: 12, 36: 14, 64: 24, 80: 30 };
 const INITIALS_SIZE_RATIO = 0.39;
@@ -28,21 +31,41 @@ function readFontSize(sizePx: number) {
   return FOUNDERHALL_FONT_SIZES[sizePx] ?? Math.max(MINIMUM_INITIALS_SIZE_PX, Math.round(sizePx * INITIALS_SIZE_RATIO));
 }
 
+function FaceImage({ src }: { src: string }) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  if (failedSrc === src) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- outside faces of any host and size, drawn as they are
+    <img
+      ref={(image) => {
+        if (image?.complete && image.naturalWidth === 0) setFailedSrc(src);
+      }}
+      src={src}
+      alt=""
+      referrerPolicy="no-referrer"
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailedSrc(src)}
+      className="absolute inset-0 size-full object-cover"
+    />
+  );
+}
+
 export function Avatar({ stableId, name, imageUrl, sizePx = DEFAULT_AVATAR_SIZE_PX, isOutside = false, className }: AvatarProps) {
   return (
-    <AvatarPrimitive.Root
+    <span
       data-slot="avatar"
       aria-hidden="true"
       style={{ width: sizePx, height: sizePx, fontSize: readFontSize(sizePx) }}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-serif leading-none font-semibold tracking-[0.01em] text-ink",
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-serif leading-none font-semibold tracking-[0.01em] text-ink",
         isOutside ? "bg-leaf shadow-[inset_0_0_0_1px_var(--graphite)]" : TINT_CLASSES[pickAvatarTint(stableId)],
         className,
       )}
     >
-      {imageUrl ? <AvatarPrimitive.Image src={imageUrl} alt="" referrerPolicy="no-referrer" className="size-full bg-vellum object-cover" /> : null}
-      <AvatarPrimitive.Fallback className="flex size-full items-center justify-center">{readInitials(name)}</AvatarPrimitive.Fallback>
-    </AvatarPrimitive.Root>
+      <span className="flex size-full items-center justify-center">{readInitials(name)}</span>
+      {imageUrl ? <FaceImage src={imageUrl} /> : null}
+    </span>
   );
 }
 

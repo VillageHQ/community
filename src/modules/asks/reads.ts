@@ -348,7 +348,7 @@ async function readHelpersOnOwnAsks(database: Database, askIds: string[], viewer
       helper: toAskMember({ id: row.helperId, name: row.helperName, title: row.helperTitle, company: row.helperCompany, avatarUpdatedAt: row.helperAvatarUpdatedAt, filledFace: row.helperFilledFace, companyLogoUrl: row.helperCompanyLogoUrl }),
       reason: isPath ? ASK_HELPER_REASONS.path : ASK_HELPER_REASONS.words,
       why: row.why,
-      canAskForIntro: isPath && row.connectorSlug !== null,
+      canAskForIntro: !isPath || row.connectorSlug !== null,
     });
     helpers.set(row.askId, list);
   }

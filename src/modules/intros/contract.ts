@@ -330,6 +330,24 @@ export const consentAnswerBodySchema = z.object({
   targetEmail: targetEmailSchema.optional(),
 });
 
+// A member who is the person asked for answers in the app (Today, Your intros), as on the emailed page: yes or no thanks.
+export const targetMemberAnswerBodySchema = z.object({
+  introId: z.uuid(),
+  answer: z.enum([CONSENT_ANSWERS.yes, CONSENT_ANSWERS.noThanks]),
+});
+
+export const targetMemberAnswerSchema = z.object({ answer: z.enum(CONSENT_ANSWERS), isRepeat: z.boolean() });
+
+// An intro that waits on a member's answer because they are the person asked for (INTRO-06).
+export type IntroForTarget = {
+  id: string;
+  requester: { id: string; name: string; headline: string | null; avatarUrl: string | null };
+  introducerName: string;
+  note: string;
+  createdAt: string;
+  closesAt: string;
+};
+
 export const consentEmailBodySchema = z.object({
   introId: z.uuid(),
   token: z.string().max(CONSENT_TOKEN_MAXIMUM_LENGTH),
@@ -399,6 +417,8 @@ export const introSchema = z.object({
   target: z.object({ name: z.string(), headline: z.string().nullable(), linkedinSlug: z.string().nullable(), isNamed: z.boolean() }),
   // The address the asker typed for the person, while the ask is open: it fills in the connector's consent email.
   suggestedTargetEmail: z.string().nullable(),
+  // For the connector only: when the app last emailed the person their link (never the address itself).
+  targetEmailedAt: timestampSchema.nullable().optional(),
   requester: introPersonSchema,
   introducer: introPersonSchema,
 });
@@ -430,6 +450,7 @@ export type IntroTransitionBody = z.infer<typeof introTransitionBodySchema>;
 export type IntroOutcomeBody = z.infer<typeof introOutcomeBodySchema>;
 export type IntroOutcomeRequest = z.input<typeof introOutcomeBodySchema>;
 export type ConsentAnswerBody = z.infer<typeof consentAnswerBodySchema>;
+export type TargetMemberAnswerBody = z.infer<typeof targetMemberAnswerBodySchema>;
 export type ConsentEmailBody = z.infer<typeof consentEmailBodySchema>;
 export type ConsentIssue = z.infer<typeof consentIssueSchema>;
 export type ConnectorAnswerBody = z.infer<typeof connectorAnswerBodySchema>;

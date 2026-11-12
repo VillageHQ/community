@@ -73,6 +73,8 @@ export type BoardPost = {
   author: AskMember;
   createdAt: string;
   who: string;
+  // The person the ask names, without their company (prefills "Who would you like … to introduce you to?").
+  targetName: string | null;
   targetText: string | null;
   targetCompany: string | null;
   helperCount: number;
@@ -136,7 +138,8 @@ async function readHelpers(database: Database, askIds: string[], viewerId: strin
       personName: row.personName,
       personTitle: row.personTitle,
       warmth: row.warmth,
-      canAskForIntro: row.reason === ASK_HELPER_REASONS.path && row.connectorSlug !== null,
+      // A path helper along the path; a helper found by profile words as a named intro (ASK-06).
+      canAskForIntro: row.reason === ASK_HELPER_REASONS.words || row.connectorSlug !== null,
     });
     helpers.set(row.askId, list);
   }
@@ -177,6 +180,7 @@ function toPost(row: PostRow, viewerId: string, helpers: PostHelper[], answers: 
     author: toMember(row.author),
     createdAt: row.createdAt.toISOString(),
     who: describeAskWho(row),
+    targetName: row.targetName ?? row.targetText ?? null,
     targetText: row.targetText,
     targetCompany: row.targetCompany ?? null,
     helperCount: isAsk ? helpers.length : 0,

@@ -446,7 +446,10 @@ a.fh-mcard:hover .fh-who b{text-decoration:underline;text-decoration-thickness:1
 @media (prefers-reduced-motion:reduce){
 *::before,*::after{transition-duration:0s!important;animation-duration:0s!important}
 }
+.fh-print-only{display:none}
+.fh-spend-bar{display:block;height:3px;margin-top:4px;border-radius:2px;background:var(--fund);opacity:.6}
 @media print{
+.fh-print-only{display:block!important}
 .fh-side,.fh-topbar,.fh-tabbar,.fh-preview-strip,.fh-report-actions,.fh-back,.fh-no-print,.fh-toast{display:none!important}
 .fh-app{display:block}
 .fh-main{padding:0;max-width:none}

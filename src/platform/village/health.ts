@@ -3,10 +3,11 @@ import "server-only";
 import { isVillageError, VillageError } from "@villagehq/sdk";
 import { inArray, sql } from "drizzle-orm";
 
-import type { DatabaseOrTransaction } from "../database/client.ts";
+import type { Database, DatabaseOrTransaction } from "../database/client.ts";
 import { logError } from "../observability/route-logging.ts";
 import { INSTANCE_SETTING_KEYS, instanceSettings } from "../settings/schema.ts";
 import { readSettings, saveSettings } from "../settings/store.ts";
+import { alertAdminsAboutVillageSafely } from "./trouble-alerts.ts";
 
 // Village counts as in trouble when it doesn't answer, or refuses this community's keys. Every other
 // answer (out of credits, not found, busy) means Village is up and the keys work.
@@ -49,8 +50,19 @@ async function recordVillageAnswered(database: DatabaseOrTransaction, now: Date)
     });
 }
 
-// `error` is null for a call that worked. Returns what was recorded.
-export async function recordVillageOutcome(database: DatabaseOrTransaction, error: unknown, now = new Date()) {
+// Stores the trouble; true when it starts a new spell (none stored, or another kind), so admins are emailed once.
+async function storeTrouble(database: Database, trouble: VillageTrouble, now: Date) {
+  const changed = await database
+    .insert(instanceSettings)
+    .values({ key: HEALTH_KEYS.trouble, value: trouble, updatedAt: now })
+    .onConflictDoUpdate({ target: instanceSettings.key, set: { value: sql`excluded.value`, updatedAt: now }, where: sql`${instanceSettings.value} <> excluded.value` })
+    .returning({ key: instanceSettings.key });
+  await saveSettings(database, { [HEALTH_KEYS.troubleAt]: now.toISOString() });
+  return changed.length > 0;
+}
+
+// `error` is null for a call that worked. Returns what was recorded. A new spell of trouble emails the admins once.
+export async function recordVillageOutcome(database: Database, error: unknown, now = new Date()) {
   // The app's own refusals (a daily limit, a spent time budget) never reached Village.
   if (error !== null && (!isVillageError(error) || error instanceof VillageDeadlineError)) return null;
   const trouble = error === null ? null : readVillageTrouble(error);
@@ -58,12 +70,12 @@ export async function recordVillageOutcome(database: DatabaseOrTransaction, erro
     await recordVillageAnswered(database, now);
     return null;
   }
-  await saveSettings(database, { [HEALTH_KEYS.troubleAt]: now.toISOString(), [HEALTH_KEYS.trouble]: trouble });
+  if (await storeTrouble(database, trouble, now)) await alertAdminsAboutVillageSafely(database, trouble);
   return trouble;
 }
 
 // For the SDK's request hook, which can't wait: a failure to record never reaches the caller.
-export function noteVillageOutcome(readDatabase: () => DatabaseOrTransaction, error: unknown) {
+export function noteVillageOutcome(readDatabase: () => Database, error: unknown) {
   void (async () => recordVillageOutcome(readDatabase(), error))().catch((cause: unknown) => logError("village-health", cause));
 }
 

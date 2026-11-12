@@ -19,6 +19,11 @@ export const INSTANCE_SETTING_KEYS = {
   villageLastOkAt: "village_last_ok_at",
   villageTroubleAt: "village_trouble_at",
   villageTrouble: "village_trouble",
+  // When admins were last emailed about each Village trouble (out of credits, down, keys refused): once per spell, at
+  // most once a day.
+  villageAlertedOutOfCreditsAt: "village_alerted_out_of_credits_at",
+  villageAlertedDownAt: "village_alerted_down_at",
+  villageAlertedKeysRejectedAt: "village_alerted_keys_rejected_at",
   jobsTickSecret: "jobs_tick_secret",
   monthlyCreditCap: "monthly_credit_cap",
   fillInBasis: "fill_in_basis",

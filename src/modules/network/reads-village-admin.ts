@@ -117,3 +117,31 @@ export async function readNudgeStates(database: Database, adminId: string, now =
   ]);
   return { unconnected, noAsks };
 }
+
+const SPEND_WINDOW_DAYS = 30;
+const SPEND_MEMBERS_SHOWN = 20;
+
+// Credits spent per UTC day and per member over the last 30 days, from the per-call ledger (every paid call, fill-in
+// included). Fill-in runs as the app, so it has no member: it is its own line.
+export async function readCreditSpend(database: Database, now = new Date()) {
+  const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) - (SPEND_WINDOW_DAYS - 1) * DAY_MS);
+  const day = sql<string>`to_char(${villageCreditCall.calledAt} at time zone 'UTC', 'YYYY-MM-DD')`;
+  const credits = sql<number>`coalesce(sum(${villageCreditCall.credits}), 0)`.mapWith(Number);
+  const lookups = sql<number>`count(*)`.mapWith(Number);
+  const [days, members] = await Promise.all([
+    database.select({ day, credits, lookups }).from(villageCreditCall).where(gte(villageCreditCall.calledAt, since)).groupBy(day).orderBy(desc(day)),
+    database
+      .select({ id: villageCreditCall.userId, name: user.name, credits, lookups })
+      .from(villageCreditCall)
+      .leftJoin(user, eq(user.id, villageCreditCall.userId))
+      .where(gte(villageCreditCall.calledAt, since))
+      .groupBy(villageCreditCall.userId, user.name)
+      .orderBy(desc(credits), user.name)
+      .limit(SPEND_MEMBERS_SHOWN),
+  ]);
+  return {
+    windowDays: SPEND_WINDOW_DAYS,
+    days,
+    members: members.map(({ id, name, ...row }) => ({ ...row, id: id ?? "app", name: id ? (name ?? "Deleted member") : null })),
+  };
+}

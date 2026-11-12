@@ -217,7 +217,7 @@ describe("asks that reach helpers", () => {
       expect(own?.target).toEqual({ linkedinSlug: TARGET_SLUG, name: "Clara Bergström" });
       expect(own?.helpers.map(({ helper, canAskForIntro }) => [helper.id, canAskForIntro])).toEqual([
         [jonas.userId, true],
-        [noor.userId, false],
+        [noor.userId, true],
       ]);
       expect((await readBoard(noor)).asks[0]?.whyYou).toMatch(/^can help with “Freight/u);
       expect((await readBoard(gardener)).asks[0]?.whyYou).toBeNull();
@@ -401,10 +401,26 @@ describe("asks that reach helpers", () => {
       expect(intro).toMatchObject({ requesterId: amara.userId, introducerId: jonas.userId, state: INTRO_STATES.requested, askId, isConnectorOffer: false });
     });
 
-    it("refuses a word helper, who has no known path", async () => {
+    // ASK-06: Founderhall lets the author ask any listed helper. A helper found by profile words has no path, so it is
+    // a named intro for the person the author names, with that helper as the connector.
+    it("asks a word helper for the intro too, as a named intro for the person the author names", async () => {
       const { id: askId } = await post(amara);
 
-      expect((await call(postAskHelper, amara, { askId, helperId: noor.userId, note: NOTE })).status).toBe(NOT_FOUND_STATUS);
+      const response = await call(postAskHelper, amara, { askId, helperId: noor.userId, note: NOTE, targetName: "Clara Freight" });
+
+      expect(response.status).toBe(OK_STATUS);
+      const [intro] = await database.select().from(introRequest);
+      expect(intro).toMatchObject({ requesterId: amara.userId, introducerId: noor.userId, state: INTRO_STATES.requested, askId, isNamedTarget: true, targetName: "Clara Freight" });
+    });
+
+    it("asks the author to name the person when the ask names nobody, and still refuses a member who isn't listed", async () => {
+      const { id: askId } = await post(amara, { targetLinkedin: null });
+
+      const unnamed = await call(postAskHelper, amara, { askId, helperId: noor.userId, note: NOTE, targetName: "" });
+      expect(unnamed.status).toBe(UNPROCESSABLE_STATUS);
+      expect((await call(postAskHelper, amara, { askId, helperId: bystander.userId, note: NOTE, targetName: "Clara Freight" })).status).toBe(NOT_FOUND_STATUS);
+      expect((await call(postAskHelper, jonas, { askId, helperId: noor.userId, note: NOTE, targetName: "Clara Freight" })).status).toBe(NOT_FOUND_STATUS);
+      expect(await database.select().from(introRequest)).toEqual([]);
     });
   });
 

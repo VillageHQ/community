@@ -14,13 +14,14 @@ import { ROUTES } from "../../platform/http/routes.ts";
 import { runAfterResponse } from "../../platform/observability/after-response.ts";
 import { logError } from "../../platform/observability/route-logging.ts";
 import { createInviteToken, hashInviteToken } from "../members/service-invite-token.ts";
-import { CONSENT_ANSWERS, INTRO_ERROR_CODES, INTRO_STATES, type ConsentAnswer, type ConsentAnswerBody } from "./contract.ts";
+import { CONSENT_ANSWERS, INTRO_ERROR_CODES, INTRO_STATES, type ConsentAnswer, type ConsentAnswerBody, type TargetMemberAnswerBody } from "./contract.ts";
 import { deliverIntroEmail, INTRO_EMAIL_EVENTS, type IntroEmailEvent } from "./email.ts";
 import { sendJoiningEmail } from "./email-target.ts";
 import { recordFailedConsentAttempt } from "./limits.ts";
 import { CLOSES_CONSENT, readIntroDeadline } from "./reads.ts";
 import { hashTargetSlug, isTargetOptedOut } from "./opt-out.ts";
 import { readConsentParticipants, isConsentTokenLive, readLinkedIntro, readLiveConsentHash, readSettledAnswer } from "./reads-consent.ts";
+import { readMemberConsentHash } from "./reads-target-member.ts";
 import { introConsentLink, introOptOut, introRequest } from "./schema.ts";
 
 const FORBIDDEN_STATUS = 403;
@@ -217,6 +218,24 @@ export async function answerConsentAsk({ database, environment, request, viewerI
   const saved = await SAVES_ANSWER[answer]({ database, tokenHash, now: new Date(), targetSlugHash, targetEmail: typedEmail });
   if (!saved) return readEarlierAnswer(database, environment, linked.id);
 
+  const { agreed, refused } = saved;
+  runAfterResponse(() => (agreed ? tellEveryoneAboutYes(database, environment, agreed) : tellEveryoneAboutNo(database, environment, refused)));
+  return { answer, isRepeat: false };
+}
+
+// INTRO-06: a member who is the person asked for answers in the app. It runs the emailed link's own path (one of the
+// intro's live consent links), so the move, the emails and a second tap behave exactly the same. A yes uses their own
+// account address, so the app can join them by email.
+export async function answerAsTargetMember({ database, environment, member }: { database: Database; environment: Environment; member: { id: string } }, { introId, answer }: TargetMemberAnswerBody) {
+  // Not waiting on this member (answered, closed, or not theirs): the same answer for each, so nothing leaks.
+  const consent = await readMemberConsentHash(database, member.id, introId);
+  if (!consent) throw closedLinkError();
+  const [intro] = await database.select().from(introRequest).where(eq(introRequest.id, introId));
+  if (!intro) throw closedLinkError();
+  const targetSlugHash = await hashTargetSlug(database, environment, intro.targetLinkedinSlug);
+  const targetEmail = answer === CONSENT_ANSWERS.yes && readResendConfig(environment) ? consent.email : null;
+  const saved = await SAVES_ANSWER[answer]({ database, tokenHash: consent.tokenHash, now: new Date(), targetSlugHash, targetEmail });
+  if (!saved) return readEarlierAnswer(database, environment, introId);
   const { agreed, refused } = saved;
   runAfterResponse(() => (agreed ? tellEveryoneAboutYes(database, environment, agreed) : tellEveryoneAboutNo(database, environment, refused)));
   return { answer, isRepeat: false };

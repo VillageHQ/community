@@ -3,12 +3,12 @@ import { Ledger } from "@/components/ui/figures";
 import { Note } from "@/components/ui/note";
 
 import { formatDayMonth } from "../console-periods";
-import { hoursWord, medianTile, NO_ANSWER_DAYS, readConnectorRows, REPORT_FOOT, RESULT_ROWS, type BreakdownRow, type ReportStats } from "../report-stats";
+import { hoursWord, medianTile, NO_ANSWER_DAYS, OTHER_CONNECTORS, readConnectorRows, REPORT_FOOT, RESULT_ROWS, type BreakdownRow, type ReportStats } from "../report-stats";
 
 const percentOf = (part: number, whole: number) => (whole ? `${Math.round((part / whole) * 100)}%` : undefined);
 const barOf = (part: number, whole: number) => (part / Math.max(whole, 1)) * 100;
 
-type Column = { label: string; key: "asked" | "yes" | "made" | "declined" | "open" };
+type Column = { label: string; key: "asked" | "yes" | "made" | "declined" | "noAnswer" | "open" };
 
 const CONNECTOR_COLUMNS: Column[] = [
   { label: "Asked", key: "asked" },
@@ -19,6 +19,7 @@ const BREAKDOWN_COLUMNS: Column[] = [
   { label: "Asked", key: "asked" },
   { label: "Made", key: "made" },
   { label: "Declined", key: "declined" },
+  { label: "No answer", key: "noAnswer" },
   { label: "Open", key: "open" },
 ];
 
@@ -40,6 +41,7 @@ function Table({ first, columns, rows }: { first: string; columns: Column[]; row
           <tr key={row.name}>
             <td>
               <span className="fh-serif">{row.name}</span>
+              {row.isCredited === false ? <small className="fh-muted block">not named to partners</small> : null}
             </td>
             {columns.map(({ key }) => (
               <td key={key} className="fh-n">
@@ -176,9 +178,16 @@ export function ReportDocument({ report, preparedBy, logo, now = new Date() }: R
           { label: <b>Introduced</b>, value: stats.made, percent: barOf(stats.made, stats.asked), tone: "made", hasBookmark: true },
           {
             label: "Declined",
-            note: `${stats.declinedConnector + stats.expiredConnector} at the connector, ${stats.declinedTarget + stats.expiredTarget} by the person asked for`,
+            note: `${stats.declinedConnector} at the connector, ${stats.declinedTarget} by the person asked for`,
             value: stats.declined,
             percent: barOf(stats.declined, stats.asked),
+            tone: "declined",
+          },
+          {
+            label: `No answer in ${NO_ANSWER_DAYS} days`,
+            note: `${stats.expiredConnector} at the connector, ${stats.expiredTarget} with the person asked for`,
+            value: stats.noAnswer,
+            percent: barOf(stats.noAnswer, stats.asked),
             tone: "declined",
           },
           {
@@ -191,7 +200,20 @@ export function ReportDocument({ report, preparedBy, logo, now = new Date() }: R
         ]}
       />
       <div className="fh-two">
-        <Breakdown title="Top connectors" first="Member" columns={CONNECTOR_COLUMNS} rows={readConnectorRows(stats)} empty="No connectors yet." />
+        <div>
+          {/* The admin's view names every connector (the owner's decision); the printed copy, the CSV and the partner
+              email name only those who turned on "Credit me in reports". */}
+          <div className="fh-no-print">
+            <Breakdown title="Top connectors" first="Member" columns={CONNECTOR_COLUMNS} rows={readConnectorRows(stats, { everyone: true })} empty="No connectors yet." />
+            <p className="fh-small fh-muted mt-2">
+              Partners see a name only when that member turned on “Credit me in reports” on Your data. Everyone else is counted under {OTHER_CONNECTORS}, also in the
+              PDF, the CSV and the email.
+            </p>
+          </div>
+          <div className="fh-print-only">
+            <Breakdown title="Top connectors" first="Member" columns={CONNECTOR_COLUMNS} rows={readConnectorRows(stats)} empty="No connectors yet." />
+          </div>
+        </div>
         <Breakdown title="By sector" first="Sector" columns={BREAKDOWN_COLUMNS} rows={stats.sectors} empty="No sectors yet." />
       </div>
       <div className="fh-two" id="breakdown">
@@ -200,8 +222,8 @@ export function ReportDocument({ report, preparedBy, logo, now = new Date() }: R
       </div>
       <h2>The no’s, too</h2>
       <p className="fh-small">
-        {stats.declinedConnector} declined by the connector and {stats.declinedTarget} by the person asked for; {stats.expiredConnector + stats.expiredTarget} had no
-        answer in {NO_ANSWER_DAYS} days. {stats.withdrawn} withdrawn by the asker. {stats.open} still open. Declines carry no reason, by design.
+        {stats.declinedConnector} declined by the connector and {stats.declinedTarget} by the person asked for; {stats.noAnswer} had no answer in {NO_ANSWER_DAYS}{" "}
+        days and are not counted as declines. {stats.withdrawn} withdrawn by the asker. {stats.open} still open. Declines carry no reason, by design.
       </p>
       {stats.asked ? null : <Note className="mt-4">No intros in this period yet. The report fills in from the intro log as members ask for intros.</Note>}
       {asks ? <AsksAndUpdates asks={asks} /> : null}

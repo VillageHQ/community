@@ -14,6 +14,7 @@ import type { ConsentIssue, Intro } from "@/modules/intros/contract";
 import { composeConsentNote } from "@/modules/intros/copy";
 import { emailConsentLinkRequest, issuedConsentQuery, makeNewConsentLinkRequest } from "@/modules/intros/queries";
 import { readFirstName } from "@/platform/design/avatar-identity";
+import { formatShortDate } from "@/platform/text/format-date";
 
 function EmailLinkForm({ intro, consentIssue }: { intro: Intro; consentIssue: ConsentIssue }) {
   const emailId = useId();
@@ -102,9 +103,18 @@ export function ConsentLinkPanel({ intro }: { intro: Intro }) {
         <Send aria-hidden="true" className="size-5 shrink-0 text-brand-emphasis" />
         Now ask {targetFirst}
       </h3>
-      <p className="type-note text-foreground-soft">
-        Send {targetFirst} this private link, however you normally reach them. They read {requesterFirst}&apos;s note and say yes or no thanks, with no account. {requesterFirst} hears nothing until then.
-      </p>
+      {intro.targetEmailedAt ? (
+        // The app already emailed the person (INTRO-06): no need to send anything by hand.
+        <p className="type-note text-foreground-soft">
+          We emailed {targetFirst} on {formatShortDate(intro.targetEmailedAt)}. They answer from that email, or in the app if they&apos;re a member here. Nothing more to send; if
+          you also reach them another way, a new link below works too. {requesterFirst} hears nothing until then.
+        </p>
+      ) : (
+        <p className="type-note text-foreground-soft">
+          Send {targetFirst} this private link, however you normally reach them. They read {requesterFirst}&apos;s note and say yes or no thanks, with no account. {requesterFirst} hears
+          nothing until then.
+        </p>
+      )}
       {consentIssue ? <IssuedConsent intro={intro} consentIssue={consentIssue} /> : <MakeNewLink intro={intro} />}
     </div>
   );

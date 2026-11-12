@@ -35,6 +35,8 @@ export async function readAdminTabFacts(database: Database, environment: Environ
     creditsBadge: outOfCreditsAt || villageHealth?.trouble ? 1 : 0,
     // Village didn't answer or refused the keys: every admin page says so, with when it last worked.
     villageTrouble: villageHealth?.trouble ? villageHealth : null,
+    // Village said the credits ran out: Home says so until the next charged call works.
+    villageOutOfCreditsAt: outOfCreditsAt,
     chatBadge: chatConnections.filter(({ needsAttention }) => needsAttention).length,
     hiddenTabHrefs: MODULES.flatMap(({ manifest }) => (enabledIds.has(manifest.id) ? [] : manifest.adminTabs.map(({ href }) => href))),
   };

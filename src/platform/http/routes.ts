@@ -182,6 +182,7 @@ export const API_ROUTES = {
   introSeen: "/api/intros/seen",
   introOutcome: "/api/intros/outcome",
   introConsentAnswer: "/api/intros/consent/answer",
+  introTargetAnswer: "/api/intros/consent/member-answer",
   introConsentLink: "/api/intros/consent/link",
   introConsentEmail: "/api/intros/consent/email",
   introConnectorAnswer: "/api/intros/answer",

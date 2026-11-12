@@ -247,6 +247,59 @@ export function LatestLookups({ latest }: { latest: Lookups["latest"] }) {
   );
 }
 
+type CreditSpend = { windowDays: number; days: { day: string; credits: number; lookups: number }[]; members: { id: string; name: string | null; credits: number; lookups: number }[] };
+
+const DAY_LABEL = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+
+// Credits per day and per member, last 30 days (UTC), from this portal's ledger of paid calls.
+export function CreditSpendTables({ spend }: { spend: CreditSpend }) {
+  if (spend.days.length === 0) return <p className="fh-small fh-muted mt-3">No lookups in the last {spend.windowDays} days.</p>;
+  const peak = Math.max(...spend.days.map(({ credits }) => credits), 1);
+  return (
+    <>
+      <table className="fh-tbl mt-3.5" aria-label={`Lookups per day, last ${spend.windowDays} days`}>
+        <thead>
+          <tr>
+            <th>Per day, last {spend.windowDays} days</th>
+            <th className="fh-n">Lookups</th>
+            <th className="fh-n">Used</th>
+          </tr>
+        </thead>
+        <tbody>
+          {spend.days.map((row) => (
+            <tr key={row.day}>
+              <td>
+                {DAY_LABEL.format(new Date(`${row.day}T00:00:00Z`))}
+                <span aria-hidden="true" className="fh-spend-bar" style={{ width: `${Math.max(4, (row.credits / peak) * 100)}%` }} />
+              </td>
+              <td className="fh-n">{n(row.lookups)}</td>
+              <td className="fh-n">{n(row.credits)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <table className="fh-tbl mt-3.5" aria-label={`Lookups per member, last ${spend.windowDays} days`}>
+        <thead>
+          <tr>
+            <th>Per member, last {spend.windowDays} days</th>
+            <th className="fh-n">Lookups</th>
+            <th className="fh-n">Used</th>
+          </tr>
+        </thead>
+        <tbody>
+          {spend.members.map((row) => (
+            <tr key={row.id}>
+              <td>{row.name ?? <span className="fh-muted">Profile fill-in (the portal itself)</span>}</td>
+              <td className="fh-n">{n(row.lookups)}</td>
+              <td className="fh-n">{n(row.credits)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+}
+
 type MemberUsage = { id: string; name: string; isRemoved: boolean; lookupsToday: number; searches: number; pathLookups: number };
 
 // Community's per-member spend (the old Credits page), kept under the latest lookups.
@@ -254,7 +307,7 @@ export function LookupsPerMember({ members, windowDays }: { members: MemberUsage
   if (members.length === 0) return null;
   return (
     <details className="mt-3">
-      <summary className="fh-small">Lookups per member, last {windowDays} days</summary>
+      <summary className="fh-small">Each member’s searches and paths, last {windowDays} days</summary>
       <table className="fh-tbl mt-2">
         <thead>
           <tr>

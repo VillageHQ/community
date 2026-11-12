@@ -40,6 +40,8 @@ export type IntroLedger = {
   declinedByConnector: number;
   declinedByTarget: number;
   declined: number;
+  // Asks that closed with no answer in 7 days: not declines (the partner report's rule, ADM-04).
+  noAnswer: number;
   openWithConnector: number;
   openWithTarget: number;
   open: number;
@@ -52,8 +54,9 @@ const CONNECTOR_SAID_YES: readonly string[] = [INTRO_STATES.accepted, INTRO_STAT
 export function countIntroLedger(rows: readonly IntroLogRow[]): IntroLedger {
   const counted = rows.filter(({ state }) => state !== INTRO_STATES.withdrawn);
   const by = (test: (row: IntroLogRow) => boolean) => counted.filter(test).length;
-  const declinedByConnector = by(({ stateWord }) => stateWord === "declined by connector" || stateWord === "no answer from connector");
-  const declinedByTarget = by(({ stateWord }) => stateWord === "declined by target" || stateWord === "no answer from target");
+  const declinedByConnector = by(({ stateWord }) => stateWord === "declined by connector");
+  const declinedByTarget = by(({ stateWord }) => stateWord === "declined by target");
+  const noAnswer = by(({ stateWord }) => stateWord === "no answer from connector" || stateWord === "no answer from target");
   const openWithConnector = by(({ stateWord }) => stateWord === "with connector");
   const openWithTarget = by(({ stateWord }) => stateWord === "with target");
   return {
@@ -63,6 +66,7 @@ export function countIntroLedger(rows: readonly IntroLogRow[]): IntroLedger {
     declinedByConnector,
     declinedByTarget,
     declined: declinedByConnector + declinedByTarget,
+    noAnswer,
     openWithConnector,
     openWithTarget,
     open: openWithConnector + openWithTarget,

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { IntrosList } from "@/modules/intros/components/intros-list";
 import { introsManifest } from "@/modules/intros/manifest";
 import { readIntroBoard } from "@/modules/intros/reads";
+import { readIntrosForTarget } from "@/modules/intros/reads-target-member";
 import { requireMember } from "@/platform/auth/session";
 import { getDatabase } from "@/platform/database/client";
 import { modulePage } from "@/platform/modules/module-page";
@@ -13,6 +14,6 @@ export const metadata: Metadata = { title: "Your intros" };
 export default modulePage(introsManifest, async function IntrosPage() {
   const member = await requireMember();
   const database = getDatabase();
-  const [board, allowance] = await Promise.all([readIntroBoard(database, member.id), readAskAllowance(database, member.id)]);
-  return <IntrosList board={board} allowance={allowance} />;
+  const [board, allowance, forYou] = await Promise.all([readIntroBoard(database, member.id), readAskAllowance(database, member.id), readIntrosForTarget(database, member.id)]);
+  return <IntrosList board={board} allowance={allowance} forYou={forYou} />;
 });
