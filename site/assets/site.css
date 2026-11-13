@@ -487,6 +487,9 @@ footer { background: var(--night); color: var(--paper); padding: 24px var(--pad)
   body { background-image: none; }
   .skip-link, .bar, #pen, .fm-tip, .copy { display: none !important; }
   .sheet { min-height: 0; break-inside: avoid; }
+  /* the first sheet fits one page: a smaller plan; and if it still runs over, it may break rather than leave a blank page */
+  #plan { break-inside: auto; }
+  .hero .plan-wrap { width: 72%; margin: 6px auto 0; }
   html.pen-on .sheet::before { content: ""; position: absolute; inset: var(--inset); border: 1px solid var(--frame); }
   /* every reveal and stroke in its final state, whether or not the page was scrolled before printing */
   .pre { visibility: visible !important; }
