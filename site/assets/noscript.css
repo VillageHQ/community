@@ -1,9 +1,0 @@
-@media (max-width: 1040px) {
-  .site-header .mobile-nav {
-    display: grid !important;
-  }
-}
-
-.site-header {
-  position: static;
-}
