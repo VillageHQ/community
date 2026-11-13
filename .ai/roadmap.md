@@ -110,7 +110,7 @@ reason, or the owner's later brief where it says so) · **open** = not on main y
 
 ### Marketing site
 - **done** · One-page marketing site — `site/`, "Founderhall by Village" (PR #23), now "Common Hall by Village" ([common-hall-site](features/common-hall-site/SPEC.md))
-- **dropped** · Animated phone replay — GSAP is not open source (merge plan revision 8). Motion came back on the Common Hall page (2026-11-13): GSAP 3.13 vendored in `site/assets/vendor/` under its own no-charge licence, the page only, never the app — [common-hall-site](features/common-hall-site/SPEC.md)
+- **dropped** · Animated phone replay — GSAP is not open source (merge plan revision 8). Motion came back on the Common Hall page (2026-11-13) as the page's own script, no library — [common-hall-site](features/common-hall-site/SPEC.md)
 - **dropped** · Pricing table — the owner's one-site brief (no prices on the page) overrides the merge plan, which kept pricing
 - **open** · Sign-up form — [site-signup](features/site-signup/SPEC.md)
 - **open** · Confirmation email — [site-signup](features/site-signup/SPEC.md)

@@ -18,8 +18,8 @@ deploying the page; buying a domain; a dark mode for the new look (roadmap line)
 
 ## Deciding facts (lead's calls, reversible)
 1. The site keeps its Content Security Policy (`default-src 'none'; script-src 'self'; style-src 'self'; …`) and loads
-   nothing from third parties: GSAP 3.13 + ScrollTrigger are vendored into `site/assets/vendor/` (MIT, licence header
-   kept); Figtree stays self-hosted; JetBrains Mono is added as a latin woff2 subset under its OFL; no inline styles or
+   nothing from third parties: the motion is the page's own script, no library (the lead's call on 2026-11-13: GSAP's
+   licence is not open source, and this repo is AGPL); Figtree stays self-hosted; JetBrains Mono is added as a latin woff2 subset under its OFL; no inline styles or
    scripts; the page is split into `index.html`, `assets/site.css`, `assets/site.js`.
 2. One form only, the existing contract: `#signup-form` with `data-endpoint` (empty = nothing sent, the page says so),
    fields `name`, `email`, `community`, `members`, `plan` (= "managed"), `website` robot trap; 201 `{ok, emailSent, next}`

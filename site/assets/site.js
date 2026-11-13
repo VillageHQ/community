@@ -1,11 +1,10 @@
-// Common Hall by Village: every behaviour on the landing page. The sign-up form, the copy button, the founders'
-// labels and the sticky bar work without GSAP; the pen, the plan's drawing and the founders' walks need GSAP 3.13 +
-// ScrollTrigger (vendored in assets/vendor/) and never run under reduced motion.
+// Common Hall by Village: every behaviour on the landing page, with no library. The sign-up form, the copy button,
+// the founders' labels and the sticky bar always work; the pen, the plan's drawing, the reveals and the founders'
+// walks run on the small motion engine below and never run under reduced motion.
 (function () {
   const html = document.documentElement;
-  const hasGsap = Boolean(window.gsap && window.ScrollTrigger);
-  if (!hasGsap) html.classList.remove("motion");
-  const motionOn = () => hasGsap && html.classList.contains("motion");
+  const reduceQuery = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  const motionOn = () => html.classList.contains("motion") && !(reduceQuery && reduceQuery.matches);
 
   /* ---------- the self-host door: copy the install line ---------- */
   const COPY_LABEL = "Copy";
@@ -160,10 +159,14 @@
       if (motionOn()) {
         const tick = confirmBox.querySelector(".confirm-title svg path");
         const length = tick.getTotalLength();
-        window.gsap.fromTo(confirmBox.children, { y: 8, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power3.out", stagger: 0.06 });
-        window.gsap.fromTo(tick, { strokeDasharray: length, strokeDashoffset: length }, { strokeDashoffset: 0, duration: 0.5, ease: "power2.out", delay: 0.1 });
+        const rise = (el, v) => { el.style.opacity = String(v); el.style.transform = `translateY(${8 * (1 - v)}px)`; };
+        Array.from(confirmBox.children).forEach((el) => rise(el, 0));
+        each(confirmBox.children, { stagger: 0.06, duration: 0.45, ease: EASE.power3Out, apply: rise });
+        tick.style.strokeDasharray = String(length);
+        tick.style.strokeDashoffset = String(length);
+        tween({ delay: 0.1, duration: 0.5, ease: EASE.power2Out, apply: (v) => { tick.style.strokeDashoffset = String(length * (1 - v)); } });
       }
-      if (hasGsap) window.ScrollTrigger.refresh();
+      refreshPen();
     }
 
     function bold(text) {
@@ -226,7 +229,7 @@
       confirmBox.hidden = true;
       form.hidden = false;
       input(FIELDS.name).focus();
-      if (hasGsap) window.ScrollTrigger.refresh();
+      refreshPen();
     });
   }
 
@@ -313,12 +316,82 @@
   setUpFounderLabels();
   setUpBar();
 
+
+  /* =================================================================================================================
+     THE MOTION ENGINE. A few lines instead of a library: every animation is a tween on one requestAnimationFrame
+     loop. A tween has a delay, a duration, an easing and an apply(v) for v from 0 to 1; it can be paused, resumed and
+     killed. Easing names: power2 = cubic, power3 = quartic, as the design's motion notes call them.
+     ================================================================================================================= */
+  const EASE = {
+    linear: (t) => t,
+    power1Out: (t) => 1 - (1 - t) ** 2,
+    power2In: (t) => t ** 3,
+    power2Out: (t) => 1 - (1 - t) ** 3,
+    power2InOut: (t) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2),
+    power3Out: (t) => 1 - (1 - t) ** 4,
+    sineInOut: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
+  };
+  const tweens = new Set();
+  let tickerFrame = 0;
+  let tickerLast = 0;
+  function tickerStep(now) {
+    const dt = tickerLast ? Math.min(0.1, (now - tickerLast) / 1000) : 0;
+    tickerLast = now;
+    let running = false;
+    for (const t of Array.from(tweens)) {
+      if (t.paused || !tweens.has(t)) continue;
+      running = true;
+      t.time += dt;
+      if (t.time < t.delay) continue;
+      const p = t.duration > 0 ? Math.min(1, (t.time - t.delay) / t.duration) : 1;
+      if (t.apply) t.apply(t.ease(p));
+      if (p >= 1) {
+        tweens.delete(t);
+        if (t.done) t.done();
+      }
+    }
+    if (running && tweens.size) tickerFrame = requestAnimationFrame(tickerStep);
+    else { tickerFrame = 0; tickerLast = 0; }
+  }
+  function wake() {
+    if (!tickerFrame) { tickerLast = 0; tickerFrame = requestAnimationFrame(tickerStep); }
+  }
+  function tween({ delay = 0, duration = 0, ease = EASE.linear, apply = null, done = null }) {
+    const t = {
+      delay, duration, ease, apply, done, time: 0, paused: false,
+      pause() { this.paused = true; },
+      resume() { this.paused = false; wake(); },
+      kill() { tweens.delete(this); },
+      get active() { return tweens.has(this); },
+    };
+    tweens.add(t);
+    wake();
+    return t;
+  }
+  // the same tween on a list of elements, each starting `stagger` seconds after the one before
+  function each(elements, { at = 0, stagger = 0, duration, ease, apply, done }) {
+    return Array.from(elements).map((el, i) => tween({ delay: at + i * stagger, duration, ease, apply: (v) => apply(el, v), done: done && (() => done(el)) }));
+  }
+  const touched = new Set(); // every element the motion styled, so reduced motion can put it all back
+  function style(el, props) {
+    touched.add(el);
+    Object.assign(el.style, props);
+  }
+  const strokeLengths = new WeakMap();
+  function prepStroke(el) {
+    const length = el.getTotalLength ? el.getTotalLength() : 0;
+    strokeLengths.set(el, length);
+    style(el, { strokeDasharray: `${length} ${length + 1}`, strokeDashoffset: String(length) });
+  }
+  const drawStroke = (el, v) => { el.style.strokeDashoffset = String(strokeLengths.get(el) * (1 - v)); };
+  const fadeIn = (el, v) => { el.style.opacity = String(v); };
+
   /* =================================================================================================================
      THE PEN. One drawing runs down the page: every sheet frame, the room schedule's dimension line, each room's
      hatch, the ledger rules and the two entrance doors. Each stroke gets a "key" on one scroll axis. The pen's tip
-     is scroll + 65% of the viewport, scrubbed. A sheet's strokes are keyed so the whole sheet is drawn by the time
-     the sheet rests (its top at the top of the screen): no resting frame is ever half drawn. Without motion (reduced
-     motion, no GSAP) every stroke is simply drawn.
+     is scroll + 65% of the viewport; the scroll it follows is smoothed (it catches up in about half a second, like
+     a scrub). A sheet's strokes are keyed so the whole sheet is drawn by the time the sheet rests (its top at the top
+     of the screen): no resting frame is ever half drawn. Without motion every stroke is simply drawn.
      ================================================================================================================= */
   const NS = "http://www.w3.org/2000/svg";
   const penSvg = document.getElementById("pen");
@@ -326,6 +399,7 @@
   const TIP = 0.65; // where the tip rides in the viewport
   const LEAD = 70; // short strokes draw over 70 px of scroll
   const BAR_IN = 72; // phone frame bottom inset on sheets the sticky bar covers
+  const SCRUB = 0.15; // the smoothing time constant, in seconds
   let items = []; // { el, svg, len, k0, k1 }
   let frameCount = 0; // the frame strokes come first; the nib rides the tip of the newest one
   let nib = null;
@@ -436,162 +510,166 @@
     nib.style.opacity = "1";
   }
 
-  const drawAll = () => {
-    build();
-    render(1e9);
-  };
+  // the tip: `load` pulls it down from above the page on the first visit; `followed` is the smoothed scroll
+  const pen = { load: 1, followed: window.scrollY, target: window.scrollY, frame: 0, last: 0 };
+  function tipV() {
+    const H = window.innerHeight;
+    return pen.followed + TIP * H - (1 - pen.load) * (TIP * H + 90);
+  }
+  const draw = () => render(motionOn() ? tipV() : 1e9);
+  function followStep(now) {
+    const dt = pen.last ? Math.min(0.1, (now - pen.last) / 1000) : 1 / 60;
+    pen.last = now;
+    const gap = pen.target - pen.followed;
+    pen.followed = Math.abs(gap) < 0.5 ? pen.target : pen.followed + gap * (1 - Math.exp(-dt / SCRUB));
+    draw();
+    if (pen.followed !== pen.target) pen.frame = requestAnimationFrame(followStep);
+    else { pen.frame = 0; pen.last = 0; }
+  }
+  function onScroll() {
+    pen.target = Math.max(0, Math.min(window.scrollY, document.documentElement.scrollHeight - window.innerHeight));
+    if (!motionOn()) return;
+    if (!pen.frame) pen.frame = requestAnimationFrame(followStep);
+  }
+  let refreshFrame = 0;
+  // re-measure after anything changes the page's height (resize, fonts, the form's confirmation)
+  function refreshPen() {
+    if (refreshFrame) return;
+    refreshFrame = requestAnimationFrame(() => {
+      refreshFrame = 0;
+      build();
+      onScroll();
+      if (!motionOn()) pen.followed = pen.target;
+      draw();
+    });
+  }
 
-  if (!hasGsap) {
-    drawAll();
-    window.addEventListener("resize", drawAll);
+  build();
+  draw();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", refreshPen);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refreshPen);
+  if (!motionOn()) {
+    html.classList.remove("motion");
     return;
   }
-  const { gsap, ScrollTrigger } = window;
-  gsap.registerPlugin(ScrollTrigger);
 
-  const mm = gsap.matchMedia();
-  mm.add({ motion: "(prefers-reduced-motion: no-preference)", reduce: "(prefers-reduced-motion: reduce)" }, (context) => {
-    if (context.conditions.reduce) {
-      html.classList.remove("motion");
-      drawAll();
-      window.addEventListener("resize", drawAll);
-      return () => window.removeEventListener("resize", drawAll);
-    }
-    html.classList.add("motion");
+  /* ----- sheet 1: the plan draws itself, labels type in, the stamp lands ----- */
+  const walls = document.querySelectorAll(".plan .wall");
+  const doors = document.querySelectorAll(".plan .door");
+  const dims = document.querySelectorAll(".plan .dim-l");
+  const dimTexts = document.querySelectorAll(".plan .dim-t");
+  const table = document.querySelector(".plan .table");
+  const chairs = document.querySelectorAll(".plan .chair");
+  const labels = document.querySelectorAll(".plan .rl");
+  const icons = document.querySelectorAll(".plan .ric path, .plan .ric circle, .plan .ric rect");
+  const markers = document.querySelectorAll(".plan .fm");
+  const facts = document.querySelectorAll(".facts li");
+  const stamp = document.querySelector(".stamp");
+  [...walls, ...dims, table, ...icons].forEach(prepStroke);
+  [...doors, ...dimTexts, ...markers].forEach((el) => style(el, { opacity: "0" }));
+  chairs.forEach((el) => style(el, { transform: "scale(0)" }));
+  labels.forEach((t) => { t.textContent = ""; });
+  style(stamp, { opacity: "0", transform: "rotate(-14deg) scale(1.6)" });
+  facts.forEach((el) => style(el, { opacity: "0", transform: "translateY(6px)" }));
+  document.querySelectorAll(".pre").forEach((el) => style(el, { visibility: "visible" }));
 
-    /* ----- the pen's tip: load (draws sheet 1) + scroll (scrubbed) ----- */
-    const state = { sy: 0, load: 0 };
-    const tipV = () => {
-      const H = window.innerHeight;
-      return state.sy + TIP * H - (1 - state.load) * (TIP * H + 90);
+  const START = 0.2; // the opening's delay, as on the design
+  pen.load = 0;
+  draw();
+  tween({ delay: START, duration: 2.2, ease: EASE.power2InOut, apply: (v) => { pen.load = v; draw(); } });
+  each(walls, { at: START + 0.1, stagger: 0.05, duration: 1.5, ease: EASE.power2InOut, apply: drawStroke });
+  each(doors, { at: START + 1.0, stagger: 0.02, duration: 0.4, ease: EASE.power2Out, apply: fadeIn });
+  each(dims, { at: START + 1.05, stagger: 0.1, duration: 0.7, ease: EASE.power2Out, apply: drawStroke });
+  each(dimTexts, { at: START + 1.45, stagger: 0.1, duration: 0.4, ease: EASE.power1Out, apply: fadeIn });
+  each([table], { at: START + 1.25, duration: 0.6, ease: EASE.power2InOut, apply: drawStroke });
+  each(chairs, { at: START + 1.5, stagger: 0.025, duration: 0.35, ease: EASE.power3Out, apply: (el, v) => { el.style.transform = `scale(${v})`; } });
+  labels.forEach((t, i) => {
+    const full = t.dataset.text;
+    tween({ delay: START + 1.1 + i * 0.08, duration: Math.max(0.25, full.length * 0.045), apply: (v) => { t.textContent = full.slice(0, Math.round(v * full.length)); } });
+  });
+  each(icons, { at: START + 0.9, stagger: 0.02, duration: 0.9, ease: EASE.power2InOut, apply: drawStroke });
+  each(markers, { at: START + 2.2, stagger: 0.08, duration: 0.5, ease: EASE.power2Out, apply: fadeIn });
+  each(facts, { at: START + 2.0, stagger: 0.1, duration: 0.45, ease: EASE.power2Out, apply: (el, v) => { el.style.opacity = String(v); el.style.transform = `translateY(${(1 - v) * 6}px)`; } });
+  tween({ delay: START + 2.5, duration: 0.5, ease: EASE.power3Out, apply: (v) => { stamp.style.opacity = String(v); stamp.style.transform = `rotate(${-14 + 8 * v}deg) scale(${1.6 - 0.6 * v})`; } });
+
+  /* ----- sheets 2 to 4: one reveal each, when the section comes into view (once) ----- */
+  // `edge` is how far from the bottom of the screen the element's top must come, so 12 means "top at 88% of the screen"
+  // An IntersectionObserver plays it when it comes into view; a jump past it (an anchor link, a fast fling) is caught
+  // on the next scroll, since the observer never sees an element it skipped.
+  const pendingReveals = new Set();
+  function reveal(elements, edge, onEnter) {
+    const group = { elements: new Set(elements), edge, onEnter, io: null };
+    const play = (targets) => {
+      const fresh = targets.filter((el) => group.elements.delete(el));
+      fresh.forEach((el) => group.io.unobserve(el));
+      if (!group.elements.size) { group.io.disconnect(); pendingReveals.delete(group); }
+      if (fresh.length) onEnter(fresh);
     };
-    const draw = () => render(tipV());
-    build();
-    draw();
-    gsap.to(state, {
-      sy: () => ScrollTrigger.maxScroll(window),
-      ease: "none",
-      onUpdate: draw,
-      scrollTrigger: { id: "pen", start: 0, end: "max", scrub: 0.45, invalidateOnRefresh: true },
-    });
-    const onRefresh = () => {
-      build();
-      draw();
-    };
-    ScrollTrigger.addEventListener("refresh", onRefresh);
-
-    /* ----- sheet 1: the plan draws itself, labels type in, the stamp lands ----- */
-    function prep(targets) {
-      gsap.utils.toArray(targets).forEach((p) => {
-        const length = p.getTotalLength ? p.getTotalLength() : 0;
-        gsap.set(p, { strokeDasharray: `${length} ${length + 1}`, strokeDashoffset: length });
-      });
-    }
-    const walls = gsap.utils.toArray(".plan .wall");
-    const doors = gsap.utils.toArray(".plan .door");
-    const dims = gsap.utils.toArray(".plan .dim-l");
-    const dimTexts = gsap.utils.toArray(".plan .dim-t");
-    const table = document.querySelector(".plan .table");
-    const chairs = gsap.utils.toArray(".plan .chair");
-    const labels = gsap.utils.toArray(".plan .rl");
-    const icons = gsap.utils.toArray(".plan .ric path, .plan .ric circle, .plan .ric rect");
-    prep(walls);
-    prep(dims);
-    prep(table);
-    prep(icons);
-    gsap.set(".plan .fm", { opacity: 0 });
-    gsap.set(doors, { opacity: 0 });
-    gsap.set(chairs, { scale: 0, transformOrigin: "50% 50%" });
-    gsap.set(dimTexts, { opacity: 0 });
-    labels.forEach((t) => { t.textContent = ""; });
-    gsap.set(".stamp", { opacity: 0, scale: 1.6, rotation: -14 });
-    gsap.set(".facts li", { opacity: 0, y: 6 });
-    gsap.set(".pre", { visibility: "visible" });
-
-    const tl = gsap.timeline({ delay: 0.2 });
-    tl.to(state, { load: 1, duration: 2.2, ease: "power2.inOut", onUpdate: draw }, 0)
-      .to(walls, { strokeDashoffset: 0, duration: 1.5, ease: "power2.inOut", stagger: 0.05 }, 0.1)
-      .to(doors, { opacity: 1, duration: 0.4, ease: "power2.out", stagger: 0.02 }, 1.0)
-      .to(dims, { strokeDashoffset: 0, duration: 0.7, ease: "power2.out", stagger: 0.1 }, 1.05)
-      .to(dimTexts, { opacity: 1, duration: 0.4, stagger: 0.1 }, 1.45)
-      .to(table, { strokeDashoffset: 0, duration: 0.6, ease: "power2.inOut" }, 1.25)
-      .to(chairs, { scale: 1, duration: 0.35, ease: "power3.out", stagger: 0.025 }, 1.5);
-    labels.forEach((t, i) => {
-      const full = t.dataset.text;
-      const typed = { n: 0 };
-      tl.to(typed, {
-        n: full.length,
-        duration: Math.max(0.25, full.length * 0.045),
-        ease: "none",
-        onUpdate: () => { t.textContent = full.slice(0, Math.round(typed.n)); },
-        onComplete: () => { t.textContent = full; },
-      }, 1.1 + i * 0.08);
-    });
-    tl.to(icons, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut", stagger: 0.02 }, 0.9)
-      .to(".plan .fm", { opacity: 1, duration: 0.5, ease: "power2.out", stagger: 0.08 }, 2.2)
-      .to(".facts li", { opacity: 1, y: 0, duration: 0.45, ease: "power2.out", stagger: 0.1 }, 2.0)
-      .to(".stamp", { opacity: 1, scale: 1, rotation: -6, duration: 0.5, ease: "power3.out" }, 2.5);
-
-    /* ----- sheet 2: each room lights its room on the key plan; the stamp lands once ----- */
-    gsap.set(".room .lit", { opacity: 0 });
-    gsap.set(".rm-top .stp", { opacity: 0, scale: 1.4, transformOrigin: "50% 50%" });
-    ScrollTrigger.batch(".room", {
-      start: "top 88%",
-      once: true,
-      interval: 0.08,
-      onEnter: (rows) => {
-        gsap.to(rows.map((r) => r.querySelector(".lit")), { opacity: 1, duration: 0.5, ease: "power2.out", stagger: 0.06 });
-        gsap.to(rows.map((r) => r.querySelector(".rm-top .stp")), { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out", stagger: 0.06, delay: 0.1 });
-      },
-    });
-
-    /* ----- sheet 3: rows rule in, the revision triangles place (the sample figures stay still) ----- */
-    const rows = gsap.utils.toArray(".ledger .lg");
-    const triangles = gsap.utils.toArray(".ledger .tri");
-    gsap.set(rows, { opacity: 0, x: -12 });
-    gsap.set(triangles, { opacity: 0, y: -7, scale: 0.7, transformOrigin: "50% 60%" });
-    gsap.timeline({ scrollTrigger: { trigger: ".ledger", start: "top 82%", once: true } })
-      .to(rows, { opacity: 1, x: 0, duration: 0.45, ease: "power3.out", stagger: 0.05 }, 0)
-      .to(triangles, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: "power3.out", stagger: 0.08 }, 0.15);
-
-    /* ----- sheet 4: both door leaves swing open 25 degrees in plan view ----- */
-    const leaves = gsap.utils.toArray(".door-plan .leaf");
-    gsap.set(leaves, { attr: { x2: 52, y2: 40 } });
-    const doorsTimeline = gsap.timeline({ scrollTrigger: { trigger: "#doors", start: "top 55%", once: true } });
-    leaves.forEach((leaf, i) => {
-      const swing = { d: 0 };
-      doorsTimeline.to(swing, {
-        d: 25,
-        duration: 0.9,
-        ease: "power2.inOut",
-        onUpdate: () => {
-          const r = (swing.d * Math.PI) / 180;
-          leaf.setAttribute("x2", (12 + 40 * Math.cos(r)).toFixed(2));
-          leaf.setAttribute("y2", (40 - 40 * Math.sin(r)).toFixed(2));
-        },
-      }, i * 0.15);
-    });
-
-    /* ----- sheet 1: founders walk between rooms (only while the plan is in view; never on reduced motion) ----- */
-    const stopFounders = setUpWalks(tl);
-
-    return () => {
-      stopFounders();
-      ScrollTrigger.removeEventListener("refresh", onRefresh);
-      labels.forEach((t) => { t.textContent = t.dataset.text; });
-      leaves.forEach((leaf) => {
-        leaf.setAttribute("x2", "48.25");
-        leaf.setAttribute("y2", "23.1");
-      });
-    };
+    group.play = play;
+    group.io = new IntersectionObserver((entries) => play(entries.filter((e) => e.isIntersecting).map((e) => e.target)), { rootMargin: `0px 0px -${edge}% 0px` });
+    group.elements.forEach((el) => group.io.observe(el));
+    pendingReveals.add(group);
+  }
+  function revealPassed() {
+    const line = window.innerHeight * 0.12; // above this, the observer has had its chance: the element was skipped
+    pendingReveals.forEach((group) => group.play(Array.from(group.elements).filter((el) => el.getBoundingClientRect().top < line)));
+  }
+  window.addEventListener("scroll", revealPassed, { passive: true });
+  // rooms: each row lights its room on the key plan; its stamp lands
+  document.querySelectorAll(".room .lit").forEach((el) => style(el, { opacity: "0" }));
+  document.querySelectorAll(".rm-top .stp").forEach((el) => style(el, { opacity: "0", transform: "scale(1.4)" }));
+  reveal(document.querySelectorAll(".room"), 12, (rows) => {
+    each(rows.map((r) => r.querySelector(".lit")), { stagger: 0.06, duration: 0.5, ease: EASE.power2Out, apply: fadeIn });
+    each(rows.map((r) => r.querySelector(".rm-top .stp")), { at: 0.1, stagger: 0.06, duration: 0.45, ease: EASE.power3Out, apply: (el, v) => { el.style.opacity = String(v); el.style.transform = `scale(${1.4 - 0.4 * v})`; } });
+  });
+  // record: rows rule in, the revision triangles place (the sample figures stay still, as on the design)
+  const ledgerRows = document.querySelectorAll(".ledger .lg");
+  const triangles = document.querySelectorAll(".ledger .tri");
+  ledgerRows.forEach((el) => style(el, { opacity: "0", transform: "translateX(-12px)" }));
+  triangles.forEach((el) => style(el, { opacity: "0", transform: "translateY(-7px) scale(0.7)" }));
+  reveal([document.querySelector(".ledger")], 18, () => {
+    each(ledgerRows, { stagger: 0.05, duration: 0.45, ease: EASE.power3Out, apply: (el, v) => { el.style.opacity = String(v); el.style.transform = `translateX(${-12 * (1 - v)}px)`; } });
+    each(triangles, { at: 0.15, stagger: 0.08, duration: 0.4, ease: EASE.power3Out, apply: (el, v) => { el.style.opacity = String(v); el.style.transform = `translateY(${-7 * (1 - v)}px) scale(${0.7 + 0.3 * v})`; } });
+  });
+  // entrances: both door leaves swing open 25 degrees in plan view
+  const leaves = document.querySelectorAll(".door-plan .leaf");
+  const swingTo = (leaf, degrees) => {
+    const r = (degrees * Math.PI) / 180;
+    leaf.setAttribute("x2", (12 + 40 * Math.cos(r)).toFixed(2));
+    leaf.setAttribute("y2", (40 - 40 * Math.sin(r)).toFixed(2));
+  };
+  leaves.forEach((leaf) => swingTo(leaf, 0));
+  reveal([document.getElementById("doors")], 45, () => {
+    each(leaves, { stagger: 0.15, duration: 0.9, ease: EASE.power2InOut, apply: (leaf, v) => swingTo(leaf, 25 * v) });
   });
 
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => ScrollTrigger.refresh());
+  /* ----- sheet 1: founders walk between rooms (only while the plan is in view; never on reduced motion) ----- */
+  const stopFounders = setUpWalks(START + 3.0);
 
-  // The six founders: polylines along the real corridors and through the door openings, about 40 px a second on
-  // screen, at most two walking at once, each resting 6 to 10 s. The loop runs only while the plan is in view.
-  function setUpWalks(openingTimeline) {
+  // Reduced motion switched on while the page is open: stop everything and show the finished drawing.
+  if (reduceQuery) {
+    reduceQuery.addEventListener("change", () => {
+      if (!reduceQuery.matches) return;
+      stopFounders();
+      tweens.clear();
+      html.classList.remove("motion");
+      touched.forEach((el) => {
+        ["opacity", "transform", "strokeDasharray", "strokeDashoffset", "visibility"].forEach((p) => { el.style[p] = ""; });
+      });
+      labels.forEach((t) => { t.textContent = t.dataset.text; });
+      leaves.forEach((leaf) => swingTo(leaf, 25));
+      markers.forEach((m) => m.setAttribute("transform", m.dataset.home));
+      refreshPen();
+    });
+  }
+
+  // The six founders: paths along the real corridors and through the door openings, walked with
+  // SVGPathElement.getPointAtLength at about 40 px a second on screen (sine in-out per trip), at most two walking at
+  // once, each resting 6 to 10 s. Every walk and timer pauses while the plan is off screen.
+  function setUpWalks(startAt) {
     const planSvg = document.querySelector(".plan");
+    const layer = planSvg.querySelector(".founders").parentNode;
     const HUB = [240, 142.5];
     // every place a founder can rest, with the walk from the hub (corridors, door openings) to it
     const PLACES = {
@@ -606,14 +684,20 @@
       chat: { spots: [[267, 226]], via: (s) => [HUB, [259, 142.5], [259, 184], [267, 192], s] },
       admin: { spots: [[322, 226]], via: (s) => [HUB, [259, 142.5], [259, 184], [322, 184], s] },
     };
-    const START = [["asks", 0], ["intros", 1], ["members", 2], ["feed", 0], ["messages", 0], ["network", 0]];
-    const people = gsap.utils.toArray(".plan .fm").map((el, i) => ({ el, place: START[i][0], spot: START[i][1], moving: false, restUntil: 0 }));
+    const HOME = [["asks", 0], ["intros", 1], ["members", 2], ["feed", 0], ["messages", 0], ["network", 0]];
+    const people = Array.from(markers).map((el, i) => {
+      el.dataset.home = el.getAttribute("transform");
+      const route = document.createElementNS(NS, "path");
+      route.setAttribute("class", "route");
+      layer.insertBefore(route, layer.querySelector(".founders"));
+      return { el, route, place: HOME[i][0], spot: HOME[i][1], moving: false, restUntil: 0 };
+    });
     const taken = (place, spot) => people.some((p) => p.place === place && p.spot === spot);
     function put(person, point) {
-      person.el.setAttribute("transform", `translate(${point[0].toFixed(2)} ${point[1].toFixed(2)})`);
+      person.el.setAttribute("transform", `translate(${point.x.toFixed(2)} ${point.y.toFixed(2)})`);
       if (tipOwner === person.el) placeTip();
     }
-    // drop points that sit on a straight line (or repeat) so a walk has no needless stops
+    // drop points that sit on a straight line (or repeat) so a walk has no needless corners
     function simplify(points) {
       let again = true;
       while (again) {
@@ -629,81 +713,66 @@
       }
       return points;
     }
-    let live = [];
+    const live = new Set();
     let alive = false;
+    let started = false;
     let moving = 0;
-    const track = (tween) => {
-      live.push(tween);
-      if (!alive) tween.pause();
-      return tween;
-    };
-    const clean = () => { live = live.filter((t) => t.isActive() || t.paused() || t.progress() < 1); };
+    // every walk and timer goes through track(), so the pause rule reaches all of them
+    function track(options) {
+      const done = options.done;
+      const t = tween({ ...options, done: () => { live.delete(t); if (done) done(); } });
+      live.add(t);
+      if (!alive) t.pause();
+      return t;
+    }
+    const later = (seconds, fn) => track({ duration: seconds, done: fn });
     const pxPerUnit = () => planSvg.getBoundingClientRect().width / 384;
 
     function walk(person, place, spot) {
       const from = PLACES[person.place].via(PLACES[person.place].spots[person.spot]).slice().reverse();
       const to = PLACES[place].via(PLACES[place].spots[spot]);
       const points = simplify(from.concat(to.slice(1)));
-      const segments = [];
-      let total = 0;
-      for (let i = 1; i < points.length; i++) {
-        const d = Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
-        segments.push(d);
-        total += d;
-      }
+      person.route.setAttribute("d", "M" + points.map((p) => `${p[0]} ${p[1]}`).join("L"));
+      const total = person.route.getTotalLength();
       person.place = place;
       person.spot = spot;
       person.moving = true;
       moving++;
-      const progress = { d: 0 };
       const speed = 40 / pxPerUnit(); // about 40 px a second on screen
-      track(gsap.to(progress, {
-        d: total,
+      track({
         duration: Math.max(1.2, total / speed),
-        ease: "sine.inOut",
-        onUpdate: () => {
-          let d = progress.d;
-          let k = 0;
-          while (k < segments.length - 1 && d > segments[k]) {
-            d -= segments[k];
-            k++;
-          }
-          const f = segments[k] ? Math.min(1, d / segments[k]) : 1;
-          const a = points[k];
-          const b = points[k + 1];
-          put(person, [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
-        },
-        onComplete: () => {
+        ease: EASE.sineInOut,
+        apply: (v) => put(person, person.route.getPointAtLength(total * v)),
+        done: () => {
           person.moving = false;
           moving--;
           person.restUntil = performance.now() + 6000 + Math.random() * 4000;
           arrive(person);
-          clean();
         },
-      }));
+      });
     }
     // what each visit means, shown once and small: a "?" in Asks, a line between two founders meeting in Intros
     function arrive(person) {
       if (person.place === "asks") {
-        const mark = document.querySelector(".plan .fm-q");
-        track(gsap.timeline().set(mark, { opacity: 0 }).to(mark, { opacity: 1, duration: 0.3, ease: "power2.out" }).to(mark, { opacity: 0, duration: 0.45, ease: "power2.in" }, "+=.6"));
+        const mark = planSvg.querySelector(".fm-q");
+        track({ duration: 0.3, ease: EASE.power2Out, apply: (v) => { mark.style.opacity = String(v); } });
+        track({ delay: 0.9, duration: 0.45, ease: EASE.power2In, apply: (v) => { mark.style.opacity = String(1 - v); } });
       } else if (person.place === "intros" && taken("intros", 1 - person.spot)) {
-        const line = document.querySelector(".plan .meet");
+        const line = planSvg.querySelector(".meet");
         const length = line.getTotalLength();
-        track(gsap.timeline()
-          .set(line, { opacity: 1, strokeDasharray: length, strokeDashoffset: length })
-          .to(line, { strokeDashoffset: 0, duration: 0.5, ease: "power2.out" })
-          .to(line, { opacity: 0, duration: 0.5, ease: "power2.in" }, "+=1.6"));
+        line.style.strokeDasharray = String(length);
+        line.style.strokeDashoffset = String(length);
+        line.style.opacity = "1";
+        track({ duration: 0.5, ease: EASE.power2Out, apply: (v) => { line.style.strokeDashoffset = String(length * (1 - v)); } });
+        track({ delay: 2.1, duration: 0.5, ease: EASE.power2In, apply: (v) => { line.style.opacity = String(1 - v); } });
       }
     }
+    // pick a room first, then one free spot in it, so the long table's seven chairs don't take every visit
     function pickDestination(person) {
-      const options = [];
-      Object.keys(PLACES).filter((n) => n !== person.place).forEach((n) => {
-        PLACES[n].spots.forEach((s, i) => { if (!taken(n, i)) options.push([n, i]); });
-      });
-      // keep the long table from taking every visit: pick a room first, then one free spot in it
       const byPlace = {};
-      options.forEach((o) => { (byPlace[o[0]] = byPlace[o[0]] || []).push(o); });
+      Object.keys(PLACES).filter((n) => n !== person.place).forEach((n) => {
+        PLACES[n].spots.forEach((s, i) => { if (!taken(n, i)) (byPlace[n] = byPlace[n] || []).push([n, i]); });
+      });
       const names = Object.keys(byPlace);
       if (!names.length) return null;
       const list = byPlace[names[Math.floor(Math.random() * names.length)]];
@@ -719,32 +788,38 @@
           if (destination) walk(person, destination[0], destination[1]);
         }
       }
-      track(gsap.delayedCall(1.6 + Math.random() * 1.6, tick));
-    }
-    function startFounders() {
-      const now = performance.now();
-      people.forEach((p, i) => { p.restUntil = now + 5000 + i * 1200; });
-      // the first two visits are fixed so the opening always shows them: Priya joins Marcus in Intros, then Tomás
-      // leaves Feed for a chair at the long table
-      walk(people[0], "intros", 0);
-      track(gsap.delayedCall(2.2, () => { if (!people[3].moving) walk(people[3], "members", 3); }));
-      track(gsap.delayedCall(4.5, tick));
+      later(1.6 + Math.random() * 1.6, tick);
     }
     function setAlive(on) {
       if (on === alive) return;
       alive = on;
       live.forEach((t) => (on ? t.resume() : t.pause()));
+      if (on) people.forEach((p) => { if (!p.moving) p.restUntil = Math.max(p.restUntil, performance.now() + 1500); });
     }
-    let toggle = null;
-    openingTimeline.call(() => {
-      alive = ScrollTrigger.isInViewport(planSvg, 0.1);
-      startFounders();
-      toggle = ScrollTrigger.create({ trigger: planSvg, start: "top bottom", end: "bottom top", onToggle: (self) => setAlive(self.isActive) });
-    }, null, 3.0);
+    const io = new IntersectionObserver((entries) => {
+      const visible = entries[entries.length - 1].isIntersecting;
+      if (started) setAlive(visible);
+      else alive = visible;
+    });
+    io.observe(planSvg);
+    const starter = tween({
+      delay: startAt,
+      done: () => {
+        started = true;
+        const now = performance.now();
+        people.forEach((p, i) => { p.restUntil = now + 5000 + i * 1200; });
+        // the first two visits are fixed so the opening always shows them: Priya joins Marcus in Intros, then
+        // Tomás leaves Feed for a chair at the long table
+        walk(people[0], "intros", 0);
+        later(2.2, () => { if (!people[3].moving) walk(people[3], "members", 3); });
+        later(4.5, tick);
+      },
+    });
     return () => {
+      starter.kill();
+      io.disconnect();
       live.forEach((t) => t.kill());
-      live = [];
-      if (toggle) toggle.kill();
+      live.clear();
     };
   }
 })();

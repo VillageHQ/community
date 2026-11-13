@@ -4,8 +4,8 @@ What it does now (since 2026-11-13; replaces the Founderhall page in [one-site](
 
 - `site/` is one static page (`index.html`, `assets/site.css`, `assets/boot.js`, `assets/site.js`) that sells the app
   in this repo as **Common Hall by Village**. No framework, no build step, no cookies, no analytics, and the same
-  Content Security Policy as before: only this site's own files load. GSAP 3.13 + ScrollTrigger and the fonts
-  (Figtree, JetBrains Mono) are files in `site/assets/`.
+  Content Security Policy as before: only this site's own files load. The motion is the page's own script, no
+  library; the fonts (Figtree, JetBrains Mono) are files in `site/assets/`.
 - The page is a drawing set of four sheets, each one screen tall, with a sheet tag ("Sheet N of 4"):
   1. **Plan** — "Read every room *before* you move in.", one sub-line, the **Schedule call** button (to the form) and
      an outlined **GitHub** button with the GitHub mark (to `VillageHQ/community`), the round AGPL 3.0 stamp, the
@@ -27,7 +27,7 @@ What it does now (since 2026-11-13; replaces the Founderhall page in [one-site](
 - Motion: the pen draws every sheet's frame and inner strokes as the page scrolls, so each sheet is fully drawn when
   it rests; the plan draws itself on load and the stamp lands; rooms light up, ledger rows rule in, the door leaves
   swing open. The founders walk between rooms along the corridors while the plan is on screen and pause when it is
-  not; hover, focus or tap shows a founder's name, company and one line. Reduced motion, no JavaScript or no GSAP:
+  not; hover, focus or tap shows a founder's name, company and one line. Reduced motion or no JavaScript:
   everything is drawn and still.
 - Light look only (`color-scheme: light`). Works from 320 px. Printing hides the bar, the pen layer and the tooltip.
 - `.ai/features/one-site/reports/check-site.mjs` serves the folder, opens it at 320/390/1280 px with motion (waits

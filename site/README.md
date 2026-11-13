@@ -2,9 +2,8 @@
 
 The public page for the app in this repo, under the name Common Hall by Village. It is drawn as a paper drawing set:
 four sheets (Plan, Rooms, Record, Entrances), one screen tall each, with a pen line that draws every sheet's frame as you
-scroll and six made-up founders walking between the rooms of the floor plan. Plain HTML, CSS and JavaScript, no
-framework and no build step. It loads nothing from third parties: the animation library and the fonts are files in
-this folder.
+scroll and six made-up founders walking between the rooms of the floor plan. Plain HTML, CSS and JavaScript, with no
+framework, no script library and no build step. It loads nothing from third parties: the fonts are files in this folder.
 
 ## Preview
 
@@ -57,9 +56,10 @@ directory is `site` itself.
 - `index.html` is markup only: no `style=` attributes, no inline scripts, no `<style>`. The floor plan, the key plans,
   the stamp and the founders are inline SVG with classes and presentation attributes.
 - `assets/site.css` holds every style. `assets/boot.js` runs in the head and adds `html.motion` (the pre-animation
-  states) unless the visitor prefers reduced motion; it removes the class again if GSAP has not loaded after 4 s.
+  states) unless the visitor prefers reduced motion; it removes the class again if `site.js` has not drawn the page after 4 s.
 - `assets/site.js` holds every behaviour: the form, the Copy button, the founders' labels, the phone's sticky bar,
-  the pen and the founders' walks. How the motion works: `.ai/features/common-hall-site/NOTES.md`.
+  the pen and the founders' walks. The motion is the page's own script, no library: a small requestAnimationFrame
+  tween loop, a scroll listener for the pen and IntersectionObservers for the reveals. How the motion works: `.ai/features/common-hall-site/NOTES.md`.
 - Without JavaScript the page still reads: every stroke is drawn, the founders sit in their rooms, and the form's
   place says it needs JavaScript. With reduced motion nothing moves.
 
@@ -80,10 +80,6 @@ errors (CSP violations included), horizontal overflow or a missing anchor. It sa
 
 ## Third-party assets
 
-- GSAP 3.13.0 and ScrollTrigger 3.13.0 (`assets/vendor/gsap.min.js`, `assets/vendor/ScrollTrigger.min.js`), copied
-  unchanged from the npm package with their notices. GSAP is free to use but **not open source**: it is under
-  GreenSock's Standard "No Charge" License (owned by Webflow), not MIT or AGPL. Terms: `assets/vendor/LICENSE-gsap.txt`.
-  The app itself does not use GSAP.
 - Figtree (roman and italic), from `@fontsource-variable/figtree`, under the SIL Open Font License:
   `assets/fonts/OFL-figtree.txt`.
 - JetBrains Mono (latin subset, variable weight), from `@fontsource-variable/jetbrains-mono`, under the SIL Open Font
