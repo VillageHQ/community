@@ -209,7 +209,8 @@ h1 em { font-style: italic; font-weight: 700; letter-spacing: -0.6px; }
 .plan .ric-s { transform: scale(1.15); }
 .plan .fm { cursor: pointer; outline: none; }
 .plan .fm circle { stroke: var(--paper); stroke-width: 1.2; }
-.plan .fm:focus-visible circle { stroke: var(--forest); stroke-width: 2.2; }
+.plan .fm:focus-visible circle:not(.fm-hit) { stroke: var(--forest); stroke-width: 2.2; }
+.plan .fm .fm-hit { fill: transparent; stroke: none; } /* at least a 24 px tap target around the 14 px dot, down to 320 px screens */
 .plan .fm text { font: 700 5.3px var(--sans); fill: #fff; text-anchor: middle; pointer-events: none; }
 .plan .fm-s { transform: scale(1); }
 .plan .meet { fill: none; stroke: var(--forest); stroke-width: 1.4; opacity: 0; }
@@ -296,7 +297,7 @@ h1 em { font-style: italic; font-weight: 700; letter-spacing: -0.6px; }
 .door-plan { width: 58px; height: 40px; flex: none; overflow: visible; }
 .door-plan .wl { stroke: var(--ink); stroke-width: 3; stroke-linecap: square; }
 .door-plan .arc { stroke: var(--muted); stroke-width: 0.9; }
-.door-plan .leaf { stroke: var(--forest); stroke-width: 2.6; stroke-linecap: round; }
+.door-plan .leaf { stroke: var(--forest); stroke-width: 2.6; stroke-linecap: round; transform-box: view-box; transform-origin: 12px 40px; transform: rotate(-25deg); } /* open 25 degrees */
 .door-card:not(.v) .door-plan .leaf { stroke: var(--ink); }
 .door-card h3 { font: 600 19px/23px var(--sans); letter-spacing: -0.2px; }
 .door-card .fine { font: 500 12.5px/17px var(--sans); color: var(--muted); }
@@ -478,6 +479,7 @@ footer { background: var(--night); color: var(--paper); padding: 24px var(--pad)
   .ft { grid-template-columns: 2fr 1.3fr 1fr 1.3fr 1fr; }
   .ft .wide { grid-column: auto; }
   .bar { display: none; }
+  .install code { white-space: normal; line-height: 18px; padding: 9px 0; overflow-x: visible; } /* the full line, wrapping at its slashes */
 }
 
 /* ---------- print: the drawing on paper, without the moving parts ---------- */
@@ -486,4 +488,11 @@ footer { background: var(--night); color: var(--paper); padding: 24px var(--pad)
   .skip-link, .bar, #pen, .fm-tip, .copy { display: none !important; }
   .sheet { min-height: 0; break-inside: avoid; }
   html.pen-on .sheet::before { content: ""; position: absolute; inset: var(--inset); border: 1px solid var(--frame); }
+  /* every reveal and stroke in its final state, whether or not the page was scrolled before printing */
+  .pre { visibility: visible !important; }
+  .facts li, .plan .door, .plan .dim-t, .plan .fm, .room .lit, .rm-top .stp, .ledger .lg, .ledger .tri, .stamp, .confirm > * { opacity: 1 !important; }
+  .facts li, .plan .chair, .rm-top .stp, .ledger .lg, .ledger .tri, .confirm > *, .rule { transform: none !important; }
+  .stamp { transform: rotate(-6deg) !important; }
+  .door-plan .leaf { transform: rotate(-25deg) !important; }
+  main .pen, .plan .wall, .plan .dim-l, .plan .table, .plan .ric path, .plan .ric circle, .plan .ric rect, .confirm-title svg path { stroke-dasharray: none !important; stroke-dashoffset: 0 !important; }
 }

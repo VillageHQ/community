@@ -548,6 +548,8 @@
   draw();
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", refreshPen);
+  // any change in the page's height (the form's field errors, a server error, the confirmation) redraws the frames
+  if ("ResizeObserver" in window) new ResizeObserver(refreshPen).observe(document.querySelector("main"));
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(refreshPen);
   if (!motionOn()) {
     html.classList.remove("motion");
@@ -634,11 +636,9 @@
   });
   // entrances: both door leaves swing open 25 degrees in plan view
   const leaves = document.querySelectorAll(".door-plan .leaf");
-  const swingTo = (leaf, degrees) => {
-    const r = (degrees * Math.PI) / 180;
-    leaf.setAttribute("x2", (12 + 40 * Math.cos(r)).toFixed(2));
-    leaf.setAttribute("y2", (40 - 40 * Math.sin(r)).toFixed(2));
-  };
+  // the leaf is drawn closed in the markup and opened by a CSS rotation about its hinge (12, 40), so print and
+  // reduced motion show it open without script
+  const swingTo = (leaf, degrees) => style(leaf, { transform: `rotate(${-degrees}deg)` });
   leaves.forEach((leaf) => swingTo(leaf, 0));
   reveal([document.getElementById("doors")], 45, () => {
     each(leaves, { stagger: 0.15, duration: 0.9, ease: EASE.power2InOut, apply: (leaf, v) => swingTo(leaf, 25 * v) });
@@ -646,6 +646,24 @@
 
   /* ----- sheet 1: founders walk between rooms (only while the plan is in view; never on reduced motion) ----- */
   const stopFounders = setUpWalks(START + 3.0);
+
+  // Printing: every reveal still waiting plays, and every running tween except the founders' jumps to its end, so
+  // the printed page is the finished drawing (site.css also forces the final states under @media print).
+  window.addEventListener("beforeprint", () => {
+    pendingReveals.forEach((group) => group.play(Array.from(group.elements)));
+    let guard = 0;
+    while (guard++ < 5) {
+      const open = Array.from(tweens).filter((t) => !t.walking);
+      if (!open.length) break;
+      open.forEach((t) => {
+        tweens.delete(t);
+        if (t.apply) t.apply(t.ease(1));
+        if (t.done) t.done();
+      });
+    }
+    render(1e9);
+  });
+  window.addEventListener("afterprint", draw);
 
   // Reduced motion switched on while the page is open: stop everything and show the finished drawing.
   if (reduceQuery) {
@@ -658,7 +676,6 @@
         ["opacity", "transform", "strokeDasharray", "strokeDashoffset", "visibility"].forEach((p) => { el.style[p] = ""; });
       });
       labels.forEach((t) => { t.textContent = t.dataset.text; });
-      leaves.forEach((leaf) => swingTo(leaf, 25));
       markers.forEach((m) => m.setAttribute("transform", m.dataset.home));
       refreshPen();
     });
@@ -721,6 +738,7 @@
     function track(options) {
       const done = options.done;
       const t = tween({ ...options, done: () => { live.delete(t); if (done) done(); } });
+      t.walking = true; // the founders' walks and timers are left alone when printing
       live.add(t);
       if (!alive) t.pause();
       return t;

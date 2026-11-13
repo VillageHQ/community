@@ -43,20 +43,28 @@ lead ruled out the library on 2026-11-13: its licence is not open source, and th
 - On load, `pen.load` goes 0 → 1 over 2.2 s, which pulls the tip from above the page down to its scroll position:
   that draws sheet 1's frame while the plan draws itself (walls, doors, dimension lines, the table and chairs, the
   labels typing in, the room icons), the facts rise and the stamp lands (scale 1.6 → 1, −14° → −6°, quartic out).
-- `refreshPen()` re-measures on resize, when the fonts are ready, and when the form's confirmation changes the page
-  height. Without motion the pen is built once and drawn in full.
+- `refreshPen()` re-measures on resize, when the fonts are ready, and whenever `main` changes size (a
+  ResizeObserver: the form's field errors, a server error, the confirmation), so the frame never cuts through text. Without motion the pen is built once and drawn in full.
 
 ## The reveals
 - One IntersectionObserver per section, with a bottom margin standing in for "element top at N% of the screen":
   rooms at 88% (each row lights its room and its stamp lands), the ledger at 82% (rows rule in, revision triangles
   place; the sample figures stay still, as the design's fix round set them), the Entrances at 55% (both door leaves
-  swing open 25°). Each plays once.
+  swing open 25°; a leaf is drawn closed in the markup and opened by a CSS `rotate(-25deg)` about its hinge, so
+  reduced motion and print show it open without script). Each plays once.
 - An observer never sees an element a jump skipped (the "Two ways in" link, a fast fling), so a scroll listener also
   plays any pending reveal whose element is already above 12% of the screen.
 
+## Printing
+- Under `@media print`, `site.css` forces every reveal and stroke to its final state with `!important` (opacity 1,
+  no transforms, no dashes, the stamp at −6°, the door leaves open), so a page printed before it was scrolled is
+  complete. A `beforeprint` handler also plays every pending reveal and runs every tween except the founders' to its
+  end (the room labels finish typing).
+
 ## The founders
 - Six `.fm` markers in the plan SVG (focusable `role="button"` groups with full aria-labels, `data-name`,
-  `data-line`). Their HTML positions are their resting rooms, so reduced motion and no-JS show them seated.
+  `data-line`), each with a transparent 32-unit hit circle (at least 24 px on screen from 320 px wide) around its
+  14 px dot. Their HTML positions are their resting rooms, so reduced motion and no-JS show them seated.
 - `PLACES` maps each room to resting spots and a route from the hub (the corridor junction at 240, 142.5) through
   the corridors and door openings. A walk is the reversed route out of the current spot plus the route into the next,
   with collinear and repeated points dropped. The polyline is written into the founder's own hidden `path.route`, and

@@ -61,7 +61,8 @@ directory is `site` itself.
   the pen and the founders' walks. The motion is the page's own script, no library: a small requestAnimationFrame
   tween loop, a scroll listener for the pen and IntersectionObservers for the reveals. How the motion works: `.ai/features/common-hall-site/NOTES.md`.
 - Without JavaScript the page still reads: every stroke is drawn, the founders sit in their rooms, and the form's
-  place says it needs JavaScript. With reduced motion nothing moves.
+  place says it needs JavaScript. With reduced motion nothing moves. Printing shows the finished drawing whether or not
+  the page was scrolled first.
 
 ## How it stays out of the app
 
