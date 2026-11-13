@@ -87,7 +87,7 @@ case "$args" in *" up -d"*) printf "compose saw domain: %s\n" "${COMMUNITY_DOMAI
 case "$args" in
   "volume inspect "*) [ -n "${STUB_VOLUME_EXISTS:-}" ] ;;
   "image inspect "*) printf "%s\n" "${STUB_IMAGE_ID-sha256:current}" ;;
-  build*) [ -z "${STUB_BUILD_FAILS:-}" ] ;;
+  build*) printf "#12 building\n"; [ -z "${STUB_BUILD_FAILS:-}" ] || { printf "%s\n" "${STUB_BUILD_OUTPUT:-ERROR: failed to solve}"; exit 1; } ;;
   "inspect "*) printf "%s\n" "${STUB_APP_HEALTH:-healthy}" ;;
   *" pull --quiet app") [ -z "${STUB_PULL_FAILS:-}" ] ;;
   *" up -d"*) if [ -n "${STUB_UP_FAILS:-}" ]; then printf "Error: listen tcp 0.0.0.0:80: bind: address already in use\n"; exit 1; fi ;;
@@ -95,6 +95,7 @@ case "$args" in
   *" ps -q app") printf "app-id\n" ;;
   *" exec -T postgres pg_dump "*) printf "dump" ;;
   *" exec -T postgres pg_restore --list") cat >/dev/null ;;
+  *" exec -T postgres psql "*) [ -z "${STUB_ADMIN_EXISTS:-}" ] || printf "1\n" ;;
   *) ;;
 esac'
   cat >"$STUBS/curl" <<'STUB'
@@ -124,11 +125,19 @@ STUB
   write_stub ip 'printf "2: ens3    inet %s/32 scope global ens3\n" "${STUB_LOCAL_ADDRESS:-'"$SERVER_IP"'}"'
   write_stub fallocate 'touch "$3"'
   write_stub mkswap ':'
-  write_stub swapon '[ "${1:-}" != "--show" ] || [ -z "${STUB_SWAP_ACTIVE:-}" ] || printf "/existing\n"'
+  write_stub swapon '
+if [ "${1:-}" = "--show" ]; then
+  [ -z "${STUB_SWAPON_NO_SHOW:-}" ] || exit 1
+  [ -z "${STUB_SWAP_ACTIVE:-}" ] || printf "/existing\n"
+  exit 0
+fi
+[ -z "${STUB_SWAPON_FAILS:-}" ] || exit 255'
+  write_stub swapoff ':'
 }
 
 reset_server() {
   rm -rf /opt/community /usr/local/bin/community /etc/systemd/system/community-backup.* /swapfile
+  printf 'Filename\tType\tSize\tUsed\tPriority\n' >/tmp/fake-swaps
   : >/tmp/dns-records
   cp /tmp/fstab.original /etc/fstab
   : >"$CALLS"
@@ -307,6 +316,34 @@ test_dns_failure() {
   assert_exit 0
   assert_says "$DOMAIN points at this server"
 
+  it "accepts several addresses in COMMUNITY_SERVER_IP"
+  point_domain_at "$SERVER_IP"
+  point_domain_at "2001:db8::20"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_SERVER_IP="$SERVER_IP, 2001:DB8::20"
+  assert_exit 0
+  assert_says "$DOMAIN points at this server"
+
+  it "refuses a COMMUNITY_SERVER_IP that isn't an address"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_SERVER_IP="$SERVER_IP nonsense"
+  assert_exit 1
+  assert_says "\"nonsense\" doesn't look like a server address"
+  assert_nothing_set_up
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_SERVER_IP="999.1.1.1"
+  assert_says "\"999.1.1.1\" doesn't look like a server address"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" COMMUNITY_SERVER_IP=":"
+  assert_says "\":\" doesn't look like a server address"
+
+  it "offers COMMUNITY_SERVER_IP instead of calling the record old, behind NAT"
+  point_domain_at "$OTHER_IPV6"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" STUB_LOCAL_ADDRESS="10.0.0.5"
+  assert_exit 1
+  assert_says "Right now $DOMAIN points at $OTHER_IPV6"
+  assert_says "COMMUNITY_SERVER_IP=$OTHER_IPV6"
+  assert_never_says "Change or delete that old record"
+  assert_says "If not, change or delete the record that points at $OTHER_IPV6"
+  assert_nothing_set_up
+
   it "stops when it can't detect this server's address"
   run_installer COMMUNITY_DOMAIN="$DOMAIN" STUB_PUBLIC_IP="nonsense"
   assert_exit 1
@@ -473,7 +510,9 @@ test_image_fallback() {
   assert_exit 0
   assert_says "building it on this server"
   assert_says "2.5 GB"
-  assert_called "docker build -f /source/deploy/vps/Dockerfile -t ghcr.io/villagehq/community:latest /source"
+  assert_says "bigger server"
+  assert_called "docker build --network host -f /source/deploy/vps/Dockerfile -t ghcr.io/villagehq/community:latest /source"
+  assert_true "keeps the build output in its log" grep -q "#12 building" /opt/community/install.log
 
   it "doesn't build when the download works"
   point_domain_at "$SERVER_IP"
@@ -486,6 +525,24 @@ test_image_fallback() {
   assert_exit 1
   assert_says "The build failed"
   assert_not_called "up -d"
+
+  it "shows the real cause of a failed build, not a memory guess"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" STUB_PULL_FAILS=1 STUB_BUILD_FAILS=1 STUB_IMAGE_ID="" \
+    STUB_BUILD_OUTPUT="npm error request to https://registry.npmjs.org/ failed, reason: getaddrinfo EAI_AGAIN registry.npmjs.org"
+  assert_exit 1
+  assert_says "getaddrinfo EAI_AGAIN registry.npmjs.org"
+  assert_says "couldn't look up"
+  assert_never_says "out of memory"
+  assert_never_says "stopped unexpectedly"
+  assert_true "keeps the cause in its log" grep -q "EAI_AGAIN" /opt/community/install.log
+
+  it "blames memory only when the build was killed for it"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" STUB_PULL_FAILS=1 STUB_BUILD_FAILS=1 STUB_IMAGE_ID="" \
+    STUB_BUILD_OUTPUT='ERROR: process "/bin/sh -c pnpm build" did not complete successfully: exit code: 137'
+  assert_exit 1
+  assert_says "ran out of memory"
 }
 
 test_rerun() {
@@ -498,7 +555,7 @@ test_rerun() {
   checksum_before="$(sha256sum "$ENV_FILE")"
   token_before="$(read_secret SETUP_TOKEN)"
   : >"$CALLS"
-  run_installer COMMUNITY_DOMAIN="different.example.test"
+  run_installer COMMUNITY_DOMAIN="different.example.test" STUB_ADMIN_EXISTS=1
   assert_exit 0
   assert_says "already installed"
   assert_says "Keeping your existing settings"
@@ -514,11 +571,22 @@ test_rerun() {
   assert_not_called "volume rm"
   assert_not_called "down"
 
+  it "still shows the setup token after a first install that stopped"
+  point_domain_at "$SERVER_IP"
+  run_installer COMMUNITY_DOMAIN="$DOMAIN" STUB_APP_HEALTH=starting COMMUNITY_HEALTH_TIMEOUT_SECONDS=1
+  run_installer
+  assert_exit 0
+  assert_says "Setup token:  $(read_secret SETUP_TOKEN)"
+  assert_says "https://$DOMAIN/setup"
+  assert_says "Keeping your existing settings"
+  assert_never_says "up to date"
+  assert_never_says "already installed"
+
   it "needs neither a domain nor DNS"
   point_domain_at "$SERVER_IP"
   run_installer COMMUNITY_DOMAIN="$DOMAIN"
   : >/tmp/dns-records
-  run_installer
+  run_installer STUB_ADMIN_EXISTS=1
   assert_exit 0
   assert_says "Already set up, so we skip this check"
 
@@ -532,9 +600,12 @@ test_rerun() {
   it "keeps the current version when a rebuild fails"
   point_domain_at "$SERVER_IP"
   run_installer COMMUNITY_DOMAIN="$DOMAIN"
-  run_installer STUB_PULL_FAILS=1 STUB_BUILD_FAILS=1
+  run_installer STUB_PULL_FAILS=1 STUB_BUILD_FAILS=1 STUB_ADMIN_EXISTS=1
   assert_exit 0
   assert_says "keeping the version you have"
+  assert_says "still runs the version you had"
+  assert_never_says "up to date"
+  assert_never_says "bigger server"
 
   it "stops before changing anything when the backup fails"
   point_domain_at "$SERVER_IP"
@@ -574,7 +645,7 @@ test_firewall() {
 test_swap() {
   describe "Handling memory"
 
-  local small_machine='total_memory_mb() { printf 512; }; ensure_swap'
+  local small_machine='swaps_file=/tmp/fake-swaps; total_memory_mb() { printf 512; }; ensure_swap'
 
   it "adds swap once on a small machine"
   run_function "$small_machine; $small_machine"
@@ -589,6 +660,41 @@ test_swap() {
 
   it "leaves a small machine with swap alone"
   run_function "$small_machine" STUB_SWAP_ACTIVE=1
+  assert_not_called "mkswap"
+
+  it "sees active swap in /proc/swaps when swapon can't list it, and carries on"
+  : >/swapfile
+  printf '/swapfile file 2097148 0 -2\n' >>/tmp/fake-swaps
+  run_function "$small_machine; say reached-the-end" STUB_SWAPON_NO_SHOW=1 STUB_SWAPON_FAILS=1
+  assert_exit 0
+  assert_says "already has swap"
+  assert_says "reached-the-end"
+  assert_true "keeps /swapfile" test -e /swapfile
+
+  it "leaves alone a /swapfile it didn't make"
+  : >/swapfile
+  run_function "$small_machine; say reached-the-end"
+  assert_exit 0
+  assert_says "reached-the-end"
+  assert_not_called "swapon /swapfile"
+  assert_not_called "swapoff"
+  assert_true "keeps /swapfile" test -e /swapfile
+
+  it "turns off and removes only its own swap file when it can't turn it on"
+  run_function "$small_machine; say reached-the-end" STUB_SWAPON_FAILS=1
+  assert_exit 0
+  assert_says "reached-the-end"
+  assert_says "couldn't add swap"
+  assert_called "swapoff /swapfile"
+  assert_true "removes its own /swapfile" test ! -e /swapfile
+  assert_true "leaves no fstab line" test "$(grep -c '^/swapfile ' /etc/fstab)" = "0"
+
+  it "turns its own swap file back on in a re-run"
+  run_function "$small_machine"
+  : >"$CALLS"
+  run_function "$small_machine"
+  assert_exit 0
+  assert_called "swapon /swapfile"
   assert_not_called "mkswap"
 }
 
@@ -650,7 +756,7 @@ test_helper() {
   point_domain_at "$SERVER_IP"
   run_installer COMMUNITY_DOMAIN="$DOMAIN"
   exit_code=0
-  output="$(env PATH="$STUBS:$PATH" COMMUNITY_NONINTERACTIVE=1 community upgrade 2>&1)" || exit_code=$?
+  output="$(env PATH="$STUBS:$PATH" COMMUNITY_NONINTERACTIVE=1 STUB_ADMIN_EXISTS=1 community upgrade 2>&1)" || exit_code=$?
   assert_exit 0
   assert_says "up to date at https://$DOMAIN"
   assert_says "Downloading Community's files (main)"

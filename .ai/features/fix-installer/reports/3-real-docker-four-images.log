@@ -1,0 +1,56 @@
+
+=== ubuntu:26.04 (real-docker) ===
+
+Installing Docker for real, in a container with no way to run it
+  ok    installs from Docker's official source and stops plainly when Docker can't start: exits 1
+  ok    installs from Docker's official source and stops plainly when Docker can't start: says "Docker is installed, but it isn't running"
+/usr/bin/docker
+  ok    installs from Docker's official source and stops plainly when Docker can't start: installs the docker command
+Docker Compose version v5.7.1
+  ok    installs from Docker's official source and stops plainly when Docker can't start: installs Compose
+  ok    installs from Docker's official source and stops plainly when Docker can't start: uses Docker's official repository
+  ok    installs from Docker's official source and stops plainly when Docker can't start: writes no settings yet
+
+Failures: 0
+
+=== ubuntu:24.04 (real-docker) ===
+
+Installing Docker for real, in a container with no way to run it
+  ok    installs from Docker's official source and stops plainly when Docker can't start: exits 1
+  ok    installs from Docker's official source and stops plainly when Docker can't start: says "Docker is installed, but it isn't running"
+/usr/bin/docker
+  ok    installs from Docker's official source and stops plainly when Docker can't start: installs the docker command
+Docker Compose version v5.7.1
+  ok    installs from Docker's official source and stops plainly when Docker can't start: installs Compose
+  ok    installs from Docker's official source and stops plainly when Docker can't start: uses Docker's official repository
+  ok    installs from Docker's official source and stops plainly when Docker can't start: writes no settings yet
+
+Failures: 0
+
+=== ubuntu:22.04 (real-docker) ===
+
+Installing Docker for real, in a container with no way to run it
+  ok    installs from Docker's official source and stops plainly when Docker can't start: exits 1
+  ok    installs from Docker's official source and stops plainly when Docker can't start: says "Docker is installed, but it isn't running"
+/usr/bin/docker
+  ok    installs from Docker's official source and stops plainly when Docker can't start: installs the docker command
+Docker Compose version v5.7.1
+  ok    installs from Docker's official source and stops plainly when Docker can't start: installs Compose
+  ok    installs from Docker's official source and stops plainly when Docker can't start: uses Docker's official repository
+  ok    installs from Docker's official source and stops plainly when Docker can't start: writes no settings yet
+
+Failures: 0
+
+=== debian:12 (real-docker) ===
+
+Installing Docker for real, in a container with no way to run it
+  ok    installs from Docker's official source and stops plainly when Docker can't start: exits 1
+  ok    installs from Docker's official source and stops plainly when Docker can't start: says "Docker is installed, but it isn't running"
+/usr/bin/docker
+  ok    installs from Docker's official source and stops plainly when Docker can't start: installs the docker command
+Docker Compose version v5.7.1
+  ok    installs from Docker's official source and stops plainly when Docker can't start: installs Compose
+  ok    installs from Docker's official source and stops plainly when Docker can't start: uses Docker's official repository
+  ok    installs from Docker's official source and stops plainly when Docker can't start: writes no settings yet
+
+Failures: 0

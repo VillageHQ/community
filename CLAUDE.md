@@ -49,7 +49,8 @@ Better Auth, Vitest, pnpm. Village is optional (network search, intro paths and 
   `.ai/features/fh-followup/NOTES.md` (emailed invite link confirms, job board on by default, "copied" words),
   `.ai/features/fix-accounts-privacy/NOTES.md`, `.ai/features/fix-feed-digest-site/NOTES.md`,
   `.ai/features/fix-intros-reports/NOTES.md`, `.ai/features/fix-host-findings/NOTES.md`,
-  `.ai/features/fix-cleanup/NOTES.md`, `.ai/features/common-hall-site/NOTES.md` (the landing page's motion).
+  `.ai/features/fix-cleanup/NOTES.md`, `.ai/features/common-hall-site/NOTES.md` (the landing page's motion),
+  `.ai/features/fix-installer/NOTES.md` (install.sh: build failures, swap, first install, DNS).
 - No notes: `.do/`, `.github/`, `deploy/`, `docs/` (guides), `drizzle/` (generated), `site/` (own README), `public/` (demo pictures),
   `vercel.json` (the daily Vercel Cron Job). Every deploy setup runs the job runner;
   `src/test/deploy-setups.test.ts` guards it.

@@ -39,6 +39,10 @@ curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh
 
 [Read the guide](docs/self-host-vps.md) for what to rent and how to point your domain.
 
+- **Stopped halfway?** Run the same command again. It keeps your settings and picks up where it stopped. Until you create your admin account, it ends with your setup token and the `/setup` steps again.
+- **Behind NAT or a load balancer** (as on Fly.io), the server goes out from a different address than visitors reach. The installer notices and shows the command that passes the addresses your domain points at, like `curl -fsSL https://raw.githubusercontent.com/VillageHQ/community/main/install.sh | sudo COMMUNITY_DOMAIN=community.example.com COMMUNITY_SERVER_IP=203.0.113.10,2001:db8::10 bash`.
+- **No ready-made app to download?** The installer builds it on the server instead. That takes about 3 minutes with 4 GB of memory and 2 dedicated processors, and 30 minutes or more on a small 2 GB server, so use a bigger server for the first install if you can. If the build fails, the installer shows its last lines and the cause.
+
 ### Deploy on Fly.io
 
 There's no button, but the container image runs on Fly as it is. We tried it once on a throwaway app (2026-11-12): it built, migrated, signed in, ran its timed jobs and kept its data through a restart. You need the `fly` CLI and a Postgres database Fly's machines can reach.

@@ -183,13 +183,19 @@ Keep a copy of this file in your password manager. It holds your secrets.
 
 **"doesn't point at this server yet":** Your DNS record is missing or wrong. The message shows the exact record to create. Wait a few minutes after you create it, because changes take time to spread. On Cloudflare, use **DNS only**.
 
+**"none of its own network cards has that address":** Your server sits behind NAT or a load balancer (as on Fly.io), so the address it goes out from isn't the one visitors reach it on. If your record already points at the address visitors use, it's right: run the command the message shows, which passes that address as `COMMUNITY_SERVER_IP`. It takes several addresses separated by commas, for example `COMMUNITY_SERVER_IP=203.0.113.10,2001:db8::10` when your domain has both an `A` and an `AAAA` record.
+
 **"couldn't get a security certificate":** The app is fine, but it can't get the certificate that makes `https://` work. Check three things: your domain points at this server, your hosting company's firewall allows ports 80 and 443, and Cloudflare is on **DNS only**. It keeps trying by itself. Run `sudo community logs caddy` to see what's happening. Caddy is the program that handles certificates.
 
 **"already using the web ports":** Another program holds port 80 or 443. The message names it. Remove that program, or start with a fresh server. If it only uses a private address, like a Tailscale one, you can keep it. The message shows the command that puts your community on your public address instead, using the `COMMUNITY_BIND_ADDRESS` setting.
 
-**"We couldn't download the ready-made app":** Your server builds the app itself instead. That needs about 2.5 GB of memory and swap together, and the installer adds swap on small servers. It took about 3 minutes on a server with 6 processors and 11 GB of memory, and it can take 10 minutes or more on a small one. If it fails, try again later, or use a server with more memory.
+**"We couldn't download the ready-made app":** Your server builds the app itself instead. That needs about 2.5 GB of memory and swap together, and the installer adds swap on small servers. It takes about 3 minutes with 4 GB of memory and 2 dedicated processors, and 30 minutes or more on a 2 GB server with a shared processor. If you can, use a bigger server for the first install. Some hosting companies let you move to a smaller plan afterwards. To follow the build, run `sudo tail -f /opt/community/install.log` in another window.
 
-**"The build failed":** Your server probably ran out of memory. Use a server with at least 2 GB of memory, then run the same command again.
+**"The build failed":** The message shows the build's last lines and what they mean: the server ran out of memory (use a server with more memory), or it couldn't look up internet addresses (check the server's DNS settings). The whole build is in `/opt/community/install.log`. Your settings are saved, so run the same command again once it's fixed.
+
+**Running the command again after a first install that stopped:** It keeps the settings and secrets it already made and picks up where it stopped. Until someone creates the admin account, it ends with your setup token and the `/setup` steps again. After that, a run is an upgrade.
+
+**"a file at /swapfile that isn't turned on":** The installer only adds, turns on or removes a swap file it marked as its own. It left this one alone. If your server is small, turn that swap file on yourself, or remove it and run the same command again.
 
 **"Your community didn't start in time":** Run `sudo community logs app` and look for lines with `"scope":"migrations"` or `"scope":"health"`. They give the real cause. Then run the same command again.
 
