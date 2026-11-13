@@ -62,3 +62,4 @@ Append-only. `date · slug · symptom · root cause · fix commit/PR · repro te
 - 2026-11-13 · fix-cleanup · (fixed) "Send Rosa this private link" after the app emailed her; US dates on intro pages · the panel reads the send at once; `formatDayMonth` · `intros-ui.test.ts` "the connector asking the person"
 - 2026-11-13 · fix-cleanup · (fixed) "Invite cancelled" vs "Revoked"; invite dates cut at about 1034 px · "Invite revoked."; the date line wraps · `invites.test.ts` "says revoked"
 - 2026-11-13 · fix-cleanup · (fixed) Website form offered the 2,000-member plan above 2,000 · a quote for the size · `src/test/site-signup.test.ts`
+- 2026-11-13 open (site, print only): the Schedule call buttons print as white text on white; browsers drop background colours in print. Fix: print-color-adjust: exact on the buttons.

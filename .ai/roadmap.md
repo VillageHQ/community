@@ -48,6 +48,8 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] Fix build, the small leftovers: cohort on Admin › Invites, Hiring follows who linked the jobs, one feed note and a Feed tab, intro page words and dates, "revoked" wording, the website plan above 2,000 members — fix-cleanup — open pull request, [PR #59](https://github.com/VillageHQ/community/pull/59) — [spec](features/fix-cleanup/SPEC.md)
 - [ ] Asks board tabs (Open, Mine, Answered, Closed), search over every ask and answer, admin pin, reopen, and an Admin › Asks page — asks-tools — open pull request, [PR #39](https://github.com/VillageHQ/community/pull/39) — [charter](features/asks-tools/CHARTER.md) · [spec](features/asks-board-tools/SPEC.md)
 
+- [ ] The landing page becomes Common Hall by Village: the blueprint drawing set (design v15), founders walking between rooms, Schedule call and GitHub, the sign-up form kept — common-hall-site — open pull request — [spec](features/common-hall-site/SPEC.md)
+
 ## Next (queued)
 - [ ] RIGHT / HIDE / FIX for filled-in lines in the weekly email, and a jobs card on Today (Today's "Check your card" now fills: fix-small) — parity — [spec](features/profile-confirm-lines/SPEC.md)
 - [ ] Intros from a profile without Village, and "Who <name> can introduce you to" — intros-no-village — open pull request, [PR #40](https://github.com/VillageHQ/community/pull/40) — [charter](features/intros-no-village/CHARTER.md) · [spec](features/intros-from-profile/SPEC.md)
@@ -75,6 +77,8 @@ Each open item gets these yes/no checks; code adds the points (change a number t
 - [ ] Invites when email is off: mailto and "Copy all links" — parity — [spec](features/invite-fallbacks/SPEC.md)
 - [ ] Hosting and data settings: region and data-protection contact (built; the agreement link is still open) — parity — [spec](features/hosting-data-settings/SPEC.md)
 - [ ] Managed-plan sign-up on the website — parity — [spec](features/site-signup/SPEC.md)
+- [ ] Rename the product to Common Hall across the app, README and docs (the landing page already says it)
+- [ ] A dark version of the blueprint landing page
 - Gaps neither product had (merge plan): Google/Microsoft sign-in and SSO, groups inside one community, CRM export, events, other languages.
 
 ## Done
@@ -105,8 +109,8 @@ Every Founderhall feature, once, in the order of the Founderhall inventory. **do
 reason, or the owner's later brief where it says so) · **open** = not on main yet (with its spec or build). Checked against the code on main on 2026-11-10.
 
 ### Marketing site
-- **done** · One-page marketing site — `site/`, "Founderhall by Village" (PR #23)
-- **dropped** · Animated phone replay / motion — GSAP is not open source (merge plan revision 8); `site/` keeps Community's own tour
+- **done** · One-page marketing site — `site/`, "Founderhall by Village" (PR #23), now "Common Hall by Village" ([common-hall-site](features/common-hall-site/SPEC.md))
+- **dropped** · Animated phone replay — GSAP is not open source (merge plan revision 8). Motion came back on the Common Hall page (2026-11-13) as the page's own script, no library — [common-hall-site](features/common-hall-site/SPEC.md)
 - **dropped** · Pricing table — the owner's one-site brief (no prices on the page) overrides the merge plan, which kept pricing
 - **open** · Sign-up form — [site-signup](features/site-signup/SPEC.md)
 - **open** · Confirmation email — [site-signup](features/site-signup/SPEC.md)
