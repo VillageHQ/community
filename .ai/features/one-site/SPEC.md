@@ -1,5 +1,8 @@
 # One marketing site: Founderhall by Village
 
+> Update 2026-11-13: the page is now **Common Hall by Village**, the blueprint drawing set; what it does now is in
+> [common-hall-site/SPEC.md](../common-hall-site/SPEC.md). This spec describes the Founderhall page it replaced.
+
 What it does now.
 
 - `site/` is one static page (`index.html`, `assets/site.css`, `assets/site.js`) that sells the app in this repo as
